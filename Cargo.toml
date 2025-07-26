@@ -1,117 +1,39 @@
 [workspace]
 members = [
-    "gateway/bff",
-    "services/reviews-service",
-    "services/booking-service",
-    "services/validation-service",
-    "services/notification-service",
-    "services/info-on-arrival-service",
-    "services/rate-limiter-service",
-    "services/security-service",
-    "services/location-service",
-    "services/shared"
+    "backend/shared",
+    "backend/booking-service",
+    "backend/notification-service",
+    "backend/reviews-service", 
+    "backend/security-service",
+    "backend/validation-service",
+    "backend/info-on-arrival-service",
+    "backend/location-service",
+    "backend/rate-limiter-service",
+    "backend/auth-service"
 ]
-resolver = "2"
-
-[workspace.metadata.scripts]
-# Development
-dev = "./dev.sh"
-dev-frontend = "cd frontend && PORT=${VITE_PORT:-5173} bun run dev"
-
-# Building
-build = "cargo build --workspace --release && cd frontend && bun run build"
-build-frontend = "cd frontend && bun run build"
-build-wasm = "cargo build --workspace --target wasm32-unknown-unknown --release"
-
-# Testing
-test = "cargo test --workspace && cd frontend && bun run test"
-test-unit = "cargo test --workspace"
-test-integration = "node tests/api/test-dni-api.js"
-test-e2e = "testcafe chrome tests/e2e/"
-test-ui = "cd frontend && bun run test"
-
-# Linting and formatting
-lint = "cargo clippy --workspace -- -D warnings && cd frontend && bunx eslint . --ext .ts,.tsx"
-lint-fix = "cargo clippy --workspace --fix --allow-dirty -- -D warnings && cd frontend && bunx eslint . --ext .ts,.tsx --fix"
-format = "cargo fmt --all && cd frontend && bunx prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
-format-check = "cargo fmt --all -- --check && cd frontend && bunx prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
-
-# Database (Bun runs drizzle-kit)
-db-generate = "cd frontend && bunx drizzle-kit generate"
-db-migrate = "cd frontend && bunx drizzle-kit migrate"
-db-studio = "cd frontend && bunx drizzle-kit studio"
-
-# Development tools
-storybook = "cd frontend && bunx storybook dev -p 6006 --host 0.0.0.0"
-clean = "cargo clean && rm -rf frontend/dist/ frontend/coverage/ frontend/.next/ frontend/.bun/"
-
-# Performance and monitoring
-perf-lighthouse = "bunx lighthouse http://0.0.0.0:${VITE_PORT:-5173} --output json --output-path ./tests/performance/lighthouse.json"
-perf-k6 = "k6 run tests/performance/api-load.js"
-health-check = "node tests/infrastructure/monitoring/health-check.js"
-
-# Setup
-setup-dev = "chmod +x tests/infrastructure/scripts/setup-dev.sh && ./tests/infrastructure/scripts/setup-dev.sh"
-
-[workspace.metadata.aliases]
-dev = "dev"
-build = "build"
-test = "test"
-lint = "lint"
-fmt = "format"
-
-[workspace.metadata.env]
-# Spin Gateway
-SPIN_LISTEN_ADDRESS = { default = "0.0.0.0:3000", description = "Gateway listen address" }
-GATEWAY_PORT = { default = "3000", description = "Gateway port" }
-
-# Frontend Dynamic Ports
-VITE_PORT = { default = "5173", description = "Frontend Vite dev server port" }
-VITE_PREVIEW_PORT = { default = "4173", description = "Vite preview server port" }
-VITE_API_PROXY = { default = "http://localhost:3000", description = "Frontend API proxy URL to gateway" }
-
-# Database Configuration
-DATABASE_URL = { required = true, description = "PostgreSQL connection string" }
-NEON_DATABASE_URL = { required = true, description = "Neon database connection string" }
-
-# Auth0 Configuration
-AUTH0_DOMAIN = { required = true, description = "Auth0 tenant domain" }
-AUTH0_CLIENT_ID = { required = true, description = "Auth0 client ID" }
-AUTH0_CLIENT_SECRET = { required = true, description = "Auth0 client secret" }
-AUTH0_AUDIENCE = { required = false, description = "Auth0 API audience" }
-
-# External Services
-TWILIO_ACCOUNT_SID = { required = false, description = "Twilio account SID for SMS" }
-TWILIO_AUTH_TOKEN = { required = false, description = "Twilio auth token" }
-TELEGRAM_BOT_TOKEN = { required = false, description = "Telegram bot token" }
-SMTP_HOST = { required = false, description = "SMTP server host" }
-SMTP_PORT = { required = false, description = "SMTP server port" }
-SMTP_USER = { required = false, description = "SMTP username" }
-SMTP_PASS = { required = false, description = "SMTP password" }
-
-# Encryption and Security
-ENCRYPTION_KEY = { required = true, description = "AES-256-GCM encryption key" }
-JWT_SECRET = { required = true, description = "JWT signing secret" }
-
-# Service Configuration
-RATE_LIMIT_REQUESTS = { required = false, description = "Rate limit requests per minute", default = "100" }
-LOG_LEVEL = { required = false, description = "Application log level", default = "info" }
 
 [workspace.dependencies]
-tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
-js-sys = "0.3"
-web-sys = "0.3"
-console_error_panic_hook = "0.1"
-wee_alloc = "0.4"
-anyhow = "1.0"
-thiserror = "1.0"
-uuid = { version = "1.0", features = ["v4", "wasm-bindgen", "serde"] }
-chrono = { version = "0.4", features = ["serde", "wasm-bindgen"] }
-reqwest = { version = "0.11", features = ["json"] }
-async-trait = "0.1"
-axum = "0.7"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+spin-sdk = "2.1"
+wit-bindgen = "0.25"
+http = "1.1"
 sqlx = { version = "0.7", features = ["postgres", "chrono", "uuid"] }
+thiserror = "1.0"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+
+# Cargo aliases for deployment
+[workspace.metadata.commands]
+local = "spin up --listen 0.0.0.0:3000"
+build-all = "cargo build --target wasm32-wasi --release --workspace --exclude shared"
+prod = "spin login && spin deploy --registry ghcr.io"
+test-all = "./scripts/test-all-services.sh"

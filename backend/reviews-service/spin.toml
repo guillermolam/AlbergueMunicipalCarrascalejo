@@ -1,0 +1,31 @@
+
+spin_manifest_version = 2
+
+[application]
+name = "reviews-service"
+version = "0.1.0"
+authors = ["Albergue Del Carrascalejo"]
+
+[variables]
+database_url = { required = true }
+neon_database_url = { required = true }
+log_level = { default = "info" }
+
+[[trigger.http]]
+route = "/..."
+component = "reviews-service"
+
+[component.reviews-service]
+source = "target/wasm32-wasi/release/reviews_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
+
+[component.reviews-service.build]
+command = "cargo build --target wasm32-wasi --release"
+
+[component.reviews-service.variables]
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+log_level = "{{ log_level }}"
+
+[component.reviews-service.key_value_stores]
+default = { label = "reviews-kv" }
