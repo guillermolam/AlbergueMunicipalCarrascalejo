@@ -1,0 +1,31 @@
+
+spin_manifest_version = 2
+
+[application]
+name = "rate-limiter-service"
+version = "0.1.0"
+authors = ["Albergue Del Carrascalejo"]
+
+[variables]
+rate_limit_requests = { default = "100" }
+rate_limit_window = { default = "3600" }
+log_level = { default = "info" }
+
+[[trigger.http]]
+route = "/..."
+component = "rate-limiter-service"
+
+[component.rate-limiter-service]
+source = "target/wasm32-wasi/release/rate_limiter_service.wasm"
+allowed_outbound_hosts = []
+
+[component.rate-limiter-service.build]
+command = "cargo build --target wasm32-wasi --release"
+
+[component.rate-limiter-service.variables]
+rate_limit_requests = "{{ rate_limit_requests }}"
+rate_limit_window = "{{ rate_limit_window }}"
+log_level = "{{ log_level }}"
+
+[component.rate-limiter-service.key_value_stores]
+default = { label = "rate-limiter-kv" }

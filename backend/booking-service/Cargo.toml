@@ -46,3 +46,10 @@ thiserror = "1.0"
 # UUID and time
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
+
+[build]
+command = "cargo build --target wasm32-wasi --release"
+
+[[bin]]
+name = "booking_service"
+path = "src/main.rs"

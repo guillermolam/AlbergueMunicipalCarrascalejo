@@ -1,0 +1,50 @@
+
+spin_manifest_version = 2
+
+[application]
+name = "notification-service"
+version = "0.1.0"
+authors = ["Albergue Del Carrascalejo"]
+
+[variables]
+database_url = { required = true }
+neon_database_url = { required = true }
+twilio_account_sid = { required = false }
+twilio_auth_token = { required = false }
+telegram_bot_token = { required = false }
+smtp_host = { required = false }
+smtp_port = { required = false }
+smtp_user = { required = false }
+smtp_pass = { required = false }
+log_level = { default = "info" }
+
+[[trigger.http]]
+route = "/..."
+component = "notification-service"
+
+[component.notification-service]
+source = "target/wasm32-wasi/release/notification_service.wasm"
+allowed_outbound_hosts = [
+    "https://api.twilio.com",
+    "https://api.telegram.org",
+    "https://*.smtp.com",
+    "https://*.neon.tech"
+]
+
+[component.notification-service.build]
+command = "cargo build --target wasm32-wasi --release"
+
+[component.notification-service.variables]
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+twilio_account_sid = "{{ twilio_account_sid }}"
+twilio_auth_token = "{{ twilio_auth_token }}"
+telegram_bot_token = "{{ telegram_bot_token }}"
+smtp_host = "{{ smtp_host }}"
+smtp_port = "{{ smtp_port }}"
+smtp_user = "{{ smtp_user }}"
+smtp_pass = "{{ smtp_pass }}"
+log_level = "{{ log_level }}"
+
+[component.notification-service.key_value_stores]
+default = { label = "notification-kv" }

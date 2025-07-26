@@ -1,0 +1,34 @@
+
+spin_manifest_version = 2
+
+[application]
+name = "location-service"
+version = "0.1.0"
+authors = ["Albergue Del Carrascalejo"]
+
+[variables]
+database_url = { required = true }
+google_places_api_key = { required = false }
+log_level = { default = "info" }
+
+[[trigger.http]]
+route = "/..."
+component = "location-service"
+
+[component.location-service]
+source = "target/wasm32-wasi/release/location_service.wasm"
+allowed_outbound_hosts = [
+    "https://maps.googleapis.com",
+    "https://*.neon.tech"
+]
+
+[component.location-service.build]
+command = "cargo build --target wasm32-wasi --release"
+
+[component.location-service.variables]
+database_url = "{{ database_url }}"
+google_places_api_key = "{{ google_places_api_key }}"
+log_level = "{{ log_level }}"
+
+[component.location-service.key_value_stores]
+default = { label = "location-kv" }
