@@ -35,4 +35,7 @@ codegen-units = 1
 [workspace.metadata.commands]
 local = "spin up --listen 0.0.0.0:3000"
 build-all = "cargo build --target wasm32-wasi --release --workspace --exclude shared"
+build-services = "for service in booking-service notification-service reviews-service security-service validation-service info-on-arrival-service location-service rate-limiter-service auth-service; do echo Building $service...; cd $service && cargo build --target wasm32-wasi --release && cd ..; done"
 deploy = "spin login && spin deploy"
+deploy-local = "cargo build --target wasm32-wasi --release --workspace --exclude shared && spin build && spin up --listen 0.0.0.0:3000"
+deploy-prod = "cargo build --target wasm32-wasi --release --workspace --exclude shared && spin build && spin login && spin deploy"

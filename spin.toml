@@ -2,78 +2,241 @@
 spin_manifest_version = 2
 
 [application]
-name = "albergue-carrascalejo"
+name = "albergue-microservices"
 version = "0.1.0"
 authors = ["Albergue Del Carrascalejo"]
-description = "Albergue booking and management system"
+description = "Microservices architecture for albergue management"
 
 [variables]
-# Auth0 Configuration
+database_url = { required = true }
+neon_database_url = { required = true }
 auth0_domain = { required = true }
 auth0_client_id = { required = true }
 auth0_client_secret = { required = true }
-
-# Database Configuration
-database_url = { required = true }
-neon_database_url = { required = true }
-
-# External Services
+smtp_host = { default = "smtp.resend.com" }
+smtp_password = { required = false }
 twilio_account_sid = { required = false }
 twilio_auth_token = { required = false }
 telegram_bot_token = { required = false }
-smtp_host = { required = false }
-smtp_port = { required = false }
-smtp_user = { required = false }
-smtp_pass = { required = false }
-
-# Security
-encryption_key = { required = true }
-jwt_secret = { required = true }
-
-# Service Configuration
-rate_limit_requests = { default = "100" }
+google_places_api_key = { required = false }
 log_level = { default = "info" }
 
+# Gateway BFF Component
 [[trigger.http]]
 route = "/api/..."
 component = "gateway-bff"
 
-[[trigger.http]]
-route = "/..."
-component = "static-fileserver"
-
 [component.gateway-bff]
-source = "gateway/bff/target/wasm32-wasi/release/gateway_bff.wasm"
+source = "gateway/bff/target/wasm32-wasi/release/bff.wasm"
 allowed_outbound_hosts = [
-    "https://*.auth0.com", 
+    "https://*.neon.tech",
+    "https://api.auth0.com",
+    "https://smtp.resend.com",
     "https://api.twilio.com",
     "https://api.telegram.org",
-    "https://*.neon.tech",
-    "https://*.postgres.com"
+    "https://maps.googleapis.com"
 ]
 
 [component.gateway-bff.build]
-command = "cargo build --target wasm32-wasi --release"
-workdir = "gateway/bff"
+command = "cd gateway/bff && cargo build --target wasm32-wasi --release"
 
 [component.gateway-bff.variables]
+database_url = "{{ database_url }}"
 auth0_domain = "{{ auth0_domain }}"
 auth0_client_id = "{{ auth0_client_id }}"
 auth0_client_secret = "{{ auth0_client_secret }}"
+log_level = "{{ log_level }}"
+
+[component.gateway-bff.key_value_stores]
+default = { label = "gateway-kv" }
+
+# Booking Service
+[[trigger.http]]
+route = "/booking/..."
+component = "booking-service"
+
+[component.booking-service]
+source = "backend/booking-service/target/wasm32-wasi/release/booking_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech"]
+
+[component.booking-service.build]
+command = "cd backend/booking-service && cargo build --target wasm32-wasi --release"
+
+[component.booking-service.variables]
 database_url = "{{ database_url }}"
-neon_database_url = "{{ neon_database_url }}"
+log_level = "{{ log_level }}"
+
+[component.booking-service.key_value_stores]
+default = { label = "booking-kv" }
+
+# Notification Service
+[[trigger.http]]
+route = "/notification/..."
+component = "notification-service"
+
+[component.notification-service]
+source = "backend/notification-service/target/wasm32-wasi/release/notification_service.wasm"
+allowed_outbound_hosts = [
+    "https://*.neon.tech",
+    "https://smtp.resend.com",
+    "https://api.twilio.com",
+    "https://api.telegram.org"
+]
+
+[component.notification-service.build]
+command = "cd backend/notification-service && cargo build --target wasm32-wasi --release"
+
+[component.notification-service.variables]
+database_url = "{{ database_url }}"
+smtp_host = "{{ smtp_host }}"
+smtp_password = "{{ smtp_password }}"
 twilio_account_sid = "{{ twilio_account_sid }}"
 twilio_auth_token = "{{ twilio_auth_token }}"
 telegram_bot_token = "{{ telegram_bot_token }}"
-smtp_host = "{{ smtp_host }}"
-smtp_port = "{{ smtp_port }}"
-smtp_user = "{{ smtp_user }}"
-smtp_pass = "{{ smtp_pass }}"
-encryption_key = "{{ encryption_key }}"
-jwt_secret = "{{ jwt_secret }}"
-rate_limit_requests = "{{ rate_limit_requests }}"
 log_level = "{{ log_level }}"
 
-[component.static-fileserver]
-source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.0.1/spin_static_fs.wasm", digest = "sha256:65456bf4e84cf81b62075e761b2b0afaffaef2d0aeda521b245150f76b96421b" }
-files = [ { source = "frontend/dist", destination = "/" } ]
+[component.notification-service.key_value_stores]
+default = { label = "notification-kv" }
+
+# Reviews Service
+[[trigger.http]]
+route = "/reviews/..."
+component = "reviews-service"
+
+[component.reviews-service]
+source = "backend/reviews-service/target/wasm32-wasi/release/reviews_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech"]
+
+[component.reviews-service.build]
+command = "cd backend/reviews-service && cargo build --target wasm32-wasi --release"
+
+[component.reviews-service.variables]
+database_url = "{{ database_url }}"
+log_level = "{{ log_level }}"
+
+[component.reviews-service.key_value_stores]
+default = { label = "reviews-kv" }
+
+# Security Service
+[[trigger.http]]
+route = "/security/..."
+component = "security-service"
+
+[component.security-service]
+source = "backend/security-service/target/wasm32-wasi/release/security_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech"]
+
+[component.security-service.build]
+command = "cd backend/security-service && cargo build --target wasm32-wasi --release"
+
+[component.security-service.variables]
+database_url = "{{ database_url }}"
+log_level = "{{ log_level }}"
+
+[component.security-service.key_value_stores]
+default = { label = "security-kv" }
+
+# Validation Service
+[[trigger.http]]
+route = "/validation/..."
+component = "validation-service"
+
+[component.validation-service]
+source = "backend/validation-service/target/wasm32-wasi/release/validation_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech"]
+
+[component.validation-service.build]
+command = "cd backend/validation-service && cargo build --target wasm32-wasi --release"
+
+[component.validation-service.variables]
+database_url = "{{ database_url }}"
+log_level = "{{ log_level }}"
+
+[component.validation-service.key_value_stores]
+default = { label = "validation-kv" }
+
+# Info on Arrival Service
+[[trigger.http]]
+route = "/info/..."
+component = "info-on-arrival-service"
+
+[component.info-on-arrival-service]
+source = "backend/info-on-arrival-service/target/wasm32-wasi/release/info_on_arrival_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech"]
+
+[component.info-on-arrival-service.build]
+command = "cd backend/info-on-arrival-service && cargo build --target wasm32-wasi --release"
+
+[component.info-on-arrival-service.variables]
+database_url = "{{ database_url }}"
+log_level = "{{ log_level }}"
+
+[component.info-on-arrival-service.key_value_stores]
+default = { label = "info-kv" }
+
+# Location Service
+[[trigger.http]]
+route = "/location/..."
+component = "location-service"
+
+[component.location-service]
+source = "backend/location-service/target/wasm32-wasi/release/location_service.wasm"
+allowed_outbound_hosts = [
+    "https://*.neon.tech",
+    "https://maps.googleapis.com"
+]
+
+[component.location-service.build]
+command = "cd backend/location-service && cargo build --target wasm32-wasi --release"
+
+[component.location-service.variables]
+database_url = "{{ database_url }}"
+google_places_api_key = "{{ google_places_api_key }}"
+log_level = "{{ log_level }}"
+
+[component.location-service.key_value_stores]
+default = { label = "location-kv" }
+
+# Rate Limiter Service
+[[trigger.http]]
+route = "/rate-limiter/..."
+component = "rate-limiter-service"
+
+[component.rate-limiter-service]
+source = "backend/rate-limiter-service/target/wasm32-wasi/release/rate_limiter_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech"]
+
+[component.rate-limiter-service.build]
+command = "cd backend/rate-limiter-service && cargo build --target wasm32-wasi --release"
+
+[component.rate-limiter-service.variables]
+database_url = "{{ database_url }}"
+log_level = "{{ log_level }}"
+
+[component.rate-limiter-service.key_value_stores]
+default = { label = "rate-limiter-kv" }
+
+# Auth Service
+[[trigger.http]]
+route = "/auth/..."
+component = "auth-service"
+
+[component.auth-service]
+source = "backend/auth-service/target/wasm32-wasi/release/auth_service.wasm"
+allowed_outbound_hosts = [
+    "https://*.neon.tech",
+    "https://api.auth0.com"
+]
+
+[component.auth-service.build]
+command = "cd backend/auth-service && cargo build --target wasm32-wasi --release"
+
+[component.auth-service.variables]
+database_url = "{{ database_url }}"
+auth0_domain = "{{ auth0_domain }}"
+auth0_client_id = "{{ auth0_client_id }}"
+auth0_client_secret = "{{ auth0_client_secret }}"
+log_level = "{{ log_level }}"
+
+[component.auth-service.key_value_stores]
+default = { label = "auth-kv" }

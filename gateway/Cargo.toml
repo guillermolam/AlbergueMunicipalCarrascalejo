@@ -20,6 +20,7 @@ AUTH0_CLIENT_SECRET = { required = true, description = "Auth0 client secret" }
 # Build commands
 build = "cargo build --workspace --release --target wasm32-wasi"
 build-spin = "spin build"
+build-all = "cargo build --workspace --release --target wasm32-wasi && spin build"
 
 # Development commands  
 dev = "spin up --listen ${SPIN_LISTEN_ADDRESS:-0.0.0.0:3000}"
@@ -28,6 +29,7 @@ dev-with-caddy = "spin up --listen 127.0.0.1:3000 & cd gateway && caddy run --co
 # Deployment commands
 deploy = "cargo build --workspace --release --target wasm32-wasi && spin build && spin deploy"
 deploy-local = "cargo build --workspace --release --target wasm32-wasi && spin build && spin up --listen ${SPIN_LISTEN_ADDRESS:-0.0.0.0:3000}"
+deploy-prod = "cargo build --workspace --release --target wasm32-wasi && spin build && spin login && spin deploy"
 
 # Testing and validation
 test-gateway = "spin up --listen 127.0.0.1:3000 & sleep 2 && curl http://127.0.0.1:3000/api/ping"
