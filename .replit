@@ -36,4 +36,107 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd gateway && spin up --listen 0.0.0.0:3000"
+args = "cd frontend && bun run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd gateway && cargo build --target wasm32-wasi --release"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin up --listen 0.0.0.0:3000"
+
+[[workflows.workflow]]
+name = "build:all"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && bun run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd gateway && cargo build --target wasm32-wasi --release"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $DATABASE_URL"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin build"
+
+[[workflows.workflow]]
+name = "deploy:local"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && bun run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd gateway && cargo build --target wasm32-wasi --release"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $DATABASE_URL"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin up --listen 0.0.0.0:3000"
+
+[[workflows.workflow]]
+name = "deploy:prod"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && bun run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd gateway && cargo build --target wasm32-wasi --release"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $DATABASE_URL"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin login"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin deploy"

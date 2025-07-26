@@ -35,5 +35,10 @@ codegen-units = 1
 [workspace.metadata.commands]
 local = "spin up --listen 0.0.0.0:3000"
 build-all = "cargo build --target wasm32-wasi --release --workspace --exclude shared"
+build-frontend = "cd frontend && bun run build"
+build-gateway = "cd gateway && cargo build --target wasm32-wasi --release"
+build-backend = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
+migrate-db = "sqlx migrate run --database-url $DATABASE_URL"
+spin-build = "spin build"
 prod = "spin login && spin deploy --registry ghcr.io"
 test-all = "./scripts/test-all-services.sh"
