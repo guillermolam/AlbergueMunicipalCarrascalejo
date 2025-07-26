@@ -25,3 +25,15 @@ start = "rust-analyzer"
 pattern = "**/*.toml"
 [languages.toml.languageServer]
 start = "taplo lsp"
+
+[workflows]
+runButton = "Run"
+
+[[workflows.workflow]]
+name = "Run"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd gateway && spin up --listen 0.0.0.0:3000"
