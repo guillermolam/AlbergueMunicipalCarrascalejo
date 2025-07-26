@@ -1,3 +1,4 @@
+
 [package]
 name = "shared"
 version = "0.1.0"
@@ -21,5 +22,13 @@ anyhow = "1.0"
 # HTTP types for DTOs
 http = "1.1"
 
+# Async runtime and utilities
 tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
+
+# Additional utilities for security and validation
+regex = "1.10"
+base64 = "0.21"
+
+# WASM compatibility
+wasm-bindgen = "0.2"
