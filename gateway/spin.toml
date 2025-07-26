@@ -7,9 +7,9 @@ authors = ["Albergue Del Carrascalejo"]
 
 [variables]
 # Auth0 Configuration
-auth0_domain = { required = true }
-auth0_client_id = { required = true }
-auth0_client_secret = { required = true }
+auth0_domain = { required = true, default = "albergue-dev.auth0.com" }
+auth0_client_id = { required = true, default = "placeholder_client_id" }
+auth0_client_secret = { required = true, default = "placeholder_secret" }
 
 # Database Configuration
 database_url = { required = true }

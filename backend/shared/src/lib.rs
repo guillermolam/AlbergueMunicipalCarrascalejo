@@ -1,6 +1,12 @@
 // Shared types and utilities for WASM microservices
 // Types are now generated from database/ folder schema definitions
 
+pub mod db;
+pub mod dto;
+pub mod error;
+
+use tokio::runtime::Runtime;
+use std::sync::Once;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
@@ -159,7 +165,7 @@ impl ValidationResult {
         ValidationResult {
             valid,
             confidence,
-            extracted_data: json!({}), 
+            extracted_data: json!({}),
             errors: vec![],
         }
     }
@@ -188,3 +194,98 @@ pub fn generate_reference_number() -> String {
 pub fn calculate_price(nights: u32, price_per_night: f64) -> f64 {
     nights as f64 * price_per_night
 }
+
+static INIT: Once = Once::new();
+static mut RUNTIME: Option<Runtime> = None;
+
+// Utility function to get or create Tokio runtime for WASM compatibility
+pub fn get_or_create_runtime() -> &'static Runtime {
+    unsafe {
+        INIT.call_once(|| {
+            RUNTIME = Some(
+                Runtime::new().expect("Failed to create Tokio runtime")
+            );
+        });
+        RUNTIME.as_ref().unwrap()
+    }
+}
+
+// Async utility functions
+pub mod async_utils {
+    use tokio::time::{Duration, sleep};
+    use futures::future::try_join_all;
+    use std::future::Future;
+
+    // Stateless function to execute tasks with timeout
+    pub async fn with_timeout<T, F>(future: F, timeout_ms: u64) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
+    where
+        F: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
+    {
+        tokio::time::timeout(Duration::from_millis(timeout_ms), future)
+            .await
+            .map_err(|_| "Operation timed out".into())?
+    }
+
+    // Stateless function to retry operations
+    pub async fn retry_with_backoff<T, F, Fut>(
+        mut operation: F,
+        max_retries: usize,
+        base_delay_ms: u64,
+    ) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
+    where
+        F: FnMut() -> Fut,
+        Fut: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
+    {
+        let mut attempts = 0;
+
+        loop {
+            match operation().await {
+                Ok(result) => return Ok(result),
+                Err(e) if attempts >= max_retries => return Err(e),
+                Err(_) => {
+                    attempts += 1;
+                    let delay = base_delay_ms * 2_u64.pow(attempts as u32 - 1);
+                    sleep(Duration::from_millis(delay)).await;
+                }
+            }
+        }
+    }
+
+    // Stateless function to execute tasks concurrently with limit
+    pub async fn execute_concurrent<T, F, Fut>(
+        tasks: Vec<F>,
+        concurrency_limit: usize,
+    ) -> Vec<Result<T, Box<dyn std::error::Error + Send + Sync>>>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
+        T: Send + 'static,
+    {
+        use tokio::sync::Semaphore;
+        use std::sync::Arc;
+
+        let semaphore = Arc::new(Semaphore::new(concurrency_limit));
+        let handles: Vec<_> = tasks
+            .into_iter()
+            .map(|task| {
+                let semaphore = Arc::clone(&semaphore);
+                tokio::spawn(async move {
+                    let _permit = semaphore.acquire().await.unwrap();
+                    task().await
+                })
+            })
+            .collect();
+
+        let mut results = Vec::new();
+        for handle in handles {
+            results.push(handle.await.unwrap_or_else(|e| Err(e.into())));
+        }
+
+        results
+    }
+}
+
+// Re-export common async traits and types
+pub use tokio::task;
+pub use futures::future::{join_all, try_join_all};
+pub use async_utils::*;

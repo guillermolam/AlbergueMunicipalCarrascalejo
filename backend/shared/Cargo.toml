@@ -20,3 +20,6 @@ anyhow = "1.0"
 
 # HTTP types for DTOs
 http = "1.1"
+
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
