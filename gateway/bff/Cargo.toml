@@ -1,4 +1,3 @@
-
 [package]
 name = "gateway_bff"
 version = "0.1.0"
@@ -22,8 +21,10 @@ ENCRYPTION_KEY = { required = true }
 JWT_SECRET = { required = true }
 
 [dependencies]
-spin-sdk = "3.0"
+anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-anyhow = "1.0"
+spin-sdk = "2.0"
 http = "0.2"
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"

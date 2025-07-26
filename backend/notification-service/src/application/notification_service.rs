@@ -1,225 +1,193 @@
-use crate::domain::*;
-use crate::ports::*;
-use serde_json;
-use shared::{AlbergueError, AlbergueResult};
-use std::collections::HashMap;
+use crate::domain::notification::{Notification, NotificationChannel, NotificationStatus};
+use crate::ports::{email_port::EmailPort, sms_port::SmsPort, telegram_port::TelegramPort};
+use anyhow::Result;
+use tokio::task;
+use futures::future::try_join_all;
+use std::sync::Arc;
 
-pub struct NotificationServiceImpl {
-    email_adapter: Box<dyn EmailPort>,
-    sms_adapter: Box<dyn SmsPort>,
-    telegram_adapter: Box<dyn TelegramPort>,
-    template_engine: handlebars::Handlebars<'static>,
+pub struct NotificationService {
+    email_adapter: Arc<dyn EmailPort + Send + Sync>,
+    sms_adapter: Arc<dyn SmsPort + Send + Sync>, 
+    telegram_adapter: Arc<dyn TelegramPort + Send + Sync>,
 }
 
-impl NotificationServiceImpl {
-    pub fn new() -> Self {
-        let mut template_engine = handlebars::Handlebars::new();
-
-        // Register default templates
-        Self::register_templates(&mut template_engine);
-
+impl NotificationService {
+    pub fn new(
+        email_adapter: Arc<dyn EmailPort + Send + Sync>,
+        sms_adapter: Arc<dyn SmsPort + Send + Sync>,
+        telegram_adapter: Arc<dyn TelegramPort + Send + Sync>,
+    ) -> Self {
         Self {
-            email_adapter: Box::new(crate::adapters::email::NodemailerAdapter::new()),
-            sms_adapter: Box::new(crate::adapters::sms::TwilioAdapter::new()),
-            telegram_adapter: Box::new(crate::adapters::telegram::TelegrafAdapter::new()),
-            template_engine,
+            email_adapter,
+            sms_adapter,
+            telegram_adapter,
         }
     }
 
-    fn register_templates(engine: &mut handlebars::Handlebars<'static>) {
-        // Booking confirmation email template
-        engine
-            .register_template_string(
-                "booking_confirmation_email",
-                r#"
-¡Hola {{pilgrim_name}}!
-
-Su reserva en el Albergue del Carrascalejo ha sido confirmada.
-
-Detalles de la reserva:
-- ID de reserva: {{booking_id}}
-- Fecha de entrada: {{check_in_date}}
-- Fecha de salida: {{check_out_date}}
-- Habitación: {{room_type}} - Cama {{bed_number}}
-- Importe total: {{total_amount}}€
-
-¡Esperamos su llegada! El Camino le está esperando.
-
-Albergue del Carrascalejo
-"#,
-            )
-            .unwrap();
-
-        // Payment receipt template
-        engine
-            .register_template_string(
-                "payment_receipt_email",
-                r#"
-Estimado/a peregrino/a,
-
-Su pago ha sido procesado correctamente.
-
-Detalles del pago:
-- ID de transacción: {{transaction_id}}
-- Importe: {{amount}} {{currency}}
-- Método de pago: {{payment_method}}
-- Fecha: {{payment_date}}
-
-{{#if receipt_url}}
-Puede descargar su recibo desde: {{receipt_url}}
-{{/if}}
-
-¡Buen Camino!
-
-Albergue del Carrascalejo
-"#,
-            )
-            .unwrap();
-
-        // WhatsApp booking confirmation
-        engine.register_template_string(
-            "booking_confirmation_whatsapp",
-            "🏠 Reserva confirmada en Albergue del Carrascalejo\n📅 {{check_in_date}} - {{check_out_date}}\n🛏️ {{room_type}} - Cama {{bed_number}}\n💰 {{total_amount}}€\n\n¡Buen Camino! 🚶‍♂️",
-        ).unwrap();
+    // Async function to send notification through single channel
+    async fn send_single_channel(&self, notification: &Notification, channel: NotificationChannel) -> Result<NotificationStatus> {
+        match channel {
+            NotificationChannel::Email => {
+                self.email_adapter.send_email(&notification.recipient, &notification.subject, &notification.body).await
+            }
+            NotificationChannel::Sms => {
+                self.sms_adapter.send_sms(&notification.recipient, &notification.body).await
+            }
+            NotificationChannel::WhatsApp => {
+                self.sms_adapter.send_whatsapp(&notification.recipient, &notification.body).await
+            }
+            NotificationChannel::Telegram => {
+                self.telegram_adapter.send_message(&notification.recipient, &notification.body).await
+            }
+        }
     }
 
-    pub async fn send_email(
-        &self,
-        recipient: &str,
-        subject: &str,
-        content: &str,
-    ) -> AlbergueResult<String> {
-        let notification = Notification::new(
-            NotificationType::AdminAlert,
-            NotificationChannel::Email,
-            recipient.to_string(),
-            content.to_string(),
-        )
-        .with_subject(subject.to_string());
+    // Async function to send notification with fallback channels
+    pub async fn send_with_fallback(&self, mut notification: Notification, channels: Vec<NotificationChannel>) -> Result<Notification> {
+        for channel in channels {
+            let status = self.send_single_channel(&notification, channel).await?;
 
-        self.email_adapter.send_email(&notification).await
-    }
-
-    pub async fn send_sms(&self, recipient: &str, message: &str) -> AlbergueResult<String> {
-        let notification = Notification::new(
-            NotificationType::AdminAlert,
-            NotificationChannel::SMS,
-            recipient.to_string(),
-            message.to_string(),
-        );
-
-        self.sms_adapter.send_sms(&notification).await
-    }
-
-    pub async fn send_whatsapp(&self, recipient: &str, message: &str) -> AlbergueResult<String> {
-        let notification = Notification::new(
-            NotificationType::AdminAlert,
-            NotificationChannel::WhatsApp,
-            recipient.to_string(),
-            message.to_string(),
-        );
-
-        self.sms_adapter.send_whatsapp(&notification).await
-    }
-
-    pub async fn send_telegram(&self, chat_id: &str, message: &str) -> AlbergueResult<String> {
-        let notification = Notification::new(
-            NotificationType::AdminAlert,
-            NotificationChannel::Telegram,
-            chat_id.to_string(),
-            message.to_string(),
-        );
-
-        self.telegram_adapter.send_telegram(&notification).await
-    }
-
-    pub async fn send_booking_confirmation(&self, booking_data: &str) -> AlbergueResult<String> {
-        let data: BookingNotificationData = serde_json::from_str(booking_data)
-            .map_err(|e| AlbergueError::ValidationError(format!("Invalid booking data: {}", e)))?;
-
-        // Prepare template data
-        let mut template_data = HashMap::new();
-        template_data.insert("pilgrim_name".to_string(), data.pilgrim_name.clone());
-        template_data.insert("booking_id".to_string(), data.booking_id.clone());
-        template_data.insert("check_in_date".to_string(), data.check_in_date.clone());
-        template_data.insert("check_out_date".to_string(), data.check_out_date.clone());
-        template_data.insert("bed_number".to_string(), data.bed_number.to_string());
-        template_data.insert("room_type".to_string(), data.room_type.clone());
-        template_data.insert("total_amount".to_string(), data.total_amount.to_string());
-
-        // Send email
-        let email_content = self
-            .template_engine
-            .render("booking_confirmation_email", &template_data)
-            .map_err(|e| AlbergueError::ValidationError(format!("Template error: {}", e)))?;
-
-        let email_notification = Notification::new(
-            NotificationType::ReservationCreated,
-            NotificationChannel::Email,
-            data.pilgrim_email.clone(),
-            email_content,
-        )
-        .with_subject("Reserva confirmada - Albergue del Carrascalejo".to_string())
-        .with_template_data(template_data.clone());
-
-        let email_result = self.email_adapter.send_email(&email_notification).await?;
-
-        // Send WhatsApp if phone available
-        if let Some(phone) = data.pilgrim_phone {
-            let whatsapp_content = self
-                .template_engine
-                .render("booking_confirmation_whatsapp", &template_data)
-                .map_err(|e| AlbergueError::ValidationError(format!("Template error: {}", e)))?;
-
-            let whatsapp_notification = Notification::new(
-                NotificationType::ReservationCreated,
-                NotificationChannel::WhatsApp,
-                phone,
-                whatsapp_content,
-            )
-            .with_template_data(template_data);
-
-            // Try WhatsApp, fallback to SMS
-            match self.sms_adapter.send_whatsapp(&whatsapp_notification).await {
-                Ok(_) => {}
-                Err(_) => {
-                    let _ = self.sms_adapter.send_sms(&whatsapp_notification).await;
+            match status {
+                NotificationStatus::Sent => {
+                    notification.status = NotificationStatus::Sent;
+                    notification.channel = Some(channel);
+                    return Ok(notification);
+                }
+                NotificationStatus::Failed => {
+                    // Continue to next channel
+                    continue;
+                }
+                _ => {
+                    notification.status = status;
+                    notification.channel = Some(channel);
                 }
             }
         }
 
-        Ok(email_result)
+        notification.status = NotificationStatus::Failed;
+        Ok(notification)
     }
 
-    pub async fn send_payment_receipt(&self, payment_data: &str) -> AlbergueResult<String> {
-        let data: PaymentNotificationData = serde_json::from_str(payment_data)
-            .map_err(|e| AlbergueError::ValidationError(format!("Invalid payment data: {}", e)))?;
+    // Async function to send multiple notifications concurrently
+    pub async fn send_bulk(&self, notifications: Vec<Notification>) -> Result<Vec<Notification>> {
+        // Create tasks for concurrent execution
+        let tasks: Vec<_> = notifications
+            .into_iter()
+            .map(|notification| {
+                let service = self.clone_service();
+                task::spawn(async move {
+                    // Default fallback order: WhatsApp -> SMS -> Email
+                    let channels = vec![
+                        NotificationChannel::WhatsApp,
+                        NotificationChannel::Sms,
+                        NotificationChannel::Email,
+                    ];
+                    service.send_with_fallback(notification, channels).await
+                })
+            })
+            .collect();
 
-        let mut template_data = HashMap::new();
-        template_data.insert("booking_id".to_string(), data.booking_id.clone());
-        template_data.insert("transaction_id".to_string(), data.transaction_id.clone());
-        template_data.insert("amount".to_string(), data.amount.to_string());
-        template_data.insert("currency".to_string(), data.currency.clone());
-        template_data.insert("payment_method".to_string(), data.payment_method.clone());
-        template_data.insert(
-            "payment_date".to_string(),
-            chrono::Utc::now().format("%Y-%m-%d %H:%M").to_string(),
-        );
-
-        if let Some(receipt_url) = &data.receipt_url {
-            template_data.insert("receipt_url".to_string(), receipt_url.clone());
+        // Wait for all tasks to complete
+        let mut results = Vec::new();
+        for task in tasks {
+            results.push(task.await??);
         }
 
-        let email_content = self
-            .template_engine
-            .render("payment_receipt_email", &template_data)
-            .map_err(|e| AlbergueError::ValidationError(format!("Template error: {}", e)))?;
-
-        // This would need to get the recipient email from the booking service
-        // For now, we'll return a success message
-        Ok(format!(
-            "Payment receipt prepared for booking {}",
-            data.booking_id
-        ))
+        Ok(results)
     }
+
+    // Async function to send booking confirmation with multiple channels
+    pub async fn send_booking_confirmation(&self, guest_email: &str, guest_phone: Option<&str>, booking_details: &str) -> Result<Vec<Notification>> {
+        let mut notifications = Vec::new();
+
+        // Email notification
+        let email_notification = Notification {
+            id: uuid::Uuid::new_v4().to_string(),
+            recipient: guest_email.to_string(),
+            subject: "Booking Confirmation - Albergue Del Carrascalejo".to_string(),
+            body: format!("Your booking has been confirmed. Details: {}", booking_details),
+            channel: None,
+            status: NotificationStatus::Pending,
+            created_at: chrono::Utc::now(),
+            sent_at: None,
+        };
+        notifications.push(email_notification);
+
+        // SMS notification if phone provided
+        if let Some(phone) = guest_phone {
+            let sms_notification = Notification {
+                id: uuid::Uuid::new_v4().to_string(),
+                recipient: phone.to_string(),
+                subject: "Booking Confirmed".to_string(),
+                body: format!("Booking confirmed at Albergue Del Carrascalejo. {}", booking_details),
+                channel: None,
+                status: NotificationStatus::Pending,
+                created_at: chrono::Utc::now(),
+                sent_at: None,
+            };
+            notifications.push(sms_notification);
+        }
+
+        // Send all notifications concurrently
+        self.send_bulk(notifications).await
+    }
+
+    // Helper method to clone the service for async tasks
+    fn clone_service(&self) -> NotificationService {
+        NotificationService {
+            email_adapter: Arc::clone(&self.email_adapter),
+            sms_adapter: Arc::clone(&self.sms_adapter),
+            telegram_adapter: Arc::clone(&self.telegram_adapter),
+        }
+    }
+
+    // Async function to process notification queue
+    pub async fn process_queue(&self, queue: Vec<Notification>) -> Result<Vec<Notification>> {
+        // Group notifications by priority/type for optimal processing
+        let (urgent, normal): (Vec<_>, Vec<_>) = queue
+            .into_iter()
+            .partition(|n| n.subject.contains("URGENT") || n.subject.contains("EMERGENCY"));
+
+        // Process urgent notifications first
+        let urgent_results = if !urgent.is_empty() {
+            self.send_bulk(urgent).await?
+        } else {
+            Vec::new()
+        };
+
+        // Process normal notifications
+        let normal_results = if !normal.is_empty() {
+            self.send_bulk(normal).await?
+        } else {
+            Vec::new()
+        };
+
+        // Combine results
+        let mut all_results = urgent_results;
+        all_results.extend(normal_results);
+
+        Ok(all_results)
+    }
+}
+
+// Stateless pure functions for notification templates
+pub fn create_booking_template(guest_name: &str, booking_id: &str, check_in: &str, check_out: &str) -> String {
+    format!(
+        "Hola {}, tu reserva {} ha sido confirmada. Check-in: {}, Check-out: {}. ¡Te esperamos!",
+        guest_name, booking_id, check_in, check_out
+    )
+}
+
+pub fn create_payment_template(amount: i32, payment_method: &str) -> String {
+    format!(
+        "Pago recibido: {}€ via {}. Gracias por tu reserva en Albergue Del Carrascalejo.",
+        amount / 100, payment_method
+    )
+}
+
+pub fn create_reminder_template(guest_name: &str, days_until: i32) -> String {
+    format!(
+        "Hola {}, te recordamos que tu estancia en el Albergue Del Carrascalejo es en {} días.",
+        guest_name, days_until
+    )
 }
