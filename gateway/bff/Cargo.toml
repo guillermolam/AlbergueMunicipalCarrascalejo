@@ -1,0 +1,29 @@
+
+[package]
+name = "gateway_bff"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.env]
+# Auth Configuration
+AUTH0_DOMAIN = { required = true }
+AUTH0_CLIENT_ID = { required = true }
+AUTH0_CLIENT_SECRET = { required = true }
+
+# Database Configuration
+DATABASE_URL = { required = true }
+NEON_DATABASE_URL = { required = true }
+
+# Security
+ENCRYPTION_KEY = { required = true }
+JWT_SECRET = { required = true }
+
+[dependencies]
+spin-sdk = "3.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+http = "0.2"

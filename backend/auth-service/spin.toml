@@ -1,0 +1,18 @@
+spin_manifest_version = 2
+
+[application]
+name = "auth-service"
+version = "0.1.0"
+authors = ["Guillermo Lam <guillermolam.m@gmail.com>"]
+description = "OIDC and OAuth2 Service"
+
+[[trigger.http]]
+route = "/authorize"
+component = "auth-service"
+
+[component.auth-service]
+source = "target/wasm32-wasi/release/auth_service.wasm"
+allowed_outbound_hosts = []
+[component.auth-service.build]
+command = "cargo build --target wasm32-wasi --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

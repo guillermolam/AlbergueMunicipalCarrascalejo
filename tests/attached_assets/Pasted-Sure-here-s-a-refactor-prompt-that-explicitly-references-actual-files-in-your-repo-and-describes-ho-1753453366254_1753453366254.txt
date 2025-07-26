@@ -1,0 +1,109 @@
+Sure, here’s a refactor prompt that explicitly references actual files in your repo and describes how they need to change—so Replit can **see what's there and know exactly what to modify**:
+
+---
+
+## Refactor Planning & Task Prompt for Replit Agent
+
+You are a developer working inside the Replit monorepo for **Albergue Del Carrascalejo**, with this structure:
+
+```
+gateway/
+services/validation-service/src/
+services/booking-service/src/
+services/country-service/src/
+services/security-service/src/
+services/rate-limiter-service/src/
+frontend/
+shared/
+database/
+```
+
+Use this prompt to plan and execute the refactor in modular, test-first iterations.
+
+---
+
+### 🎯 Objective
+
+Refactor to match the architecture and scaffold:
+
+* Each Rust service adopts the DDD + hexagonal layout (`domain/`, `application/`, `ports/`, `adapters/`, `infrastructure/`).
+* Move existing logic in validation-service (e.g. OCR, document validators) into `validation-service/src/domain/…` etc.
+* Ensure services use shared DTOs in `shared/` crate.
+* Frontend: separate `/admin`, `/customer`, `/components`, add Zustand for global state.
+* Move OCR training data into `services/validation-service/tests/ocr-training/…`, not in attached\_assets.
+* Remove legacy Express code if present.
+* Update `package.json` and Cargo workspace structure to match.
+
+---
+
+### 🚦 Task Planning
+
+**Task 1: Setup workspace correctness**
+
+* Check `Cargo.toml` root includes all services and `gateway` in `[workspace.members]`.
+* Check `spin.toml` routes all `services/*/target` components.
+* Test: run `cargo build --workspace`.
+
+**Task 2: validation-service OCR refactor**
+
+* Move existing `ocr`, `dni`, `mrz` logic files from `src/` to `src/domain/validators/`.
+* Create `ports/ocr_client.rs` trait; implement adapter in `adapters/tesseract.rs`.
+* Move training data to `services/validation-service/tests/ocr-training/{dni-nif, passports, nie-tie}`.
+* Add unit tests in `validation-service/tests/` referencing the training data.
+
+**Task 3: booking-service DDD layout**
+
+* Create `booking-service/src/domain/booking.rs` entity.
+* Move API handler in `lib.rs` to `application/create_booking.rs`.
+* Define traits `BookingRepository` and `NotificationSender` in `ports/`.
+* Use shared DTOs imported via `shared` crate.
+
+**Task 4: Frontend admin panel scaffolding**
+
+* Under `frontend/src/pages/`, ensure `AdminDashboard.tsx` and `BookingPage.tsx` exist.
+* Under `frontend/src/components/`, ensure `NotificationBadge.tsx`, `BedMap.tsx`.
+* Install Zustand store in `frontend/src/store/*`.
+* Storybook: move example stories to reflect admin UI.
+
+---
+
+### 🧪 Testing on Each Task
+
+* After each task implementation, run:
+
+  * In Rust services: `cargo test -p validation-service`, `cargo test` workspace.
+  * In frontend: `npm run test:ui`, `storybook --ci`, `npm run lint:ui`.
+* Ensure no lint warnings/errors, and diesel/sqlx migration tasks still pass if relevant.
+
+---
+
+### 🔁 Workflow
+
+1. List tasks in bullet form with description and test plan.
+2. Pick Task 1: publish the planned change, then implement it.
+3. After code changes, run tests and report:
+
+   * Files changed
+   * Tests passed?
+   * Any blockers or missing imports?
+4. Once green, move to next task.
+
+If you encounter a gap or uncertainty (e.g. missing shared DTO for a field), stop and ask before proceeding.
+
+---
+
+**First Task Draft**:
+
+> **Task 1: Validate & Fix Cargo workspace and spin.toml**
+>
+> * Open `Cargo.toml`, verify `[workspace.members]` includes `"gateway"`, and each `"services/...` folder.
+> * If missing, add them.
+> * Open `spin.toml`, confirm routes for gateway and each service (WISE: `[[wasm]]` entries).
+> * Test by running `cargo build --workspace` and `spin build`.
+>   **Definition of done:** Build completes without errors, spin.toml is valid and lists all components.
+
+Once ready, implement Task 1.
+
+---
+
+Let me know once the agent has listed the tasks or has completed the first step.

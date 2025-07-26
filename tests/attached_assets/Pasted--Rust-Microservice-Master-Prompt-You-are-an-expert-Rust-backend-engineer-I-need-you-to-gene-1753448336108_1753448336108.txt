@@ -1,0 +1,66 @@
+# Rust Microservice Master Prompt
+
+You are an expert **Rust backend engineer**. I need you to generate a new microservice project in Rust that:
+
+## Core Requirements
+
+- **Domain‑Driven Design (DDD)** with a hexagonal (ports & adapters) and functional architecture
+- **Single use‑case**: creating a booking for exactly one person
+- **Persistence**: store bookings in a PostgreSQL database (use `sqlx` or `Diesel`)
+- **External Integration**: submit each booking as a SOAP request to the SES Hospedajes service at:
+  https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion
+  - Use HTTP Basic Auth
+  - Construct the SOAP envelope per the MIR‑Hospedajes v3.1.2 schema (see PDF)
+
+- **WASM support**: compile to WebAssembly for deployment (e.g. via `wasm-pack`)
+- **WASM support**: compile to WebAssembly for deployment (e.g. via `wasm-pack`)
+- **API Gateway integration**: behind an API Gateway using Auth0 for downstream OAuth2 / OIDC / SAML / social‑login  
+  - Validate the forwarded JWT in the microservice, enforce scopes/roles, and map claims into a typed `UserContext`
+
+## References
+
+- Core repo: [guillermolam/alberguecarcalejo](https://github.com/guillermolam/alberguecarcalejo)
+- Shared schema: [schema.ts](https://github.com/guillermolam/alberguecarcalejo/blob/main/shared/schema.ts)
+- Other backend services: [backend/services](https://github.com/guillermolam/alberguecarcalejo/tree/main/backend/services)
+- API Gateway / Identity Provider: integrate Auth0 downstream
+
+## Project Structure
+
+```txt
+src/
+├── domain/
+│   └── booking.rs          // Booking entity, VO, enums
+├── application/
+│   └── create_booking.rs   // Use-case service
+├── ports/
+│   ├── booking_repository.rs
+│   └── hospedajes_client.rs
+├── adapters/
+│   ├── db_repository.rs
+│   └── soap_client.rs
+├── infrastructure/
+│   └── http_client.rs      // auth setup
+└── lib.rs                  // wiring & exports
+
+```
+
+## Key Requirements
+
+1. **Domain**: Booking entity with exactly one `Person`, validations, value objects (dates with timezones, enums for document type, role, etc.)
+2. **Application**: Implement `CreateBookingService` that takes a `Booking`, saves to the database, then calls the SOAP adapter
+3. **Ports**: Define async traits for `BookingRepository` and `HospedajesClient`
+4. **Adapters**:
+   - **DB**: implement `BookingRepository` using `sqlx` (Postgres)
+   - **SOAP**: implement `HospedajesClient` using `reqwest` (or WASM-compatible fetch) + `quick-xml` to serialize and send the SOAP envelope
+5. **WASM Build**: Ensure HTTP client supports WASM (e.g. `reqwest` with `wasm-client` feature or `wasm-bindgen` fetch)
+6. **Auth0**: Assume JWT Bearer token validation is handled upstream; service should accept a validated token header
+
+## Deliverables
+
+- **`Cargo.toml`** with necessary dependencies
+- Module stubs for each layer with correct `use`, `async_trait`, and function signatures
+- Example implementation in `soap_client.rs` showing envelope construction and HTTP call
+- A small `main.rs` (or `lib.rs`) demonstrating wiring of `DbRepository`, `SoapClient`, and `CreateBookingService`
+- Comments indicating where to fill in credentials and detailed XML mapping per the MIR schema
+
+> **Note:** Do not include extra explanations—only output the project files and code required.

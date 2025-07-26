@@ -1,10 +1,27 @@
-hidden = ["target", ".cargo"]
+modules = ["bun-1.2", "postgresql-16"]
 
-entrypoint = "src/main.rs"
-modules = ["rust-stable"]
+# The command to run when you press the "Run" button.
+run = "spin up"
 
+# The main configuration file for your project.
+entrypoint = "spin.toml"
+
+# Hides clutter from the file tree.
+hidden = [".config", "bun.lockb", "target", "node_modules", ".cache"]
+
+# This section configures the Nix environment.
+# NOTICE: The 'channel' line has been REMOVED.
+# This tells Replit to use its own default, stable channel, which avoids the error.
 [nix]
-channel = "stable-24_05"
 
-[gitHubImport]
-requiredFiles = [".replit"]
+# Provides language server support for Rust.
+[languages.rust]
+pattern = "**/*.rs"
+[languages.rust.languageServer]
+start = "rust-analyzer"
+
+# Provides language server support for TOML files.
+[languages.toml]
+pattern = "**/*.toml"
+[languages.toml.languageServer]
+start = "taplo lsp"

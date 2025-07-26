@@ -1,0 +1,42 @@
+[workspace]
+members = ["bff"]
+resolver = "2"
+
+[workspace.metadata.env]
+# Spin Gateway Configuration
+SPIN_LISTEN_ADDRESS = { default = "0.0.0.0:3000", description = "Gateway listen address" }
+GATEWAY_PORT = { default = "3000", description = "Gateway port" }
+
+# Database Configuration
+DATABASE_URL = { required = true, description = "PostgreSQL connection string" }
+NEON_DATABASE_URL = { required = true, description = "Neon database connection string" }
+
+# Auth Configuration
+AUTH0_DOMAIN = { required = true, description = "Auth0 tenant domain" }
+AUTH0_CLIENT_ID = { required = true, description = "Auth0 client ID" }
+AUTH0_CLIENT_SECRET = { required = true, description = "Auth0 client secret" }
+
+[workspace.metadata.scripts]
+# Build commands
+build = "cargo build --workspace --release --target wasm32-wasi"
+build-spin = "spin build"
+
+# Development commands  
+dev = "spin up --listen ${SPIN_LISTEN_ADDRESS:-0.0.0.0:3000}"
+dev-with-caddy = "spin up --listen 127.0.0.1:3000 & cd gateway && caddy run --config Caddyfile"
+
+# Deployment commands
+deploy = "cargo build --workspace --release --target wasm32-wasi && spin build && spin deploy"
+deploy-local = "cargo build --workspace --release --target wasm32-wasi && spin build && spin up --listen ${SPIN_LISTEN_ADDRESS:-0.0.0.0:3000}"
+
+# Testing and validation
+test-gateway = "spin up --listen 127.0.0.1:3000 & sleep 2 && curl http://127.0.0.1:3000/api/ping"
+
+[workspace.dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+wasm-bindgen = "0.2"
+spin-sdk = "3.0"
+anyhow = "1.0"
+http = "0.2"

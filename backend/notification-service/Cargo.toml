@@ -1,0 +1,78 @@
+[package]
+name = "notification-service"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[package.metadata.env]
+# Email Configuration
+SMTP_HOST = { required = true, description = "SMTP server host" }
+SMTP_PORT = { required = true, description = "SMTP server port" }
+SMTP_USER = { required = true, description = "SMTP username" }
+SMTP_PASS = { required = true, description = "SMTP password" }
+SMTP_FROM_EMAIL = { required = true, description = "From email address" }
+SMTP_FROM_NAME = { required = true, description = "From name" }
+
+# SMS Configuration (Twilio)
+TWILIO_ACCOUNT_SID = { required = true, description = "Twilio account SID" }
+TWILIO_AUTH_TOKEN = { required = true, description = "Twilio auth token" }
+TWILIO_FROM_NUMBER = { required = true, description = "Twilio from phone number" }
+
+# WhatsApp Configuration (Twilio)
+TWILIO_WHATSAPP_FROM = { required = false, description = "WhatsApp from number" }
+
+# Telegram Configuration
+TELEGRAM_BOT_TOKEN = { required = true, description = "Telegram bot token" }
+TELEGRAM_CHAT_ID = { required = false, description = "Default Telegram chat ID" }
+
+# Template Configuration
+TEMPLATE_LANGUAGE = { default = "es", description = "Default template language" }
+
+# Service Configuration
+NOTIFICATION_RETRY_ATTEMPTS = { default = "3", description = "Number of retry attempts" }
+LOG_LEVEL = { default = "info", description = "Application log level" }
+
+[dependencies]
+# Shared types and utilities
+shared = { path = "../shared" }
+
+# WASM support
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+web-sys = "0.3"
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# HTTP client and server
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Email support (Nodemailer/SMTP)
+lettre = "0.10"
+
+# Telegram bot
+teloxide = "0.12"
+
+# Template engine for notifications
+handlebars = "4.0"
+
+# UUID and time
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[build-dependencies]
+wasm-pack = "0.12"
