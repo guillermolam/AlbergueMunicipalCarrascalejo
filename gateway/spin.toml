@@ -1,0 +1,72 @@
+
+
+spin_manifest_version = 2
+
+[application]
+name = "albergue-gateway"
+version = "0.1.0"
+authors = ["Albergue Del Carrascalejo"]
+
+[variables]
+# Auth0 Configuration
+auth0_domain = { required = true }
+auth0_client_id = { required = true }
+auth0_client_secret = { required = true }
+
+# Database Configuration
+database_url = { required = true }
+neon_database_url = { required = true }
+
+# External Services
+twilio_account_sid = { required = false }
+twilio_auth_token = { required = false }
+telegram_bot_token = { required = false }
+smtp_host = { required = false }
+smtp_port = { required = false }
+smtp_user = { required = false }
+smtp_pass = { required = false }
+
+# Security
+encryption_key = { required = true }
+jwt_secret = { required = true }
+
+# Service Configuration
+rate_limit_requests = { default = "100" }
+log_level = { default = "info" }
+
+[[trigger.http]]
+route = "/api/..."
+component = "gateway-bff"
+
+[component.gateway-bff]
+source = "bff/target/wasm32-wasi/release/gateway_bff.wasm"
+allowed_outbound_hosts = [
+    "https://*.auth0.com", 
+    "https://api.twilio.com",
+    "https://api.telegram.org",
+    "https://*.neon.tech",
+    "https://*.postgres.com"
+]
+
+[component.gateway-bff.build]
+command = "cargo build --target wasm32-wasi --release"
+workdir = "bff"
+
+[component.gateway-bff.variables]
+auth0_domain = "{{ auth0_domain }}"
+auth0_client_id = "{{ auth0_client_id }}"
+auth0_client_secret = "{{ auth0_client_secret }}"
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+twilio_account_sid = "{{ twilio_account_sid }}"
+twilio_auth_token = "{{ twilio_auth_token }}"
+telegram_bot_token = "{{ telegram_bot_token }}"
+smtp_host = "{{ smtp_host }}"
+smtp_port = "{{ smtp_port }}"
+smtp_user = "{{ smtp_user }}"
+smtp_pass = "{{ smtp_pass }}"
+encryption_key = "{{ encryption_key }}"
+jwt_secret = "{{ jwt_secret }}"
+rate_limit_requests = "{{ rate_limit_requests }}"
+log_level = "{{ log_level }}"
+

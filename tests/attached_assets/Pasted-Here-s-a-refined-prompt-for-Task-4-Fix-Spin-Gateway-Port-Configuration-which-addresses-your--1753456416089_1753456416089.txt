@@ -1,0 +1,66 @@
+Here’s a refined prompt for **Task 4: Fix Spin Gateway & Port Configuration**, which addresses your port mismatch issue and ensures WASM service integration works smoothly.
+
+---
+
+## 🧩 Prompt for Task 4 – *Spin TOML & Port Configuration Fix*
+
+**Task 4: Resolve port mismatch & ensure proper service routing in `spin.toml` and gateway configuration**
+
+You will fix the current port mismatch issue—server defaulting to port `5000` while the application expects port `80`—and verify that all WASM services integrate correctly through the Spin gateway.
+
+### Instructions:
+
+1. **Inspect `spin.toml`:**
+
+   * Confirm HTTP triggering components use `route = "/"` or `/api/*` and their default internal port matches the externally-exposed port (`80`).
+   * Ensure each `component` entry (gateway and services) points to the correct `.wasm` file and build command.
+
+2. **Update `spin up` command:**
+
+   * Ensure dev launch uses `spin up --listen 0.0.0.0:80` instead of default port 3000 or 5000. Spin defaults to 3000 unless configured ([spinframework.dev][1], [fermyon.com][2]).
+   * This ensures the gateway and services serve traffic on port 80, matching frontend expectations.
+
+3. **Adjust gateway code (gateway/src/lib.rs or Spin component):**
+
+   * Validate that the gateway proxies to the correct internal routes (e.g. `/api/booking`) without assuming port `5000`.
+   * Use relative routing handled via Spin and avoid hardcoded ports.
+
+4. **Update service configs if needed:**
+
+   * If any service’s internal HTTP listener defaults to port `5000`, override it to use `80` in `spin.toml` or service settings.
+
+### Testing:
+
+* Build and run services using:
+
+  ```
+  spin build
+  spin up --listen 0.0.0.0:80
+  ```
+* Verify the root UI and key API endpoints respond correctly: test with `curl http://[Replit-URL]:80/` for root, `/api/bookings`, etc.
+* Run full test suite (`npm run test:ui`, `cargo test`, Rust lint/clippy) to ensure nothing breaks.
+
+### Definition of Done:
+
+* `spin.toml` file correctly maps triggers to port 80 and includes all wasm components.
+* Gateway / frontend loads without errors (no port mismatch).
+* All backend services are reachable via Spin routes (no manual port references).
+* Final build tests all pass.
+
+---
+
+**Why this matters:** Spin defaults to port 3000 unless overriden, and hosting inside Fermyon with Docker-like bindings often expects port 80 externally—so mismatched listening ports cause failures unless you explicitly bind to port 80 ([spinframework.dev][1], [fermyon.com][2]).
+
+---
+
+Please proceed with Task 4, then report:
+
+* What changed (files modified)
+* Whether build/server run succeeds
+* Access test results (`curl` or browser)
+* Any blockers or missing port setting
+
+Stop and ask if any port or component setting is ambiguous or missing!
+
+[1]: https://spinframework.dev/v2/running-apps?utm_source=chatgpt.com "Running Spin Applications"
+[2]: https://www.fermyon.com/blog/spin-in-docker?utm_source=chatgpt.com "Docker Desktop and Spin for Serverless WebAssembly Apps"

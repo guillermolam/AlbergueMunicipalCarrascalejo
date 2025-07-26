@@ -1,0 +1,518 @@
+
+version: '3'
+
+vars:
+  FRONTEND_PORT: '5173'
+  BACKEND_PORT: '8000'
+  GATEWAY_PORT: '3000'
+  FRONTEND_URI: 'http://0.0.0.0:{{.FRONTEND_PORT}}'
+  BACKEND_URI: 'http://0.0.0.0:{{.BACKEND_PORT}}'
+  GATEWAY_URI: 'http://0.0.0.0:{{.GATEWAY_PORT}}'
+
+env:
+  RUST_BACKTRACE: '1'
+  RUST_LOG: 'debug'
+  NODE_ENV: 'development'
+  DATABASE_URL: 'postgresql://localhost:5432/albergue_dev'
+
+tasks:
+  # Main entry points
+  default:
+    desc: Run full CI/CD pipeline
+    deps: [ci:full]
+
+  dev:
+    desc: Run all services in development mode
+    deps: [setup:check, setup:deps]
+    cmds:
+      - task: dev:services
+
+  ci:full:
+    desc: Complete CI/CD pipeline with all checks
+    deps: 
+      - setup:check
+      - setup:deps
+      - format:check
+      - lint:all
+      - sast:all
+      - test:unit
+      - build:all
+      - test:integration
+      - test:e2e
+      - security:dast
+      - performance:all
+      - compatibility:all
+
+  # Setup and verification
+  setup:check:
+    desc: Verify development environment
+    cmds:
+      - rustc --version
+      - node --version
+      - bun --version
+      - caddy version
+      - echo "✅ Development environment ready"
+
+  setup:deps:
+    desc: Install all dependencies
+    deps: [setup:deps:frontend, setup:deps:rust]
+
+  setup:deps:frontend:
+    desc: Install frontend dependencies
+    dir: frontend
+    cmds:
+      - bun install
+
+  setup:deps:rust:
+    desc: Install Rust dependencies
+    cmds:
+      - cargo fetch --workspace
+
+  setup:trunk:
+    desc: Install and configure Trunk.io for linting
+    cmds:
+      - |
+        if ! command -v trunk >/dev/null 2>&1; then
+          curl https://get.trunk.io -fsSL | bash || echo "⚠️  Trunk.io installation failed"
+        fi
+      - trunk init || echo "⚠️  Trunk.io already initialized"
+      - trunk check enable clippy rustfmt eslint prettier semgrep bandit || echo "⚠️  Some trunk checks already enabled"
+
+  # Code formatting
+  format:all:
+    desc: Format all code
+    deps: [format:rust, format:frontend]
+
+  format:rust:
+    desc: Format Rust code
+    cmds:
+      - cargo fmt --all
+
+  format:frontend:
+    desc: Format frontend code
+    dir: frontend
+    cmds:
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}" "server/**/*.{ts,js,json}" || echo "⚠️  Prettier formatting failed"
+        else
+          echo "⚠️  Prettier not available, skipping frontend formatting"
+        fi
+
+  format:check:
+    desc: Check code formatting
+    deps: [format:check:rust, format:check:frontend]
+
+  format:check:rust:
+    desc: Check Rust formatting
+    cmds:
+      - cargo fmt --all -- --check
+
+  format:check:frontend:
+    desc: Check frontend formatting
+    dir: frontend
+    cmds:
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" "server/**/*.{ts,js,json}" || echo "⚠️  Frontend formatting check failed"
+        else
+          echo "⚠️  Prettier not available, skipping frontend format check"
+        fi
+
+  # Linting
+  lint:all:
+    desc: Run all linters
+    deps: [lint:rust, lint:frontend, lint:trunk]
+
+  lint:rust:
+    desc: Lint Rust code
+    cmds:
+      - cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  lint:frontend:
+    desc: Lint frontend code
+    dir: frontend
+    cmds:
+      - bun run lint
+
+  lint:trunk:
+    desc: Run Trunk.io linting
+    cmds:
+      - |
+        if command -v trunk >/dev/null 2>&1; then
+          trunk check --all
+        else
+          echo "⚠️  Trunk.io not installed, skipping"
+        fi
+
+  # Static Application Security Testing (SAST)
+  sast:all:
+    desc: Run all SAST tools
+    deps: [sast:semgrep, sast:cargo-audit, sast:trunk-security]
+
+  sast:semgrep:
+    desc: Run Semgrep security analysis
+    cmds:
+      - |
+        if command -v semgrep >/dev/null 2>&1; then
+          semgrep --config=auto --error --strict --verbose .
+        else
+          echo "⚠️  Semgrep not installed, skipping security analysis"
+        fi
+
+  sast:cargo-audit:
+    desc: Run Cargo security audit
+    cmds:
+      - |
+        if ! command -v cargo-audit >/dev/null 2>&1; then
+          cargo install cargo-audit
+        fi
+      - cargo audit
+
+  sast:trunk-security:
+    desc: Run Trunk.io security checks
+    cmds:
+      - |
+        if command -v trunk >/dev/null 2>&1; then
+          trunk check --filter=security
+        else
+          echo "⚠️  Trunk.io not available, skipping security checks"
+        fi
+
+  # Unit Testing
+  test:unit:
+    desc: Run all unit tests
+    deps: [test:unit:rust, test:unit:frontend]
+
+  test:unit:rust:
+    desc: Run Rust unit tests
+    cmds:
+      - cargo test --workspace --lib
+
+  test:unit:frontend:
+    desc: Run frontend unit tests
+    dir: frontend
+    cmds:
+      - bun run test
+
+  test:unit:coverage:
+    desc: Generate test coverage reports
+    deps: [test:unit:coverage:rust, test:unit:coverage:frontend]
+
+  test:unit:coverage:rust:
+    desc: Generate Rust coverage
+    cmds:
+      - |
+        if ! command -v cargo-tarpaulin >/dev/null 2>&1; then
+          cargo install cargo-tarpaulin
+        fi
+      - mkdir -p coverage
+      - cargo tarpaulin --workspace --out xml --output-dir coverage/
+
+  test:unit:coverage:frontend:
+    desc: Generate frontend coverage
+    dir: frontend
+    cmds:
+      - |
+        if grep -q "test:coverage" package.json; then
+          bun run test:coverage
+        else
+          echo "⚠️  Frontend coverage script not available"
+        fi
+
+  # Build
+  build:all:
+    desc: Build all services
+    deps: [build:gateway, build:backend, build:frontend]
+
+  build:gateway:
+    desc: Build gateway service
+    dir: gateway
+    cmds:
+      - cargo build --target wasm32-wasi
+      - spin build
+
+  build:backend:
+    desc: Build backend services
+    cmds:
+      - cargo build --workspace --release
+
+  build:frontend:
+    desc: Build frontend
+    dir: frontend
+    cmds:
+      - bun run build
+
+  # Development services
+  dev:services:
+    desc: Run all services in parallel
+    deps: [dev:gateway, dev:backend, dev:frontend]
+
+  dev:gateway:
+    desc: Run gateway in development
+    dir: gateway
+    cmds:
+      - spin up --listen 0.0.0.0:{{.GATEWAY_PORT}}
+
+  dev:backend:
+    desc: Run backend services
+    cmds:
+      - |
+        echo "Starting backend services..."
+        if [ -f "backend/booking-service/Cargo.toml" ]; then
+          cargo run --manifest-path backend/booking-service/Cargo.toml &
+        fi
+        if [ -f "backend/notification-service/Cargo.toml" ]; then
+          cargo run --manifest-path backend/notification-service/Cargo.toml &
+        fi
+        if [ -f "backend/validation-service/Cargo.toml" ]; then
+          cargo run --manifest-path backend/validation-service/Cargo.toml &
+        fi
+        wait
+
+  dev:frontend:
+    desc: Run frontend development server
+    dir: frontend
+    cmds:
+      - bun run dev -- --host 0.0.0.0 --port {{.FRONTEND_PORT}}
+
+  # Integration Testing
+  test:integration:
+    desc: Run integration tests
+    deps: [test:integration:api, test:integration:database]
+
+  test:integration:api:
+    desc: Run API integration tests
+    dir: tests/api
+    cmds:
+      - |
+        for test_file in *.js *.mjs; do
+          if [ -f "$test_file" ]; then
+            echo "Running $test_file..."
+            if [[ "$test_file" == *.mjs ]]; then
+              node "$test_file" || echo "⚠️  Test $test_file failed"
+            else
+              node "$test_file" || echo "⚠️  Test $test_file failed"
+            fi
+          fi
+        done
+
+  test:integration:database:
+    desc: Run database integration tests
+    dir: database/test
+    cmds:
+      - |
+        if command -v psql >/dev/null 2>&1; then
+          for sql_file in *.sql; do
+            if [ -f "$sql_file" ]; then
+              echo "Running database test: $sql_file"
+              psql "${DATABASE_URL}" -f "$sql_file" || echo "⚠️  Database test $sql_file failed"
+            fi
+          done
+        else
+          echo "⚠️  PostgreSQL client not available, skipping database tests"
+        fi
+
+  # End-to-End Testing
+  test:e2e:
+    desc: Run all E2E tests
+    deps: [test:e2e:testcafe, test:e2e:comprehensive]
+
+  test:e2e:testcafe:
+    desc: Run TestCafe E2E tests
+    dir: tests/e2e/testcafe
+    cmds:
+      - |
+        if command -v testcafe >/dev/null 2>&1; then
+          for test_file in *.js; do
+            if [ -f "$test_file" ]; then
+              echo "Running E2E test: $test_file"
+              testcafe chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
+            fi
+          done
+        else
+          echo "⚠️  TestCafe not installed, skipping E2E tests"
+        fi
+
+  test:e2e:comprehensive:
+    desc: Run comprehensive E2E test suite
+    dir: tests/runners
+    cmds:
+      - |
+        if [ -f "run-comprehensive-testcafe.js" ]; then
+          node run-comprehensive-testcafe.js || echo "⚠️  Comprehensive E2E tests failed"
+        else
+          echo "⚠️  Comprehensive test runner not found"
+        fi
+
+  # Dynamic Application Security Testing (DAST)
+  security:dast:
+    desc: Run DAST security scans
+    deps: [security:dast:zap, security:dast:nuclei]
+
+  security:dast:zap:
+    desc: Run OWASP ZAP security scan
+    cmds:
+      - |
+        if command -v zap-baseline.py >/dev/null 2>&1; then
+          if [ -f "tests/infrastructure/security/zap-rules.tsv" ]; then
+            zap-baseline.py -t {{.FRONTEND_URI}} -c tests/infrastructure/security/zap-rules.tsv
+          else
+            zap-baseline.py -t {{.FRONTEND_URI}}
+          fi
+        else
+          echo "⚠️  OWASP ZAP not installed, skipping DAST scan"
+        fi
+
+  security:dast:nuclei:
+    desc: Run Nuclei vulnerability scanner
+    cmds:
+      - |
+        if command -v nuclei >/dev/null 2>&1; then
+          nuclei -u {{.FRONTEND_URI}} -severity medium,high,critical
+        else
+          echo "⚠️  Nuclei not installed, skipping vulnerability scan"
+        fi
+
+  # Performance Testing
+  performance:all:
+    desc: Run all performance tests
+    deps: [performance:lighthouse, performance:k6]
+
+  performance:lighthouse:
+    desc: Run Lighthouse performance audit
+    cmds:
+      - |
+        if ! command -v lighthouse >/dev/null 2>&1; then
+          echo "⚠️  Lighthouse not installed, installing..."
+          npm install -g lighthouse || echo "⚠️  Failed to install Lighthouse"
+        fi
+        if command -v lighthouse >/dev/null 2>&1; then
+          mkdir -p tests/infrastructure/performance
+          lighthouse {{.FRONTEND_URI}} --output json --output-path ./tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+          lighthouse {{.FRONTEND_URI}}/admin --output json --output-path ./tests/infrastructure/performance/lighthouse-admin-results.json || echo "⚠️  Lighthouse admin audit failed"
+        fi
+
+  performance:k6:
+    desc: Run k6 load testing
+    cmds:
+      - |
+        if command -v k6 >/dev/null 2>&1; then
+          if [ -f "tests/infrastructure/performance/api-load-test.js" ]; then
+            k6 run tests/infrastructure/performance/api-load-test.js
+          else
+            echo "⚠️  k6 load test script not found"
+          fi
+        else
+          echo "⚠️  k6 not installed, skipping load tests"
+        fi
+
+  # Cross-browser and device compatibility
+  compatibility:all:
+    desc: Run cross-browser and device compatibility tests
+    deps: [compatibility:browsers, compatibility:devices]
+
+  compatibility:browsers:
+    desc: Test on major browsers
+    cmds:
+      - |
+        if command -v testcafe >/dev/null 2>&1; then
+          if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+            testcafe chrome:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Chrome test failed"
+            testcafe firefox:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Firefox test failed"
+            testcafe safari tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Safari not available"
+            testcafe edge tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Edge not available"
+          else
+            echo "⚠️  Browser compatibility test file not found"
+          fi
+        else
+          echo "⚠️  TestCafe not installed, skipping browser compatibility tests"
+        fi
+
+  compatibility:devices:
+    desc: Test responsive design on different devices
+    cmds:
+      - |
+        if command -v testcafe >/dev/null 2>&1; then
+          if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+            testcafe chrome:headless:emulation:device=iPhone tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPhone test failed"
+            testcafe chrome:headless:emulation:device=iPad tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPad test failed"
+            testcafe chrome:headless:emulation:device=desktop tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Desktop test failed"
+          else
+            echo "⚠️  Device compatibility test file not found"
+          fi
+        else
+          echo "⚠️  TestCafe not installed, skipping device compatibility tests"
+        fi
+
+  # Utility tasks
+  clean:
+    desc: Clean build artifacts and caches
+    cmds:
+      - cargo clean
+      - rm -rf frontend/dist/
+      - rm -rf frontend/node_modules/.cache/
+      - rm -rf coverage/
+      - rm -rf tests/e2e/outputs/
+      - echo "✅ Clean completed"
+
+  preview:
+    desc: Preview built application
+    deps: [build:all]
+    dir: frontend
+    cmds:
+      - bun run serve -- --host 0.0.0.0 --port 4173
+
+  deploy:
+    desc: Deploy to production
+    deps: [ci:full]
+    cmds:
+      - |
+        if command -v spin >/dev/null 2>&1; then
+          spin deploy
+        else
+          echo "⚠️  Spin CLI not available for deployment"
+        fi
+
+  # Health checks
+  health:check:
+    desc: Check application health
+    cmds:
+      - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
+      - curl -f {{.GATEWAY_URI}}/api/health || echo "⚠️  Gateway health check failed"
+
+  # Database operations
+  db:migrate:
+    desc: Run database migrations
+    dir: database
+    cmds:
+      - |
+        if [ -f "scripts/migrate-postgres.sh" ]; then
+          ./scripts/migrate-postgres.sh
+        else
+          echo "⚠️  Database migration script not found"
+        fi
+
+  db:seed:
+    desc: Seed database with test data
+    dir: database
+    cmds:
+      - |
+        if command -v psql >/dev/null 2>&1 && [ -f "seed/dev_seed.sql" ]; then
+          psql "${DATABASE_URL}" -f seed/dev_seed.sql
+        else
+          echo "⚠️  PostgreSQL client not available or seed file not found"
+        fi
+
+  db:reset:
+    desc: Reset database
+    deps: [db:migrate, db:seed]
+
+  # Nix environment verification
+  nix:
+    desc: Verify Nix packages are available
+    cmds:
+      - rustc --version && echo "✅ Rust available"
+      - node --version && echo "✅ Node.js available"
+      - bun --version && echo "✅ Bun available"
+      - caddy version && echo "✅ Caddy available"

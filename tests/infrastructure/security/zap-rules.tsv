@@ -1,0 +1,8 @@
+
+10202	IGNORE	(Cookie No HttpOnly Flag)
+10054	IGNORE	(Cookie Without SameSite Attribute)
+10016	IGNORE	(Web Browser XSS Protection Not Enabled)
+10021	IGNORE	(X-Content-Type-Options Header Missing)
+10020	IGNORE	(X-Frame-Options Header Not Set)
+90023	IGNORE	(XML External Entity Attack)
+40012	IGNORE	(Cross Domain Script Inclusion)

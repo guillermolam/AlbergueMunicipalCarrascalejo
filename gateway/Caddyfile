@@ -1,0 +1,96 @@
+#----------------------------------------------------------------
+# Refactored Caddyfile for SPA + API, Dev & Prod, with templating
+#----------------------------------------------------------------
+
+# Default values if env vars aren’t set
+{$API_PORT:3000}         # Port Spin gateway listens on :contentReference[oaicite:1]{index=1}
+{$TLS_EMAIL:you@domain.com}
+{$DEV_DOMAIN:*.picard.replit.dev}
+{$PROD_DOMAIN:alberguedelcarrascalejo.com}
+
+{
+  email {$TLS_EMAIL}     # ACME email for production certs :contentReference[oaicite:2]{index=2}
+}
+
+########################################################################
+# DEVELOPMENT: any subdomain of picard.replit.dev
+########################################################################
+{$DEV_DOMAIN} {
+  tls internal {                  # use Caddy’s internal CA for dev HTTPS :contentReference[oaicite:3]{index=3}
+    protocols tls1.2 tls1.3       # restrict to TLS ≥1.2 :contentReference[oaicite:4]{index=4}
+  }
+  encode gzip zstd                # compress responses :contentReference[oaicite:5]{index=5}
+
+  # 1) Handle API routes
+  handle /api/* {
+    reverse_proxy 127.0.0.1:{$API_PORT} {
+      transport http {
+        versions h2 http/1.1 h3   # HTTP/2 & HTTP/3 support :contentReference[oaicite:6]{index=6}
+      }
+    }
+  }
+
+  # 2) Serve SPA with client-side routing fallback
+  handle {
+    root * /srv/frontend/dist     # adjust to your build output folder
+    try_files {path} /index.html # fallback to index.html for SPA :contentReference[oaicite:7]{index=7}
+
+    # 2a) Cache-Control for index.html only
+    route {
+      try_files {path} /index.html
+      header /index.html Cache-Control "public, max-age=0, must-revalidate"
+    }
+
+    file_server                  # serve static assets :contentReference[oaicite:8]{index=8}
+  }
+
+  # 3) Global security headers
+  header /* {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"  # HSTS :contentReference[oaicite:9]{index=9}
+    X-Frame-Options "SAMEORIGIN"               # clickjacking protection :contentReference[oaicite:10]{index=10}
+    X-Content-Type-Options "nosniff"           # MIME sniffing prevention :contentReference[oaicite:11]{index=11}
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    -Server                                    # remove server header :contentReference[oaicite:12]{index=12}
+  }
+}
+
+########################################################################
+# PRODUCTION: alberguedelcarrascalejo.com
+########################################################################
+{$PROD_DOMAIN} {
+  tls {$TLS_EMAIL} {             # Automatic Let’s Encrypt certs :contentReference[oaicite:13]{index=13}
+    protocols tls1.2 tls1.3      # restrict to TLS ≥1.2 :contentReference[oaicite:14]{index=14}
+  }
+  encode gzip zstd               # compress responses :contentReference[oaicite:15]{index=15}
+
+  handle /api/* {
+    reverse_proxy 127.0.0.1:{$API_PORT} {
+      transport http {
+        versions h2 http/1.1 h3  # HTTP/2 & HTTP/3 support :contentReference[oaicite:16]{index=16}
+      }
+    }
+  }
+
+  handle {
+    root * /srv/frontend/dist
+    try_files {path} /index.html
+
+    route {
+      try_files {path} /index.html
+      header /index.html Cache-Control "public, max-age=0, must-revalidate"
+    }
+
+    file_server
+  }
+
+  header /* {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"  
+    X-Frame-Options "SAMEORIGIN"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    -Server
+  }
+}

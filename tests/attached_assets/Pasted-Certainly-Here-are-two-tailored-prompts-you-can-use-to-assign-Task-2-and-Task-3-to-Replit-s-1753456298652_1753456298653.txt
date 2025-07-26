@@ -1,0 +1,107 @@
+Certainly! Here are two tailored prompts you can use to assign **Task 2** and **Task 3** to Replit's assistant or agent, mentioning relevant files and expected outcomes:
+
+---
+
+## 🧩 Prompt for Task 2 – *Validation Service OCR Refactor*
+
+**Task 2: Refactor `validation-service` module**
+You will refactor the existing OCR and document validation logic to fit the DDD + hexagonal architecture and relocate test assets.
+
+### Instructions:
+
+1. In `services/validation-service/src/`, move current OCR logic, DNI/NIE/MRZ parsers into:
+
+   ```
+   validation-service/src/domain/validators/
+   ```
+2. Define a Trait `OcrClient` in the `ports/` folder to abstract validation operations.
+3. Create an adapter implementation in:
+
+   ```
+   validation-service/src/adapters/tesseract.rs
+   ```
+
+   that implements `OcrClient` and processes the OCR logic.
+4. Move all training data files currently under `attached_assets/` into:
+
+   ```
+   services/validation-service/tests/ocr-training/
+     ├─ dni-nif/
+     ├─ passports/
+     └─ nie-tie/
+   ```
+
+   and update unit tests under `validation-service/tests/` to use these files programmatically.
+5. Add new unit tests in `validation-service/tests/` to assert:
+
+   * Known DNI/NIE/Passport samples return expected parsed output.
+   * Invalid or missing input returns proper validation errors.
+
+### Testing:
+
+* Run `cargo test -p validation-service`
+* All tests must pass.
+* Tests must cleanly reference the training assets loaded at runtime by relative paths.
+
+### Definition of Done:
+
+* All OCR and parser logic is in `domain/`.
+* `OcrClient` trait and adapter exist.
+* Training data is structured and accessible in tests.
+* Unit tests run cleanly and validate core parsing logic.
+
+---
+
+## 🧩 Prompt for Task 3 – *Booking Service DDD Layout*
+
+**Task 3: Refactor `booking-service` to DDD/hexagonal layout**
+Organize the booking service into domain, application, ports, and adapter layers, while integrating shared DTOs and notification traits.
+
+### Instructions:
+
+1. In `services/booking-service/src/`, create/fill:
+
+   ```
+   domain/booking.rs            // Define Booking entity, value objects, and validations
+   application/create_booking.rs // Use-case logic: validation, repository save, notification trigger
+   ports/booking_repository.rs    // Trait to abstract persistence
+   ports/notification_sender.rs   // Trait for sending notifications (email/SMS/telegram)
+   adapters/db_repository.rs      // Implements repository using `sqlx` and Postgres (neondb)
+   adapters/notification_smtp.rs  // Implements notifications via SMTP / Twilio / Telegraf
+   ```
+2. In `services/booking-service/src/lib.rs`, import and wire:
+
+   * Application service with real domain object
+   * Adapters injected into ports (repo, notification)
+   * HTTP endpoint handler (or Spin component) calls application service
+3. Use shared DTOs defined in `shared/src/lib.rs` for contract between gateway/frontend and booking-service.
+
+### Testing:
+
+* Write unit tests in `booking-service/tests/` covering:
+
+  * Domain validation of `Booking`
+  * The `CreateBookingService` flow: saving, notification stub
+  * Inputs with invalid data should trigger domain errors
+* Run: `cargo test -p booking-service`
+
+### Definition of Done:
+
+* Files and layers created and properly separated.
+* All tests pass without lint or clippy errors.
+* Shared DTOs used consistently.
+* No business logic exists outside `domain` or `application`.
+
+---
+
+🧠 **Important Note**: After finishing each task, run the full test suite (`npm run test:ui`, `cargo test`, lint checks) and report:
+
+* Files created/modified
+* Tests passed/failing
+* Any missing imports or blockers
+
+If you're unsure or a required file is missing or ambiguous, stop and ask before proceeding.
+
+---
+
+These prompts should be precise enough for Replit’s assistant (or any developer) to start implementing these tasks modularly and in a test-driven way.

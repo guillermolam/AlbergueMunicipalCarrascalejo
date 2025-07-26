@@ -1,0 +1,31 @@
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    curl \
+    git \
+    postgresql-client
+
+# Install Rust for WASM compilation
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN . ~/.cargo/env && rustup target add wasm32-unknown-unknown
+
+# Install wasm-pack
+RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build WASM modules
+RUN . ~/.cargo/env && ./build-bff.sh
+
+EXPOSE 5000
+
+CMD ["npm", "run", "dev"]

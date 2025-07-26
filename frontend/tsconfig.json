@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/store/*": ["./src/store/*"],
+      "@/contexts/*": ["./src/contexts/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@assets/*": ["../tests/attached_assets/*"],
+      "@shared/*": ["../services/shared/src/*"],
+      "@wasm/*": ["../pkg/*"],
+      "@server/*": ["./server/*"]
+    }
+  },
+  "include": [
+    "src",
+    "server",
+    "src/types/global.d.ts",
+    "../tests/attached_assets",
+    "../backend/shared/src"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

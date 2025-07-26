@@ -1,0 +1,23 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && bun build server/index.ts --outdir=dist --target=bun",
+    "start": "bun dist/index.js",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "db:push": "drizzle-kit push",
+    "serve": "vite preview",
+    "server:dev": "bun server/index.ts",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist/ .bun/ node_modules/.cache/"
+  },
+  "bun": {
+    "lockfile": "bun.lockb"
+  }
+}

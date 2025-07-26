@@ -1,0 +1,87 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Spanish Document OCR Lambda for Albergue Del Carrascalejo - Processes Spanish DNI/NIE and international passports
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: provided.al2023
+    Architectures:
+      - x86_64
+
+Resources:
+  SpanishDocumentOCRFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/lambda/spanish-document-ocr/
+      Description: 'Rust-based OCR service for Spanish DNI/NIE and passport processing with Tesseract integration'
+      Handler: bootstrap
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          RUST_LOG: info
+          TESSERACT_PREFIX: /opt/tesseract
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowCredentials: false
+          AllowOrigins:
+            - 'https://*.replit.dev'
+            - 'https://*.replit.app'
+            - 'http://localhost:*'
+          AllowHeaders:
+            - 'Content-Type'
+            - 'Accept'
+            - 'Origin'
+            - 'Authorization'
+            - 'X-Requested-With'
+          AllowMethods:
+            - 'GET'
+            - 'POST'
+            - 'OPTIONS'
+          MaxAge: 86400
+      PackageType: Zip
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/spanish-document-ocr:*'
+      Events:
+        HttpApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+      Layers:
+        - !Ref TesseractLayer
+
+  TesseractLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: tesseract-ocr-layer
+      Description: Tesseract OCR binaries and Spanish language data
+      ContentUri: layers/tesseract/
+      CompatibleRuntimes:
+        - provided.al2023
+      CompatibleArchitectures:
+        - x86_64
+
+Outputs:
+  SpanishDocumentOCRApi:
+    Description: "Function URL for Spanish Document OCR"
+    Value: !GetAtt SpanishDocumentOCRFunctionUrl.FunctionUrl
+    Export:
+      Name: !Sub "${AWS::StackName}-ocr-function-url"
+      
+  SpanishDocumentOCRFunction:
+    Description: "Spanish Document OCR Lambda Function ARN"
+    Value: !GetAtt SpanishDocumentOCRFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ocr-function-arn"

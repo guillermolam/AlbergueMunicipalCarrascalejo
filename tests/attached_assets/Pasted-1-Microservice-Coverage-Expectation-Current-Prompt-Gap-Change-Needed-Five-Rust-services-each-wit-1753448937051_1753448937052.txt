@@ -1,0 +1,45 @@
+1 – Microservice Coverage
+Expectation	Current Prompt	Gap / Change Needed
+Five Rust services each with full DDD layout and WASM build tasks	Only booking‑, validation‑, country‑, security‑, rate‑services listed, but country‑, security‑, rate‑limiter have no sub‑directories, tests, nor individual build scripts in the ASCII tree	Expand tree to show domain/, application/, ports/, adapters/, infrastructure/, and tests/ for every service; ensure matching build:wasm:<name> script for each
+Shared crates / workspace for cross‑service models	Not mentioned	Add Cargo.toml workspace with members = ["services/*"] and a shared crate for DTOs
+
+2 – Tooling & Quality Gates
+Expectation	Current Prompt	Gap / Change
+npm‑run‑all listed in devDependencies (needed by build:wasm)	Missing (update attempt failed)	Append "npm-run-all": "^4.1.5" to devDependencies
+stylelint config file path	stylelint.config.cjs shown, but no script calls npm run lint:css	Add "lint:css": "stylelint \"src/**/*.{css,scss}\"" and reference in QA matrix
+Storybook build script	Only storybook dev present	Add "storybook:build": "cd frontend && storybook build" for CI snapshot
+Performance testing for API with k6	Has script but no test file references	Clarify test location tests/perf/api-load.js and provide sample script
+
+3 – Database & Migration
+Expectation	Current Prompt	Gap / Change
+sqlx CLI install step	Not documented in run instructions	Add cargo install sqlx-cli --no-default-features --features native-tls,postgres before migrations
+Neon connection pooling advice (@neondatabase/serverless for gateway)	Not mentioned	Add gateway adapter note: use Neon “serverless driver” for heavier traffic
+
+4 – Frontend Details
+Expectation	Current Prompt	Gap / Change
+Enzyme deprecation → prefer React Testing Library	Prompt still cites Enzyme	Replace with @testing-library/react in devDeps and scripts
+vite-plugin-inspect observability mention but no install	Not in devDeps	Add "vite-plugin-inspect": "^0.8.2" and note to include in vite.config.ts
+Tailwind purge / content array	Only mentioned	Provide example content: ["./src/**/*.{ts,tsx,mdx}"]
+
+5 – Gateway & Auth
+Expectation	Current Prompt	Gap / Change
+Rate‑limit / Helmet config sample	Only listed	Provide minimal code stub in gateway/src/index.ts illustrating use of express-rate-limit, helmet, and Auth0 middleware
+JWT re‑check in microservices	Mentioned conceptually	Add tiny Rust middleware example in each service (tower::Service) that verifies Authorization header before hitting application layer
+
+6 – CI/CD & Lint
+Expectation	Current Prompt	Gap / Change
+GitHub Actions with jobs: lint‑ui, lint‑rs, test‑ui, test‑api, test‑e2e, build‑wasm	Not defined	Provide .github/workflows/ci.yml skeleton
+Pre‑commit hooks (husky / lint‑staged)	Absent	Add note to configure husky for prettier + eslint + stylelint
+
+Summary for Replit AI
+Expand every Rust service directory with full DDD scaffolding and add missing build:wasm:<name> tasks.
+
+Add npm‑run‑all dependency and fix CSS lint + Storybook build scripts.
+
+Swap Enzyme for React Testing Library, include vite‑plugin‑inspect, and supply concrete Tailwind content array.
+
+Insert sqlx‑cli install into setup instructions and mention Neon serverless driver for gateway.
+
+Provide sample Express and Rust auth/rate‑limit stubs.
+
+Deliver GitHub Actions CI skeleton plus husky hooks.

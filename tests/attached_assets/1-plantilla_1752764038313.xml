@@ -1,0 +1,58 @@
+<ns2:peticion xmlns:ns2="http://www.neg.hospedajes.mir.es/altaParteHospedaje">
+  <solicitud>
+    <codigoEstablecimiento>texto</codigoEstablecimiento>
+    <comunicacion>
+      <contrato>
+        <referencia>texto</referencia>
+        <fechaContrato>2025-07-14+02:00</fechaContrato>
+        <fechaEntrada>2025-07-14T13:39:48.642+02:00</fechaEntrada>
+        <fechaSalida>2025-07-14T13:39:48.642+02:00</fechaSalida>
+        <numPersonas>1</numPersonas>
+        <numHabitaciones>1</numHabitaciones>
+        <internet>true</internet>
+        <pago>
+          <!--Tipos de pago: [DESTI, EFECT, TARJT, PLATF, TRANS, MOVIL, TREG, OTRO]-->
+          <tipoPago>EFECT</tipoPago>
+          <fechaPago>2025-07-14+02:00</fechaPago>
+          <medioPago>texto</medioPago>
+          <titular>texto</titular>
+          <!--Formato mm/aaaa siendo mm un mes entre 01 y 12 y aaaa un año del 2023 en adelante-->
+          <caducidadTarjeta>12/2027</caducidadTarjeta>
+        </pago>
+      </contrato>
+      <persona>
+        <!--Roles: VI. Debe haber, al menos, una persona con el rol de viajero (VI). El número de personas informadas deberá coincindir con el número de personas establecido para la comunicación-->
+        <rol>VI</rol>
+        <nombre>texto</nombre>
+        <apellido1>texto</apellido1>
+        <apellido2>texto</apellido2>
+        <!--Tipos documentos: [NIF, NIE, PAS, OTRO, CIF, CIF_E]-->
+        <tipoDocumento>NIF</tipoDocumento>
+        <numeroDocumento>00000000T</numeroDocumento>
+        <soporteDocumento>texto</soporteDocumento>
+        <fechaNacimiento>2025-07-14+02:00</fechaNacimiento>
+        <!--País código ISO alfa-3: [ESP, ARG, ...]-->
+        <nacionalidad>ESP</nacionalidad>
+        <!--Sexo: [H, M, O]-->
+        <sexo>H</sexo>
+        <direccion>
+          <direccion>texto</direccion>
+          <direccionComplementaria>texto</direccionComplementaria>
+          <!--Código de Municipio de 5 dígitos: [07065, 07901,...]-->
+          <!--Si el país es España (ESP), el código de municipio ha de ir informado, no así el nombre del municipio-->
+          <codigoMunicipio>00000</codigoMunicipio>
+          <!--Si el país es distinto de España (ESP), ha de informar el nombre del municipio, no así el código de municipio-->
+          <nombreMunicipio>texto</nombreMunicipio>
+          <codigoPostal>00000</codigoPostal>
+          <!--País código ISO alfa-3: [ESP, ARG, ...]-->
+          <pais>ESP</pais>
+        </direccion>
+        <telefono>999999999</telefono>
+        <telefono2>999999999</telefono2>
+        <correo>correo@correo.es</correo>
+        <!--Tipos de parentescos: [AB, BA, BN, CY, CD, HR, HJ, PM, NI, SB, SG, TI, YN, TU, OT]-->
+        <parentesco>PM</parentesco>
+      </persona>
+    </comunicacion>
+  </solicitud>
+</ns2:peticion>
