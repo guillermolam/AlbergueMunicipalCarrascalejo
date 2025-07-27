@@ -1,4 +1,3 @@
-
 #!/usr/bin/env node
 
 console.log('🧪 Comprehensive TestCafe Test Suite Runner');
@@ -61,7 +60,7 @@ function runTestFile(testFile, browser) {
     console.log('─'.repeat(60));
 
     const startTime = Date.now();
-    
+
     const testProcess = spawn('npx', [
       'testcafe',
       browser,
@@ -91,7 +90,7 @@ function runTestFile(testFile, browser) {
     testProcess.on('close', (code) => {
       clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
-      
+
       const result = {
         file: testFile.file,
         description: testFile.description,
@@ -140,9 +139,9 @@ function runTestFile(testFile, browser) {
 // Main test runner
 async function runAllTests() {
   const overallStartTime = Date.now();
-  
+
   console.log('🔍 Checking server availability...');
-  
+
   // Simple server check
   try {
     const response = await fetch('http://localhost:5000/api/health');
@@ -168,7 +167,7 @@ async function runAllTests() {
       } catch (error) {
         console.error(`💥 Critical error in ${testFile.file}: ${error.message}`);
       }
-      
+
       // Short pause between tests
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
@@ -176,29 +175,29 @@ async function runAllTests() {
 
   // Generate final report
   const overallDuration = Date.now() - overallStartTime;
-  
+
   console.log('\n');
   console.log('═'.repeat(80));
   console.log('📊 COMPREHENSIVE TEST EXECUTION SUMMARY');
   console.log('═'.repeat(80));
-  
+
   console.log(`📈 Total Tests: ${totalTests}`);
   console.log(`✅ Passed: ${passedTests}`);
   console.log(`❌ Failed: ${failedTests}`);
   console.log(`📊 Success Rate: ${totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(1) : 0}%`);
   console.log(`⏱️ Total Duration: ${(overallDuration / 1000 / 60).toFixed(2)} minutes`);
-  
+
   console.log('\n📋 DETAILED TEST RESULTS:');
   console.log('─'.repeat(80));
-  
+
   testResults.forEach((result, index) => {
     const status = result.success ? '✅ PASS' : '❌ FAIL';
     const duration = `${(result.duration / 1000).toFixed(2)}s`;
-    
+
     console.log(`${index + 1}. ${status} - ${result.description}`);
     console.log(`   📁 ${result.file}`);
     console.log(`   🌐 ${result.browser} | ⏱️ ${duration}`);
-    
+
     if (!result.success && result.exitCode) {
       console.log(`   💥 Exit Code: ${result.exitCode}`);
     }
@@ -211,7 +210,7 @@ async function runAllTests() {
   // Test categories summary
   console.log('📊 TEST CATEGORIES SUMMARY:');
   console.log('─'.repeat(50));
-  
+
   const categories = [
     { name: 'NIE Documents', pattern: 'nie-documents', icon: '🆔' },
     { name: 'Residence Permits', pattern: 'residence-permits', icon: '🏠' },
@@ -225,7 +224,7 @@ async function runAllTests() {
     const categoryPassed = categoryResults.filter(r => r.success).length;
     const categoryTotal = categoryResults.length;
     const categoryRate = categoryTotal > 0 ? (categoryPassed / categoryTotal * 100).toFixed(1) : 0;
-    
+
     console.log(`${category.icon} ${category.name}: ${categoryPassed}/${categoryTotal} (${categoryRate}%)`);
   });
 
@@ -243,7 +242,7 @@ async function runAllTests() {
 
   console.log('\n🎯 NEXT STEPS:');
   console.log('─'.repeat(30));
-  
+
   if (failedTests === 0) {
     console.log('🎉 All tests passed! System is ready for deployment.');
     console.log('💡 Consider running tests in different browsers for full coverage.');
@@ -258,7 +257,7 @@ async function runAllTests() {
   console.log('Run specific test: npx testcafe chrome tests/[test-file].js');
   console.log('Debug mode: npx testcafe chrome tests/[test-file].js --debug-mode');
   console.log('Live mode: npx testcafe chrome tests/[test-file].js --live');
-  
+
   console.log('\n' + '═'.repeat(80));
   console.log('🏁 COMPREHENSIVE TEST SUITE EXECUTION COMPLETE');
   console.log('═'.repeat(80));
@@ -290,13 +289,13 @@ const path = require('path');
 async function runTests() {
     const testcafe = await createTestCafe();
     const runner = testcafe.createRunner();
-    
+
     const testFiles = [
         path.join(__dirname, '../e2e/testcafe/test-dni-simple.js'),
         path.join(__dirname, '../e2e/testcafe/testcafe-document-formats.js'),
         path.join(__dirname, '../e2e/testcafe/testcafe-full-registration-flow.js')
     ];
-    
+
     try {
         const failedCount = await runner
             .src(testFiles)
@@ -306,7 +305,7 @@ async function runTests() {
                 takeOnFails: true
             })
             .run();
-            
+
         console.log(`Tests failed: ${failedCount}`);
         return failedCount;
     } finally {
@@ -315,3 +314,16 @@ async function runTests() {
 }
 
 runTests().catch(console.error);
+
+// Export for programmatic usage
+module.exports = { runAllTests };
+
+// Run tests if called directly
+if (require.main === module) {
+    runAllTests()
+        .then(() => console.log('Test execution completed'))
+        .catch(error => {
+            console.error('\n💥 Fatal error in test execution:', error);
+            process.exit(1);
+        });
+}
