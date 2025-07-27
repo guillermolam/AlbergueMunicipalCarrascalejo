@@ -916,13 +916,15 @@ tasks:
       - cd gateway/bff && cargo test test_security_scanning_blocks_malicious_content -- --nocapture
       - echo "🔒 Testing rate limiting middleware..."
       - cd gateway/bff && cargo test test_rate_limiting_blocks_excessive_requests -- --nocapture
+
   test:gateway:composition:
     desc: Test Gateway BFF service composition
     cmds:
       - echo "🧪 Running gateway BFF service composition tests..."
       - cd gateway/bff && cargo test test_rate_limiting_blocks_excessive_requests -- --nocapture
       - cd gateway/bff && cargo test test_security_scanning_blocks_malicious_content -- --nocapture
-test:
+
+  test:
     desc: Run all tests
     cmds:
       - task: test:unit:rust
