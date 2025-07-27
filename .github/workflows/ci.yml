@@ -1,15 +1,14 @@
-
 name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 env:
-  NODE_VERSION: '18'
-  RUST_VERSION: 'stable'
+  NODE_VERSION: "18"
+  RUST_VERSION: "stable"
 
 jobs:
   # Code Quality & Security
@@ -17,32 +16,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ env.RUST_VERSION }}
           components: rustfmt, clippy
           override: true
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Format TypeScript/JavaScript
         run: npm run format:check
-      
+
       - name: Lint TypeScript/JavaScript
         run: npm run lint
-      
+
       - name: Format Rust
         run: cd backend-rust && cargo fmt --check
-      
+
       - name: Lint Rust
         run: cd backend-rust && cargo clippy -- -D warnings
 
@@ -50,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Semgrep SAST
         uses: semgrep/semgrep-action@v1
         with:
@@ -62,15 +61,15 @@ jobs:
             p/rust
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-      
+
       - name: Run CodeQL Analysis
         uses: github/codeql-action/init@v3
         with:
-          languages: 'javascript,typescript'
-      
+          languages: "javascript,typescript"
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
-      
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
@@ -90,42 +89,42 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ env.RUST_VERSION }}
           override: true
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      
+
       - name: Build WASM modules
         run: ./build-bff.sh
-      
+
       - name: Run TypeScript unit tests
         run: npm run test:unit
         env:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/albergue_test
-      
+
       - name: Run Rust unit tests
         run: cd backend-rust && cargo test
-      
+
       - name: Generate coverage report
         run: npm run test:coverage
-      
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -147,22 +146,22 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build application
         run: npm run build
-      
+
       - name: Start application
         run: |
           npm run dev &
@@ -170,10 +169,10 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/albergue_test
           NODE_ENV: test
-      
+
       - name: Run API integration tests
         run: npm run test:integration
-      
+
       - name: Run E2E tests with TestCafe
         run: npm run test:e2e
 
@@ -182,28 +181,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build application
         run: npm run build
-      
+
       - name: Start application
         run: |
           npm run preview &
           sleep 15
-      
+
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v10
         with:
-          configPath: './infrastructure/lighthouse/lighthouserc.json'
+          configPath: "./infrastructure/lighthouse/lighthouserc.json"
           uploadArtifacts: true
           temporaryPublicStorage: true
 
@@ -223,26 +222,26 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Start application
         run: |
           npm run dev &
           sleep 30
         env:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/albergue_test
-      
+
       - name: Install k6
         run: |
           sudo gpg -k
@@ -250,7 +249,7 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update
           sudo apt-get install k6
-      
+
       - name: Run k6 performance tests
         run: k6 run infrastructure/performance/api-load-test.js
 
@@ -259,51 +258,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Start application
         run: |
           npm run dev &
           sleep 30
         env:
           NODE_ENV: test
-      
+
       - name: Run OWASP ZAP Security Scan
         uses: zaproxy/action-full-scan@v0.7.0
         with:
-          target: 'http://0.0.0.0:5000'
-          rules_file_name: 'infrastructure/security/zap-rules.tsv'
-          cmd_options: '-a'
+          target: "http://0.0.0.0:5000"
+          rules_file_name: "infrastructure/security/zap-rules.tsv"
+          cmd_options: "-a"
 
   # Deployment
   deploy:
     runs-on: ubuntu-latest
-    needs: [format-and-lint, sast-security, unit-tests, integration-tests, lighthouse-performance, k6-performance]
+    needs:
+      [
+        format-and-lint,
+        sast-security,
+        unit-tests,
+        integration-tests,
+        lighthouse-performance,
+        k6-performance,
+      ]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build application
         run: npm run build
-      
+
       - name: Deploy to Replit
         run: echo "Deployment to Replit staging environment"
         # Add Replit deployment commands here

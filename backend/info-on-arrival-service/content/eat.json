@@ -23,20 +23,24 @@
     {
       "name": "Tabula Calda",
       "description": "Restaurante romano temático con ambiente histórico. Ideal para cenar tras visitar los monumentos romanos.",
-      "phone": "+34924304512", 
+      "phone": "+34924304512",
       "address": "Calle Romero Leal, 11, 06800 Mérida",
       "link": "https://www.tabulacalda.com/",
       "rating": 4.5,
       "price_range": "30-40€ por persona",
       "img": "/img/tabula-calda.jpg",
       "opening_hours": "19:30-24:00 (solo cenas)",
-      "specialties": ["Cocina romana", "Ambiente temático", "Vinos de la tierra"]
+      "specialties": [
+        "Cocina romana",
+        "Ambiente temático",
+        "Vinos de la tierra"
+      ]
     },
     {
       "name": "Mesón El Asador",
       "description": "Asador tradicional con cordero y cochinillo al horno de leña. Ambiente familiar y precios moderados.",
       "phone": "+34924315028",
-      "address": "Avenida de Extremadura, 6, 06800 Mérida", 
+      "address": "Avenida de Extremadura, 6, 06800 Mérida",
       "link": "https://turismomerida.org/donde-comer/",
       "rating": 4.2,
       "price_range": "20-30€ por persona",
@@ -52,7 +56,7 @@
       "link": "https://turismomerida.org/donde-comer/",
       "rating": 4.4,
       "price_range": "10-15€ por persona",
-      "img": "/img/casa-benito.jpg", 
+      "img": "/img/casa-benito.jpg",
       "opening_hours": "08:00-24:00",
       "specialties": ["Tapas tradicionales", "Raciones", "Desayunos"]
     }

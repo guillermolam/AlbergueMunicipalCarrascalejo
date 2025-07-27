@@ -33,8 +33,12 @@ function App() {
                 <Route path="/admin-old" component={AdminPage} />
                 <Route>
                   <div className="text-center py-20">
-                    <h1 className="text-2xl font-bold mb-4">Página no encontrada</h1>
-                    <p className="text-muted-foreground">La página que buscas no existe.</p>
+                    <h1 className="text-2xl font-bold mb-4">
+                      Página no encontrada
+                    </h1>
+                    <p className="text-muted-foreground">
+                      La página que buscas no existe.
+                    </p>
                   </div>
                 </Route>
               </Switch>

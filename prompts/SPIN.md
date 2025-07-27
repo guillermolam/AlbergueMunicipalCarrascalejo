@@ -1,4 +1,3 @@
-
 # Spin Framework Instructions
 
 ## ⚠️ IMPORTANT: NO EXPRESS.JS
@@ -27,17 +26,20 @@ This project runs exclusively on **Fermyon Spin** framework. Express.js is **NOT
 ## Development Workflow
 
 ### 1. Build WASM Services
+
 ```bash
 ./scripts/build-wasm.sh
 ```
 
 ### 2. Start Spin Gateway
+
 ```bash
 cd gateway
 spin up --listen 0.0.0.0:8000
 ```
 
 ### 3. Start Frontend (separate terminal)
+
 ```bash
 cd frontend
 npx vite --host 0.0.0.0 --port 5173
@@ -46,12 +48,14 @@ npx vite --host 0.0.0.0 --port 5173
 ## Service Implementation Rules
 
 ### ✅ DO - Rust WASM Services
+
 - Implement all business logic in Rust
 - Use `spin_sdk::http_component` macro
 - Handle HTTP requests/responses directly
 - Return JSON responses with proper CORS headers
 
 Example service structure:
+
 ```rust
 use spin_sdk::{
     http::{IntoResponse, Request, Response},
@@ -67,12 +71,13 @@ async fn handle_request(req: Request) -> anyhow::Result<impl IntoResponse> {
         .header("Access-Control-Allow-Origin", "*")
         .body(serde_json::to_string(&data)?)
         .build();
-    
+
     Ok(response)
 }
 ```
 
 ### ❌ DON'T - Express.js or Node.js Backend
+
 - No `express()` apps
 - No middleware chains
 - No `app.listen()` or server creation
@@ -102,7 +107,7 @@ Frontend communicates with backend via API calls to `http://localhost:8000/api/*
 
 ```typescript
 // ✅ Correct - API calls to Spin services
-const response = await fetch('/api/booking/dashboard/stats');
+const response = await fetch("/api/booking/dashboard/stats");
 const data = await response.json();
 
 // ❌ Wrong - No Express routes
@@ -144,17 +149,20 @@ VITE_GOOGLE_PLACES_API_KEY=...
 ## Testing
 
 ### Unit Tests (Rust)
+
 ```bash
 cargo test
 ```
 
 ### Integration Tests
+
 ```bash
 # Test Spin services directly
 curl http://localhost:8000/api/booking/pricing
 ```
 
 ### E2E Tests
+
 ```bash
 npm run test:e2e
 ```
@@ -162,12 +170,14 @@ npm run test:e2e
 ## Deployment
 
 ### To Fermyon Cloud
+
 ```bash
 spin login
 spin deploy
 ```
 
 ### To Replit
+
 Use Replit's Spin runtime support for deployment.
 
 ## Common Pitfalls

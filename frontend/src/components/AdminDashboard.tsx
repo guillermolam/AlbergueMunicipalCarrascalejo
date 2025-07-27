@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../lib/queryClient";
-import { 
-  Bed, 
-  Euro, 
-  TrendingUp, 
-  Calendar, 
+import {
+  Bed,
+  Euro,
+  TrendingUp,
+  Calendar,
   MapPin,
   LogOut,
-  Settings
+  Settings,
 } from "lucide-react";
 
 interface AdminDashboardProps {
@@ -19,25 +19,25 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ onBackToHome }: AdminDashboardProps) {
   const { data: dashboardStats } = useQuery({
-    queryKey: ['/booking/dashboard/stats'],
+    queryKey: ["/booking/dashboard/stats"],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/booking/dashboard/stats');
+      const response = await apiRequest("GET", "/booking/dashboard/stats");
       return response.json();
-    }
+    },
   });
 
   const { data: pricing } = useQuery({
-    queryKey: ['/booking/pricing'],
+    queryKey: ["/booking/pricing"],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/booking/pricing');
+      const response = await apiRequest("GET", "/booking/pricing");
       return response.json();
-    }
+    },
   });
 
   const stats = dashboardStats || {
     occupancy: { available: 24, occupied: 0, total: 24 },
     today_bookings: 0,
-    revenue: 0
+    revenue: 0,
   };
 
   const bedPrice = pricing?.dormitory || 15;
@@ -71,7 +71,9 @@ export default function AdminDashboard({ onBackToHome }: AdminDashboardProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Camas Disponibles</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Camas Disponibles
+              </CardTitle>
               <Bed className="h-4 w-4 text-sage-600" />
             </CardHeader>
             <CardContent>
@@ -86,16 +88,16 @@ export default function AdminDashboard({ onBackToHome }: AdminDashboardProps) {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reservas Hoy</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Reservas Hoy
+              </CardTitle>
               <Calendar className="h-4 w-4 text-sage-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-sage-700">
                 {stats.today_bookings}
               </div>
-              <p className="text-xs text-muted-foreground">
-                nuevas reservas
-              </p>
+              <p className="text-xs text-muted-foreground">nuevas reservas</p>
             </CardContent>
           </Card>
 
@@ -108,15 +110,15 @@ export default function AdminDashboard({ onBackToHome }: AdminDashboardProps) {
               <div className="text-2xl font-bold text-sage-700">
                 €{stats.revenue}
               </div>
-              <p className="text-xs text-muted-foreground">
-                total acumulado
-              </p>
+              <p className="text-xs text-muted-foreground">total acumulado</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Precio por Noche</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Precio por Noche
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-sage-600" />
             </CardHeader>
             <CardContent>

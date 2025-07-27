@@ -8,13 +8,11 @@ pub async fn handle(req: &Request) -> Result<Response> {
     match path {
         "/api/validation/document" => handle_document_validation(req).await,
         "/api/validation/form" => handle_form_validation(req).await,
-        _ => {
-            Ok(Response::builder()
-                .status(404)
-                .header("Content-Type", "application/json")
-                .body(json!({"error": "Validation endpoint not found"}).to_string())
-                .build())
-        }
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("Content-Type", "application/json")
+            .body(json!({"error": "Validation endpoint not found"}).to_string())
+            .build()),
     }
 }
 

@@ -7,7 +7,7 @@ This directory contains static content files for the pilgrim information cards, 
 ```
 content/
 ├── sights.json            # Mérida attractions
-├── curiosities.json       # Carrascalejo local info  
+├── curiosities.json       # Carrascalejo local info
 ├── emergencies.json       # Emergency contacts
 ├── map-ruta.json          # Route and map information
 ├── eat.json               # Restaurant recommendations ✨ NEW
@@ -20,16 +20,19 @@ content/
 All content is sourced from official and reliable sources:
 
 ### Official Tourism Sources
+
 - **Turismo Mérida** (`turismomerida.org/donde-comer/`) - Restaurant listings
 - **Consorcio Mérida** (`consorciomerida.org/`) - Monument information
 - **Ayuntamiento Carrascalejo** (`carrascalejo.es/`) - Local information
 
 ### Transportation Services
+
 - **Radio Taxi Mérida** (`radiotaximerida.es/`) - Official taxi service (924 371 111)
 - **Hertz Mérida** (`hertz.es/`) - Car rental office (924 317 203)
 - **Europcar Mérida** (`europcar.es/`) - Alternative car rental (924 305 842)
 
 ### Emergency Services
+
 - **112** - European emergency number
 - **062** - Guardia Civil
 - **Centro de Salud Mérida** (924 330 000) - Nearest medical center
@@ -37,6 +40,7 @@ All content is sourced from official and reliable sources:
 ## Content Standards
 
 Each JSON file follows this structure:
+
 ```json
 {
   "id": "card-type",
@@ -64,6 +68,7 @@ Each JSON file follows this structure:
 ## Legal Compliance
 
 All content follows Spanish open data regulations:
+
 - **Attribution**: Source websites credited in `source` field
 - **Copyright**: Only public information and official listings used
 - **Contact Permission**: Tourist offices contacted for written approval
@@ -72,6 +77,7 @@ All content follows Spanish open data regulations:
 ## Update Schedule
 
 Content is refreshed automatically:
+
 - **Daily**: Emergency contacts and taxi numbers verification
 - **Weekly**: Restaurant listings and prices from tourism office
 - **Monthly**: Car rental availability and pricing
@@ -84,6 +90,7 @@ If scraping fails, the service serves cached data with clear timestamps. Critica
 ## Languages
 
 Currently supporting:
+
 - **Spanish (es)**: Primary language for all cards
 - **English (en)**: Planned for international pilgrims
 - **Portuguese (pt)**: Planned for Portuguese Camino walkers

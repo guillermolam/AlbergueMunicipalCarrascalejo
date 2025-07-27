@@ -8,15 +8,15 @@ SQLITE_DB=${SQLITE_DATABASE:-"./albergue.db"}
 OUTPUT_FILE="database/schemas/sqlite_current.sql"
 
 if [ ! -f "$SQLITE_DB" ]; then
-    echo "❌ Error: SQLite database not found: $SQLITE_DB"
-    exit 1
+	echo "❌ Error: SQLite database not found: $SQLITE_DB"
+	exit 1
 fi
 
 echo "📁 Database: $SQLITE_DB"
 echo "📄 Output: $OUTPUT_FILE"
 
 # Dump schema only
-sqlite3 "$SQLITE_DB" ".schema" > "$OUTPUT_FILE"
+sqlite3 "$SQLITE_DB" ".schema" >"$OUTPUT_FILE"
 
 echo "✅ Schema dumped successfully!"
 
