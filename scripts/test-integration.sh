@@ -23,18 +23,23 @@ echo "🚀 Starting Spin gateway on port $PORT..."
 spin up --listen 0.0.0.0:$PORT &
 SPIN_PID=$!
 
-# Wait for gateway to start
-sleep 5
-
-# Verify gateway is running
-echo "🔍 Verifying gateway health..."
-if curl -f "http://0.0.0.0:$PORT/api/health" > /dev/null 2>&1; then
-    echo "✅ Gateway is healthy"
-else
-    echo "❌ Gateway health check failed"
-    kill $SPIN_PID 2>/dev/null || true
-    exit 1
-fi
+# Wait for gateway to start with retries
+echo "⏳ Waiting for gateway to start..."
+for i in {1..30}; do
+    if curl -f "http://0.0.0.0:$PORT/api/health" > /dev/null 2>&1; then
+        echo "✅ Gateway is healthy (attempt $i)"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo "❌ Gateway health check failed after 30 attempts"
+        echo "📋 Checking gateway logs..."
+        jobs -p | xargs -r ps -f
+        kill $SPIN_PID 2>/dev/null || true
+        exit 1
+    fi
+    echo "⏳ Waiting for gateway... (attempt $i/30)"
+    sleep 2
+done
 
 # Run integration tests
 echo "🧪 Running integration tests..."

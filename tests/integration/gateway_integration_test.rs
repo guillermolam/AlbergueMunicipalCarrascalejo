@@ -3,7 +3,7 @@
 
 use anyhow::Result;
 use reqwest;
-use serde_json::Value;
+use serde_json::{json, Value};
 use speculoos::prelude::*;
 use std::env;
 use std::time::Duration;
@@ -108,7 +108,7 @@ async fn test_service_composition_pipeline_success() -> Result<()> {
     let client = GatewayTestClient::new();
 
     // Test successful request through entire pipeline
-    let booking_data = json!({
+    let booking_data = serde_json::json!({
         "guest_name": "John Doe",
         "check_in": "2024-01-20",
         "check_out": "2024-01-21",
@@ -162,10 +162,10 @@ async fn test_security_scanning_malicious_payload() -> Result<()> {
     let client = GatewayTestClient::new();
 
     let malicious_payloads = vec![
-        json!({"content": "<script>alert('xss')</script>"}),
-        json!({"content": "'; DROP TABLE users; --"}),
-        json!({"content": "javascript:alert(1)"}),
-        json!({"content": "data:text/html,<script>alert('xss')</script>"}),
+        serde_json::json!({"content": "<script>alert('xss')</script>"}),
+        serde_json::json!({"content": "'; DROP TABLE users; --"}),
+        serde_json::json!({"content": "javascript:alert(1)"}),
+        serde_json::json!({"content": "data:text/html,<script>alert('xss')</script>"}),
     ];
 
     for payload in malicious_payloads {
@@ -195,7 +195,7 @@ async fn test_authentication_required_endpoints() -> Result<()> {
     ];
 
     for endpoint in protected_endpoints {
-        let response = client.post(endpoint, json!({"test": "data"})).await?;
+        let response = client.post(endpoint, serde_json::json!({"test": "data"})).await?;
 
         assert_that(&response.status().as_u16()).is_equal_to(401);
 
@@ -239,7 +239,7 @@ async fn test_oauth2_authentication_flow() -> Result<()> {
 
     let body: Value = response.json().await?;
     // Should contain OAuth2 response structure
-    assert_that(&body).is_not_equal_to(json!(null));
+    assert_that(&body).is_not_equal_to(serde_json::json!(null));
 
     Ok(())
 }
@@ -250,7 +250,7 @@ async fn test_openid_connect_userinfo() -> Result<()> {
 
     let response = client.post_with_auth(
         "/api/auth/userinfo",
-        json!({}),
+        serde_json::json!({}),
         "valid_access_token_123"
     ).await?;
 
@@ -330,7 +330,7 @@ async fn test_middleware_context_propagation() -> Result<()> {
 
     let response = client.post_with_auth(
         "/api/booking/create",
-        json!({"guest_name": "Test User"}),
+        serde_json::json!({"guest_name": "Test User"}),
         "valid_token_with_user_info"
     ).await?;
 
