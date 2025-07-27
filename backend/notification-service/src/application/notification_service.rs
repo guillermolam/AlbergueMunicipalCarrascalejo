@@ -1,13 +1,13 @@
 use crate::domain::notification::{Notification, NotificationChannel, NotificationStatus};
 use crate::ports::{email_port::EmailPort, sms_port::SmsPort, telegram_port::TelegramPort};
 use anyhow::Result;
-use tokio::task;
 use futures::future::try_join_all;
 use std::sync::Arc;
+use tokio::task;
 
 pub struct NotificationService {
     email_adapter: Arc<dyn EmailPort + Send + Sync>,
-    sms_adapter: Arc<dyn SmsPort + Send + Sync>, 
+    sms_adapter: Arc<dyn SmsPort + Send + Sync>,
     telegram_adapter: Arc<dyn TelegramPort + Send + Sync>,
 }
 
@@ -25,25 +25,45 @@ impl NotificationService {
     }
 
     // Async function to send notification through single channel
-    async fn send_single_channel(&self, notification: &Notification, channel: NotificationChannel) -> Result<NotificationStatus> {
+    async fn send_single_channel(
+        &self,
+        notification: &Notification,
+        channel: NotificationChannel,
+    ) -> Result<NotificationStatus> {
         match channel {
             NotificationChannel::Email => {
-                self.email_adapter.send_email(&notification.recipient, &notification.subject, &notification.body).await
+                self.email_adapter
+                    .send_email(
+                        &notification.recipient,
+                        &notification.subject,
+                        &notification.body,
+                    )
+                    .await
             }
             NotificationChannel::Sms => {
-                self.sms_adapter.send_sms(&notification.recipient, &notification.body).await
+                self.sms_adapter
+                    .send_sms(&notification.recipient, &notification.body)
+                    .await
             }
             NotificationChannel::WhatsApp => {
-                self.sms_adapter.send_whatsapp(&notification.recipient, &notification.body).await
+                self.sms_adapter
+                    .send_whatsapp(&notification.recipient, &notification.body)
+                    .await
             }
             NotificationChannel::Telegram => {
-                self.telegram_adapter.send_message(&notification.recipient, &notification.body).await
+                self.telegram_adapter
+                    .send_message(&notification.recipient, &notification.body)
+                    .await
             }
         }
     }
 
     // Async function to send notification with fallback channels
-    pub async fn send_with_fallback(&self, mut notification: Notification, channels: Vec<NotificationChannel>) -> Result<Notification> {
+    pub async fn send_with_fallback(
+        &self,
+        mut notification: Notification,
+        channels: Vec<NotificationChannel>,
+    ) -> Result<Notification> {
         for channel in channels {
             let status = self.send_single_channel(&notification, channel).await?;
 
@@ -97,7 +117,12 @@ impl NotificationService {
     }
 
     // Async function to send booking confirmation with multiple channels
-    pub async fn send_booking_confirmation(&self, guest_email: &str, guest_phone: Option<&str>, booking_details: &str) -> Result<Vec<Notification>> {
+    pub async fn send_booking_confirmation(
+        &self,
+        guest_email: &str,
+        guest_phone: Option<&str>,
+        booking_details: &str,
+    ) -> Result<Vec<Notification>> {
         let mut notifications = Vec::new();
 
         // Email notification
@@ -105,7 +130,10 @@ impl NotificationService {
             id: uuid::Uuid::new_v4().to_string(),
             recipient: guest_email.to_string(),
             subject: "Booking Confirmation - Albergue Del Carrascalejo".to_string(),
-            body: format!("Your booking has been confirmed. Details: {}", booking_details),
+            body: format!(
+                "Your booking has been confirmed. Details: {}",
+                booking_details
+            ),
             channel: None,
             status: NotificationStatus::Pending,
             created_at: chrono::Utc::now(),
@@ -119,7 +147,10 @@ impl NotificationService {
                 id: uuid::Uuid::new_v4().to_string(),
                 recipient: phone.to_string(),
                 subject: "Booking Confirmed".to_string(),
-                body: format!("Booking confirmed at Albergue Del Carrascalejo. {}", booking_details),
+                body: format!(
+                    "Booking confirmed at Albergue Del Carrascalejo. {}",
+                    booking_details
+                ),
                 channel: None,
                 status: NotificationStatus::Pending,
                 created_at: chrono::Utc::now(),
@@ -171,7 +202,12 @@ impl NotificationService {
 }
 
 // Stateless pure functions for notification templates
-pub fn create_booking_template(guest_name: &str, booking_id: &str, check_in: &str, check_out: &str) -> String {
+pub fn create_booking_template(
+    guest_name: &str,
+    booking_id: &str,
+    check_in: &str,
+    check_out: &str,
+) -> String {
     format!(
         "Hola {}, tu reserva {} ha sido confirmada. Check-in: {}, Check-out: {}. ¡Te esperamos!",
         guest_name, booking_id, check_in, check_out
@@ -181,7 +217,8 @@ pub fn create_booking_template(guest_name: &str, booking_id: &str, check_in: &st
 pub fn create_payment_template(amount: i32, payment_method: &str) -> String {
     format!(
         "Pago recibido: {}€ via {}. Gracias por tu reserva en Albergue Del Carrascalejo.",
-        amount / 100, payment_method
+        amount / 100,
+        payment_method
     )
 }
 

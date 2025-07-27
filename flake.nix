@@ -1,82 +1,120 @@
-# This is a complete flake.nix for your project.
-# It defines a development environment that can be used locally with the command `nix develop`.
+# flake.nix (Versión Optimizada y Alineada)
 {
-  description = "A development environment for the Albergue Carcalejo project with Rust, Spin, and Bun.";
+  description = "Desarrollo para Albergue Carcalejo: Rust WASM microservicios con Fermyon Spin y React frontend";
 
-  # --- Inputs ---
-  # These are the external dependencies of your flake.
-  # They are pinned in the flake.lock file for perfect reproducibility.
   inputs = {
-    # The main Nix package collection. We pin it to a specific release.
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
-
-    # A helper library that makes it easy to define outputs for different systems (Linux, macOS, etc.).
+    # Usamos la misma versión que replit.nix para consistencia
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  # --- Outputs ---
-  # These are the "things" your flake provides, like packages or development shells.
   outputs = { self, nixpkgs, flake-utils }:
-    # Use the flake-utils helper to generate outputs for common systems.
     flake-utils.lib.eachDefaultSystem (system:
       let
-        # Define pkgs for the current system (e.g., x86_64-linux).
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs { 
+          inherit system; 
+          config.allowUnfree = true; 
+        };
 
-        # --- Custom Packages ---
-        # These are the same derivations from our replit.nix file.
-
+        # --- Definiciones Personalizadas (Alineadas con replit.nix) ---
+        
         spin-version = "v2.2.0";
         spin-cli = pkgs.stdenv.mkDerivation {
           pname = "spin-cli";
           version = spin-version;
           src = pkgs.fetchurl {
             url = "https://github.com/fermyon/spin/releases/download/${spin-version}/spin-${spin-version}-linux-amd64.tar.gz";
-            sha256 = "1k1r4b1vj1v2zjw1x9s8yq298q9z4y1h4v2zjw1x9s8yq298q9z4y1h4"; # Placeholder hash
+            sha256 = "sha256-2ugh7gpoiqMTGe9QPTuXJnd+U5mrSXIQK1TwucuP4s8=";
           };
+          # Corregido: usar sourceRoot en lugar de dontUnpack
+          sourceRoot = ".";
           installPhase = ''
             mkdir -p $out/bin
             cp spin $out/bin/
+            chmod +x $out/bin/spin
           '';
         };
 
-        bun-version = "1.0.25";
+        # Versión actualizada de Bun (puedes usar la que prefieras)
+        bun-version = "1.2.19";
         bun-cli = pkgs.stdenv.mkDerivation {
           pname = "bun-cli";
           version = bun-version;
           src = pkgs.fetchurl {
             url = "https://github.com/oven-sh/bun/releases/download/bun-v${bun-version}/bun-linux-x64.zip";
-            sha256 = "1j2k3l4j5k6l7j8k9l0j1k2j3l4j5k6l7j8k9l0j1k2j3l4j5k6l7j8k"; # Placeholder hash
+            # Necesitarás actualizar este hash cuando pruebes
+            sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
           };
           nativeBuildInputs = [ pkgs.unzip ];
           installPhase = ''
             mkdir -p $out/bin
             cp bun-linux-x64/bun $out/bin/
+            chmod +x $out/bin/bun
           '';
         };
 
       in
       {
-        # --- Development Shell ---
-        # This defines the environment you get when you run `nix develop`.
+        # Shell de desarrollo principal
         devShells.default = pkgs.mkShell {
-          # The list of packages to make available in the shell.
-          # This is the equivalent of the `deps` list in replit.nix.
           buildInputs = [
-            # Custom Packages
+            # --- Runtimes y Herramientas de Compilación ---
             spin-cli
             bun-cli
-
-            # Rust Tooling
             pkgs.rustc
             pkgs.cargo
-            pkgs.rust-analyzer
-            pkgs.taplo-cli
+            pkgs.nodejs_22
 
-            # Build Dependencies
+            # --- Herramientas de Calidad y Sistema ---
+            pkgs.trunk-io  # Corregido: usar trunk-io en lugar de nodePackages.trunkio
+            pkgs.go-task   # Añadido: faltaba en la versión anterior
+
+            # --- Soporte para el IDE ---
+            pkgs.rust-analyzer
+
+            # --- Dependencias de Compilación Esenciales ---
             pkgs.openssl
             pkgs.pkg-config
+            pkgs.unzip
           ];
+
+          # Variables de entorno útiles para desarrollo
+          shellHook = ''
+            echo "🏨 Entorno de desarrollo Albergue Carcalejo activado"
+            echo "📦 Spin CLI: $(spin --version)"
+            echo "🟨 Bun: $(bun --version)"
+            echo "🦀 Rust: $(rustc --version)"
+            echo "📋 Task: $(task --version)"
+            echo ""
+            echo "Comandos útiles:"
+            echo "  task          - Ver todas las tareas disponibles"
+            echo "  trunk check   - Ejecutar todos los linters"
+            echo "  trunk fmt     - Formatear todo el código"
+            echo "  spin up       - Ejecutar el servidor local"
+            echo ""
+          '';
+        };
+
+        # Shell alternativo solo para CI/CD (más ligero)
+        devShells.ci = pkgs.mkShell {
+          buildInputs = [
+            spin-cli
+            bun-cli
+            pkgs.rustc
+            pkgs.cargo
+            pkgs.nodejs_22
+            pkgs.trunk-io
+            pkgs.go-task
+            pkgs.openssl
+            pkgs.pkg-config
+            pkgs.unzip
+          ];
+        };
+
+        # Paquetes que puedes instalar individualmente
+        packages = {
+          inherit spin-cli bun-cli;
+          default = spin-cli;
         };
       }
     );

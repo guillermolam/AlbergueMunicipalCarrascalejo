@@ -28,17 +28,17 @@ in
 {
   deps = [
     spin-cli
-    pkgs.trunk
-    pkgs.go-task
     pkgs.rustc
     pkgs.cargo
+    pkgs.nodejs_22
+    pkgs.trunk-io
+    pkgs.go-task
+    pkgs.unzip
+    pkgs.k6
+    pkgs.zap
     pkgs.rust-analyzer
     pkgs.taplo-cli
-    pkgs.k6
     pkgs.openssl
     pkgs.pkg-config
-
-    pkgs.cargo-audit
-    
   ];
 }

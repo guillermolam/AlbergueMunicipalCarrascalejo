@@ -1,6 +1,5 @@
 modules = ["bun-1.2", "postgresql-16"]
 
-# The command to run when you press the "Run" button.
 run = "spin up"
 
 # The main configuration file for your project.
@@ -27,7 +26,6 @@ pattern = "**/*.toml"
 start = "taplo lsp"
 
 [workflows]
-runButton = "Run"
 
 [[workflows.workflow]]
 name = "Run"
