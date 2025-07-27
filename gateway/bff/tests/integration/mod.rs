@@ -1,6 +1,6 @@
-use super::super::{compose_services, handle_health_check};
+use crate::{compose_services, handle_health_check};
 use anyhow::Result;
-use spin_sdk::http::{Request, Method};
+use spin_sdk::http::{IntoResponse, Method, Request, RequestBuilder};
 use speculoos::prelude::*;
 
 #[cfg(test)]
@@ -24,11 +24,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_service_composition_health_check() -> Result<()> {
-        let req = Request::builder()
-            .method(Method::GET)
-            .uri("/api/health")
-            .body(vec![])
-            .unwrap();
+        let req = Request::new(Method::Get, "/api/health");
 
         let response = compose_services(req).await?;
 
@@ -39,11 +35,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_service_composition_cors_options() -> Result<()> {
-        let req = Request::builder()
-            .method(Method::OPTIONS)
-            .uri("/api/booking/create")
-            .body(vec![])
-            .unwrap();
+        let req = Request::new(Method::Options, "/api/booking/create");
 
         let response = compose_services(req).await?;
 
@@ -55,11 +47,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_service_composition_not_found() -> Result<()> {
-        let req = Request::builder()
-            .method(Method::GET)
-            .uri("/api/nonexistent")
-            .body(vec![])
-            .unwrap();
+        let req = Request::new(Method::Get, "/api/nonexistent");
 
         let response = compose_services(req).await?;
 

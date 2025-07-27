@@ -40,14 +40,11 @@ fi
 echo "🧪 Running integration tests..."
 cd tests/integration
 
-# Update test client to use dynamic port
-sed -i.bak "s/const GATEWAY_URL: &str = \"http:\/\/0\.0\.0\.0:3000\";/const GATEWAY_URL: \&str = \"http:\/\/0.0.0.0:$PORT\";/" gateway_integration_test.rs
+# Set environment variable for dynamic port
+export GATEWAY_TEST_PORT=$PORT
 
 # Run the tests
-cargo test --test gateway_integration_test -- --test-threads=1
-
-# Restore original file
-mv gateway_integration_test.rs.bak gateway_integration_test.rs
+GATEWAY_TEST_PORT=$PORT cargo test --test gateway_integration_test -- --test-threads=1
 
 TEST_RESULT=$?
 
