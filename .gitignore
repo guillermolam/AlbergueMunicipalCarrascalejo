@@ -1,11 +1,8 @@
-node_modules
-dist
+# OS
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -13,5 +10,32 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# UPM (not needed with Nix)
+# Build artifacts
+dist/
+build/
+coverage/
+*.tar.gz
+
+# Vite/Bun-specific
+node_modules/
+.bun/
+.vite/
+server/public/
+vite.config.ts.*
+
+# UPM (if previously used)
 .upm/
+
+# Rust
+target/
+Cargo.lock  # Remove this only if you use Cargo workspaces exclusively
+
+# Trunk.io
+.trunk/cache/
+.trunk/tmp/
+.trunk/logs/
+.trunk/out/
+.vscode/.trunk/
+
+# Optional: Keep to pin plugin versions (recommended)
+# !.trunk/toolchain.lock

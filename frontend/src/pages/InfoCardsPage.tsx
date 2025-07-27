@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { MapPin, Phone, Star, Clock, Car, Utensils } from "lucide-react";
@@ -9,7 +15,8 @@ export default function InfoCardsPage() {
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold">Información para Peregrinos</h1>
         <p className="text-muted-foreground">
-          Todo lo que necesitas saber para disfrutar de tu estancia en Mérida y alrededores
+          Todo lo que necesitas saber para disfrutar de tu estancia en Mérida y
+          alrededores
         </p>
       </div>
 
@@ -26,7 +33,10 @@ export default function InfoCardsPage() {
               <div className="flex items-center gap-2">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                    />
                   ))}
                 </div>
                 <Badge variant="secondary">€€€€</Badge>
@@ -34,7 +44,8 @@ export default function InfoCardsPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Restaurante galardonado con estrella Michelin. Experiencia gastronómica única.
+                Restaurante galardonado con estrella Michelin. Experiencia
+                gastronómica única.
               </p>
               <div className="flex items-center gap-1 text-sm">
                 <MapPin className="h-4 w-4" />
@@ -53,7 +64,10 @@ export default function InfoCardsPage() {
               <div className="flex items-center gap-2">
                 <div className="flex items-center">
                   {[...Array(4)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                    />
                   ))}
                   <Star className="h-4 w-4 text-gray-300" />
                 </div>
@@ -62,7 +76,8 @@ export default function InfoCardsPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Cocina romana tradicional cerca del Teatro Romano. Ambiente histórico.
+                Cocina romana tradicional cerca del Teatro Romano. Ambiente
+                histórico.
               </p>
               <div className="flex items-center gap-1 text-sm">
                 <MapPin className="h-4 w-4" />
@@ -81,7 +96,10 @@ export default function InfoCardsPage() {
               <div className="flex items-center gap-2">
                 <div className="flex items-center">
                   {[...Array(4)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                    />
                   ))}
                   <Star className="h-4 w-4 text-gray-300" />
                 </div>
@@ -115,11 +133,14 @@ export default function InfoCardsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Radio Taxi Mérida</CardTitle>
-              <Badge variant="outline" className="w-fit">24 Horas</Badge>
+              <Badge variant="outline" className="w-fit">
+                24 Horas
+              </Badge>
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Servicio de taxi oficial de Mérida. Cobertura completa de la ciudad y alrededores.
+                Servicio de taxi oficial de Mérida. Cobertura completa de la
+                ciudad y alrededores.
               </p>
               <div className="flex items-center gap-1 text-sm font-medium">
                 <Phone className="h-4 w-4" />
@@ -135,11 +156,14 @@ export default function InfoCardsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Taxi Aeropuerto Badajoz</CardTitle>
-              <Badge variant="outline" className="w-fit">Traslados</Badge>
+              <Badge variant="outline" className="w-fit">
+                Traslados
+              </Badge>
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Servicio especializado en traslados al aeropuerto de Badajoz y otras ciudades.
+                Servicio especializado en traslados al aeropuerto de Badajoz y
+                otras ciudades.
               </p>
               <div className="flex items-center gap-1 text-sm font-medium">
                 <Phone className="h-4 w-4" />
@@ -168,7 +192,8 @@ export default function InfoCardsPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Alquiler de vehículos con cobertura internacional. Amplia flota disponible.
+                Alquiler de vehículos con cobertura internacional. Amplia flota
+                disponible.
               </p>
               <div className="flex items-center gap-1 text-sm">
                 <MapPin className="h-4 w-4" />

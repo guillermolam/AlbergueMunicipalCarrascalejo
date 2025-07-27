@@ -8,13 +8,11 @@ pub async fn handle(req: &Request) -> Result<Response> {
     match path {
         "/api/auth/user" => handle_user_info(req).await,
         "/api/auth/permissions" => handle_permissions(req).await,
-        _ => {
-            Ok(Response::builder()
-                .status(404)
-                .header("Content-Type", "application/json")
-                .body(json!({"error": "Auth service endpoint not found"}).to_string())
-                .build())
-        }
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("Content-Type", "application/json")
+            .body(json!({"error": "Auth service endpoint not found"}).to_string())
+            .build()),
     }
 }
 

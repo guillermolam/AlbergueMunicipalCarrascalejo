@@ -1,544 +1,179 @@
-
 version: '3'
 
-vars:
-  FRONTEND_PORT: '5173'
-  BACKEND_PORT: '8000'
-  GATEWAY_PORT: '3000'
-  FRONTEND_URI: 'http://0.0.0.0:{{.FRONTEND_PORT}}'
-  BACKEND_URI: 'http://0.0.0.0:{{.BACKEND_PORT}}'
-  GATEWAY_URI: 'http://0.0.0.0:{{.GATEWAY_PORT}}'
+includes:
+  ports: ./taskfiles/Taskfile.ports.yml
+  setup: ./taskfiles/Taskfile.setup.yml
+  dev: ./taskfiles/Taskfile.dev.yml
+  build: ./taskfiles/Taskfile.build.yml
+  test: ./taskfiles/Taskfile.test.yml
+  quality: ./taskfiles/Taskfile.quality.yml
+  act: ./taskfiles/Taskfile.act.yml
 
-env:
-  RUST_BACKTRACE: '1'
-  RUST_LOG: 'debug'
-  NODE_ENV: 'development'
-  DATABASE_URL: 'postgresql://localhost:5432/albergue_dev'
+vars:
+  PROJECT_NAME: "AlbergueMunicipalCarrascalejo"
+  PYTHON: python3
+  BUN: bun
+  CARGO: cargo
+  TRUNK: trunk
+  COVERAGE_THRESHOLD: 85
 
 tasks:
-  openports:
-    desc: Find 3 open random ports
-    cmds:
-      - |
-        random_ports_async() {
-          local min=${1:-3000}
-          local max=${2:-4000}
-          local count=3
-        
-          (
-            awk -v min="$min" -v max="$max" -v count="$count" '
-              BEGIN {
-                srand();
-                while (n < count) {
-                  r = int(min + rand() * (max - min + 1));
-                  if (!(r in seen)) {
-                    seen[r] = 1;
-                    print r;
-                    n++;
-                  }
-                }
-              }
-            '
-          ) &
-        }
-      
-  # Main entry points
+  # Default task that runs complete pipeline with coverage requirements
   default:
-    desc: Run full CI/CD pipeline
-    deps: [ci:full]
+    desc: Complete development pipeline con requisitos de cobertura
+    cmds:
+      - echo "Starting complete development pipeline with 85% coverage requirement..."
+      - task: setup:coverage
+      - task: test:unit
+      - task: test:integration
+      - task: coverage:all
+      - task: build
+      - task: start
+      - echo "Pipeline completed - coverage ≥ {{.COVERAGE_THRESHOLD}}% verified"
 
+  # Non-breaking formatting check
+  fmt:
+    desc: Check formatting without breaking build
+    cmds:
+      - task: quality:fmt:check
+
+  # Non-breaking linting check
+  lint:
+    desc: Check linting without breaking build
+    cmds:
+      - task: quality:lint:check
+
+  # Check quality without changes (non-breaking)
+  check:
+    desc: Check quality without making changes
+    cmds:
+      - task: quality:dev:check
+
+  # CI/CD pipeline with coverage requirements
+  ci:
+    desc: CI pipeline con requisitos de cobertura (solo tests rompen build)
+    cmds:
+      - echo "Running CI pipeline with coverage requirements..."
+      - task: setup:coverage
+      - task: test:unit
+      - task: test:integration
+      - task: coverage:all
+      - task: build:all
+
+  # Pre-commit hooks (only tests can break build)
+  pre-commit:
+    desc: Pre-commit checks con cobertura
+    cmds:
+      - task: test:unit:quick
+      - task: quality:ci:all
+
+  # Quick tests (can break build)
+  test:unit:quick:
+    desc: Quick unit tests (PUEDE ROMPER BUILD)
+    cmds:
+      - echo "Running quick unit tests..."
+      - cd backend && cargo test --lib
+      - cd frontend && bun test --run
+      - cd gateway && cargo test --lib
+
+  # Full test suite with coverage (can break build)
+  test:
+    desc: Full test suite with coverage (PUEDE ROMPER BUILD)
+    cmds:
+      - task: test:unit
+      - task: test:integration
+      - task: coverage:all
+
+  # Coverage verification (can break build)
+  coverage:
+    desc: Verify 85% coverage across all projects (PUEDE ROMPER BUILD)
+    cmds:
+      - task: test:coverage:all
+
+  # Build (non-breaking for quality issues)
+  build:
+    desc: Build all services (quality issues no rompen build)
+    cmds:
+      - task: build:all
+
+  # Start development environment
+  start:
+    desc: Start development environment
+    cmds:
+      - task: dev:start
+
+  # Development workflow with coverage
   dev:
-    desc: Run all services in development mode
-    deps: [setup:check, setup:deps]
+    desc: Development workflow con cobertura
     cmds:
-      - task: dev:services
+      - echo "Development workflow with coverage requirements..."
+      - task: quality:dev:check
+      - task: test:unit:quick
+      - task: build
+      - task: start
 
-  ci:full:
-    desc: Complete CI/CD pipeline with all checks
-    deps: 
-      - setup:check
-      - setup:deps
-      - format:check
-      - lint:all
-      - sast:all
-      - test:unit
-      - build:all
-      - test:integration
-      - test:e2e
-      - security:dast
-      - performance:all
-      - compatibility:all
-
-  # Setup and verification
-  setup:check:
-    desc: Verify development environment
+  # Setup coverage tools
+  setup:coverage:
+    desc: Install coverage tools
     cmds:
-      - rustc --version
-      - node --version
-      - bun --version
-      - caddy version
-      - echo "✅ Development environment ready"
+      - task: test:setup:coverage
 
-  setup:deps:
-    desc: Install all dependencies
-    deps: [setup:deps:frontend, setup:deps:rust]
-
-  setup:deps:frontend:
-    desc: Install frontend dependencies
-    dir: frontend
+  # Coverage reports
+  coverage:report:
+    desc: Generate coverage reports
     cmds:
-      - bun install
+      - task: test:coverage:report
 
-  setup:deps:rust:
-    desc: Install Rust dependencies
+  # Coverage verification (can break build)
+  coverage:all:
+    desc: Verify coverage across all projects (PUEDE ROMPER BUILD)
     cmds:
-      - cargo fetch --workspace
+      - task: test:coverage:all
 
-  setup:trunk:
-    desc: Install and configure Trunk.io for linting
+  # Report generation
+  report:
+    desc: Generate quality and coverage reports
     cmds:
-      - |
-        if ! command -v trunk >/dev/null 2>&1; then
-          curl https://get.trunk.io -fsSL | bash || echo "⚠️  Trunk.io installation failed"
-        fi
-      - trunk init || echo "⚠️  Trunk.io already initialized"
-      - trunk check enable clippy rustfmt eslint prettier semgrep bandit || echo "⚠️  Some trunk checks already enabled"
+      - task: quality:report:all
+      - task: test:coverage:report
 
-  # Code formatting
-  format:all:
-    desc: Format all code
-    deps: [format:rust, format:frontend]
-
-  format:rust:
-    desc: Format Rust code
+  # Help and status
+  help:
+    desc: Show help
     cmds:
-      - cargo fmt --all
+      - task --list-all
 
-  format:frontend:
-    desc: Format frontend code
-    dir: frontend
+  status:
+    desc: Show project status with coverage
     cmds:
-      - |
-        if command -v prettier >/dev/null 2>&1; then
-          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}" "server/**/*.{ts,js,json}" || echo "⚠️  Prettier formatting failed"
-        else
-          echo "⚠️  Prettier not available, skipping frontend formatting"
-        fi
+      - echo "Project Status with Coverage Requirements:"
+      - task: ports:show
+      - echo
+      - task: dev:status
+      - echo
+      - task: quality:status
 
-  format:check:
-    desc: Check code formatting
-    deps: [format:check:rust, format:check:frontend]
-
-  format:check:rust:
-    desc: Check Rust formatting
-    cmds:
-      - cargo fmt --all -- --check
-
-  format:check:frontend:
-    desc: Check frontend formatting
-    dir: frontend
-    cmds:
-      - |
-        if command -v prettier >/dev/null 2>&1; then
-          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" "server/**/*.{ts,js,json}" || echo "⚠️  Frontend formatting check failed"
-        else
-          echo "⚠️  Prettier not available, skipping frontend format check"
-        fi
-
-  # Linting
-  lint:all:
-    desc: Run all linters
-    deps: [lint:rust, lint:frontend, lint:trunk]
-
-  lint:rust:
-    desc: Lint Rust code
-    cmds:
-      - cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-  lint:frontend:
-    desc: Lint frontend code
-    dir: frontend
-    cmds:
-      - bun run lint
-
-  lint:trunk:
-    desc: Run Trunk.io linting
-    cmds:
-      - |
-        if command -v trunk >/dev/null 2>&1; then
-          trunk check --all
-        else
-          echo "⚠️  Trunk.io not installed, skipping"
-        fi
-
-  # Static Application Security Testing (SAST)
-  sast:all:
-    desc: Run all SAST tools
-    deps: [sast:semgrep, sast:cargo-audit, sast:trunk-security]
-
-  sast:semgrep:
-    desc: Run Semgrep security analysis
-    cmds:
-      - |
-        if command -v semgrep >/dev/null 2>&1; then
-          semgrep --config=auto --error --strict --verbose .
-        else
-          echo "⚠️  Semgrep not installed, skipping security analysis"
-        fi
-
-  sast:cargo-audit:
-    desc: Run Cargo security audit
-    cmds:
-      - |
-        if ! command -v cargo-audit >/dev/null 2>&1; then
-          cargo install cargo-audit
-        fi
-      - cargo audit
-
-  sast:trunk-security:
-    desc: Run Trunk.io security checks
-    cmds:
-      - |
-        if command -v trunk >/dev/null 2>&1; then
-          trunk check --filter=security
-        else
-          echo "⚠️  Trunk.io not available, skipping security checks"
-        fi
-
-  # Unit Testing
-  test:unit:
-    desc: Run all unit tests
-    deps: [test:unit:rust, test:unit:frontend]
-
-  test:unit:rust:
-    desc: Run Rust unit tests
-    cmds:
-      - cargo test --workspace --lib
-
-  test:unit:frontend:
-    desc: Run frontend unit tests
-    dir: frontend
-    cmds:
-      - bun run test
-
-  test:unit:coverage:
-    desc: Generate test coverage reports
-    deps: [test:unit:coverage:rust, test:unit:coverage:frontend]
-
-  test:unit:coverage:rust:
-    desc: Generate Rust coverage
-    cmds:
-      - |
-        if ! command -v cargo-tarpaulin >/dev/null 2>&1; then
-          cargo install cargo-tarpaulin
-        fi
-      - mkdir -p coverage
-      - cargo tarpaulin --workspace --out xml --output-dir coverage/
-
-  test:unit:coverage:frontend:
-    desc: Generate frontend coverage
-    dir: frontend
-    cmds:
-      - |
-        if grep -q "test:coverage" package.json; then
-          bun run test:coverage
-        else
-          echo "⚠️  Frontend coverage script not available"
-        fi
-
-  # Build
-  build:all:
-    desc: Build all services
-    deps: [build:gateway, build:backend, build:frontend]
-
-  build:gateway:
-    desc: Build gateway service
-    dir: gateway
-    cmds:
-      - cargo build --target wasm32-wasi
-      - spin build
-
-  build:backend:
-    desc: Build backend services
-    cmds:
-      - cargo build --workspace --release
-
-  build:frontend:
-    desc: Build frontend
-    dir: frontend
-    cmds:
-      - bun run build
-
-  # Development services
-  dev:services:
-    desc: Run all services in parallel
-    deps: [dev:gateway, dev:backend, dev:frontend]
-
-  dev:gateway:
-    desc: Run gateway in development
-    dir: gateway
-    cmds:
-      - spin up --listen 0.0.0.0:{{.GATEWAY_PORT}}
-
-  dev:backend:
-    desc: Run backend services
-    cmds:
-      - |
-        echo "Starting backend services..."
-        if [ -f "backend/booking-service/Cargo.toml" ]; then
-          cargo run --manifest-path backend/booking-service/Cargo.toml &
-        fi
-        if [ -f "backend/notification-service/Cargo.toml" ]; then
-          cargo run --manifest-path backend/notification-service/Cargo.toml &
-        fi
-        if [ -f "backend/validation-service/Cargo.toml" ]; then
-          cargo run --manifest-path backend/validation-service/Cargo.toml &
-        fi
-        wait
-
-  dev:frontend:
-    desc: Run frontend development server
-    dir: frontend
-    cmds:
-      - bun run dev -- --host 0.0.0.0 --port {{.FRONTEND_PORT}}
-
-  # Integration Testing
-  test:integration:
-    desc: Run integration tests
-    deps: [test:integration:api, test:integration:database]
-
-  test:integration:api:
-    desc: Run API integration tests
-    dir: tests/api
-    cmds:
-      - |
-        for test_file in *.js *.mjs; do
-          if [ -f "$test_file" ]; then
-            echo "Running $test_file..."
-            if [[ "$test_file" == *.mjs ]]; then
-              node "$test_file" || echo "⚠️  Test $test_file failed"
-            else
-              node "$test_file" || echo "⚠️  Test $test_file failed"
-            fi
-          fi
-        done
-
-  test:integration:database:
-    desc: Run database integration tests
-    dir: database/test
-    cmds:
-      - |
-        if command -v psql >/dev/null 2>&1; then
-          for sql_file in *.sql; do
-            if [ -f "$sql_file" ]; then
-              echo "Running database test: $sql_file"
-              psql "${DATABASE_URL}" -f "$sql_file" || echo "⚠️  Database test $sql_file failed"
-            fi
-          done
-        else
-          echo "⚠️  PostgreSQL client not available, skipping database tests"
-        fi
-
-  # End-to-End Testing
-  test:e2e:
-    desc: Run all E2E tests
-    deps: [test:e2e:testcafe, test:e2e:comprehensive]
-
-  test:e2e:testcafe:
-    desc: Run TestCafe E2E tests
-    dir: tests/e2e/testcafe
-    cmds:
-      - |
-        if command -v testcafe >/dev/null 2>&1; then
-          for test_file in *.js; do
-            if [ -f "$test_file" ]; then
-              echo "Running E2E test: $test_file"
-              testcafe chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
-            fi
-          done
-        else
-          echo "⚠️  TestCafe not installed, skipping E2E tests"
-        fi
-
-  test:e2e:comprehensive:
-    desc: Run comprehensive E2E test suite
-    dir: tests/runners
-    cmds:
-      - |
-        if [ -f "run-comprehensive-testcafe.js" ]; then
-          node run-comprehensive-testcafe.js || echo "⚠️  Comprehensive E2E tests failed"
-        else
-          echo "⚠️  Comprehensive test runner not found"
-        fi
-
-  # Dynamic Application Security Testing (DAST)
-  security:dast:
-    desc: Run DAST security scans
-    deps: [security:dast:zap, security:dast:nuclei]
-
-  security:dast:zap:
-    desc: Run OWASP ZAP security scan
-    cmds:
-      - |
-        if command -v zap-baseline.py >/dev/null 2>&1; then
-          if [ -f "tests/infrastructure/security/zap-rules.tsv" ]; then
-            zap-baseline.py -t {{.FRONTEND_URI}} -c tests/infrastructure/security/zap-rules.tsv
-          else
-            zap-baseline.py -t {{.FRONTEND_URI}}
-          fi
-        else
-          echo "⚠️  OWASP ZAP not installed, skipping DAST scan"
-        fi
-
-  security:dast:nuclei:
-    desc: Run Nuclei vulnerability scanner
-    cmds:
-      - |
-        if command -v nuclei >/dev/null 2>&1; then
-          nuclei -u {{.FRONTEND_URI}} -severity medium,high,critical
-        else
-          echo "⚠️  Nuclei not installed, skipping vulnerability scan"
-        fi
-
-  # Performance Testing
-  performance:all:
-    desc: Run all performance tests
-    deps: [performance:lighthouse, performance:k6]
-
-  performance:lighthouse:
-    desc: Run Lighthouse performance audit
-    cmds:
-      - |
-        if ! command -v lighthouse >/dev/null 2>&1; then
-          echo "⚠️  Lighthouse not installed, installing..."
-          npm install -g lighthouse || echo "⚠️  Failed to install Lighthouse"
-        fi
-        if command -v lighthouse >/dev/null 2>&1; then
-          mkdir -p tests/infrastructure/performance
-          lighthouse {{.FRONTEND_URI}} --output json --output-path ./tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
-          lighthouse {{.FRONTEND_URI}}/admin --output json --output-path ./tests/infrastructure/performance/lighthouse-admin-results.json || echo "⚠️  Lighthouse admin audit failed"
-        fi
-
-  performance:k6:
-    desc: Run k6 load testing
-    cmds:
-      - |
-        if command -v k6 >/dev/null 2>&1; then
-          if [ -f "tests/infrastructure/performance/api-load-test.js" ]; then
-            k6 run tests/infrastructure/performance/api-load-test.js
-          else
-            echo "⚠️  k6 load test script not found"
-          fi
-        else
-          echo "⚠️  k6 not installed, skipping load tests"
-        fi
-
-  # Cross-browser and device compatibility
-  compatibility:all:
-    desc: Run cross-browser and device compatibility tests
-    deps: [compatibility:browsers, compatibility:devices]
-
-  compatibility:browsers:
-    desc: Test on major browsers
-    cmds:
-      - |
-        if command -v testcafe >/dev/null 2>&1; then
-          if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
-            testcafe chrome:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Chrome test failed"
-            testcafe firefox:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Firefox test failed"
-            testcafe safari tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Safari not available"
-            testcafe edge tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Edge not available"
-          else
-            echo "⚠️  Browser compatibility test file not found"
-          fi
-        else
-          echo "⚠️  TestCafe not installed, skipping browser compatibility tests"
-        fi
-
-  compatibility:devices:
-    desc: Test responsive design on different devices
-    cmds:
-      - |
-        if command -v testcafe >/dev/null 2>&1; then
-          if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
-            testcafe chrome:headless:emulation:device=iPhone tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPhone test failed"
-            testcafe chrome:headless:emulation:device=iPad tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPad test failed"
-            testcafe chrome:headless:emulation:device=desktop tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Desktop test failed"
-          else
-            echo "⚠️  Device compatibility test file not found"
-          fi
-        else
-          echo "⚠️  TestCafe not installed, skipping device compatibility tests"
-        fi
-
-  # Utility tasks
+  # Cleanup
   clean:
-    desc: Clean build artifacts and caches
+    desc: Clean everything including coverage
     cmds:
-      - cargo clean
-      - rm -rf frontend/dist/
-      - rm -rf frontend/node_modules/.cache/
-      - rm -rf coverage/
-      - rm -rf tests/e2e/outputs/
-      - echo "✅ Clean completed"
+      - echo "Cleaning everything including coverage..."
+      - task: quality:clean
+      - task: build:clean
+      - task: test:clean
+      - task: ports:clean
+      - task: dev:clean
 
-  preview:
-    desc: Preview built application
-    deps: [build:all]
-    dir: frontend
+  # Act workflow runner
+  act:
+    desc: Run GitHub Actions workflows locally with act
     cmds:
-      - bun run serve -- --host 0.0.0.0 --port 4173
-
-  deploy:
-    desc: Deploy to production
-    deps: [ci:full]
-    cmds:
-      - |
-        if command -v spin >/dev/null 2>&1; then
-          spin deploy
-        else
-          echo "⚠️  Spin CLI not available for deployment"
-        fi
-
-  # Health checks
-  health:check:
-    desc: Check application health
-    cmds:
-      - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
-      - curl -f {{.GATEWAY_URI}}/api/health || echo "⚠️  Gateway health check failed"
-
-  # Database operations
-  db:migrate:
-    desc: Run database migrations
-    dir: database
-    cmds:
-      - |
-        if [ -f "scripts/migrate-postgres.sh" ]; then
-          ./scripts/migrate-postgres.sh
-        else
-          echo "⚠️  Database migration script not found"
-        fi
-
-  db:seed:
-    desc: Seed database with test data
-    dir: database
-    cmds:
-      - |
-        if command -v psql >/dev/null 2>&1 && [ -f "seed/dev_seed.sql" ]; then
-          psql "${DATABASE_URL}" -f seed/dev_seed.sql
-        else
-          echo "⚠️  PostgreSQL client not available or seed file not found"
-        fi
-
-  db:reset:
-    desc: Reset database
-    deps: [db:migrate, db:seed]
-
-  # Nix environment verification
-  nix:
-    desc: Verify Nix packages are available
-    cmds:
-      - rustc --version && echo "✅ Rust available"
-      - node --version && echo "✅ Node.js available"
-      - bun --version && echo "✅ Bun available"
-      - caddy version && echo "✅ Caddy available"
+      - echo "Running GitHub Actions workflows locally..."
+      - echo "Available act commands:"
+      - echo "  task act:setup-act    - Install act"
+      - echo "  task act:run-quality  - Run quality workflow"
+      - echo "  task act:run-tests    - Run tests workflow"
+      - echo "  task act:run-push     - Run on push event"
+      - echo "  task act:run-pr       - Run on PR event"
+      - echo "  task act:list         - List workflows"
+      - echo "  task act:help         - Show help"

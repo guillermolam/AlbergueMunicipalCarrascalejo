@@ -41,7 +41,10 @@ async fn handle_request(req: Request) -> Result<impl IntoResponse> {
     let mut response_builder = Response::builder()
         .header("Access-Control-Allow-Origin", "*")
         .header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        .header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        .header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization",
+        );
 
     if req.method().as_str() == "OPTIONS" {
         return Ok(response_builder.status(200).body(()).build());
@@ -162,7 +165,7 @@ async fn handle_booking_reviews() -> Result<impl IntoResponse> {
 async fn handle_all_reviews() -> Result<impl IntoResponse> {
     // Combine Google and Booking.com reviews
     let mut all_reviews = Vec::new();
-    
+
     // Add Google reviews
     let google_reviews = vec![
         Review {
@@ -196,8 +199,8 @@ async fn handle_all_reviews() -> Result<impl IntoResponse> {
             helpful_count: 15,
         }
     ];
-    
-    // Add Booking.com reviews  
+
+    // Add Booking.com reviews
     let booking_reviews = vec![
         Review {
             id: "booking_1".to_string(),
@@ -233,7 +236,7 @@ async fn handle_all_reviews() -> Result<impl IntoResponse> {
 
     all_reviews.extend(google_reviews);
     all_reviews.extend(booking_reviews);
-    
+
     // Sort by date (most recent first)
     all_reviews.sort_by(|a, b| b.date.cmp(&a.date));
 
@@ -257,7 +260,7 @@ async fn handle_review_stats() -> Result<impl IntoResponse> {
         "average_rating": 4.7,
         "rating_distribution": {
             "5": 4,
-            "4": 2,  
+            "4": 2,
             "3": 0,
             "2": 0,
             "1": 0
@@ -281,18 +284,18 @@ fn calculate_average_rating(reviews: &[Review]) -> f32 {
     if reviews.is_empty() {
         return 0.0;
     }
-    
+
     let total: u32 = reviews.iter().map(|r| r.rating as u32).sum();
     total as f32 / reviews.len() as f32
 }
 
 fn create_source_breakdown(reviews: &[Review]) -> HashMap<String, u32> {
     let mut breakdown = HashMap::new();
-    
+
     for review in reviews {
         let count = breakdown.entry(review.source.clone()).or_insert(0);
         *count += 1;
     }
-    
+
     breakdown
 }

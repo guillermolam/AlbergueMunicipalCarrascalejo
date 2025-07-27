@@ -1,7 +1,7 @@
 {
   "id": "car-rentals",
   "lang": "es",
-  "title": "Alquiler de Coches", 
+  "title": "Alquiler de Coches",
   "icon": "car",
   "priority": 5,
   "source": "hertz.es",
@@ -18,10 +18,15 @@
       "price_range": "Desde 25€/día económico",
       "img": "/img/hertz-merida.jpg",
       "opening_hours": "08:00-13:00, 16:00-19:00",
-      "services": ["Flota variada", "GPS incluido", "Seguro completo", "Recogida aeropuerto"]
+      "services": [
+        "Flota variada",
+        "GPS incluido",
+        "Seguro completo",
+        "Recogida aeropuerto"
+      ]
     },
     {
-      "name": "Europcar Mérida", 
+      "name": "Europcar Mérida",
       "description": "Situada cerca de la estación de tren con buenos precios para alquileres de varios días. Ofertas especiales para turistas.",
       "phone": "+34924305842",
       "address": "Calle Cardero, 40, 06800 Mérida",
@@ -30,7 +35,12 @@
       "price_range": "Desde 22€/día económico",
       "img": "/img/europcar-merida.jpg",
       "opening_hours": "08:30-13:00, 16:30-19:30",
-      "services": ["Precios competitivos", "Alquileres largos", "Vehículos nuevos", "Asistencia 24h"]
+      "services": [
+        "Precios competitivos",
+        "Alquileres largos",
+        "Vehículos nuevos",
+        "Asistencia 24h"
+      ]
     },
     {
       "name": "Avis Badajoz (Aeropuerto)",
@@ -42,7 +52,11 @@
       "price_range": "Desde 30€/día + traslado",
       "img": "/img/avis-badajoz.jpg",
       "opening_hours": "Según horarios vuelos",
-      "services": ["Recogida aeropuerto", "Vehículos premium", "Entrega flexible"]
+      "services": [
+        "Recogida aeropuerto",
+        "Vehículos premium",
+        "Entrega flexible"
+      ]
     },
     {
       "name": "Autocares Leda (Alternativa)",
@@ -54,7 +68,12 @@
       "price_range": "Madrid: 20-35€ según horario",
       "img": "/img/leda-bus.jpg",
       "opening_hours": "06:00-22:00",
-      "services": ["Transporte público", "Varias frecuencias", "Conexiones nacionales", "WiFi gratis"]
+      "services": [
+        "Transporte público",
+        "Varias frecuencias",
+        "Conexiones nacionales",
+        "WiFi gratis"
+      ]
     }
   ]
 }

@@ -63,7 +63,7 @@ struct Booking { /* ... */ }
 ## Migration History
 
 - `001_init_schema.sql` - Initial schema migration with complete table definitions
-- Future migrations will be numbered sequentially (002_, 003_, etc.)
+- Future migrations will be numbered sequentially (002*, 003*, etc.)
 
 ## Data Retention and Compliance
 

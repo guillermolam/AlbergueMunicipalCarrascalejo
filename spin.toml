@@ -29,12 +29,12 @@ component = "gateway-bff"
 [component.gateway-bff]
 source = "gateway/bff/target/wasm32-wasi/release/bff.wasm"
 allowed_outbound_hosts = [
-    "https://*.neon.tech",
-    "https://api.auth0.com",
-    "https://smtp.resend.com",
-    "https://api.twilio.com",
-    "https://api.telegram.org",
-    "https://maps.googleapis.com"
+  "https://*.neon.tech",
+  "https://api.auth0.com",
+  "https://smtp.resend.com",
+  "https://api.twilio.com",
+  "https://api.telegram.org",
+  "https://maps.googleapis.com",
 ]
 
 [component.gateway-bff.build]
@@ -77,10 +77,10 @@ component = "notification-service"
 [component.notification-service]
 source = "backend/notification-service/target/wasm32-wasi/release/notification_service.wasm"
 allowed_outbound_hosts = [
-    "https://*.neon.tech",
-    "https://smtp.resend.com",
-    "https://api.twilio.com",
-    "https://api.telegram.org"
+  "https://*.neon.tech",
+  "https://smtp.resend.com",
+  "https://api.twilio.com",
+  "https://api.telegram.org",
 ]
 
 [component.notification-service.build]
@@ -181,10 +181,7 @@ component = "location-service"
 
 [component.location-service]
 source = "backend/location-service/target/wasm32-wasi/release/location_service.wasm"
-allowed_outbound_hosts = [
-    "https://*.neon.tech",
-    "https://maps.googleapis.com"
-]
+allowed_outbound_hosts = ["https://*.neon.tech", "https://maps.googleapis.com"]
 
 [component.location-service.build]
 command = "cd backend/location-service && cargo build --target wasm32-wasi --release"
@@ -223,10 +220,7 @@ component = "auth-service"
 
 [component.auth-service]
 source = "backend/auth-service/target/wasm32-wasi/release/auth_service.wasm"
-allowed_outbound_hosts = [
-    "https://*.neon.tech",
-    "https://api.auth0.com"
-]
+allowed_outbound_hosts = ["https://*.neon.tech", "https://api.auth0.com"]
 
 [component.auth-service.build]
 command = "cd backend/auth-service && cargo build --target wasm32-wasi --release"

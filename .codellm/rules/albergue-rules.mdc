@@ -1,0 +1,10 @@
+---
+description: Global tools and packages are installe via nix 
+globs: *.nix
+alwaysApply: true
+---
+
+# Your rule content
+
+- The rule description goes here
+- You can use markdown but don't have to
