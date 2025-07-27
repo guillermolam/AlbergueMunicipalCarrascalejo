@@ -138,3 +138,66 @@ args = "spin login"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "spin deploy"
+
+[[workflows.workflow]]
+name = "deploy:production"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "export NODE_ENV=production"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && bun run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd gateway && cargo build --target wasm32-wasi --release"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $NEON_DATABASE_URL"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin login"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "spin deploy"
+
+[[workflows.workflow]]
+name = "migrate:dev"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "export NODE_ENV=development"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $DATABASE_URL"
+
+[[workflows.workflow]]
+name = "migrate:prod"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "export NODE_ENV=production"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $NEON_DATABASE_URL"
