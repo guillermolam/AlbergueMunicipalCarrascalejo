@@ -28,3 +28,38 @@ spin-sdk = "2.0"
 http = "0.2"
 tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
+[package]
+name = "bff"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "bff"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+spin-sdk = { workspace = true }
+http = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.5"
+mockall = "0.11"
+tempfile = "3.0"
+
+[[bin]]
+name = "test-runner"
+path = "tests/lib.rs"
+required-features = []
+
+[features]
+default = []
+test-utils = []
