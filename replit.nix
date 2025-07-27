@@ -40,5 +40,7 @@ in
     pkgs.taplo-cli
     pkgs.openssl
     pkgs.pkg-config
+    pkgs.python312
+    pkgs.openssl
   ];
 }
