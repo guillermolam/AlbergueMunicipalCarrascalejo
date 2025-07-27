@@ -48,7 +48,6 @@ auth0_client_secret = "{{ auth0_client_secret }}"
 log_level = "{{ log_level }}"
 
 [component.gateway-bff.key_value_stores]
-default = "default"
 default = { label = "gateway-kv" }
 
 # Booking Service
