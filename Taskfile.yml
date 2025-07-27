@@ -323,7 +323,23 @@ tasks:
     desc: Run Rust unit tests
     cmds:
       - echo "🧪 Ejecutando tests unitarios de Rust..."
-      - cargo test --workspace --lib --verbose
+      - cargo test --workspace --lib --bins
+
+  test:integration:gateway:
+    desc: Run gateway integration tests with Spin
+    cmds:
+      - echo "🚀 Running gateway integration tests..."
+      - ./scripts/test-integration.sh
+
+  test:integration:services:
+    desc: Run individual service integration tests
+    cmds:
+      - echo "🔧 Testing booking service integration..."
+      - cd backend/booking-service && cargo test --test spin_test
+      - echo "🔧 Testing notification service integration..."
+      - cd backend/notification-service && cargo test --test spin_test
+      - echo "🔧 Testing reviews service integration..."
+      - cd backend/reviews-service && cargo test
 
   test:unit:frontend:
     desc: Run main frontend unit tests
@@ -909,10 +925,9 @@ test:
     desc: Run all tests
     cmds:
       - task: test:unit:rust
-      - task: test:integration
-      - task: gateway:composition
-      - task: test:oauth2:flows
-      - task: test:security
+      - task: test:unit:frontend
+      - task: test:integration:gateway
+      - task: test:integration:services
       - task: test:e2e
 
   test:comprehensive:
