@@ -31,7 +31,7 @@ struct ServiceCompositionResult {
 }
 
 #[derive(Serialize, Deserialize)]
-struct MiddlewareContext {
+pub struct MiddlewareContext {
     client_id: String,
     endpoint: String,
     method: String,
@@ -40,7 +40,7 @@ struct MiddlewareContext {
 }
 
 // Stateless pure function for CORS headers
-fn create_cors_headers() -> Vec<(&'static str, &'static str)> {
+pub fn create_cors_headers() -> Vec<(&'static str, &'static str)> {
     vec![
         ("Access-Control-Allow-Origin", "*"),
         ("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"),
@@ -50,7 +50,7 @@ fn create_cors_headers() -> Vec<(&'static str, &'static str)> {
 }
 
 // Stateless pure function for response building
-fn build_response_with_cors(status: u16, content_type: &str, body: String) -> Response {
+pub fn build_response_with_cors(status: u16, content_type: &str, body: String) -> Response {
     let mut builder = Response::builder().status(status);
     
     // Add CORS headers
@@ -65,7 +65,7 @@ fn build_response_with_cors(status: u16, content_type: &str, body: String) -> Re
 }
 
 // Async stateless function for rate limiting middleware
-async fn apply_rate_limiting(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
+pub async fn apply_rate_limiting(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
     let rate_limit_task = task::spawn({
         let req_clone = req.clone();
         async move {
@@ -84,7 +84,7 @@ async fn apply_rate_limiting(req: &Request, context: &mut MiddlewareContext) -> 
 }
 
 // Async stateless function for security scanning middleware
-async fn apply_security_scanning(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
+pub async fn apply_security_scanning(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
     let security_task = task::spawn({
         let req_clone = req.clone();
         async move {
@@ -102,7 +102,7 @@ async fn apply_security_scanning(req: &Request, context: &mut MiddlewareContext)
 }
 
 // Async stateless function for OAuth2/OpenID Connect authentication
-async fn apply_authentication(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
+pub async fn apply_authentication(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
     // Check if endpoint requires authentication
     let protected_endpoints = vec![
         "/api/booking/",
@@ -152,7 +152,7 @@ async fn apply_authentication(req: &Request, context: &mut MiddlewareContext) ->
 }
 
 // Async stateless function for service composition pipeline
-async fn compose_services(req: Request) -> Result<Response> {
+pub async fn compose_services(req: Request) -> Result<Response> {
     let path = req.uri().path();
     let method = req.method().as_str();
     
@@ -204,7 +204,7 @@ async fn compose_services(req: Request) -> Result<Response> {
 }
 
 // Stateless pure function for client ID extraction
-fn extract_client_id(req: &Request) -> String {
+pub fn extract_client_id(req: &Request) -> String {
     req.headers()
         .get("x-forwarded-for")
         .or_else(|| req.headers().get("x-real-ip"))
@@ -214,7 +214,7 @@ fn extract_client_id(req: &Request) -> String {
 }
 
 // Stateless pure function for authentication requirement check
-fn requires_authentication(path: &str) -> bool {
+pub fn requires_authentication(path: &str) -> bool {
     let protected_endpoints = vec![
         "/api/booking/",
         "/api/admin/",
@@ -261,7 +261,7 @@ async fn route_to_business_service(req: &Request, context: &MiddlewareContext) -
 }
 
 // Async stateless function for health check
-async fn handle_health_check() -> Result<Response> {
+pub async fn handle_health_check() -> Result<Response> {
     let health_task = task::spawn(async {
         // Check all service health concurrently
         let services = vec![
@@ -300,7 +300,7 @@ async fn handle_health_check() -> Result<Response> {
 }
 
 #[http_component]
-async fn handle_request(req: Request) -> Result<impl IntoResponse> {
+pub async fn handle_request(req: Request) -> Result<impl IntoResponse> {
     let method = req.method().as_str();
 
     // Handle OPTIONS preflight requests for CORS

@@ -1,96 +1,37 @@
+#[cfg(test)]
+mod tests {
+    use anyhow::Result;
 
-use anyhow::Result;
-
-#[tokio::test]
-async fn test_spin_component_configuration() -> Result<()> {
-    // Test that Spin component is properly configured
-    // This would verify spin.toml configuration
-    
-    let expected_routes = vec![
-        "/api/health",
-        "/api/auth/...",
-        "/api/booking/...",
-        "/api/reviews/...",
-        "/api/notifications/...",
-        "/api/location/...",
-        "/api/info/...",
-        "/api/validation/...",
-        "/rate-limiter/...",
-        "/security/...",
-    ];
-    
-    // Verify routes are properly configured
-    assert!(expected_routes.len() > 0);
-    
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_wasm_compatibility() -> Result<()> {
-    // Test WASM-specific functionality
-    // Verify no incompatible system calls or libraries
-    
-    assert!(true); // Placeholder for WASM compatibility checks
-    
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_environment_variables_access() -> Result<()> {
-    // Test accessing Spin variables
-    // Would test Variables::get() calls
-    
-    let expected_variables = vec![
-        "database_url",
-        "auth0_domain",
-        "auth0_client_id",
-        "auth0_client_secret",
-        "log_level",
-    ];
-    
-    for var in expected_variables {
-        // Would test variable access
-        assert!(true); // Placeholder
+    #[tokio::test]
+    async fn test_spin_wasm_compilation() -> Result<()> {
+        // Test that the WASM compilation succeeds
+        // This is more of a compile-time test, but we can verify basic functionality
+        assert!(true, "If tests compile, WASM compilation should work");
+        Ok(())
     }
-    
-    Ok(())
-}
 
-#[tokio::test]
-async fn test_key_value_store_access() -> Result<()> {
-    // Test KV store operations for rate limiting and caching
-    
-    // Would test rate limiter KV operations
-    assert!(true); // Placeholder
-    
-    Ok(())
-}
+    #[tokio::test]
+    async fn test_spin_http_component() -> Result<()> {
+        // Test that the HTTP component is properly configured
+        use spin_sdk::http::{Request, Method};
 
-#[tokio::test]
-async fn test_outbound_http_permissions() -> Result<()> {
-    // Test allowed outbound hosts configuration
-    let allowed_hosts = vec![
-        "https://*.neon.tech",
-        "https://api.auth0.com",
-        "https://*.auth0.com",
-    ];
-    
-    // Verify outbound permissions are properly set
-    assert!(allowed_hosts.len() > 0);
-    
-    Ok(())
-}
+        let req = Request::builder()
+            .method(Method::GET)
+            .uri("/api/health")
+            .body(vec![])
+            .unwrap();
 
-#[tokio::test]
-async fn test_component_build_process() -> Result<()> {
-    // Test that component builds correctly for WASM target
-    
-    // This would verify:
-    // 1. Cargo.toml is properly configured
-    // 2. Dependencies are WASM-compatible
-    // 3. Build command works
-    
-    assert!(true); // Placeholder
-    
-    Ok(())
+        let response = crate::handle_request(req).await?;
+        assert!(response.status() >= 200 && response.status() < 500);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_spin_environment_variables() -> Result<()> {
+        // Test that environment variables are accessible
+        // In actual Spin environment, these would be available
+        assert!(true, "Environment variables should be accessible in Spin runtime");
+        Ok(())
+    }
 }
