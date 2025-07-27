@@ -136,14 +136,14 @@ tasks:
     dir: frontend
     cmds:
       - echo "📦 Instalando dependencias del frontend principal..."
-      - npm install || pnpm install || bun install
+      - bun install
 
   setup:deps:auth-frontend:
     desc: Install auth service frontend dependencies
     dir: backend/auth-service/app
     cmds:
       - echo "📦 Instalando dependencias del frontend de auth..."
-      - npm install || pnpm install || bun install
+      - bun install
 
   setup:deps:rust:
     desc: Install Rust dependencies and components
@@ -396,21 +396,21 @@ tasks:
     dir: frontend
     cmds:
       - echo "🏗️  Construyendo frontend principal..."
-      - npm run build || pnpm run build || bun run build
+      - bun run build
 
   build:auth-frontend:
     desc: Build auth service frontend
     dir: backend/auth-service/app
     cmds:
       - echo "🏗️  Construyendo frontend de auth service..."
-      - npm run build || pnpm run build || bun run build || echo "⚠️  Auth frontend build not configured"
+      - bun run build
 
   build:auth-service:
     desc: Build complete auth service (Rust + React)
     dir: backend/auth-service
     cmds:
       - echo "🏗️  Construyendo auth service completo..."
-      - cd app && (npm install || pnpm install || bun install) && (npm run build || pnpm run build || bun run build)
+      - cd app && bun install && bun run build
       - cargo build --target wasm32-wasi --release
       - spin build
 
