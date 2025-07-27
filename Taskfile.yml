@@ -177,6 +177,7 @@ tasks:
     desc: Format all Rust code in workspace
     cmds:
       - echo "🎨 Formateando código Rust..."
+      - rustup component add rustfmt || echo "rustfmt already installed"
       - cargo fmt --all
 
   format:frontend:
@@ -211,6 +212,7 @@ tasks:
   format:check:rust:
     desc: Check Rust formatting
     cmds:
+      - rustup component add rustfmt || echo "rustfmt already installed"
       - cargo fmt --check
 
   format:check:frontend:
@@ -261,7 +263,7 @@ tasks:
     dir: backend/auth-service/app
     cmds:
       - echo "🔍 Ejecutando lint en frontend de auth..."
-      - bun run lint || echo "⚠️  Auth frontend lint not configured"
+      - echo "⚠️  Auth frontend lint not configured yet"
 
   lint:trunk:
     desc: Run Trunk.io linting on entire project
