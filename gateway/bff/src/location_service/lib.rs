@@ -8,13 +8,11 @@ pub async fn handle(req: &Request) -> Result<Response> {
     match path {
         "/api/location/info" => handle_location_info().await,
         "/api/location/directions" => handle_directions(req).await,
-        _ => {
-            Ok(Response::builder()
-                .status(404)
-                .header("Content-Type", "application/json")
-                .body(json!({"error": "Location endpoint not found"}).to_string())
-                .build())
-        }
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("Content-Type", "application/json")
+            .body(json!({"error": "Location endpoint not found"}).to_string())
+            .build()),
     }
 }
 

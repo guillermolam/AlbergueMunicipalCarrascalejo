@@ -8,13 +8,11 @@ pub async fn handle(req: &Request) -> Result<Response> {
     match path {
         "/api/security/scan" => handle_security_scan(req).await,
         "/api/security/validate" => handle_validation(req).await,
-        _ => {
-            Ok(Response::builder()
-                .status(404)
-                .header("Content-Type", "application/json")
-                .body(json!({"error": "Security endpoint not found"}).to_string())
-                .build())
-        }
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("Content-Type", "application/json")
+            .body(json!({"error": "Security endpoint not found"}).to_string())
+            .build()),
     }
 }
 

@@ -1,21 +1,18 @@
-
 use anyhow::Result;
 use serde_json::json;
 use spin_sdk::http::{Request, Response};
 
 pub async fn handle(req: &Request) -> Result<Response> {
     let path = req.uri().path();
-    
+
     match path {
         "/api/rate-limit/check" => handle_rate_limit_check(req).await,
         "/api/rate-limit/status" => handle_rate_limit_status(req).await,
-        _ => {
-            Ok(Response::builder()
-                .status(404)
-                .header("Content-Type", "application/json")
-                .body(json!({"error": "Rate limit endpoint not found"}).to_string())
-                .build())
-        }
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("Content-Type", "application/json")
+            .body(json!({"error": "Rate limit endpoint not found"}).to_string())
+            .build()),
     }
 }
 

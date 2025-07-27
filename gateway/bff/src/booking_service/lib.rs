@@ -1,9 +1,8 @@
-
 use anyhow::Result;
+use futures::future::try_join_all;
 use serde::{Deserialize, Serialize};
 use spin_sdk::http::{Request, Response};
 use tokio::task;
-use futures::future::try_join_all;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Booking {
@@ -72,13 +71,13 @@ fn generate_mock_booking(id: &str, name: &str, email: &str) -> Booking {
 async fn fetch_bookings() -> Result<Vec<Booking>> {
     // Simulate async database operation
     tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-    
+
     let bookings = vec![
         generate_mock_booking("1", "Juan Pérez", "juan@example.com"),
         generate_mock_booking("2", "María García", "maria@example.com"),
         generate_mock_booking("3", "Carlos López", "carlos@example.com"),
     ];
-    
+
     Ok(bookings)
 }
 
@@ -86,7 +85,7 @@ async fn fetch_bookings() -> Result<Vec<Booking>> {
 async fn fetch_occupancy_stats() -> Result<OccupancyStats> {
     // Simulate async operation
     tokio::time::sleep(tokio::time::Duration::from_millis(30)).await;
-    
+
     Ok(OccupancyStats {
         available: 24,
         occupied: 6,
@@ -117,7 +116,7 @@ async fn fetch_dashboard_stats() -> Result<DashboardStats> {
         calculate_revenue(),
         fetch_bookings()
     )?;
-    
+
     Ok(DashboardStats {
         occupancy,
         today_bookings,
@@ -135,7 +134,11 @@ fn generate_rooms() -> Vec<Room> {
             type_: "shared".to_string(),
             capacity: 12,
             price_per_night: 1500,
-            amenities: vec!["Taquillas".to_string(), "Enchufes".to_string(), "Ventanas".to_string()],
+            amenities: vec![
+                "Taquillas".to_string(),
+                "Enchufes".to_string(),
+                "Ventanas".to_string(),
+            ],
             available: true,
         },
         Room {
@@ -144,7 +147,11 @@ fn generate_rooms() -> Vec<Room> {
             type_: "shared".to_string(),
             capacity: 10,
             price_per_night: 1500,
-            amenities: vec!["Taquillas".to_string(), "Enchufes".to_string(), "Aire acondicionado".to_string()],
+            amenities: vec![
+                "Taquillas".to_string(),
+                "Enchufes".to_string(),
+                "Aire acondicionado".to_string(),
+            ],
             available: true,
         },
         Room {
@@ -153,7 +160,11 @@ fn generate_rooms() -> Vec<Room> {
             type_: "private".to_string(),
             capacity: 2,
             price_per_night: 3500,
-            amenities: vec!["Baño privado".to_string(), "TV".to_string(), "Aire acondicionado".to_string()],
+            amenities: vec![
+                "Baño privado".to_string(),
+                "TV".to_string(),
+                "Aire acondicionado".to_string(),
+            ],
             available: true,
         },
         Room {
@@ -162,7 +173,11 @@ fn generate_rooms() -> Vec<Room> {
             type_: "private".to_string(),
             capacity: 2,
             price_per_night: 3500,
-            amenities: vec!["Baño privado".to_string(), "TV".to_string(), "Aire acondicionado".to_string()],
+            amenities: vec![
+                "Baño privado".to_string(),
+                "TV".to_string(),
+                "Aire acondicionado".to_string(),
+            ],
             available: true,
         },
     ]
@@ -183,7 +198,7 @@ fn build_json_response(status: u16, data: &impl Serialize) -> Result<Response> {
 pub async fn handle(req: &Request) -> Result<Response> {
     let method = req.method().as_str();
     let path = req.uri().path();
-    
+
     match (method, path) {
         ("GET", "/api/booking/bookings") => {
             let bookings = fetch_bookings().await?;
@@ -194,16 +209,18 @@ pub async fn handle(req: &Request) -> Result<Response> {
             let new_booking = task::spawn(async {
                 tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                 generate_mock_booking("new_id", "New Guest", "guest@example.com")
-            }).await?;
-            
+            })
+            .await?;
+
             build_json_response(201, &new_booking)
         }
         ("GET", "/api/booking/rooms") => {
             let rooms = task::spawn(async {
                 tokio::time::sleep(tokio::time::Duration::from_millis(40)).await;
                 generate_rooms()
-            }).await?;
-            
+            })
+            .await?;
+
             build_json_response(200, &rooms)
         }
         ("GET", "/api/booking/admin/stats") => {
@@ -214,8 +231,9 @@ pub async fn handle(req: &Request) -> Result<Response> {
             let pricing = task::spawn(async {
                 tokio::time::sleep(tokio::time::Duration::from_millis(20)).await;
                 Pricing { dormitory: 15 }
-            }).await?;
-            
+            })
+            .await?;
+
             build_json_response(200, &pricing)
         }
         _ => {

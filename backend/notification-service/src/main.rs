@@ -1,14 +1,14 @@
-use wasm_bindgen::prelude::*;
 use shared::{AlbergueError, AlbergueResult};
+use wasm_bindgen::prelude::*;
 
-mod domain;
-mod application;
-mod ports;
 mod adapters;
+mod application;
+mod domain;
 mod infrastructure;
+mod ports;
 
-pub use domain::*;
 pub use application::*;
+pub use domain::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -30,7 +30,12 @@ impl NotificationService {
     }
 
     #[wasm_bindgen]
-    pub async fn send_email(&self, recipient: &str, subject: &str, content: &str) -> Result<String, JsValue> {
+    pub async fn send_email(
+        &self,
+        recipient: &str,
+        subject: &str,
+        content: &str,
+    ) -> Result<String, JsValue> {
         self.service
             .send_email(recipient, subject, content)
             .await

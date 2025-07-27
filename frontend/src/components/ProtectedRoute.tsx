@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2, Shield, Lock } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, Shield, Lock } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,7 +19,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [authState, setAuthState] = useState({
     isChecking: true,
     isAuthenticated: false,
-    error: null as string | null
+    error: null as string | null,
   });
 
   useEffect(() => {
@@ -22,48 +28,48 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   const checkAuthentication = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      
+      const token = localStorage.getItem("auth_token");
+
       if (!token) {
         setAuthState({
           isChecking: false,
           isAuthenticated: false,
-          error: null
+          error: null,
         });
         return;
       }
 
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
         setAuthState({
           isChecking: false,
           isAuthenticated: true,
-          error: null
+          error: null,
         });
       } else {
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem("auth_token");
         setAuthState({
           isChecking: false,
           isAuthenticated: false,
-          error: 'Token inválido'
+          error: "Token inválido",
         });
       }
     } catch (error) {
       setAuthState({
         isChecking: false,
         isAuthenticated: false,
-        error: 'Error de conexión'
+        error: "Error de conexión",
       });
     }
   };
 
   const handleLogin = () => {
-    setLocation('/login');
+    setLocation("/login");
   };
 
   if (authState.isChecking) {
@@ -103,7 +109,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
                 {authState.error}
               </div>
             )}
-            
+
             <Button
               onClick={handleLogin}
               className="w-full bg-sage-600 hover:bg-sage-700 text-white"

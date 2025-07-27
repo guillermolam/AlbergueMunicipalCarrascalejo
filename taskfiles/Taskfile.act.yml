@@ -1,0 +1,164 @@
+# Taskfile para ejecutar GitHub Actions localmente con act
+
+version: "3"
+
+vars:
+  ACT: act
+  ACT_CONFIG: .actrc
+  ACT_SECRETS: .secrets
+  ACT_ENV: .env
+
+# Architecture: taskfile -> taskfiles -> cargo -> backend/cargo -> gateway/cargo -> frontend/package.json
+tasks:
+  setup-act:
+    desc: Instala nektos/act para ejecutar workflows localmente
+    cmds:
+      - echo "Instalando nektos/act..."
+      - which act || curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+      - echo "Act instalado correctamente"
+
+  check-act:
+    desc: Verifica que act esta instalado
+    cmds:
+      - echo "Verificando instalacion de act..."
+      - act --version
+
+  setup:
+    desc: Configura act para uso local
+    cmds:
+      - echo "Configurando act..."
+      - task: setup-act
+      - task: check-act
+      - echo "Act configurado correctamente"
+
+  # Ejecutar workflows especificos
+  run-quality:
+    desc: Ejecuta workflow de calidad localmente
+    cmds:
+      - echo "Ejecutando workflow de calidad..."
+      - act -j quality-check --container-architecture linux/amd64
+
+  run-tests:
+    desc: Ejecuta workflow de tests con cobertura localmente
+    cmds:
+      - echo "Ejecutando workflow de tests..."
+      - act -j backend-tests -j gateway-tests -j frontend-tests --container-architecture linux/amd64
+
+  run-unit:
+    desc: Ejecuta solo unit tests localmente
+    cmds:
+      - echo "Ejecutando unit tests..."
+      - act -j unit-tests --container-architecture linux/amd64
+
+  run-integration:
+    desc: Ejecuta solo integration tests localmente
+    cmds:
+      - echo "Ejecutando integration tests..."
+      - act -j integration-tests --container-architecture linux/amd64
+
+  # Ejecutar con diferentes eventos
+  run-push:
+    desc: Ejecuta workflows en evento push
+    cmds:
+      - echo "Ejecutando workflows en evento push..."
+      - act push --container-architecture linux/amd64
+
+  run-pr:
+    desc: Ejecuta workflows en evento pull request
+    cmds:
+      - echo "Ejecutando workflows en evento pull request..."
+      - act pull_request --container-architecture linux/amd64
+
+  # Ejecutar con diferentes configuraciones
+  run-verbose:
+    desc: Ejecuta workflows en modo verbose
+    cmds:
+      - echo "Ejecutando workflows en modo verbose..."
+      - act -v --container-architecture linux/amd64
+
+  run-debug:
+    desc: Ejecuta workflows en modo debug
+    cmds:
+      - echo "Ejecutando workflows en modo debug..."
+      - act --verbose --container-architecture linux/amd64
+
+  # Listar workflows disponibles
+  list:
+    desc: Lista workflows disponibles
+    cmds:
+      - echo "Workflows disponibles:"
+      - act --list
+
+  # Configuracion de secrets
+  secrets-setup:
+    desc: Configura secrets para act
+    cmds:
+      - echo "Configurando secrets para act..."
+      - |
+        if [ ! -f {{.ACT_SECRETS}} ]; then
+          echo "GITHUB_TOKEN=your_github_token_here" > {{.ACT_SECRETS}}
+          echo "CODECOV_TOKEN=your_codecov_token_here" >> {{.ACT_SECRETS}}
+          echo "Secrets template creado en {{.ACT_SECRETS}}"
+          echo "Por favor edita el archivo con tus tokens reales"
+        else
+          echo "Secrets ya configurados en {{.ACT_SECRETS}}"
+        fi
+
+  secrets-edit:
+    desc: Edita archivo de secrets
+    cmds:
+      - echo "Editando archivo de secrets..."
+      - ${EDITOR:-nano} {{.ACT_SECRETS}}
+
+  # Configuracion de environment
+  env-setup:
+    desc: Configura environment para act
+    cmds:
+      - echo "Configurando environment para act..."
+      - |
+        if [ ! -f {{.ACT_ENV}} ]; then
+          echo "COVERAGE_THRESHOLD=85" > {{.ACT_ENV}}
+          echo "Environment template creado en {{.ACT_ENV}}"
+        else
+          echo "Environment ya configurado en {{.ACT_ENV}}"
+        fi
+
+  # Ejecutar con diferentes imagenes
+  run-ubuntu:
+    desc: Ejecuta con imagen Ubuntu
+    cmds:
+      - echo "Ejecutando con imagen Ubuntu..."
+      - act -P ubuntu-latest=nektos/act-environments-ubuntu:18.04 --container-architecture linux/amd64
+
+  run-alpine:
+    desc: Ejecuta con imagen Alpine
+    cmds:
+      - echo "Ejecutando con imagen Alpine..."
+      - act -P ubuntu-latest=alpine:latest --container-architecture linux/amd64
+
+  # Limpiar contenedores
+  clean-containers:
+    desc: Limpia contenedores de act
+    cmds:
+      - echo "Limpiando contenedores de act..."
+      - docker ps -a --filter "label=act" --format "{{.ID}}" | xargs -r docker rm -f
+      - docker images --filter "label=act" --format "{{.Repository}}:{{.Tag}}" | xargs -r docker rmi -f
+
+  # Ayuda
+  help:
+    desc: Muestra ayuda de act
+    cmds:
+      - echo "Comandos disponibles para act:"
+      - echo "  task act:setup      - Instala y configura act"
+      - echo "  task act:run-quality - Ejecuta workflow de calidad"
+      - echo "  task act:run-tests  - Ejecuta workflow de tests"
+      - echo "  task act:run-push   - Ejecuta workflows en evento push"
+      - echo "  task act:run-pr     - Ejecuta workflows en evento PR"
+      - echo "  task act:list       - Lista workflows disponibles"
+      - echo "  task act:clean      - Limpia contenedores"
+      - echo ""
+      - echo "Para usar act manualmente:"
+      - echo "  act --help"
+      - echo "  act -j job-name"
+      - echo "  act push"
+      - echo "  act pull_request"

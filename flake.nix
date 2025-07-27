@@ -11,13 +11,13 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         # ✅ Correcto: allowUnfree para trunk-io
-        pkgs = import nixpkgs { 
-          inherit system; 
-          config.allowUnfree = true; 
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
         };
 
         # --- Definiciones Personalizadas ---
-        
+
         spin-version = "v2.2.0";
         spin-cli = pkgs.stdenv.mkDerivation {
           pname = "spin-cli";

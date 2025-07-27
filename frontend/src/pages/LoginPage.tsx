@@ -1,9 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, User, Mail } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Shield, User, Mail } from "lucide-react";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -22,23 +28,23 @@ export function LoginPage() {
     isAuthenticated: false,
     isLoading: false,
     error: null,
-    user: null
+    user: null,
   });
 
   useEffect(() => {
     // Check if already authenticated
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem("auth_token");
     if (token) {
       verifyToken(token);
     }
 
     // Handle OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const error = urlParams.get('error');
+    const code = urlParams.get("code");
+    const error = urlParams.get("error");
 
     if (error) {
-      setAuthState(prev => ({ ...prev, error: 'Authentication failed' }));
+      setAuthState((prev) => ({ ...prev, error: "Authentication failed" }));
     } else if (code) {
       exchangeCodeForToken(code);
     }
@@ -46,10 +52,10 @@ export function LoginPage() {
 
   const verifyToken = async (token: string) => {
     try {
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -58,70 +64,70 @@ export function LoginPage() {
           isAuthenticated: true,
           isLoading: false,
           error: null,
-          user
+          user,
         });
-        setLocation('/admin');
+        setLocation("/admin");
       } else {
-        localStorage.removeItem('auth_token');
-        setAuthState(prev => ({ ...prev, isAuthenticated: false }));
+        localStorage.removeItem("auth_token");
+        setAuthState((prev) => ({ ...prev, isAuthenticated: false }));
       }
     } catch (error) {
-      console.error('Token verification failed:', error);
-      localStorage.removeItem('auth_token');
+      console.error("Token verification failed:", error);
+      localStorage.removeItem("auth_token");
     }
   };
 
   const exchangeCodeForToken = async (code: string) => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await fetch('/api/auth/callback', {
-        method: 'POST',
+      const response = await fetch("/api/auth/callback", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ code }),
       });
 
       if (response.ok) {
         const { access_token, user } = await response.json();
-        localStorage.setItem('auth_token', access_token);
+        localStorage.setItem("auth_token", access_token);
         setAuthState({
           isAuthenticated: true,
           isLoading: false,
           error: null,
-          user
+          user,
         });
-        setLocation('/admin');
+        setLocation("/admin");
       } else {
         const errorData = await response.json();
-        setAuthState(prev => ({
+        setAuthState((prev) => ({
           ...prev,
           isLoading: false,
-          error: errorData.error || 'Authentication failed'
+          error: errorData.error || "Authentication failed",
         }));
       }
     } catch (error) {
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         isLoading: false,
-        error: 'Network error during authentication'
+        error: "Network error during authentication",
       }));
     }
   };
 
   const handleLogin = async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await fetch('/api/auth/login');
+      const response = await fetch("/api/auth/login");
       const { login_url } = await response.json();
       window.location.href = login_url;
     } catch (error) {
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         isLoading: false,
-        error: 'Failed to initiate login'
+        error: "Failed to initiate login",
       }));
     }
   };
@@ -132,7 +138,9 @@ export function LoginPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-green-600">Acceso Autorizado</CardTitle>
-            <CardDescription>Redirigiendo al panel de administración...</CardDescription>
+            <CardDescription>
+              Redirigiendo al panel de administración...
+            </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <div className="flex items-center justify-center space-x-2">

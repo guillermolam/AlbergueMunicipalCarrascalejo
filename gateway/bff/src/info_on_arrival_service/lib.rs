@@ -8,13 +8,11 @@ pub async fn handle(req: &Request) -> Result<Response> {
     match path {
         "/api/info/cards" => handle_info_cards().await,
         "/api/info/arrival" => handle_arrival_info().await,
-        _ => {
-            Ok(Response::builder()
-                .status(404)
-                .header("Content-Type", "application/json")
-                .body(json!({"error": "Info endpoint not found"}).to_string())
-                .build())
-        }
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("Content-Type", "application/json")
+            .body(json!({"error": "Info endpoint not found"}).to_string())
+            .build()),
     }
 }
 

@@ -1,4 +1,4 @@
-import { Toaster as ToasterPrimitive } from "react-hot-toast"
+import { Toaster as ToasterPrimitive } from "react-hot-toast";
 
 export const Toaster = () => {
   return (
@@ -13,5 +13,5 @@ export const Toaster = () => {
         },
       }}
     />
-  )
-}
+  );
+};

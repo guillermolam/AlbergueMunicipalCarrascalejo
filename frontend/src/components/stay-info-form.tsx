@@ -3,7 +3,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, AlertCircle, Plus, Minus, Euro } from "lucide-react";
@@ -29,39 +35,43 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
   const [checkOutDate, setCheckOutDate] = useState("");
   const [nights, setNights] = useState(2); // Default 2 nights
   const [guests] = useState(1); // Fixed to 1 for individual registration
-  
+
   // Set today as default check-in date
   useEffect(() => {
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = today.toISOString().split("T")[0];
     setCheckInDate(todayStr);
-    
+
     // Calculate default checkout date (today + 2 nights)
     const checkoutDate = new Date(today);
     checkoutDate.setDate(checkoutDate.getDate() + 2);
-    setCheckOutDate(checkoutDate.toISOString().split('T')[0]);
+    setCheckOutDate(checkoutDate.toISOString().split("T")[0]);
   }, []);
 
   // Fetch secure pricing from backend (prevents CSRF/MitM attacks)
   const { data: pricing } = useQuery({
-    queryKey: ['/api/pricing'],
+    queryKey: ["/api/pricing"],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/pricing');
+      const response = await apiRequest("GET", "/api/pricing");
       return response.json();
-    }
+    },
   });
 
-  const { data: availability, isLoading, error } = useQuery({
-    queryKey: ['/api/availability', checkInDate, checkOutDate, guests],
+  const {
+    data: availability,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["/api/availability", checkInDate, checkOutDate, guests],
     enabled: !!(checkInDate && checkOutDate),
     queryFn: async () => {
-      const response = await apiRequest('POST', '/api/availability', {
+      const response = await apiRequest("POST", "/api/availability", {
         checkInDate,
         checkOutDate,
-        numberOfPersons: guests
+        numberOfPersons: guests,
       });
       return response.json();
-    }
+    },
   });
 
   // Use secure pricing from backend (defaults to 15 EUR if not loaded)
@@ -69,13 +79,13 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
 
   const handleCheckInDateChange = (date: string) => {
     setCheckInDate(date);
-    
+
     // Auto-update checkout date based on current nights setting
     if (date) {
       const startDate = new Date(date);
       const newCheckOutDate = new Date(startDate);
       newCheckOutDate.setDate(newCheckOutDate.getDate() + nights);
-      setCheckOutDate(newCheckOutDate.toISOString().split('T')[0]);
+      setCheckOutDate(newCheckOutDate.toISOString().split("T")[0]);
     }
   };
 
@@ -84,17 +94,17 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
     if (checkInDate && date) {
       const startDate = new Date(checkInDate);
       const endDate = new Date(date);
-      
+
       // Validate that checkout is after checkin
       if (endDate <= startDate) {
         // Reset to minimum 1 night
         const newCheckOutDate = new Date(startDate);
         newCheckOutDate.setDate(newCheckOutDate.getDate() + 1);
-        setCheckOutDate(newCheckOutDate.toISOString().split('T')[0]);
+        setCheckOutDate(newCheckOutDate.toISOString().split("T")[0]);
         setNights(1);
         return;
       }
-      
+
       const diffTime = endDate.getTime() - startDate.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       setNights(diffDays);
@@ -108,7 +118,7 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
       const startDate = new Date(checkInDate);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + validNights);
-      setCheckOutDate(endDate.toISOString().split('T')[0]);
+      setCheckOutDate(endDate.toISOString().split("T")[0]);
     }
   };
 
@@ -117,8 +127,8 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
   };
 
   const handleNightsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, ''); // Only allow numbers
-    if (value === '') {
+    const value = e.target.value.replace(/[^0-9]/g, ""); // Only allow numbers
+    if (value === "") {
       setNights(1);
     } else {
       const numValue = parseInt(value);
@@ -132,24 +142,24 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
         checkInDate,
         checkOutDate,
         nights,
-        guests
+        guests,
       });
     }
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardContent className="p-6">
         <h3 className="text-2xl font-semibold text-gray-900 mb-6 font-title">
-          {t('stay.title')}
+          {t("stay.title")}
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="md:col-span-2">
             <Label className="text-sm font-medium text-gray-700 mb-2">
-              {t('stay.dates')}
+              {t("stay.dates")}
             </Label>
             <div className="flex space-x-2">
               <Input
@@ -168,10 +178,10 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
               />
             </div>
           </div>
-          
+
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2">
-              {t('stay.nights')}
+              {t("stay.nights")}
             </Label>
             <div className="flex items-center space-x-2">
               <Button
@@ -206,21 +216,21 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
               Max {MAX_NIGHTS} nights
             </p>
           </div>
-          
+
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2">
-              {t('stay.guests')}
+              {t("stay.guests")}
             </Label>
             <Select value="1" disabled>
               <SelectTrigger className="w-full">
-                <SelectValue>1 {t('stay.guest_single')}</SelectValue>
+                <SelectValue>1 {t("stay.guest_single")}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1 {t('stay.guest_single')}</SelectItem>
+                <SelectItem value="1">1 {t("stay.guest_single")}</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500 mt-1">
-              {t('stay.individual_only')}
+              {t("stay.individual_only")}
             </p>
           </div>
         </div>
@@ -230,61 +240,64 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-6">
               <div className="text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">{pricePerNight}€</span> × {nights} {nights === 1 ? t('pricing.night') : t('pricing.nights')}
+                <span className="font-semibold text-gray-800">
+                  {pricePerNight}€
+                </span>{" "}
+                × {nights}{" "}
+                {nights === 1 ? t("pricing.night") : t("pricing.nights")}
               </div>
               <div className="text-sm text-gray-600">
-                <span className="font-semibold text-[#45c655]">{nights * pricePerNight}€</span> {t('pricing.total')}
+                <span className="font-semibold text-[#45c655]">
+                  {nights * pricePerNight}€
+                </span>{" "}
+                {t("pricing.total")}
               </div>
             </div>
             <div className="text-xs text-gray-500 italic">
-              {t('pricing.payment_due')}
+              {t("pricing.payment_due")}
             </div>
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-gray-200">
             <div className="text-xs text-gray-500">
-              {t('pricing.accepted_methods')}
+              {t("pricing.accepted_methods")}
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-6 h-4 bg-[#45c655] rounded-sm flex items-center justify-center">
                 <span className="text-white text-xs font-bold">€</span>
               </div>
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/330px-Former_Visa_%28company%29_logo.svg.png" 
-                alt="Visa" 
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/330px-Former_Visa_%28company%29_logo.svg.png"
+                alt="Visa"
                 className="h-4 w-auto"
                 title="Visa cards accepted"
               />
-              <img 
-                src="https://brand.mastercard.com/content/dam/mccom/brandcenter/thumbnails/mastercard_circles_92px_2x.png" 
-                alt="Mastercard" 
+              <img
+                src="https://brand.mastercard.com/content/dam/mccom/brandcenter/thumbnails/mastercard_circles_92px_2x.png"
+                alt="Mastercard"
                 className="h-4 w-auto"
                 title="Mastercard accepted"
               />
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Bizum.svg" 
-                alt="Bizum" 
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Bizum.svg"
+                alt="Bizum"
                 className="h-4 w-auto"
                 title="Bizum mobile payments accepted"
               />
             </div>
           </div>
         </div>
-        
+
         {isLoading && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {t('loading.processing')}
-            </AlertDescription>
+            <AlertDescription>{t("loading.processing")}</AlertDescription>
           </Alert>
         )}
 
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {t('notifications.error')}
-            </AlertDescription>
+            <AlertDescription>{t("notifications.error")}</AlertDescription>
           </Alert>
         )}
 
@@ -294,17 +307,19 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
               <Alert className="bg-green-50 border-green-200">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <AlertDescription className="text-green-800">
-                  {t('stay.available', { count: availability.availableBeds })}
+                  {t("stay.available", { count: availability.availableBeds })}
                 </AlertDescription>
               </Alert>
             ) : (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  {t('stay.not_available')}
+                  {t("stay.not_available")}
                   {availability.nextAvailableDate && (
                     <div className="mt-2">
-                      {t('stay.next_available', { date: formatDate(availability.nextAvailableDate) })}
+                      {t("stay.next_available", {
+                        date: formatDate(availability.nextAvailableDate),
+                      })}
                     </div>
                   )}
                 </AlertDescription>
@@ -318,7 +333,7 @@ export function StayInfoForm({ onContinue }: StayInfoFormProps) {
           disabled={!availability?.available || isLoading}
           className="w-full bg-[#45c655] hover:bg-[#3bb048] text-white font-semibold py-3 px-6 rounded-lg transition-colors"
         >
-          {t('stay.continue')}
+          {t("stay.continue")}
           <span className="ml-2">→</span>
         </Button>
       </CardContent>

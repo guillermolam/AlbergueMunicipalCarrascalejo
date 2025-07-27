@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Build all Rust services to WASM targets
@@ -22,23 +21,23 @@ echo "🏗️ Building all services..."
 cd backend
 
 services=(
-    "booking-service"
-    "notification-service" 
-    "reviews-service"
-    "security-service"
-    "validation-service"
-    "info-on-arrival-service"
-    "location-service"
-    "rate-limiter-service"
-    "auth-service"
+	"booking-service"
+	"notification-service"
+	"reviews-service"
+	"security-service"
+	"validation-service"
+	"info-on-arrival-service"
+	"location-service"
+	"rate-limiter-service"
+	"auth-service"
 )
 
 for service in "${services[@]}"; do
-    echo "🔨 Building $service..."
-    cd "$service"
-    cargo build --target wasm32-wasi --release
-    echo "✅ $service built successfully"
-    cd ..
+	echo "🔨 Building $service..."
+	cd "$service"
+	cargo build --target wasm32-wasi --release
+	echo "✅ $service built successfully"
+	cd ..
 done
 
 echo "🎉 All services built successfully!"

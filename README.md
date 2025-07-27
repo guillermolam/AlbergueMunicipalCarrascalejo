@@ -26,6 +26,7 @@ applications and how to get started.
 
 See the [Install Spin](https://spinframework.dev/install) page of the [Spin documentation](https://spinframework.dev) for a detailed
 guide on installing and configuring Spin, but in short run the following commands:
+
 ```bash
 curl -fsSL https://spinframework.dev/downloads/install.sh | bash
 sudo mv ./spin /usr/local/bin/spin
@@ -39,17 +40,20 @@ and then follow the
 language guides, and the [guide on writing Spin applications](https://spinframework.dev/writing-apps/).
 
 ## Usage
-Below is an example of using the `spin` CLI to create a new Spin application.  To run the example you will need to install the `wasm32-wasip1` target for Rust.
+
+Below is an example of using the `spin` CLI to create a new Spin application. To run the example you will need to install the `wasm32-wasip1` target for Rust.
 
 ```bash
 $ rustup target add wasm32-wasip1
 ```
 
 First, run the `spin new` command to create a Spin application from a template.
+
 ```bash
 # Create a new Spin application named 'hello-rust' based on the Rust http template, accepting all defaults
 $ spin new --accept-defaults -t http-rust hello-rust
 ```
+
 Running the `spin new` command created a `hello-rust` directory with all the necessary files for your application. Change to the `hello-rust` directory and build the application with `spin build`, then run it locally with `spin up`:
 
 ```bash
@@ -81,28 +85,28 @@ date: Sun, 02 Mar 2025 20:09:11 GMT
 Hello World!
 ```
 
-You can make the app do more by editting the `src/lib.rs` file in the `hello-rust` directory using your favorite editor or IDE. To learn more about writing Spin applications see [Writing Applications](https://spinframework.dev/writing-apps) in the Spin documentation.  To learn how to publish and distribute your application see the [Publishing and Distribution](https://spinframework.dev/distributing-apps) guide in the Spin documentation.
+You can make the app do more by editting the `src/lib.rs` file in the `hello-rust` directory using your favorite editor or IDE. To learn more about writing Spin applications see [Writing Applications](https://spinframework.dev/writing-apps) in the Spin documentation. To learn how to publish and distribute your application see the [Publishing and Distribution](https://spinframework.dev/distributing-apps) guide in the Spin documentation.
 
 ## Language Support for Spin Features
 
 The table below summarizes the [feature support](https://spinframework.dev/language-support-overview) in each of the language SDKs.
 
-| Feature | Rust SDK Supported? | TypeScript SDK Supported? | Python SDK Supported? | Tiny Go SDK Supported? | C# SDK Supported? |
-|-----|-----|-----|-----|-----|-----|
-| **Triggers** |
-| [HTTP](https://spinframework.dev/http-trigger) | Supported | Supported | Supported | Supported | Supported |
-| [Redis](https://spinframework.dev/redis-trigger) | Supported | Supported | Supported | Supported | Not Supported |
-| **APIs** |
-| [Outbound HTTP](https://spinframework.dev/rust-components.md#sending-outbound-http-requests) | Supported | Supported | Supported | Supported | Supported |
-| [Configuration Variables](https://spinframework.dev/variables) | Supported | Supported | Supported | Supported | Supported |
-| [Key Value Storage](https://spinframework.dev/kv-store-api-guide) | Supported | Supported | Supported | Supported | Not Supported |
-| [SQLite Storage](https://spinframework.dev/sqlite-api-guide) | Supported | Supported | Supported | Supported | Not Supported |
-| [MySQL](https://spinframework.dev/rdbms-storage#using-mysql-and-postgresql-from-applications) | Supported | Supported | Not Supported | Supported | Not Supported |
-| [PostgreSQL](https://spinframework.dev/rdbms-storage#using-mysql-and-postgresql-from-applications) | Supported | Supported | Not Supported | Supported | Supported |
-| [Outbound Redis](https://spinframework.dev/rust-components.md#storing-data-in-redis-from-rust-components) | Supported | Supported | Supported | Supported | Supported |
-| [Serverless AI](https://spinframework.dev/serverless-ai-api-guide) | Supported | Supported | Supported | Supported | Not Supported |
-| **Extensibility** |
-| [Authoring Custom Triggers](https://spinframework.dev/extending-and-embedding) | Supported | Not Supported | Not Supported | Not Supported | Not Supported |
+| Feature                                                                                                   | Rust SDK Supported? | TypeScript SDK Supported? | Python SDK Supported? | Tiny Go SDK Supported? | C# SDK Supported? |
+| --------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------- | --------------------- | ---------------------- | ----------------- |
+| **Triggers**                                                                                              |
+| [HTTP](https://spinframework.dev/http-trigger)                                                            | Supported           | Supported                 | Supported             | Supported              | Supported         |
+| [Redis](https://spinframework.dev/redis-trigger)                                                          | Supported           | Supported                 | Supported             | Supported              | Not Supported     |
+| **APIs**                                                                                                  |
+| [Outbound HTTP](https://spinframework.dev/rust-components.md#sending-outbound-http-requests)              | Supported           | Supported                 | Supported             | Supported              | Supported         |
+| [Configuration Variables](https://spinframework.dev/variables)                                            | Supported           | Supported                 | Supported             | Supported              | Supported         |
+| [Key Value Storage](https://spinframework.dev/kv-store-api-guide)                                         | Supported           | Supported                 | Supported             | Supported              | Not Supported     |
+| [SQLite Storage](https://spinframework.dev/sqlite-api-guide)                                              | Supported           | Supported                 | Supported             | Supported              | Not Supported     |
+| [MySQL](https://spinframework.dev/rdbms-storage#using-mysql-and-postgresql-from-applications)             | Supported           | Supported                 | Not Supported         | Supported              | Not Supported     |
+| [PostgreSQL](https://spinframework.dev/rdbms-storage#using-mysql-and-postgresql-from-applications)        | Supported           | Supported                 | Not Supported         | Supported              | Supported         |
+| [Outbound Redis](https://spinframework.dev/rust-components.md#storing-data-in-redis-from-rust-components) | Supported           | Supported                 | Supported             | Supported              | Supported         |
+| [Serverless AI](https://spinframework.dev/serverless-ai-api-guide)                                        | Supported           | Supported                 | Supported             | Supported              | Not Supported     |
+| **Extensibility**                                                                                         |
+| [Authoring Custom Triggers](https://spinframework.dev/extending-and-embedding)                            | Supported           | Not Supported             | Not Supported         | Not Supported          | Not Supported     |
 
 ## Getting Involved and Contributing
 
@@ -120,3 +124,10 @@ Follow us on Twitter: [@spinframework](https://twitter.com/spinframework)
 
 You can join the Spin community in the [Spin CNCF Slack channel](https://cloud-native.slack.com/archives/C089NJ9G1V0) where you can ask questions, get help, and show off the cool things you are doing with Spin!
 
+## Architecture
+
+# Database
+
+The application uses a PostgreSQL database to store and manage data, ensuring reliability and scalability for handling user and application information. Whe are using Neondatabase and the dashboard and db management can be accessed here:
+
+[NEONDB DASHBOARD](https://console.neon.tech/app/projects/young-shadow-48175442?branchId=br-cold-shape-a25amomp&database=albergue-carrascalejo)

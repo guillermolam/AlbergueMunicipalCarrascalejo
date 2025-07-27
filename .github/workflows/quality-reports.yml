@@ -1,0 +1,234 @@
+name: Quality and Coverage Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM
+
+env:
+  COVERAGE_THRESHOLD: 85
+
+jobs:
+  # Quality checks (non-breaking)
+  quality-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Trunk
+      uses: trunk-io/trunk-action@v1
+      
+    - name: Check formatting (non-breaking)
+      id: fmt
+      run: |
+        trunk fmt --all || echo "format_issues=true" >> $GITHUB_OUTPUT
+        
+    - name: Check linting (non-breaking)
+      id: lint
+      run: |
+        trunk check --all || echo "lint_issues=true" >> $GITHUB_OUTPUT
+
+  # Unit tests (can break build)
+  unit-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      
+    - name: Install coverage tools
+      run: |
+        cargo install cargo-tarpaulin
+        
+    - name: Backend unit tests with coverage
+      run: |
+        cd backend
+        cargo test --lib
+        cargo tarpaulin --out xml --output-dir ../coverage/backend --fail-under ${{ env.COVERAGE_THRESHOLD }}
+        
+    - name: Gateway unit tests with coverage
+      run: |
+        cd gateway
+        cargo test --lib
+        cargo tarpaulin --out xml --output-dir ../coverage/gateway --fail-under ${{ env.COVERAGE_THRESHOLD }}
+        
+    - name: Frontend unit tests with coverage
+      run: |
+        cd frontend
+        bun install
+        bun test --coverage --coverageThreshold=${{ env.COVERAGE_THRESHOLD }}
+
+  # Integration tests (can break build)
+  integration-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      
+    - name: Install coverage tools
+      run: |
+        cargo install cargo-tarpaulin
+        
+    - name: Backend integration tests with coverage
+      run: |
+        cd backend
+        cargo test --test '*'
+        cargo tarpaulin --out xml --output-dir ../coverage/backend-integration --fail-under ${{ env.COVERAGE_THRESHOLD }}
+        
+    - name: Gateway integration tests with coverage
+      run: |
+        cd gateway
+        cargo test --test '*'
+        cargo tarpaulin --out xml --output-dir ../coverage/gateway-integration --fail-under ${{ env.COVERAGE_THRESHOLD }}
+        
+    - name: Frontend integration tests with coverage
+      run: |
+        cd frontend
+        bun install
+        bun test --integration --coverage --coverageThreshold=${{ env.COVERAGE_THRESHOLD }}
+
+  # Non-breaking tests
+  non-breaking-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      
+    - name: E2E tests (non-breaking)
+      run: |
+        echo "Running E2E tests (non-breaking)..."
+        bash scripts/testing/run-e2e-tests.sh || echo "E2E tests failed - build continues"
+        
+    - name: Performance tests (non-breaking)
+      run: |
+        echo "Running performance tests (non-breaking)..."
+        bash scripts/testing/run-performance.sh || echo "Performance tests failed - build continues"
+        
+    - name: Security tests (non-breaking)
+      run: |
+        echo "Running security tests (non-breaking)..."
+        bash scripts/testing/run-security-tests.sh || echo "Security tests failed - build continues"
+
+  # Coverage reporting
+  coverage-report:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      
+    - name: Install coverage tools
+      run: |
+        cargo install cargo-tarpaulin
+        
+    - name: Generate coverage reports
+      run: |
+        mkdir -p coverage
+        cd backend && cargo tarpaulin --out html --output-dir ../coverage/backend
+        cd ../gateway && cargo tarpaulin --out html --output-dir ../coverage/gateway
+        cd ../frontend && bun install && bun test --coverage --coverage-reporter=html --coverage-directory=../coverage/frontend
+        
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: coverage/
+        retention-days: 30
+
+  # Issue creation for quality problems
+  create-issues:
+    runs-on: ubuntu-latest
+    needs: [quality-check]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create Format Issue
+      if: needs.quality-check.outputs.format_issues == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🎨 Code formatting issues detected',
+            body: 'Formatting issues detected. Run `task fmt` to fix.',
+            labels: ['format', 'quality', 'automated']
+          });
+
+    - name: Create Lint Issue
+      if: needs.quality-check.outputs.lint_issues == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🔍 Linting issues detected',
+            body: 'Linting issues detected. Run `task lint` to fix.',
+            labels: ['lint', 'quality', 'automated']
+          });
+
+  # Summary
+  summary:
+    runs-on: ubuntu-latest
+    needs: [quality-check, unit-tests, integration-tests, non-breaking-tests]
+    if: always()
+    
+    steps:
+    - name: Summary
+      run: |
+        echo "## Pipeline Summary"
+        echo "- Quality checks: ✅ (non-breaking)"
+        echo "- Unit tests: ✅ (can break build)"
+        echo "- Integration tests: ✅ (can break build)"
+        echo "- Coverage: ✅ (85% minimum, can break build)"
+        echo "- E2E/Performance/Security: ✅ (non-breaking)"

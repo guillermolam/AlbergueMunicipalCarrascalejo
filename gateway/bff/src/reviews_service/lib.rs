@@ -1,4 +1,3 @@
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -27,17 +26,15 @@ struct ReviewsResponse {
 
 pub async fn handle(req: &Request) -> Result<Response> {
     let path = req.uri().path();
-    
+
     match path {
         "/api/reviews/all" => handle_all_reviews().await,
         "/api/reviews/stats" => handle_review_stats().await,
-        _ => {
-            Ok(Response::builder()
-                .status(404)
-                .header("Content-Type", "application/json")
-                .body(json!({"error": "Reviews endpoint not found"}).to_string())
-                .build())
-        }
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("Content-Type", "application/json")
+            .body(json!({"error": "Reviews endpoint not found"}).to_string())
+            .build()),
     }
 }
 
@@ -47,7 +44,8 @@ async fn handle_all_reviews() -> Result<Response> {
             id: "1".to_string(),
             author_name: "María González".to_string(),
             rating: 5,
-            text: "Excelente albergue! La hospitalidad de los hospitaleros es excepcional.".to_string(),
+            text: "Excelente albergue! La hospitalidad de los hospitaleros es excepcional."
+                .to_string(),
             date: "2024-03-15".to_string(),
             source: "Google".to_string(),
             verified: true,

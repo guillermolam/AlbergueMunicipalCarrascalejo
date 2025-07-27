@@ -18,10 +18,7 @@ component = "validation-service"
 
 [component.validation-service]
 source = "target/wasm32-wasi/release/validation_service.wasm"
-allowed_outbound_hosts = [
-    "https://*.amazonaws.com",
-    "https://*.neon.tech"
-]
+allowed_outbound_hosts = ["https://*.amazonaws.com", "https://*.neon.tech"]
 
 [component.validation-service.build]
 command = "cargo build --target wasm32-wasi --release"

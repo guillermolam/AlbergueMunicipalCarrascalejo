@@ -17,10 +17,7 @@ component = "location-service"
 
 [component.location-service]
 source = "target/wasm32-wasi/release/location_service.wasm"
-allowed_outbound_hosts = [
-    "https://maps.googleapis.com",
-    "https://*.neon.tech"
-]
+allowed_outbound_hosts = ["https://maps.googleapis.com", "https://*.neon.tech"]
 
 [component.location-service.build]
 command = "cargo build --target wasm32-wasi --release"

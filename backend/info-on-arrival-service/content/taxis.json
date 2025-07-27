@@ -1,6 +1,6 @@
 {
   "id": "taxis",
-  "lang": "es", 
+  "lang": "es",
   "title": "Servicios de Taxi",
   "icon": "car",
   "priority": 6,
@@ -18,7 +18,11 @@
       "price_range": "Desde Carrascalejo: ~35-45€",
       "img": "/img/radio-taxi.jpg",
       "available_24h": true,
-      "services": ["Traslados aeropuerto", "Servicios médicos", "Reservas anticipadas"]
+      "services": [
+        "Traslados aeropuerto",
+        "Servicios médicos",
+        "Reservas anticipadas"
+      ]
     },
     {
       "name": "Taxi Mérida 24h",

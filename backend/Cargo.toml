@@ -1,15 +1,15 @@
 [workspace]
 members = [
-    "shared",
-    "booking-service",
-    "notification-service",
-    "reviews-service",
-    "security-service",
-    "validation-service",
-    "info-on-arrival-service",
-    "location-service",
-    "rate-limiter-service",
-    "auth-service"
+  "shared",
+  "booking-service",
+  "notification-service",
+  "reviews-service",
+  "security-service",
+  "validation-service",
+  "info-on-arrival-service",
+  "location-service",
+  "rate-limiter-service",
+  "auth-service",
 ]
 
 [workspace.dependencies]
