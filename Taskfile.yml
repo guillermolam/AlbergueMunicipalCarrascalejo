@@ -502,7 +502,19 @@ tasks:
 
   test:integration:
     desc: Run integration tests
-    deps: [test:integration:api, test:integration:database]
+    cmds:
+      - echo "🧪 Ejecutando tests de integración..."
+      - cargo test --workspace --test '*'
+
+  test:oauth2:flows:
+    desc: Test OAuth2 and OpenID Connect flows
+    cmds:
+      - echo "🧪 Testing OAuth2 authorization code flow..."
+      - cd gateway/bff && cargo test test_oauth2_authentication_flow -- --nocapture
+      - echo "🧪 Testing OpenID Connect userinfo..."
+      - cd gateway/bff && cargo test test_openid_connect_userinfo -- --nocapture
+      - echo "🧪 Testing token refresh flow..."
+      - cd gateway/bff && cargo test handle_token_refresh -- --nocapture
 
   test:integration:api:
     desc: "🔗 Ejecutando tests de integración de API"
@@ -782,8 +794,7 @@ tasks:
   health:check:
     desc: Check application health
     cmds:
-      - echo "🏥 Verificando salud de la aplicación..."
-      - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
+      - echo "🏥 Verificando salud de la aplicación..."      - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
       - curl -f {{.GATEWAY_URI}}/api/health || echo "⚠️  Gateway health check failed"
 
   # ============================================================================
@@ -871,19 +882,44 @@ tasks:
       - cd gateway/bff && cargo check --target wasm32-wasi
       - cd backend && cargo check --target wasm32-wasi --workspace --exclude shared
 
-  test:coverage:gateway:
-    desc: Generate test coverage report for gateway
+  test:coverage:
+    desc: Run tests with coverage (target 85%+)
     cmds:
-      - echo "📊 Generating gateway test coverage..."
-      - cd gateway/bff && cargo tarpaulin --out Html --output-dir ../../coverage/gateway
+      - echo "📊 Ejecutando tests con cobertura..."
+      - cargo tarpaulin --workspace --out Html --output-dir coverage --target-coverage 85
+      - echo "📊 Testing gateway service composition coverage..."
+      - cd gateway/bff && cargo tarpaulin --out Html --output-dir ../../coverage/gateway --target-coverage 100
+
+  test:security:
+    desc: Run security tests
+    cmds:
+      - echo "🔒 Ejecutando tests de seguridad..."
+      - cd backend/security-service && cargo test
+      - echo "🔒 Testing security middleware composition..."
+      - cd gateway/bff && cargo test test_security_scanning_blocks_malicious_content -- --nocapture
+      - echo "🔒 Testing rate limiting middleware..."
+      - cd gateway/bff && cargo test test_rate_limiting_blocks_excessive_requests -- --nocapture
+  test:gateway:composition:
+    desc: Test Gateway BFF service composition
+    cmds:
+      - echo "🧪 Running gateway BFF service composition tests..."
+      - cd gateway/bff && cargo test test_rate_limiting_blocks_excessive_requests -- --nocapture
+      - cd gateway/bff && cargo test test_security_scanning_blocks_malicious_content -- --nocapture
+test:
+    desc: Run all tests
+    cmds:
+      - task: test:unit:rust
+      - task: test:integration
+      - task: gateway:composition
+      - task: test:oauth2:flows
+      - task: test:security
+      - task: test:e2e
 
   test:comprehensive:
-    desc: Run comprehensive test suite including 100% gateway coverage
+    desc: Run comprehensive test suite for service composition
     cmds:
-      - echo "🧪 Running comprehensive test suite..."
-      - task: test:gateway:all
-      - task: test:spin:config
-      - task: test:spin:build
-      - task: test:spin:wasm
-      - task: test:coverage:gateway
-      - echo "✅ All tests completed!"
+      - echo "🚀 Running comprehensive service composition test suite..."
+      - task: test:gateway:composition
+      - task: test:oauth2:flows
+      - task: test:security
+      - echo "✅ All service composition tests completed!"
