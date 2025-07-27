@@ -1,9 +1,10 @@
 [package]
-name = "gateway_bff"
+name = "bff"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
+name = "bff"
 crate-type = ["cdylib"]
 
 [package.metadata.env]
@@ -17,32 +18,8 @@ DATABASE_URL = { required = true }
 NEON_DATABASE_URL = { required = true }
 
 # Security
-
-speculoos = "0.11"
-httpc-test = "0.1"
-reqwest = { version = "0.11", features = ["json"] }
-tokio-test = "0.4"
-
 ENCRYPTION_KEY = { required = true }
 JWT_SECRET = { required = true }
-
-[dependencies]
-anyhow = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-spin-sdk = "2.0"
-http = "0.2"
-tokio = { version = "1.0", features = ["full"] }
-futures = "0.3"
-urlencoding = "2.1"
-[package]
-name = "bff"
-version = "0.1.0"
-edition = "2021"
-
-[lib]
-name = "bff"
-crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = { workspace = true }
@@ -55,17 +32,16 @@ futures = { workspace = true }
 spin-sdk = { workspace = true }
 http = { workspace = true }
 thiserror = { workspace = true }
+urlencoding = "2.1"
 
 [dev-dependencies]
 tokio-test = "0.4"
 wiremock = "0.5"
 mockall = "0.11"
 tempfile = "3.0"
-
-[[bin]]
-name = "test-runner"
-path = "tests/lib.rs"
-required-features = []
+speculoos = "0.11"
+httpc-test = "0.1"
+reqwest = { version = "0.11", features = ["json"] }
 
 [features]
 default = []

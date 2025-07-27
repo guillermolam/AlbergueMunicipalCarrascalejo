@@ -810,7 +810,8 @@ tasks:
   health:check:
     desc: Check application health
     cmds:
-      - echo "🏥 Verificando salud de la aplicación..."      - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
+      - echo "🏥 Verificando salud de la aplicación..."
+      - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
       - curl -f {{.GATEWAY_URI}}/api/health || echo "⚠️  Gateway health check failed"
 
   # ============================================================================
