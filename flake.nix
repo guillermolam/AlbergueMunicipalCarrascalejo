@@ -117,17 +117,24 @@
             
             # --- Base de Datos ---
             pkgs.postgresql        # Para migraciones y tests
+            pkgs.postgresql_16     # PostgreSQL 16 client
             pkgs.sqlx-cli          # Para SQLx migrations
             
             # --- Testing Completo ---
             pkgs.nodePackages.testcafe    # E2E testing
             pkgs.nodePackages.lighthouse  # Performance
+            pkgs.nodePackages.prettier    # Code formatting
+            pkgs.nodePackages.eslint      # Linting
+            pkgs.nodePackages.typescript  # TypeScript support
             pkgs.k6                       # Load testing
             pkgs.nuclei                   # Security scanning
+            pkgs.semgrep                  # SAST analysis
             
             # --- Herramientas de Seguridad ---
             pkgs.cargo-audit       # Rust security audit
             pkgs.zap               # OWASP ZAP
+            pkgs.semgrep           # SAST analysis
+            pkgs.nuclei            # Vulnerability scanning
             
             # --- Utilidades ---
             pkgs.curl              # Health checks
