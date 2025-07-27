@@ -1,0 +1,463 @@
+.
+├── backend
+│   ├── auth-service
+│   │   ├── app
+│   │   │   ├── build.ts
+│   │   │   ├── bun-env.d.ts
+│   │   │   ├── bunfig.toml
+│   │   │   ├── bun.lock
+│   │   │   ├── package.json
+│   │   │   ├── README.md
+│   │   │   ├── src
+│   │   │   │   ├── APITester.tsx
+│   │   │   │   ├── App.tsx
+│   │   │   │   ├── frontend.tsx
+│   │   │   │   ├── index.css
+│   │   │   │   ├── index.html
+│   │   │   │   ├── index.tsx
+│   │   │   │   ├── logo.svg
+│   │   │   │   └── react.svg
+│   │   │   └── tsconfig.json
+│   │   ├── bun.lock
+│   │   ├── Cargo.toml
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   ├── spin.toml
+│   │   ├── src
+│   │   │   ├── App.tsx
+│   │   │   ├── lib.rs
+│   │   │   └── pages
+│   │   │       ├── Callback
+│   │   │       │   └── index.tsx
+│   │   │       └── Home
+│   │   │           └── index.tsx
+│   │   └── vite.config.ts
+│   ├── booking-service
+│   │   ├── Cargo.toml
+│   │   ├── spin.toml
+│   │   ├── src
+│   │   │   ├── adapters
+│   │   │   │   ├── console_notification_sender.rs
+│   │   │   │   ├── memory_booking_repository.rs
+│   │   │   │   └── mod.rs
+│   │   │   ├── application
+│   │   │   │   ├── create_booking.rs
+│   │   │   │   └── mod.rs
+│   │   │   ├── domain
+│   │   │   │   ├── entities
+│   │   │   │   │   ├── booking.rs
+│   │   │   │   │   └── mod.rs
+│   │   │   │   └── mod.rs
+│   │   │   ├── infrastructure
+│   │   │   │   └── mod.rs
+│   │   │   ├── lib.rs
+│   │   │   └── ports
+│   │   │       ├── booking_repository.rs
+│   │   │       ├── mod.rs
+│   │   │       └── notification_sender.rs
+│   │   └── tests
+│   │       ├── booking_service_test.rs
+│   │       └── spin_test.rs
+│   ├── Cargo.toml
+│   ├── info-on-arrival-service
+│   │   ├── build.rs
+│   │   ├── Cargo.toml
+│   │   ├── content
+│   │   │   ├── car-rentals.json
+│   │   │   ├── eat.json
+│   │   │   ├── README.md
+│   │   │   └── taxis.json
+│   │   ├── spin.toml
+│   │   ├── src
+│   │   │   ├── adapters
+│   │   │   │   ├── mod.rs
+│   │   │   │   ├── scraper
+│   │   │   │   │   ├── carrascalejo_scraper.rs
+│   │   │   │   │   ├── merida_scraper.rs
+│   │   │   │   │   └── mod.rs
+│   │   │   │   └── storage
+│   │   │   │       ├── mod.rs
+│   │   │   │       └── postgres_cards_repo.rs
+│   │   │   ├── application
+│   │   │   │   ├── cards_service.rs
+│   │   │   │   └── mod.rs
+│   │   │   ├── domain
+│   │   │   │   ├── card.rs
+│   │   │   │   └── mod.rs
+│   │   │   ├── infrastructure
+│   │   │   │   ├── config.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── server.rs
+│   │   │   ├── lib.rs
+│   │   │   ├── main.rs
+│   │   │   └── ports
+│   │   │       ├── mod.rs
+│   │   │       ├── scraper_port.rs
+│   │   │       └── storage_port.rs
+│   │   └── tests
+│   │       ├── integration_tests.rs
+│   │       └── unit_tests.rs
+│   ├── location-service
+│   │   ├── Cargo.toml
+│   │   ├── spin.toml
+│   │   └── src
+│   │       └── lib.rs
+│   ├── notification-service
+│   │   ├── build.rs
+│   │   ├── Cargo.toml
+│   │   ├── spin.toml
+│   │   ├── src
+│   │   │   ├── adapters
+│   │   │   │   ├── email
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   └── nodemailer.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   ├── sms
+│   │   │   │   │   ├── mod.rs
+│   │   │   │   │   └── twilio.rs
+│   │   │   │   └── telegram
+│   │   │   │       ├── mod.rs
+│   │   │   │       └── telegraf.rs
+│   │   │   ├── application
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── notification_service.rs
+│   │   │   ├── domain
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── notification.rs
+│   │   │   ├── infrastructure
+│   │   │   │   ├── config.rs
+│   │   │   │   ├── mod.rs
+│   │   │   │   └── server.rs
+│   │   │   ├── lib.rs
+│   │   │   ├── main.rs
+│   │   │   └── ports
+│   │   │       ├── email_port.rs
+│   │   │       ├── mod.rs
+│   │   │       ├── sms_port.rs
+│   │   │       └── telegram_port.rs
+│   │   └── tests
+│   │       ├── integration_tests.rs
+│   │       ├── spin_test.rs
+│   │       └── unit_tests.rs
+│   ├── rate-limiter-service
+│   │   ├── Cargo.toml
+│   │   ├── spin.toml
+│   │   └── src
+│   │       └── lib.rs
+│   ├── README.md
+│   ├── reviews-service
+│   │   ├── Cargo.toml
+│   │   ├── spin.toml
+│   │   └── src
+│   │       ├── lib.rs
+│   │       └── main.rs
+│   ├── runtime-config.toml
+│   ├── security-service
+│   │   ├── Cargo.toml
+│   │   ├── spin.toml
+│   │   └── src
+│   │       └── lib.rs
+│   ├── shared
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       ├── db.rs
+│   │       ├── dto.rs
+│   │       ├── error.rs
+│   │       └── lib.rs
+│   └── validation-service
+│       ├── Cargo.toml
+│       ├── spin.toml
+│       ├── src
+│       │   ├── adapters
+│       │   │   ├── mod.rs
+│       │   │   └── tesseract_ocr.rs
+│       │   ├── application
+│       │   │   ├── mod.rs
+│       │   │   └── validation_service.rs
+│       │   ├── domain
+│       │   │   ├── entities
+│       │   │   │   ├── document.rs
+│       │   │   │   └── mod.rs
+│       │   │   ├── mod.rs
+│       │   │   ├── ocr
+│       │   │   │   ├── confidence_scorer.rs
+│       │   │   │   ├── image_processor.rs
+│       │   │   │   ├── mod.rs
+│       │   │   │   └── text_extractor.rs
+│       │   │   └── validators
+│       │   │       ├── dni_validator.rs
+│       │   │       ├── mod.rs
+│       │   │       ├── mrz_validator.rs
+│       │   │       ├── nie_validator.rs
+│       │   │       └── passport_validator.rs
+│       │   ├── infrastructure
+│       │   │   └── mod.rs
+│       │   ├── lib.rs
+│       │   └── ports
+│       │       ├── mod.rs
+│       │       └── ocr_client.rs
+│       └── tests
+│           ├── mod.rs
+│           └── ocr-training
+│               ├── dni-nif
+│               │   └── sample_dni_front.txt
+│               ├── nie-tie
+│               │   └── sample_nie_front.txt
+│               ├── passports
+│               │   └── sample_passport_mrz.txt
+│               └── README.md
+├── Cargo.lock
+├── Cargo.toml
+├── database
+│   ├── drizzle.config.ts
+│   ├── migrations
+│   │   ├── 001_init_schema.sql
+│   │   ├── 002_add_notifications.sql
+│   │   ├── 003_add_audit_log.sql
+│   │   ├── 004_add_indexes.sql
+│   │   └── 005_seed_pricing.sql
+│   ├── README.md
+│   ├── schemas
+│   │   ├── postgres.sql
+│   │   └── sqlite.sql
+│   ├── schema.ts
+│   ├── scripts
+│   │   ├── dump-schema-postgres.sh
+│   │   ├── dump-schema-sqlite.sh
+│   │   ├── migrate-postgres.sh
+│   │   ├── migrate-sqlite.sh
+│   │   └── setup-db.sh
+│   ├── seed
+│   │   ├── dev_seed.sql
+│   │   └── test_seed.sql
+│   └── test
+│       ├── db-integration.test.sql
+│       ├── migration-check.test.sql
+│       └── rollback-test.sql
+├── flake.lock
+├── flake.nix
+├── frontend
+│   ├── bun.lock
+│   ├── drizzle.config.ts
+│   ├── index.css
+│   ├── index.html
+│   ├── jest.config.js
+│   ├── migrations
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── public
+│   │   ├── index.html
+│   │   └── vite.svg
+│   ├── README.md
+│   ├── replit.nix
+│   ├── src
+│   │   ├── App.tsx
+│   │   ├── components
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── arrival-time-picker.tsx
+│   │   │   ├── Auth0Login.tsx
+│   │   │   ├── bed-selection-map.tsx
+│   │   │   ├── booking-confirmation.tsx
+│   │   │   ├── booking-success.tsx
+│   │   │   ├── country-autocomplete.tsx
+│   │   │   ├── Navigation.tsx
+│   │   │   ├── ProtectedRoute.tsx
+│   │   │   ├── registration-form-mobile.tsx
+│   │   │   ├── registration-form-zustand.tsx
+│   │   │   ├── registration-stepper.tsx
+│   │   │   ├── ReviewsSection.tsx
+│   │   │   ├── stay-info-form.tsx
+│   │   │   └── ui
+│   │   │       ├── alert.tsx
+│   │   │       ├── badge.tsx
+│   │   │       ├── button.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── command.tsx
+│   │   │       ├── dialog.tsx
+│   │   │       ├── input.tsx
+│   │   │       ├── label.tsx
+│   │   │       ├── popover.tsx
+│   │   │       ├── select.tsx
+│   │   │       ├── toaster.tsx
+│   │   │       └── tooltip.tsx
+│   │   ├── contexts
+│   │   │   └── i18n-context.tsx
+│   │   ├── data
+│   │   │   └── mock-reviews.ts
+│   │   ├── hooks
+│   │   │   └── useAuth0.ts
+│   │   ├── index.css
+│   │   ├── index.html
+│   │   ├── lib
+│   │   │   ├── constants.ts
+│   │   │   ├── queryClient.ts
+│   │   │   ├── schema.ts
+│   │   │   └── utils.ts
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── AdminPage.tsx
+│   │   │   ├── BookingPageOriginal.tsx
+│   │   │   ├── BookingPage.tsx
+│   │   │   ├── HomePage.tsx
+│   │   │   ├── InfoCardsPage.tsx
+│   │   │   ├── LoginPage.tsx
+│   │   │   └── LogoutPage.tsx
+│   │   ├── stores
+│   │   │   └── registration-store.ts
+│   │   └── test
+│   │       ├── example.test.tsx
+│   │       └── setup.ts
+│   ├── tailwind.config.ts
+│   ├── tests
+│   │   ├── components
+│   │   │   └── Navigation.test.tsx
+│   │   ├── fixtures
+│   │   │   └── mockBooking.ts
+│   │   ├── pages
+│   │   │   └── BookingPage.test.tsx
+│   │   └── setup.ts
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── gateway
+│   ├── bff
+│   │   ├── Cargo.toml
+│   │   └── src
+│   │       ├── auth_service
+│   │       │   └── lib.rs
+│   │       ├── auth_verify.rs
+│   │       ├── booking_service
+│   │       │   └── lib.rs
+│   │       ├── info_on_arrival_service
+│   │       │   └── lib.rs
+│   │       ├── lib.rs
+│   │       ├── location_service
+│   │       │   └── lib.rs
+│   │       ├── mod.rs
+│   │       ├── notification_service
+│   │       │   └── lib.rs
+│   │       ├── rate_limiter_service
+│   │       │   └── lib.rs
+│   │       ├── reviews_service
+│   │       │   └── lib.rs
+│   │       ├── security_service
+│   │       │   └── lib.rs
+│   │       └── validation_service
+│   │           └── lib.rs
+│   ├── Caddyfile
+│   ├── Cargo.toml
+│   ├── README.md
+│   └── spin.toml
+├── prompts
+│   ├── GOAL.md
+│   ├── PACKAGER.md
+│   └── SPIN.md
+├── README.md
+├── replit.nix
+├── scripts
+│   ├── build-wasm-all.sh
+│   ├── deploy-all-services.sh
+│   ├── dev-start.sh
+│   ├── random-ports.sh
+│   └── test-all-services.sh
+├── spin.toml
+├── target
+│   ├── CACHEDIR.TAG
+│   └── debug
+│       ├── build
+│       ├── deps
+│       │   ├── my_project-621143802b3a52bc
+│       │   └── my_project-621143802b3a52bc.d
+│       ├── examples
+│       ├── incremental
+│       │   └── my_project-2ip4nbvucehwp
+│       │       ├── s-gym7rlp2tj-1vrjh3a-92llkwflho8hpdhs2mb3tvzan
+│       │       │   ├── 13xa6ik2ivk8gu7x.o
+│       │       │   ├── 1c9e6738essfxwit.o
+│       │       │   ├── 23pi1q96kjo8hnbf.o
+│       │       │   ├── 39c8wv4fvo5v2yfs.o
+│       │       │   ├── 4suqb1w2ajo0m0yv.o
+│       │       │   ├── 7p3ylc1wmbvw58v.o
+│       │       │   ├── dep-graph.bin
+│       │       │   ├── query-cache.bin
+│       │       │   └── work-products.bin
+│       │       └── s-gym7rlp2tj-1vrjh3a.lock
+│       ├── my-project
+│       └── my-project.d
+├── Taskfile.yml
+└── tests
+    ├── api
+    │   ├── test-dni-api.js
+    │   ├── test-dni-local.mjs
+    │   ├── test-lambda.js
+    │   ├── test-nie-local.mjs
+    │   ├── test-ocr-dni.js
+    │   └── test-residence-permit-local.mjs
+    ├── attached_assets
+    │   ├── 1-plantilla_1752764038313.xml
+    │   ├── custom-icons
+    │   │   ├── dni
+    │   │   │   ├── back.svg
+    │   │   │   └── front.svg
+    │   │   ├── nie
+    │   │   ├── other
+    │   │   │   └── other_documents.svg
+    │   │   └── passport
+    │   │       └── passport.svg
+    │   ├── Pasted-1-Microservice-Coverage-Expectation-Current-Prompt-Gap-Change-Needed-Five-Rust-services-each-wit-1753448937051_1753448937052.txt
+    │   ├── Pasted-Certainly-Here-are-two-tailored-prompts-you-can-use-to-assign-Task-2-and-Task-3-to-Replit-s-1753456298652_1753456298653.txt
+    │   ├── Pasted-Here-s-a-refined-prompt-for-Task-4-Fix-Spin-Gateway-Port-Configuration-which-addresses-your--1753456416089_1753456416089.txt
+    │   ├── Pasted--Rust-Microservice-Master-Prompt-You-are-an-expert-Rust-backend-engineer-I-need-you-to-gene-1753448306231_1753448306232.txt
+    │   ├── Pasted--Rust-Microservice-Master-Prompt-You-are-an-expert-Rust-backend-engineer-I-need-you-to-gene-1753448336108_1753448336108.txt
+    │   ├── Pasted--Rust-Microservice-Master-Prompt-You-are-an-expert-Rust-backend-engineer-I-need-you-to-genera-1753447676376_1753447676379.txt
+    │   └── Pasted-Sure-here-s-a-refactor-prompt-that-explicitly-references-actual-files-in-your-repo-and-describes-ho-1753453366254_1753453366254.txt
+    ├── documentation
+    │   ├── comprehensive-test-summary.md
+    │   ├── lambda-code-structure.md
+    │   ├── lambda-cors-fix.md
+    │   └── test-summary.md
+    ├── e2e
+    │   └── testcafe
+    │       ├── e2e-test.nix
+    │       ├── testcafe-document-formats.js
+    │       ├── testcafe-full-registration-flow.js
+    │       ├── testcafe-international-passports.js
+    │       ├── testcafe-nie-documents.js
+    │       ├── testcafe-residence-permits.js
+    │       └── test-dni-simple.js
+    ├── enzyme-components
+    │   ├── App.test.tsx
+    │   ├── CountryPhoneInput.test.tsx
+    │   ├── LanguageSelector.test.tsx
+    │   ├── MultiDocumentCapture.test.tsx
+    │   └── RegistrationForm.test.tsx
+    ├── enzyme.setup.js
+    ├── infrastructure
+    │   ├── deployment
+    │   │   ├── deploy-lambda.sh
+    │   │   └── lambda-sam-template.yaml
+    │   ├── docker
+    │   │   └── Dockerfile.dev
+    │   ├── lighthouse
+    │   │   └── lighthouserc.json
+    │   ├── monitoring
+    │   │   └── health-check.js
+    │   ├── performance
+    │   │   └── api-load-test.js
+    │   ├── scripts
+    │   │   └── setup-dev.sh
+    │   └── security
+    │       └── zap-rules.tsv
+    ├── __mocks__
+    │   └── fileMock.js
+    ├── performance
+    │   └── gateway-stress-k6.js
+    ├── README.md
+    └── runners
+        ├── run-comprehensive-testcafe.js
+        ├── run-dni-tests.js
+        ├── run-enzyme-simple.js
+        └── run-enzyme-tests.js

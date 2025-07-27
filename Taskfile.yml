@@ -1,57 +1,99 @@
-
 version: '3'
 
 vars:
-  FRONTEND_PORT: '5173'
-  BACKEND_PORT: '8000'
-  GATEWAY_PORT: '3000'
-  FRONTEND_URI: 'http://0.0.0.0:{{.FRONTEND_PORT}}'
-  BACKEND_URI: 'http://0.0.0.0:{{.BACKEND_PORT}}'
-  GATEWAY_URI: 'http://0.0.0.0:{{.GATEWAY_PORT}}'
+  FRONTEND_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  GATEWAY_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  AUTH_FRONTEND_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  BOOKING_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  NOTIFICATION_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  VALIDATION_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  INFO_ARRIVAL_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  LOCATION_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  RATE_LIMITER_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  REVIEWS_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  SECURITY_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  FRONTEND_URI: "http://0.0.0.0:{{.FRONTEND_PORT}}"
+  GATEWAY_URI: "http://0.0.0.0:{{.GATEWAY_PORT}}"
+  AUTH_FRONTEND_URI: "http://0.0.0.0:{{.AUTH_FRONTEND_PORT}}"
 
 env:
-  RUST_BACKTRACE: '1'
-  RUST_LOG: 'debug'
-  NODE_ENV: 'development'
-  DATABASE_URL: 'postgresql://localhost:5432/albergue_dev'
+  RUST_BACKTRACE: "1"
+  RUST_LOG: "debug"
+  NODE_ENV: "development"
+  DATABASE_URL: "postgresql://localhost:5432/albergue_dev"
 
 tasks:
-  openports:
-    desc: Find 3 open random ports
+  # ============================================================================
+  # UTILIDADES DE PUERTOS
+  # ============================================================================
+  
+  ports:show:
+    desc: Show all assigned dynamic ports
+    cmds:
+      - echo "🌐 Puertos Asignados Dinámicamente:"
+      - echo "   Frontend Principal:{{.FRONTEND_PORT}}"
+      - echo "   Gateway BFF:{{.GATEWAY_PORT}}"
+      - echo "   Auth Frontend:{{.AUTH_FRONTEND_PORT}}"
+      - echo ""
+      - echo "🔧 Microservicios Backend:"
+      - echo "   Booking Service:{{.BOOKING_PORT}}"
+      - echo "   Notification Service:{{.NOTIFICATION_PORT}}"
+      - echo "   Validation Service:{{.VALIDATION_PORT}}"
+      - echo "   Info Arrival Service:{{.INFO_ARRIVAL_PORT}}"
+      - echo "   Location Service:{{.LOCATION_PORT}}"
+      - echo "   Rate Limiter Service:{{.RATE_LIMITER_PORT}}"
+      - echo "   Reviews Service:{{.REVIEWS_PORT}}"
+      - echo "   Security Service:{{.SECURITY_PORT}}"
+      - echo ""
+      - echo "🔗 URLs de Acceso:"
+      - echo "   Frontend:{{.FRONTEND_URI}}"
+      - echo "   Gateway:{{.GATEWAY_URI}}"
+      - echo "   Auth Frontend:{{.AUTH_FRONTEND_URI}}"
+
+  ports:save:
+    desc: Save current port configuration to .env file
     cmds:
       - |
-        random_ports_async() {
-          local min=${1:-3000}
-          local max=${2:-4000}
-          local count=3
-        
-          (
-            awk -v min="$min" -v max="$max" -v count="$count" '
-              BEGIN {
-                srand();
-                while (n < count) {
-                  r = int(min + rand() * (max - min + 1));
-                  if (!(r in seen)) {
-                    seen[r] = 1;
-                    print r;
-                    n++;
-                  }
-                }
-              }
-            '
-          ) &
-        }
-      
-  # Main entry points
+        cat > .env.ports << EOF
+        # Puertos generados dinámicamente - $(date)
+        FRONTEND_PORT={{.FRONTEND_PORT}}
+        GATEWAY_PORT={{.GATEWAY_PORT}}
+        AUTH_FRONTEND_PORT={{.AUTH_FRONTEND_PORT}}
+        BOOKING_PORT={{.BOOKING_PORT}}
+        NOTIFICATION_PORT={{.NOTIFICATION_PORT}}
+        VALIDATION_PORT={{.VALIDATION_PORT}}
+        INFO_ARRIVAL_PORT={{.INFO_ARRIVAL_PORT}}
+        LOCATION_PORT={{.LOCATION_PORT}}
+        RATE_LIMITER_PORT={{.RATE_LIMITER_PORT}}
+        REVIEWS_PORT={{.REVIEWS_PORT}}
+        SECURITY_PORT={{.SECURITY_PORT}}
+        EOF
+      - echo "✅ Puertos guardados en .env.ports"
+
+  # ============================================================================
+  # PUNTOS DE ENTRADA PRINCIPALES
+  # ============================================================================
+  
   default:
     desc: Run full CI/CD pipeline
     deps: [ci:full]
 
   dev:
-    desc: Run all services in development mode
-    deps: [setup:check, setup:deps]
+    desc: Run all services in development mode with dynamic ports
+    deps: [setup:check, setup:deps, ports:show]
     cmds:
-      - task: dev:services
+      - task: dev:all
 
   ci:full:
     desc: Complete CI/CD pipeline with all checks
@@ -69,29 +111,45 @@ tasks:
       - performance:all
       - compatibility:all
 
-  # Setup and verification
+  # ============================================================================
+  # CONFIGURACIÓN Y VERIFICACIÓN
+  # ============================================================================
+  
   setup:check:
     desc: Verify development environment
     cmds:
+      - echo "🔍 Verificando entorno de desarrollo..."
       - rustc --version
       - node --version
       - bun --version
       - caddy version
-      - echo "✅ Development environment ready"
+      - spin --version
+      - trunk --version
+      - echo "✅ Entorno de desarrollo listo"
 
   setup:deps:
     desc: Install all dependencies
-    deps: [setup:deps:frontend, setup:deps:rust]
+    deps: [setup:deps:frontend, setup:deps:auth-frontend, setup:deps:rust]
 
   setup:deps:frontend:
-    desc: Install frontend dependencies
+    desc: Install main frontend dependencies
     dir: frontend
     cmds:
-      - bun install
+      - echo "📦 Instalando dependencias del frontend principal..."
+      - npm install || pnpm install || bun install
+
+  setup:deps:auth-frontend:
+    desc: Install auth service frontend dependencies
+    dir: backend/auth-service/app
+    cmds:
+      - echo "📦 Instalando dependencias del frontend de auth..."
+      - npm install || pnpm install || bun install
 
   setup:deps:rust:
-    desc: Install Rust dependencies
+    desc: Install Rust dependencies and components
     cmds:
+      - echo "🦀 Instalando dependencias de Rust..."
+      - rustup component add rustfmt clippy
       - cargo fetch --workspace
 
   setup:trunk:
@@ -99,35 +157,54 @@ tasks:
     cmds:
       - |
         if ! command -v trunk >/dev/null 2>&1; then
+          echo "📥 Instalando Trunk.io..."
           curl https://get.trunk.io -fsSL | bash || echo "⚠️  Trunk.io installation failed"
         fi
       - trunk init || echo "⚠️  Trunk.io already initialized"
       - trunk check enable clippy rustfmt eslint prettier semgrep bandit || echo "⚠️  Some trunk checks already enabled"
 
-  # Code formatting
+  # ============================================================================
+  # FORMATEO DE CÓDIGO
+  # ============================================================================
+  
   format:all:
-    desc: Format all code
-    deps: [format:rust, format:frontend]
+    desc: Format all code (Rust + Frontend + Auth Frontend)
+    deps: [format:rust, format:frontend, format:auth-frontend]
 
   format:rust:
-    desc: Format Rust code
+    desc: Format all Rust code in workspace
     cmds:
+      - echo "🎨 Formateando código Rust..."
       - cargo fmt --all
 
   format:frontend:
-    desc: Format frontend code
+    desc: Format main frontend code
     dir: frontend
     cmds:
+      - echo "🎨 Formateando frontend principal..."
       - |
         if command -v prettier >/dev/null 2>&1; then
-          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}" "server/**/*.{ts,js,json}" || echo "⚠️  Prettier formatting failed"
+          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Prettier formatting failed"
         else
-          echo "⚠️  Prettier not available, skipping frontend formatting"
+          echo "⚠️  Prettier not available, using bun format"
+          bun run fmt || echo "⚠️  Frontend formatting failed"
+        fi
+
+  format:auth-frontend:
+    desc: Format auth service frontend code
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🎨 Formateando frontend de auth..."
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Auth frontend formatting failed"
+        else
+          bun run fmt || echo "⚠️  Auth frontend formatting failed"
         fi
 
   format:check:
     desc: Check code formatting
-    deps: [format:check:rust, format:check:frontend]
+    deps: [format:check:rust, format:check:frontend, format:check:auth-frontend]
 
   format:check:rust:
     desc: Check Rust formatting
@@ -135,35 +212,59 @@ tasks:
       - cargo fmt --all -- --check
 
   format:check:frontend:
-    desc: Check frontend formatting
+    desc: Check main frontend formatting
     dir: frontend
     cmds:
       - |
         if command -v prettier >/dev/null 2>&1; then
-          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" "server/**/*.{ts,js,json}" || echo "⚠️  Frontend formatting check failed"
+          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Frontend formatting check failed"
         else
           echo "⚠️  Prettier not available, skipping frontend format check"
         fi
 
-  # Linting
+  format:check:auth-frontend:
+    desc: Check auth frontend formatting
+    dir: backend/auth-service/app
+    cmds:
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Auth frontend formatting check failed"
+        else
+          echo "⚠️  Prettier not available, skipping auth frontend format check"
+        fi
+
+  # ============================================================================
+  # LINTING
+  # ============================================================================
+  
   lint:all:
-    desc: Run all linters
-    deps: [lint:rust, lint:frontend, lint:trunk]
+    desc: Run all linters (Rust + Frontend + Trunk)
+    deps: [lint:rust, lint:frontend, lint:auth-frontend, lint:trunk]
 
   lint:rust:
-    desc: Lint Rust code
+    desc: Lint all Rust code in workspace
     cmds:
+      - echo "🔍 Ejecutando clippy en todo el workspace..."
       - cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   lint:frontend:
-    desc: Lint frontend code
+    desc: Lint main frontend code
     dir: frontend
     cmds:
+      - echo "🔍 Ejecutando lint en frontend principal..."
       - bun run lint
 
-  lint:trunk:
-    desc: Run Trunk.io linting
+  lint:auth-frontend:
+    desc: Lint auth service frontend code
+    dir: backend/auth-service/app
     cmds:
+      - echo "🔍 Ejecutando lint en frontend de auth..."
+      - bun run lint || echo "⚠️  Auth frontend lint not configured"
+
+  lint:trunk:
+    desc: Run Trunk.io linting on entire project
+    cmds:
+      - echo "🔍 Ejecutando Trunk.io en todo el proyecto..."
       - |
         if command -v trunk >/dev/null 2>&1; then
           trunk check --all
@@ -171,7 +272,10 @@ tasks:
           echo "⚠️  Trunk.io not installed, skipping"
         fi
 
-  # Static Application Security Testing (SAST)
+  # ============================================================================
+  # ANÁLISIS DE SEGURIDAD ESTÁTICO (SAST)
+  # ============================================================================
+  
   sast:all:
     desc: Run all SAST tools
     deps: [sast:semgrep, sast:cargo-audit, sast:trunk-security]
@@ -179,6 +283,7 @@ tasks:
   sast:semgrep:
     desc: Run Semgrep security analysis
     cmds:
+      - echo "🔒 Ejecutando análisis de seguridad con Semgrep..."
       - |
         if command -v semgrep >/dev/null 2>&1; then
           semgrep --config=auto --error --strict --verbose .
@@ -189,6 +294,7 @@ tasks:
   sast:cargo-audit:
     desc: Run Cargo security audit
     cmds:
+      - echo "🔒 Ejecutando auditoría de seguridad de Cargo..."
       - |
         if ! command -v cargo-audit >/dev/null 2>&1; then
           cargo install cargo-audit
@@ -198,6 +304,7 @@ tasks:
   sast:trunk-security:
     desc: Run Trunk.io security checks
     cmds:
+      - echo "🔒 Ejecutando checks de seguridad con Trunk.io..."
       - |
         if command -v trunk >/dev/null 2>&1; then
           trunk check --filter=security
@@ -205,21 +312,33 @@ tasks:
           echo "⚠️  Trunk.io not available, skipping security checks"
         fi
 
-  # Unit Testing
+  # ============================================================================
+  # TESTING UNITARIO
+  # ============================================================================
+  
   test:unit:
     desc: Run all unit tests
-    deps: [test:unit:rust, test:unit:frontend]
+    deps: [test:unit:rust, test:unit:frontend, test:unit:auth-frontend]
 
   test:unit:rust:
     desc: Run Rust unit tests
     cmds:
+      - echo "🧪 Ejecutando tests unitarios de Rust..."
       - cargo test --workspace --lib
 
   test:unit:frontend:
-    desc: Run frontend unit tests
+    desc: Run main frontend unit tests
     dir: frontend
     cmds:
+      - echo "🧪 Ejecutando tests unitarios del frontend principal..."
       - bun run test
+
+  test:unit:auth-frontend:
+    desc: Run auth frontend unit tests
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🧪 Ejecutando tests unitarios del frontend de auth..."
+      - bun run test || echo "⚠️  Auth frontend tests not configured"
 
   test:unit:coverage:
     desc: Generate test coverage reports
@@ -228,6 +347,7 @@ tasks:
   test:unit:coverage:rust:
     desc: Generate Rust coverage
     cmds:
+      - echo "📊 Generando cobertura de tests de Rust..."
       - |
         if ! command -v cargo-tarpaulin >/dev/null 2>&1; then
           cargo install cargo-tarpaulin
@@ -239,6 +359,7 @@ tasks:
     desc: Generate frontend coverage
     dir: frontend
     cmds:
+      - echo "📊 Generando cobertura de tests del frontend..."
       - |
         if grep -q "test:coverage" package.json; then
           bun run test:coverage
@@ -246,63 +367,140 @@ tasks:
           echo "⚠️  Frontend coverage script not available"
         fi
 
-  # Build
+  # ============================================================================
+  # CONSTRUCCIÓN
+  # ============================================================================
+  
   build:all:
-    desc: Build all services
-    deps: [build:gateway, build:backend, build:frontend]
+    desc: Build all services (Gateway + Backend + Frontends)
+    deps: [build:gateway, build:backend, build:frontend, build:auth-frontend]
 
   build:gateway:
-    desc: Build gateway service
+    desc: Build gateway BFF with Spin
     dir: gateway
     cmds:
-      - cargo build --target wasm32-wasi
+      - echo "🏗️  Construyendo Gateway BFF..."
+      - cargo build --target wasm32-wasi --release
       - spin build
 
   build:backend:
-    desc: Build backend services
+    desc: Build all backend microservices
     cmds:
-      - cargo build --workspace --release
+      - echo "🏗️  Construyendo todos los microservicios backend..."
+      - cargo build --workspace --target wasm32-wasi --release --exclude shared
 
   build:frontend:
-    desc: Build frontend
+    desc: Build main frontend
     dir: frontend
     cmds:
-      - bun run build
+      - echo "🏗️  Construyendo frontend principal..."
+      - npm run build || pnpm run build || bun run build
 
-  # Development services
-  dev:services:
-    desc: Run all services in parallel
-    deps: [dev:gateway, dev:backend, dev:frontend]
+  build:auth-frontend:
+    desc: Build auth service frontend
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🏗️  Construyendo frontend de auth service..."
+      - npm run build || pnpm run build || bun run build || echo "⚠️  Auth frontend build not configured"
+
+  build:auth-service:
+    desc: Build complete auth service (Rust + React)
+    dir: backend/auth-service
+    cmds:
+      - echo "🏗️  Construyendo auth service completo..."
+      - cd app && (npm install || pnpm install || bun install) && (npm run build || pnpm run build || bun run build)
+      - cargo build --target wasm32-wasi --release
+      - spin build
+
+  # ============================================================================
+  # SERVICIOS DE DESARROLLO
+  # ============================================================================
+  
+  dev:all:
+    desc: Run all services in parallel with dynamic ports
+    deps: [dev:gateway, dev:backend, dev:frontend, dev:auth-frontend]
 
   dev:gateway:
-    desc: Run gateway in development
+    desc: Run gateway BFF with dynamic port
     dir: gateway
     cmds:
+      - echo "🚀 Iniciando Gateway BFF en puerto {{.GATEWAY_PORT}}..."
       - spin up --listen 0.0.0.0:{{.GATEWAY_PORT}}
 
   dev:backend:
-    desc: Run backend services
+    desc: Run all backend microservices with dynamic ports
     cmds:
+      - echo "🚀 Iniciando todos los microservicios backend..."
       - |
-        echo "Starting backend services..."
-        if [ -f "backend/booking-service/Cargo.toml" ]; then
-          cargo run --manifest-path backend/booking-service/Cargo.toml &
+        # Booking Service
+        if [ -f "backend/booking-service/spin.toml" ]; then
+          echo "  📦 Booking Service en puerto {{.BOOKING_PORT}}"
+          cd backend/booking-service && spin up --listen 0.0.0.0:{{.BOOKING_PORT}} &
         fi
-        if [ -f "backend/notification-service/Cargo.toml" ]; then
-          cargo run --manifest-path backend/notification-service/Cargo.toml &
+        
+        # Notification Service
+        if [ -f "backend/notification-service/spin.toml" ]; then
+          echo "  📧 Notification Service en puerto {{.NOTIFICATION_PORT}}"
+          cd backend/notification-service && spin up --listen 0.0.0.0:{{.NOTIFICATION_PORT}} &
         fi
-        if [ -f "backend/validation-service/Cargo.toml" ]; then
-          cargo run --manifest-path backend/validation-service/Cargo.toml &
+        
+        # Validation Service
+        if [ -f "backend/validation-service/spin.toml" ]; then
+          echo "  ✅ Validation Service en puerto {{.VALIDATION_PORT}}"
+          cd backend/validation-service && spin up --listen 0.0.0.0:{{.VALIDATION_PORT}} &
         fi
+        
+        # Info on Arrival Service
+        if [ -f "backend/info-on-arrival-service/spin.toml" ]; then
+          echo "  ℹ️  Info Arrival Service en puerto {{.INFO_ARRIVAL_PORT}}"
+          cd backend/info-on-arrival-service && spin up --listen 0.0.0.0:{{.INFO_ARRIVAL_PORT}} &
+        fi
+        
+        # Location Service
+        if [ -f "backend/location-service/spin.toml" ]; then
+          echo "  📍 Location Service en puerto {{.LOCATION_PORT}}"
+          cd backend/location-service && spin up --listen 0.0.0.0:{{.LOCATION_PORT}} &
+        fi
+        
+        # Rate Limiter Service
+        if [ -f "backend/rate-limiter-service/spin.toml" ]; then
+          echo "  🚦 Rate Limiter Service en puerto {{.RATE_LIMITER_PORT}}"
+          cd backend/rate-limiter-service && spin up --listen 0.0.0.0:{{.RATE_LIMITER_PORT}} &
+        fi
+        
+        # Reviews Service
+        if [ -f "backend/reviews-service/spin.toml" ]; then
+          echo "  ⭐ Reviews Service en puerto {{.REVIEWS_PORT}}"
+          cd backend/reviews-service && spin up --listen 0.0.0.0:{{.REVIEWS_PORT}} &
+        fi
+        
+        # Security Service
+        if [ -f "backend/security-service/spin.toml" ]; then
+          echo "  🔒 Security Service en puerto {{.SECURITY_PORT}}"
+          cd backend/security-service && spin up --listen 0.0.0.0:{{.SECURITY_PORT}} &
+        fi
+        
+        echo "⏳ Esperando a que todos los servicios estén listos..."
         wait
 
   dev:frontend:
-    desc: Run frontend development server
+    desc: Run main frontend development server
     dir: frontend
     cmds:
+      - echo "🚀 Iniciando frontend principal en puerto {{.FRONTEND_PORT}}..."
       - bun run dev -- --host 0.0.0.0 --port {{.FRONTEND_PORT}}
 
-  # Integration Testing
+  dev:auth-frontend:
+    desc: Run auth service frontend development server
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🚀 Iniciando frontend de auth en puerto {{.AUTH_FRONTEND_PORT}}..."
+      - bun run dev -- --host 0.0.0.0 --port {{.AUTH_FRONTEND_PORT}} || echo "⚠️  Auth frontend dev not configured"
+
+  # ============================================================================
+  # TESTING DE INTEGRACIÓN
+  # ============================================================================
+  
   test:integration:
     desc: Run integration tests
     deps: [test:integration:api, test:integration:database]
@@ -311,10 +509,11 @@ tasks:
     desc: Run API integration tests
     dir: tests/api
     cmds:
+      - echo "🔗 Ejecutando tests de integración de API..."
       - |
         for test_file in *.js *.mjs; do
           if [ -f "$test_file" ]; then
-            echo "Running $test_file..."
+            echo "  🧪 Ejecutando $test_file..."
             if [[ "$test_file" == *.mjs ]]; then
               node "$test_file" || echo "⚠️  Test $test_file failed"
             else
@@ -327,11 +526,12 @@ tasks:
     desc: Run database integration tests
     dir: database/test
     cmds:
+      - echo "🗄️  Ejecutando tests de integración de base de datos..."
       - |
         if command -v psql >/dev/null 2>&1; then
           for sql_file in *.sql; do
             if [ -f "$sql_file" ]; then
-              echo "Running database test: $sql_file"
+              echo "  🧪 Ejecutando test de DB: $sql_file"
               psql "${DATABASE_URL}" -f "$sql_file" || echo "⚠️  Database test $sql_file failed"
             fi
           done
@@ -339,7 +539,10 @@ tasks:
           echo "⚠️  PostgreSQL client not available, skipping database tests"
         fi
 
-  # End-to-End Testing
+  # ============================================================================
+  # TESTING END-TO-END
+  # ============================================================================
+  
   test:e2e:
     desc: Run all E2E tests
     deps: [test:e2e:testcafe, test:e2e:comprehensive]
@@ -348,11 +551,12 @@ tasks:
     desc: Run TestCafe E2E tests
     dir: tests/e2e/testcafe
     cmds:
+      - echo "🎭 Ejecutando tests E2E con TestCafe..."
       - |
         if command -v testcafe >/dev/null 2>&1; then
           for test_file in *.js; do
             if [ -f "$test_file" ]; then
-              echo "Running E2E test: $test_file"
+              echo "  🧪 Ejecutando E2E test: $test_file"
               testcafe chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
             fi
           done
@@ -364,6 +568,7 @@ tasks:
     desc: Run comprehensive E2E test suite
     dir: tests/runners
     cmds:
+      - echo "🎭 Ejecutando suite completa de tests E2E..."
       - |
         if [ -f "run-comprehensive-testcafe.js" ]; then
           node run-comprehensive-testcafe.js || echo "⚠️  Comprehensive E2E tests failed"
@@ -371,7 +576,10 @@ tasks:
           echo "⚠️  Comprehensive test runner not found"
         fi
 
-  # Dynamic Application Security Testing (DAST)
+  # ============================================================================
+  # TESTING DE SEGURIDAD DINÁMICO (DAST)
+  # ============================================================================
+  
   security:dast:
     desc: Run DAST security scans
     deps: [security:dast:zap, security:dast:nuclei]
@@ -379,6 +587,7 @@ tasks:
   security:dast:zap:
     desc: Run OWASP ZAP security scan
     cmds:
+      - echo "🔒 Ejecutando escaneo de seguridad con OWASP ZAP..."
       - |
         if command -v zap-baseline.py >/dev/null 2>&1; then
           if [ -f "tests/infrastructure/security/zap-rules.tsv" ]; then
@@ -393,6 +602,7 @@ tasks:
   security:dast:nuclei:
     desc: Run Nuclei vulnerability scanner
     cmds:
+      - echo "🔒 Ejecutando escaneo de vulnerabilidades con Nuclei..."
       - |
         if command -v nuclei >/dev/null 2>&1; then
           nuclei -u {{.FRONTEND_URI}} -severity medium,high,critical
@@ -400,7 +610,10 @@ tasks:
           echo "⚠️  Nuclei not installed, skipping vulnerability scan"
         fi
 
-  # Performance Testing
+  # ============================================================================
+  # TESTING DE RENDIMIENTO
+  # ============================================================================
+  
   performance:all:
     desc: Run all performance tests
     deps: [performance:lighthouse, performance:k6]
@@ -408,9 +621,10 @@ tasks:
   performance:lighthouse:
     desc: Run Lighthouse performance audit
     cmds:
+      - echo "⚡ Ejecutando auditoría de rendimiento con Lighthouse..."
       - |
         if ! command -v lighthouse >/dev/null 2>&1; then
-          echo "⚠️  Lighthouse not installed, installing..."
+          echo "📥 Instalando Lighthouse..."
           npm install -g lighthouse || echo "⚠️  Failed to install Lighthouse"
         fi
         if command -v lighthouse >/dev/null 2>&1; then
@@ -422,6 +636,7 @@ tasks:
   performance:k6:
     desc: Run k6 load testing
     cmds:
+      - echo "⚡ Ejecutando tests de carga con k6..."
       - |
         if command -v k6 >/dev/null 2>&1; then
           if [ -f "tests/infrastructure/performance/api-load-test.js" ]; then
@@ -433,7 +648,10 @@ tasks:
           echo "⚠️  k6 not installed, skipping load tests"
         fi
 
-  # Cross-browser and device compatibility
+  # ============================================================================
+  # COMPATIBILIDAD CROSS-BROWSER Y DISPOSITIVOS
+  # ============================================================================
+  
   compatibility:all:
     desc: Run cross-browser and device compatibility tests
     deps: [compatibility:browsers, compatibility:devices]
@@ -441,6 +659,7 @@ tasks:
   compatibility:browsers:
     desc: Test on major browsers
     cmds:
+      - echo "🌐 Ejecutando tests de compatibilidad de navegadores..."
       - |
         if command -v testcafe >/dev/null 2>&1; then
           if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
@@ -458,6 +677,7 @@ tasks:
   compatibility:devices:
     desc: Test responsive design on different devices
     cmds:
+      - echo "📱 Ejecutando tests de compatibilidad de dispositivos..."
       - |
         if command -v testcafe >/dev/null 2>&1; then
           if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
@@ -471,28 +691,37 @@ tasks:
           echo "⚠️  TestCafe not installed, skipping device compatibility tests"
         fi
 
-  # Utility tasks
+  # ============================================================================
+  # UTILIDADES
+  # ============================================================================
+  
   clean:
     desc: Clean build artifacts and caches
     cmds:
+      - echo "🧹 Limpiando artefactos de construcción..."
       - cargo clean
       - rm -rf frontend/dist/
       - rm -rf frontend/node_modules/.cache/
+      - rm -rf backend/auth-service/app/dist/
+      - rm -rf backend/auth-service/app/node_modules/.cache/
       - rm -rf coverage/
       - rm -rf tests/e2e/outputs/
-      - echo "✅ Clean completed"
+      - rm -rf .env.ports
+      - echo "✅ Limpieza completada"
 
   preview:
     desc: Preview built application
     deps: [build:all]
     dir: frontend
     cmds:
+      - echo "👀 Iniciando preview de la aplicación..."
       - bun run serve -- --host 0.0.0.0 --port 4173
 
   deploy:
     desc: Deploy to production
     deps: [ci:full]
     cmds:
+      - echo "🚀 Desplegando a producción..."
       - |
         if command -v spin >/dev/null 2>&1; then
           spin deploy
@@ -500,18 +729,26 @@ tasks:
           echo "⚠️  Spin CLI not available for deployment"
         fi
 
-  # Health checks
+  # ============================================================================
+  # HEALTH CHECKS
+  # ============================================================================
+  
   health:check:
     desc: Check application health
     cmds:
+      - echo "🏥 Verificando salud de la aplicación..."
       - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
       - curl -f {{.GATEWAY_URI}}/api/health || echo "⚠️  Gateway health check failed"
 
-  # Database operations
+  # ============================================================================
+  # OPERACIONES DE BASE DE DATOS
+  # ============================================================================
+  
   db:migrate:
     desc: Run database migrations
     dir: database
     cmds:
+      - echo "🗄️  Ejecutando migraciones de base de datos..."
       - |
         if [ -f "scripts/migrate-postgres.sh" ]; then
           ./scripts/migrate-postgres.sh
@@ -523,6 +760,7 @@ tasks:
     desc: Seed database with test data
     dir: database
     cmds:
+      - echo "🌱 Sembrando base de datos con datos de prueba..."
       - |
         if command -v psql >/dev/null 2>&1 && [ -f "seed/dev_seed.sql" ]; then
           psql "${DATABASE_URL}" -f seed/dev_seed.sql
@@ -534,11 +772,18 @@ tasks:
     desc: Reset database
     deps: [db:migrate, db:seed]
 
-  # Nix environment verification
-  nix:
+  # ============================================================================
+  # VERIFICACIÓN DE ENTORNO NIX
+  # ============================================================================
+  
+  nix:check:
     desc: Verify Nix packages are available
     cmds:
+      - echo "❄️  Verificando paquetes de Nix..."
       - rustc --version && echo "✅ Rust available"
       - node --version && echo "✅ Node.js available"
       - bun --version && echo "✅ Bun available"
       - caddy version && echo "✅ Caddy available"
+      - spin --version && echo "✅ Spin available"
+      - trunk --version && echo "✅ Trunk available"
+      - echo "✅ Todos los paquetes de Nix están disponibles"

@@ -100,13 +100,42 @@
         # Shell alternativo solo para CI/CD (más ligero)
         devShells.ci = pkgs.mkShell {
           buildInputs = [
+            # --- Runtimes Core ---
             spin-cli
             bun-cli
             pkgs.rustc
             pkgs.cargo
+            pkgs.rustfmt
+            pkgs.clippy
             pkgs.nodejs_22
+          
+            # --- Herramientas de Sistema ---
             pkgs.trunk-io
             pkgs.go-task
+            pkgs.caddy              # Gateway
+            pkgs.semgrep           # SAST
+            
+            # --- Base de Datos ---
+            pkgs.postgresql        # Para migraciones y tests
+            pkgs.sqlx-cli          # Para SQLx migrations
+            
+            # --- Testing Completo ---
+            pkgs.nodePackages.testcafe    # E2E testing
+            pkgs.nodePackages.lighthouse  # Performance
+            pkgs.k6                       # Load testing
+            pkgs.nuclei                   # Security scanning
+            
+            # --- Herramientas de Seguridad ---
+            pkgs.cargo-audit       # Rust security audit
+            pkgs.zap               # OWASP ZAP
+            
+            # --- Utilidades ---
+            pkgs.curl              # Health checks
+            pkgs.jq                # JSON processing
+            pkgs.git               # Version control
+            
+            # --- Desarrollo ---
+            pkgs.rust-analyzer
             pkgs.openssl
             pkgs.pkg-config
             pkgs.unzip
