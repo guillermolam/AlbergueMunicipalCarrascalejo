@@ -1,47 +1,63 @@
+
 use anyhow::Result;
-use serde_json::json;
 use spin_sdk::http::{Request, Response};
 
 pub async fn handle(req: &Request) -> Result<Response> {
     let path = req.uri().path();
-
-    match path {
-        "/api/location/info" => handle_location_info().await,
-        "/api/location/directions" => handle_directions(req).await,
+    let method = req.method().as_str();
+    
+    match (method, path) {
+        ("GET", "/api/location/info") => handle_location_info(req).await,
+        ("GET", "/api/location/weather") => handle_weather_info(req).await,
         _ => {
+            let error_body = serde_json::json!({
+                "error": "Not Found",
+                "message": "Location endpoint not found"
+            });
+            
             Ok(Response::builder()
                 .status(404)
                 .header("Content-Type", "application/json")
-                .body(json!({"error": "Location endpoint not found"}).to_string())
+                .header("Access-Control-Allow-Origin", "*")
+                .body(error_body.to_string())
                 .build())
         }
     }
 }
 
-async fn handle_location_info() -> Result<Response> {
-    let location = json!({
-        "name": "Albergue del Carrascalejo",
+async fn handle_location_info(_req: &Request) -> Result<Response> {
+    let location_info = serde_json::json!({
+        "name": "Albergue Del Carrascalejo",
         "address": "Carrascalejo, Extremadura, Spain",
         "coordinates": {
-            "lat": 39.2436,
-            "lng": -5.8739
+            "latitude": 39.2833,
+            "longitude": -5.8167
         },
-        "camino_stage": "Mérida to Alcuéscar",
-        "distance_from_merida_km": 18.5
+        "facilities": ["WiFi", "Kitchen", "Laundry", "Bicycle storage"],
+        "capacity": 20
     });
-
+    
     Ok(Response::builder()
         .status(200)
         .header("Content-Type", "application/json")
-        .body(location.to_string())
+        .header("Access-Control-Allow-Origin", "*")
+        .body(location_info.to_string())
         .build())
 }
 
-async fn handle_directions(_req: &Request) -> Result<Response> {
-    // TODO: Implement directions logic
+async fn handle_weather_info(_req: &Request) -> Result<Response> {
+    let weather = serde_json::json!({
+        "location": "Carrascalejo",
+        "temperature": 22,
+        "condition": "sunny",
+        "humidity": 65,
+        "wind_speed": 8
+    });
+    
     Ok(Response::builder()
-        .status(501)
+        .status(200)
         .header("Content-Type", "application/json")
-        .body(json!({"error": "Not implemented yet"}).to_string())
+        .header("Access-Control-Allow-Origin", "*")
+        .body(weather.to_string())
         .build())
 }

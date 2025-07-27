@@ -33,7 +33,7 @@ struct OIDCUserInfo {
 }
 
 // Stateless pure function for extracting bearer token
-fn extract_bearer_token(req: &Request) -> Option<String> {
+pub fn extract_bearer_token(req: &Request) -> Option<String> {
     req.headers()
         .get("authorization")
         .and_then(|h| h.to_str().ok())
@@ -47,7 +47,7 @@ fn extract_bearer_token(req: &Request) -> Option<String> {
 }
 
 // Async stateless function for OAuth2 token validation
-async fn validate_oauth2_token(token: &str, token_type: &str) -> Result<TokenValidationResponse> {
+pub async fn validate_oauth2_token(token: &str, token_type: &str) -> Result<TokenValidationResponse> {
     let validation_task = tokio::task::spawn({
         let token = token.to_string();
         let token_type = token_type.to_string();
@@ -173,7 +173,7 @@ async fn handle_authorization_code_flow(req: &Request) -> Result<Response> {
 }
 
 // Stateless pure function for query parameter extraction
-fn extract_query_params(req: &Request) -> HashMap<String, String> {
+pub fn extract_query_params(req: &Request) -> HashMap<String, String> {
     let mut params = HashMap::new();
     
     if let Some(query) = req.uri().query() {
