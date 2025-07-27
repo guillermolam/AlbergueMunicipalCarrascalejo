@@ -65,7 +65,7 @@
             pkgs.nodejs_22
 
             # --- Herramientas de Calidad y Sistema ---
-            pkgs.trunk     # Package for trunk linter/formatter
+            pkgs.nodePackages.trunk-io  # Trunk.io linter/formatter
             pkgs.go-task   # Task runner
 
             # --- Soporte para el IDE ---
@@ -102,7 +102,7 @@
             pkgs.rustc
             pkgs.cargo
             pkgs.nodejs_22
-            pkgs.trunk
+            pkgs.nodePackages.trunk-io
             pkgs.go-task
             pkgs.openssl
             pkgs.pkg-config
