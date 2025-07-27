@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 console.log('🧪 Comprehensive TestCafe Test Suite Runner');
 console.log('📋 Testing all document types and complete registration flow\n');
 
