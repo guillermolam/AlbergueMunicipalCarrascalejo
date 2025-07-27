@@ -808,8 +808,9 @@ tasks:
     cmds:
       - echo "🌱 Sembrando base de datos con datos de prueba..."
       - |
-        if command -v psql >/dev/null 2>&1 && [ -f "seed/dev_seed.sql" ]; then
-          psql "${DATABASE_URL}" -f seed/dev_seed.sql
+        DB_SEED_URL="${DATABASE_URL:-${NEON_DATABASE_URL:-postgresql://localhost:5432/albergue_dev}}"
+        if command -v psql >/dev/null 2>&1 && [ -f "database/seed/dev_seed.sql" ]; then
+          psql "$DB_SEED_URL" -f "database/seed/dev_seed.sql"
         else
           echo "⚠️  PostgreSQL client not available or seed file not found"
         fi

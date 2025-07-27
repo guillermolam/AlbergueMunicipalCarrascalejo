@@ -4,6 +4,7 @@ set -e
 echo "🏗️  Complete Database Setup for Albergue del Carrascalejo"
 
 # Configuration
+# Use NEON_DATABASE_URL for production, DATABASE_URL for development
 DB_URL=${NEON_DATABASE_URL:-$DATABASE_URL}
 SEED_TYPE=${1:-dev}  # 'dev' or 'test'
 

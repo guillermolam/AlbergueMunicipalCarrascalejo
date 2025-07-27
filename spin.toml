@@ -8,7 +8,7 @@ authors = ["Albergue Del Carrascalejo"]
 description = "Microservices architecture for albergue management"
 
 [variables]
-database_url = { required = true }
+database_url = { required = true, default = "postgresql://localhost:5432/albergue_dev" }
 neon_database_url = { required = true }
 auth0_domain = { required = true }
 auth0_client_id = { required = true }
