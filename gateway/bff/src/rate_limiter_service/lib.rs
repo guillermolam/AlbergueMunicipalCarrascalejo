@@ -4,51 +4,43 @@ use spin_sdk::http::{Request, Response};
 use std::collections::HashMap;
 
 pub async fn handle(req: &Request) -> Result<Response> {
-    // Extract client identifier
-    let client_id = req.headers()
+    // Mock rate limiting logic
+    // In real implementation, this would check against a rate limiting store
+    
+    let client_ip = req.headers()
         .get("x-forwarded-for")
         .or_else(|| req.headers().get("x-real-ip"))
         .and_then(|h| h.to_str().ok())
         .unwrap_or("unknown");
     
-    // Simulate rate limiting check
-    // In real implementation, this would check against a key-value store
-    let is_rate_limited = simulate_rate_limit_check(client_id);
+    // Mock rate limit check - allow first 15 requests, then start limiting
+    let request_count = client_ip.len() % 20; // Mock counter based on IP
     
-    if is_rate_limited {
+    if request_count >= 15 {
         let error_body = serde_json::json!({
             "error": "Rate Limit Exceeded",
-            "client_id": client_id,
+            "message": "Too many requests",
             "retry_after": 60
-        });
+        }).to_string();
         
         Ok(Response::builder()
             .status(429)
             .header("Content-Type", "application/json")
             .header("X-RateLimit-Remaining", "0")
             .header("X-RateLimit-Reset", "60")
-            .header("Retry-After", "60")
-            .body(error_body.to_string())
+            .body(error_body)
             .build())
     } else {
-        let success_body = serde_json::json!({
-            "status": "allowed",
-            "client_id": client_id,
-            "remaining": 99
-        });
+        let response_body = serde_json::json!({
+            "status": "ok",
+            "requests_remaining": 15 - request_count
+        }).to_string();
         
         Ok(Response::builder()
             .status(200)
             .header("Content-Type", "application/json")
-            .header("X-RateLimit-Remaining", "99")
-            .header("X-RateLimit-Reset", "3600")
-            .body(success_body.to_string())
+            .header("X-RateLimit-Remaining", &(15 - request_count).to_string())
+            .body(response_body)
             .build())
     }
-}
-
-fn simulate_rate_limit_check(client_id: &str) -> bool {
-    // Simulate rate limiting logic
-    // In real implementation, this would check request counts in KV store
-    client_id.contains("blocked") || client_id.contains("limited")
 }

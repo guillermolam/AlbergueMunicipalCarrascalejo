@@ -1,39 +1,65 @@
+
 use anyhow::Result;
 use spin_sdk::http::{Request, Response};
-use crate::build_response_with_cors;
 
 pub async fn handle(req: &Request) -> Result<Response> {
     let path = req.uri().path();
-
-    match path {
-        "/api/auth/login" => {
-            let response_body = serde_json::json!({
-                "login_url": "https://dev-auth0.auth0.com/authorize?client_id=test&redirect_uri=callback",
-                "status": "redirect"
-            });
-            Ok(build_response_with_cors(200, "application/json", response_body.to_string()))
-        }
-        "/api/auth/callback" => {
+    let method = req.method().as_str();
+    
+    match (method, path) {
+        ("POST", "/api/auth/login") => {
             let response_body = serde_json::json!({
                 "access_token": "mock_access_token_123",
-                "user_id": "user_123",
-                "status": "authenticated"
-            });
-            Ok(build_response_with_cors(200, "application/json", response_body.to_string()))
-        }
-        "/api/auth/userinfo" => {
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "user": {
+                    "id": "user_123",
+                    "email": "test@example.com"
+                }
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
+        ("GET", "/api/auth/callback") => {
             let response_body = serde_json::json!({
-                "user_id": "user_123",
+                "status": "success",
+                "message": "OAuth callback processed successfully"
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
+        ("POST", "/api/auth/userinfo") => {
+            let response_body = serde_json::json!({
+                "sub": "user_123",
                 "email": "test@example.com",
-                "permissions": ["read", "write"]
-            });
-            Ok(build_response_with_cors(200, "application/json", response_body.to_string()))
-        }
+                "name": "Test User"
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
         _ => {
             let error_body = serde_json::json!({
-                "error": "Auth endpoint not found"
-            });
-            Ok(build_response_with_cors(404, "application/json", error_body.to_string()))
+                "error": "Not Found",
+                "message": "Auth endpoint not found"
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(404)
+                .header("Content-Type", "application/json")
+                .body(error_body)
+                .build())
         }
     }
 }
