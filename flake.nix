@@ -42,8 +42,7 @@
           version = bun-version;
           src = pkgs.fetchurl {
             url = "https://github.com/oven-sh/bun/releases/download/bun-v${bun-version}/bun-linux-x64.zip";
-            # Necesitarás actualizar este hash cuando pruebes
-            sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            sha256 = "sha256-w9PBTppeyD/2fQrP525DFa0G2p809Z/HsTgTeCyvH2Y=";
           };
           nativeBuildInputs = [ pkgs.unzip ];
           installPhase = ''
@@ -66,8 +65,8 @@
             pkgs.nodejs_22
 
             # --- Herramientas de Calidad y Sistema ---
-            pkgs.trunk-io  # Corregido: usar trunk-io en lugar de nodePackages.trunkio
-            pkgs.go-task   # Añadido: faltaba en la versión anterior
+            pkgs.trunk     # Package for trunk linter/formatter
+            pkgs.go-task   # Task runner
 
             # --- Soporte para el IDE ---
             pkgs.rust-analyzer
@@ -103,7 +102,7 @@
             pkgs.rustc
             pkgs.cargo
             pkgs.nodejs_22
-            pkgs.trunk-io
+            pkgs.trunk
             pkgs.go-task
             pkgs.openssl
             pkgs.pkg-config
