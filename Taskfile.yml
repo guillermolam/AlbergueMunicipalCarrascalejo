@@ -37,7 +37,7 @@ tasks:
   # ============================================================================
   # UTILIDADES DE PUERTOS
   # ============================================================================
-  
+
   ports:show:
     desc: Show all assigned dynamic ports
     cmds:
@@ -84,7 +84,7 @@ tasks:
   # ============================================================================
   # PUNTOS DE ENTRADA PRINCIPALES
   # ============================================================================
-  
+
   default:
     desc: Run full CI/CD pipeline
     deps: [ci:full]
@@ -114,7 +114,7 @@ tasks:
   # ============================================================================
   # CONFIGURACIÓN Y VERIFICACIÓN
   # ============================================================================
-  
+
   setup:check:
     desc: Verify development environment
     cmds:
@@ -168,7 +168,7 @@ tasks:
   # ============================================================================
   # FORMATEO DE CÓDIGO
   # ============================================================================
-  
+
   format:all:
     desc: Format all code (Rust + Frontend + Auth Frontend)
     deps: [format:rust, format:frontend, format:auth-frontend]
@@ -211,7 +211,7 @@ tasks:
   format:check:rust:
     desc: Check Rust formatting
     cmds:
-      - cargo fmt --all -- --check
+      - cargo fmt --check
 
   format:check:frontend:
     desc: Check main frontend formatting
@@ -238,7 +238,7 @@ tasks:
   # ============================================================================
   # LINTING
   # ============================================================================
-  
+
   lint:all:
     desc: Run all linters (Rust + Frontend + Trunk)
     deps: [lint:rust, lint:frontend, lint:auth-frontend, lint:trunk]
@@ -277,7 +277,7 @@ tasks:
   # ============================================================================
   # ANÁLISIS DE SEGURIDAD ESTÁTICO (SAST)
   # ============================================================================
-  
+
   sast:all:
     desc: Run all SAST tools
     deps: [sast:semgrep, sast:cargo-audit, sast:trunk-security]
@@ -317,7 +317,7 @@ tasks:
   # ============================================================================
   # TESTING UNITARIO
   # ============================================================================
-  
+
   test:unit:
     desc: Run all unit tests
     deps: [test:unit:rust, test:unit:frontend, test:unit:auth-frontend]
@@ -372,7 +372,7 @@ tasks:
   # ============================================================================
   # CONSTRUCCIÓN
   # ============================================================================
-  
+
   build:all:
     desc: Build all services (Gateway + Backend + Frontends)
     deps: [build:gateway, build:backend, build:frontend, build:auth-frontend]
@@ -417,7 +417,7 @@ tasks:
   # ============================================================================
   # SERVICIOS DE DESARROLLO
   # ============================================================================
-  
+
   dev:all:
     desc: Run all services in parallel with dynamic ports
     deps: [dev:gateway, dev:backend, dev:frontend, dev:auth-frontend]
@@ -439,49 +439,49 @@ tasks:
           echo "  📦 Booking Service en puerto {{.BOOKING_PORT}}"
           cd backend/booking-service && spin up --listen 0.0.0.0:{{.BOOKING_PORT}} &
         fi
-        
+
         # Notification Service
         if [ -f "backend/notification-service/spin.toml" ]; then
           echo "  📧 Notification Service en puerto {{.NOTIFICATION_PORT}}"
           cd backend/notification-service && spin up --listen 0.0.0.0:{{.NOTIFICATION_PORT}} &
         fi
-        
+
         # Validation Service
         if [ -f "backend/validation-service/spin.toml" ]; then
           echo "  ✅ Validation Service en puerto {{.VALIDATION_PORT}}"
           cd backend/validation-service && spin up --listen 0.0.0.0:{{.VALIDATION_PORT}} &
         fi
-        
+
         # Info on Arrival Service
         if [ -f "backend/info-on-arrival-service/spin.toml" ]; then
           echo "  ℹ️  Info Arrival Service en puerto {{.INFO_ARRIVAL_PORT}}"
           cd backend/info-on-arrival-service && spin up --listen 0.0.0.0:{{.INFO_ARRIVAL_PORT}} &
         fi
-        
+
         # Location Service
         if [ -f "backend/location-service/spin.toml" ]; then
           echo "  📍 Location Service en puerto {{.LOCATION_PORT}}"
           cd backend/location-service && spin up --listen 0.0.0.0:{{.LOCATION_PORT}} &
         fi
-        
+
         # Rate Limiter Service
         if [ -f "backend/rate-limiter-service/spin.toml" ]; then
           echo "  🚦 Rate Limiter Service en puerto {{.RATE_LIMITER_PORT}}"
           cd backend/rate-limiter-service && spin up --listen 0.0.0.0:{{.RATE_LIMITER_PORT}} &
         fi
-        
+
         # Reviews Service
         if [ -f "backend/reviews-service/spin.toml" ]; then
           echo "  ⭐ Reviews Service en puerto {{.REVIEWS_PORT}}"
           cd backend/reviews-service && spin up --listen 0.0.0.0:{{.REVIEWS_PORT}} &
         fi
-        
+
         # Security Service
         if [ -f "backend/security-service/spin.toml" ]; then
           echo "  🔒 Security Service en puerto {{.SECURITY_PORT}}"
           cd backend/security-service && spin up --listen 0.0.0.0:{{.SECURITY_PORT}} &
         fi
-        
+
         echo "⏳ Esperando a que todos los servicios estén listos..."
         wait
 
@@ -502,16 +502,15 @@ tasks:
   # ============================================================================
   # TESTING DE INTEGRACIÓN
   # ============================================================================
-  
+
   test:integration:
     desc: Run integration tests
     deps: [test:integration:api, test:integration:database]
 
   test:integration:api:
-    desc: Run API integration tests
+    desc: "🔗 Ejecutando tests de integración de API"
     dir: tests/api
     cmds:
-      - echo "🔗 Ejecutando tests de integración de API..."
       - |
         for test_file in *.js *.mjs; do
           if [ -f "$test_file" ]; then
@@ -525,16 +524,15 @@ tasks:
         done
 
   test:integration:database:
-    desc: Run database integration tests
+    desc: "🗄️  Ejecutando tests de integración de base de datos"
+    dir: database/test
     cmds:
-      - echo "🗄️  Ejecutando tests de integración de base de datos..."
       - |
         if command -v psql >/dev/null 2>&1; then
-          cd database/test
           for sql_file in *.sql; do
             if [ -f "$sql_file" ]; then
               echo "  🧪 Ejecutando test de DB: $sql_file"
-              psql "${DATABASE_URL:-postgresql://localhost:5432/albergue_dev}" -f "$sql_file" || echo "⚠️  Database test $sql_file failed"
+              psql "${DATABASE_URL}" -f "$sql_file" || echo "⚠️  Database test $sql_file failed"
             fi
           done
         else
@@ -544,16 +542,15 @@ tasks:
   # ============================================================================
   # TESTING END-TO-END
   # ============================================================================
-  
+
   test:e2e:
     desc: Run all E2E tests
     deps: [test:e2e:testcafe, test:e2e:comprehensive]
 
   test:e2e:testcafe:
-    desc: Run TestCafe E2E tests
+    desc: "🎭 Ejecutando tests E2E con TestCafe"
     dir: tests/e2e/testcafe
     cmds:
-      - echo "🎭 Ejecutando tests E2E con TestCafe..."
       - |
         # Try different ways to find testcafe
         TESTCAFE_CMD=""
@@ -564,7 +561,7 @@ tasks:
         elif [ -f "../../../frontend/node_modules/.bin/testcafe" ]; then
           TESTCAFE_CMD="../../../frontend/node_modules/.bin/testcafe"
         fi
-        
+
         if [ -n "$TESTCAFE_CMD" ]; then
           for test_file in *.js; do
             if [ -f "$test_file" ]; then
@@ -578,10 +575,9 @@ tasks:
         fi
 
   test:e2e:comprehensive:
-    desc: Run comprehensive E2E test suite
+    desc: "🎭 Ejecutando suite completa de tests E2E"
     dir: tests/runners
     cmds:
-      - echo "🎭 Ejecutando suite completa de tests E2E..."
       - |
         if [ -f "run-comprehensive-testcafe.js" ]; then
           node run-comprehensive-testcafe.js || echo "⚠️  Comprehensive E2E tests failed"
@@ -592,7 +588,7 @@ tasks:
   # ============================================================================
   # TESTING DE SEGURIDAD DINÁMICO (DAST)
   # ============================================================================
-  
+
   security:dast:
     desc: Run DAST security scans
     deps: [security:dast:zap, security:dast:nuclei]
@@ -626,7 +622,7 @@ tasks:
   # ============================================================================
   # TESTING DE RENDIMIENTO
   # ============================================================================
-  
+
   performance:all:
     desc: Run all performance tests
     deps: [performance:lighthouse, performance:k6]
@@ -645,7 +641,7 @@ tasks:
         elif [ -f "frontend/node_modules/.bin/lighthouse" ]; then
           LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
         fi
-        
+
         if [ -n "$LIGHTHOUSE_CMD" ]; then
           mkdir -p tests/infrastructure/performance
           echo "  🏃 Running Lighthouse audit on {{.FRONTEND_URI}}"
@@ -682,7 +678,7 @@ tasks:
   # ============================================================================
   # COMPATIBILIDAD CROSS-BROWSER Y DISPOSITIVOS
   # ============================================================================
-  
+
   compatibility:all:
     desc: Run cross-browser and device compatibility tests
     deps: [compatibility:browsers, compatibility:devices]
@@ -701,7 +697,7 @@ tasks:
         elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
           TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
         fi
-        
+
         if [ -n "$TESTCAFE_CMD" ]; then
           if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
             echo "  🧪 Testing Chrome..."
@@ -733,7 +729,7 @@ tasks:
         elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
           TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
         fi
-        
+
         if [ -n "$TESTCAFE_CMD" ]; then
           if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
             echo "  📱 Testing iPhone..."
@@ -752,7 +748,7 @@ tasks:
   # ============================================================================
   # UTILIDADES
   # ============================================================================
-  
+
   clean:
     desc: Clean build artifacts and caches
     cmds:
@@ -790,7 +786,7 @@ tasks:
   # ============================================================================
   # HEALTH CHECKS
   # ============================================================================
-  
+
   health:check:
     desc: Check application health
     cmds:
@@ -801,7 +797,7 @@ tasks:
   # ============================================================================
   # OPERACIONES DE BASE DE DATOS
   # ============================================================================
-  
+
   db:migrate:
     desc: Run database migrations
     dir: database
@@ -833,7 +829,7 @@ tasks:
   # ============================================================================
   # VERIFICACIÓN DE ENTORNO NIX
   # ============================================================================
-  
+
   nix:check:
     desc: Verify Nix packages are available
     cmds:
