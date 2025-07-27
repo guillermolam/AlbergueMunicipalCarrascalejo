@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BookingDto {
@@ -33,7 +33,7 @@ pub enum BookingStatus {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ValidationRequest {
     pub document_type: DocumentType,
-    pub front_image: String, // base64
+    pub front_image: String,        // base64
     pub back_image: Option<String>, // base64
 }
 

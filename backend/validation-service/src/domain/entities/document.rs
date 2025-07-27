@@ -1,9 +1,8 @@
-
 use chrono::{DateTime, Utc};
-use shared::{DocumentType, ExtractedData};
-use uuid::Uuid;
-use tokio::task;
 use futures::future::try_join_all;
+use shared::{DocumentType, ExtractedData};
+use tokio::task;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct Document {
@@ -43,37 +42,39 @@ impl Document {
     }
 
     // Async method for comprehensive validation using tokio
-    pub async fn validate_comprehensive(&self) -> Result<ValidationResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn validate_comprehensive(
+        &self,
+    ) -> Result<ValidationResult, Box<dyn std::error::Error + Send + Sync>> {
         let validation_tasks = match self.document_type {
             DocumentType::DNI => {
                 let checksum_task = task::spawn({
                     let doc_num = self.document_number.clone();
                     async move { validate_dni_checksum_async(&doc_num).await }
                 });
-                
+
                 let format_task = task::spawn({
                     let doc_num = self.document_number.clone();
                     async move { validate_dni_format_async(&doc_num).await }
                 });
-                
+
                 let expiry_task = task::spawn(async {
                     tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
                     true // DNI doesn't typically expire
                 });
-                
-                let (checksum_valid, format_valid, expiry_valid) = 
+
+                let (checksum_valid, format_valid, expiry_valid) =
                     tokio::try_join!(checksum_task, format_task, expiry_task)?;
-                
+
                 ValidationResult {
                     is_valid: checksum_valid && format_valid && expiry_valid,
                     checksum_valid: Some(checksum_valid),
                     format_valid: Some(format_valid),
                     expiry_valid: Some(expiry_valid),
                     confidence: 0.95,
-                    errors: if checksum_valid && format_valid { 
-                        vec![] 
-                    } else { 
-                        vec!["DNI validation failed".to_string()] 
+                    errors: if checksum_valid && format_valid {
+                        vec![]
+                    } else {
+                        vec!["DNI validation failed".to_string()]
                     },
                 }
             }
@@ -82,25 +83,24 @@ impl Document {
                     let doc_num = self.document_number.clone();
                     async move { validate_nie_checksum_async(&doc_num).await }
                 });
-                
+
                 let format_task = task::spawn({
                     let doc_num = self.document_number.clone();
                     async move { validate_nie_format_async(&doc_num).await }
                 });
-                
-                let (checksum_valid, format_valid) = 
-                    tokio::try_join!(checksum_task, format_task)?;
-                
+
+                let (checksum_valid, format_valid) = tokio::try_join!(checksum_task, format_task)?;
+
                 ValidationResult {
                     is_valid: checksum_valid && format_valid,
                     checksum_valid: Some(checksum_valid),
                     format_valid: Some(format_valid),
                     expiry_valid: Some(!self.is_expired()),
                     confidence: 0.90,
-                    errors: if checksum_valid && format_valid { 
-                        vec![] 
-                    } else { 
-                        vec!["NIE validation failed".to_string()] 
+                    errors: if checksum_valid && format_valid {
+                        vec![]
+                    } else {
+                        vec!["NIE validation failed".to_string()]
                     },
                 }
             }
@@ -109,15 +109,14 @@ impl Document {
                     tokio::time::sleep(tokio::time::Duration::from_millis(20)).await;
                     true // Simplified passport validation
                 });
-                
+
                 let expiry_task = task::spawn({
                     let is_expired = self.is_expired();
                     async move { !is_expired }
                 });
-                
-                let (mrz_valid, expiry_valid) = 
-                    tokio::try_join!(mrz_task, expiry_task)?;
-                
+
+                let (mrz_valid, expiry_valid) = tokio::try_join!(mrz_task, expiry_task)?;
+
                 ValidationResult {
                     is_valid: mrz_valid && expiry_valid,
                     checksum_valid: Some(mrz_valid),
@@ -128,7 +127,7 @@ impl Document {
                 }
             }
         };
-        
+
         Ok(validation_tasks)
     }
 
@@ -189,16 +188,16 @@ async fn validate_dni_checksum_async(dni: &str) -> bool {
 // Async stateless function for DNI format validation
 async fn validate_dni_format_async(dni: &str) -> bool {
     tokio::time::sleep(tokio::time::Duration::from_millis(3)).await;
-    
+
     if dni.len() != 9 {
         return false;
     }
-    
+
     let number_part = &dni[..8];
     let letter_part = &dni[8..];
-    
-    number_part.chars().all(|c| c.is_ascii_digit()) && 
-    letter_part.chars().all(|c| c.is_ascii_alphabetic())
+
+    number_part.chars().all(|c| c.is_ascii_digit())
+        && letter_part.chars().all(|c| c.is_ascii_alphabetic())
 }
 
 // Stateless pure function for NIE checksum validation (sync)
@@ -242,28 +241,24 @@ async fn validate_nie_checksum_async(nie: &str) -> bool {
 // Async stateless function for NIE format validation
 async fn validate_nie_format_async(nie: &str) -> bool {
     tokio::time::sleep(tokio::time::Duration::from_millis(4)).await;
-    
+
     if nie.len() != 9 {
         return false;
     }
-    
+
     let first_char = nie.chars().next().unwrap_or(' ');
     matches!(first_char, 'X' | 'Y' | 'Z')
 }
 
 // Async stateless function for concurrent document validations
 pub async fn validate_multiple_documents(
-    documents: Vec<Document>
+    documents: Vec<Document>,
 ) -> Result<Vec<ValidationResult>, Box<dyn std::error::Error + Send + Sync>> {
     let validation_tasks: Vec<_> = documents
         .into_iter()
-        .map(|doc| {
-            task::spawn(async move {
-                doc.validate_comprehensive().await
-            })
-        })
+        .map(|doc| task::spawn(async move { doc.validate_comprehensive().await }))
         .collect();
-    
+
     let results = try_join_all(validation_tasks).await?;
     Ok(results.into_iter().collect::<Result<Vec<_>, _>>()?)
 }
