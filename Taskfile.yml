@@ -177,8 +177,7 @@ tasks:
     desc: Format all Rust code in workspace
     cmds:
       - echo "🎨 Formateando código Rust..."
-      - rustup component add rustfmt || echo "rustfmt already installed"
-      - cargo fmt --all
+      - cargo fmt --all --workspace
 
   format:frontend:
     desc: Format main frontend code
@@ -212,8 +211,7 @@ tasks:
   format:check:rust:
     desc: Check Rust formatting
     cmds:
-      - rustup component add rustfmt || echo "rustfmt already installed"
-      - cargo fmt --check
+      - cargo fmt --check --workspace
 
   format:check:frontend:
     desc: Check main frontend formatting
