@@ -553,15 +553,26 @@ tasks:
     cmds:
       - echo "🎭 Ejecutando tests E2E con TestCafe..."
       - |
+        # Try different ways to find testcafe
+        TESTCAFE_CMD=""
         if command -v testcafe >/dev/null 2>&1; then
+          TESTCAFE_CMD="testcafe"
+        elif command -v npx >/dev/null 2>&1; then
+          TESTCAFE_CMD="npx testcafe"
+        elif [ -f "../../../frontend/node_modules/.bin/testcafe" ]; then
+          TESTCAFE_CMD="../../../frontend/node_modules/.bin/testcafe"
+        fi
+        
+        if [ -n "$TESTCAFE_CMD" ]; then
           for test_file in *.js; do
             if [ -f "$test_file" ]; then
               echo "  🧪 Ejecutando E2E test: $test_file"
-              testcafe chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
+              $TESTCAFE_CMD chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
             fi
           done
         else
-          echo "⚠️  TestCafe not installed, skipping E2E tests"
+          echo "⚠️  TestCafe not available, skipping E2E tests"
+          echo "💡 Hint: Run 'cd frontend && bun add -D testcafe' to install TestCafe"
         fi
 
   test:e2e:comprehensive:
@@ -623,14 +634,32 @@ tasks:
     cmds:
       - echo "⚡ Ejecutando auditoría de rendimiento con Lighthouse..."
       - |
-        if ! command -v lighthouse >/dev/null 2>&1; then
-          echo "📥 Instalando Lighthouse..."
-          npm install -g lighthouse || echo "⚠️  Failed to install Lighthouse"
-        fi
+        # Try different ways to find lighthouse
+        LIGHTHOUSE_CMD=""
         if command -v lighthouse >/dev/null 2>&1; then
+          LIGHTHOUSE_CMD="lighthouse"
+        elif command -v npx >/dev/null 2>&1; then
+          LIGHTHOUSE_CMD="npx lighthouse"
+        elif [ -f "frontend/node_modules/.bin/lighthouse" ]; then
+          LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+        fi
+        
+        if [ -n "$LIGHTHOUSE_CMD" ]; then
           mkdir -p tests/infrastructure/performance
-          lighthouse {{.FRONTEND_URI}} --output json --output-path ./tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
-          lighthouse {{.FRONTEND_URI}}/admin --output json --output-path ./tests/infrastructure/performance/lighthouse-admin-results.json || echo "⚠️  Lighthouse admin audit failed"
+          echo "  🏃 Running Lighthouse audit on {{.FRONTEND_URI}}"
+          $LIGHTHOUSE_CMD {{.FRONTEND_URI}} --output json --output-path ./tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+          echo "  🏃 Running Lighthouse audit on {{.FRONTEND_URI}}/admin"
+          $LIGHTHOUSE_CMD {{.FRONTEND_URI}}/admin --output json --output-path ./tests/infrastructure/performance/lighthouse-admin-results.json || echo "⚠️  Lighthouse admin audit failed"
+        else
+          echo "⚠️  Lighthouse not available, trying to install locally..."
+          if cd frontend && bun add -D lighthouse; then
+            echo "✅ Lighthouse installed locally"
+            LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+            mkdir -p ../tests/infrastructure/performance
+            $LIGHTHOUSE_CMD {{.FRONTEND_URI}} --output json --output-path ../tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+          else
+            echo "⚠️  Failed to install Lighthouse"
+          fi
         fi
 
   performance:k6:
@@ -661,17 +690,31 @@ tasks:
     cmds:
       - echo "🌐 Ejecutando tests de compatibilidad de navegadores..."
       - |
+        # Try different ways to find testcafe
+        TESTCAFE_CMD=""
         if command -v testcafe >/dev/null 2>&1; then
+          TESTCAFE_CMD="testcafe"
+        elif command -v npx >/dev/null 2>&1; then
+          TESTCAFE_CMD="npx testcafe"
+        elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+          TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+        fi
+        
+        if [ -n "$TESTCAFE_CMD" ]; then
           if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
-            testcafe chrome:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Chrome test failed"
-            testcafe firefox:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Firefox test failed"
-            testcafe safari tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Safari not available"
-            testcafe edge tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Edge not available"
+            echo "  🧪 Testing Chrome..."
+            $TESTCAFE_CMD chrome:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Chrome test failed"
+            echo "  🧪 Testing Firefox..."
+            $TESTCAFE_CMD firefox:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Firefox test failed"
+            echo "  🧪 Testing Safari..."
+            $TESTCAFE_CMD safari tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Safari not available"
+            echo "  🧪 Testing Edge..."
+            $TESTCAFE_CMD edge tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Edge not available"
           else
             echo "⚠️  Browser compatibility test file not found"
           fi
         else
-          echo "⚠️  TestCafe not installed, skipping browser compatibility tests"
+          echo "⚠️  TestCafe not available, skipping browser compatibility tests"
         fi
 
   compatibility:devices:
@@ -679,16 +722,29 @@ tasks:
     cmds:
       - echo "📱 Ejecutando tests de compatibilidad de dispositivos..."
       - |
+        # Try different ways to find testcafe
+        TESTCAFE_CMD=""
         if command -v testcafe >/dev/null 2>&1; then
+          TESTCAFE_CMD="testcafe"
+        elif command -v npx >/dev/null 2>&1; then
+          TESTCAFE_CMD="npx testcafe"
+        elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+          TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+        fi
+        
+        if [ -n "$TESTCAFE_CMD" ]; then
           if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
-            testcafe chrome:headless:emulation:device=iPhone tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPhone test failed"
-            testcafe chrome:headless:emulation:device=iPad tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPad test failed"
-            testcafe chrome:headless:emulation:device=desktop tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Desktop test failed"
+            echo "  📱 Testing iPhone..."
+            $TESTCAFE_CMD chrome:headless:emulation:device=iPhone tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPhone test failed"
+            echo "  📱 Testing iPad..."
+            $TESTCAFE_CMD chrome:headless:emulation:device=iPad tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPad test failed"
+            echo "  🖥️  Testing Desktop..."
+            $TESTCAFE_CMD chrome:headless:emulation:device=desktop tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Desktop test failed"
           else
             echo "⚠️  Device compatibility test file not found"
           fi
         else
-          echo "⚠️  TestCafe not installed, skipping device compatibility tests"
+          echo "⚠️  TestCafe not available, skipping device compatibility tests"
         fi
 
   # ============================================================================
