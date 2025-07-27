@@ -1,13 +1,7 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Shield, LogIn, LogOut, User } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield, LogIn, LogOut, User } from 'lucide-react';
 
 interface Auth0LoginProps {
   onLogin: (token: string) => void;
@@ -16,22 +10,17 @@ interface Auth0LoginProps {
   user?: any;
 }
 
-export function Auth0Login({
-  onLogin,
-  onLogout,
-  isAuthenticated,
-  user,
-}: Auth0LoginProps) {
+export function Auth0Login({ onLogin, onLogout, isAuthenticated, user }: Auth0LoginProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   // Handle Auth0 callback on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get("code");
-    const error = urlParams.get("error");
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
 
     if (error) {
-      console.error("Auth0 error:", error);
+      console.error('Auth0 error:', error);
       return;
     }
 
@@ -43,37 +32,31 @@ export function Auth0Login({
   const handleCallback = async (code: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch(
-        "/callback?" + new URLSearchParams({ code }),
-      );
+      const response = await fetch('/callback?' + new URLSearchParams({ code }));
       const data = await response.json();
 
       if (response.ok && data.access_token) {
         onLogin(data.access_token);
         // Clean up URL
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname,
-        );
+        window.history.replaceState({}, document.title, window.location.pathname);
       } else {
-        throw new Error(data.error || "Authentication failed");
+        throw new Error(data.error || 'Authentication failed');
       }
     } catch (error) {
-      console.error("Callback error:", error);
+      console.error('Callback error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogin = () => {
-    const currentUrl = window.location.href.split("?")[0];
-    window.location.href = `/login?redirect_uri=${encodeURIComponent(currentUrl + "/callback")}`;
+    const currentUrl = window.location.href.split('?')[0];
+    window.location.href = `/login?redirect_uri=${encodeURIComponent(currentUrl + '/callback')}`;
   };
 
   const handleLogout = () => {
     onLogout();
-    const currentUrl = window.location.href.split("?")[0].split("#")[0];
+    const currentUrl = window.location.href.split('?')[0].split('#')[0];
     window.location.href = `/logout?returnTo=${encodeURIComponent(currentUrl)}`;
   };
 
@@ -102,17 +85,14 @@ export function Auth0Login({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-gray-600">
-            <p>
-              <strong>Usuario:</strong>{" "}
-              {user.email || user.name || "Usuario autenticado"}
-            </p>
-            {user.name && (
-              <p>
-                <strong>Nombre:</strong> {user.name}
-              </p>
-            )}
+            <p><strong>Usuario:</strong> {user.email || user.name || 'Usuario autenticado'}</p>
+            {user.name && <p><strong>Nombre:</strong> {user.name}</p>}
           </div>
-          <Button onClick={handleLogout} variant="outline" className="w-full">
+          <Button 
+            onClick={handleLogout} 
+            variant="outline" 
+            className="w-full"
+          >
             <LogOut className="h-4 w-4 mr-2" />
             Cerrar Sesión
           </Button>
@@ -133,8 +113,8 @@ export function Auth0Login({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Button
-          onClick={handleLogin}
+        <Button 
+          onClick={handleLogin} 
           className="w-full bg-sage-600 hover:bg-sage-700"
         >
           <LogIn className="h-4 w-4 mr-2" />

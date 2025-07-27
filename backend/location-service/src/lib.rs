@@ -7,12 +7,12 @@ use spin_sdk::http_component;
 fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
     let method = req.method();
     let path = req.uri().path();
-
+    
     // TODO: Implement country service endpoints
     match (method, path) {
         _ => Ok(ResponseBuilder::new(StatusCode::NOT_IMPLEMENTED)
             .header("content-type", "application/json")
             .body(r#"{"message":"Country service - under development"}"#)
-            .build()),
+            .build())
     }
 }

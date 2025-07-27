@@ -19,10 +19,10 @@ component = "info-on-arrival-service"
 [component.info-on-arrival-service]
 source = "target/wasm32-wasi/release/info_on_arrival_service.wasm"
 allowed_outbound_hosts = [
-  "https://maps.googleapis.com",
-  "https://turismomerida.org",
-  "https://radiotaximerida.es",
-  "https://*.neon.tech",
+    "https://maps.googleapis.com",
+    "https://turismomerida.org",
+    "https://radiotaximerida.es",
+    "https://*.neon.tech"
 ]
 
 [component.info-on-arrival-service.build]

@@ -1,14 +1,8 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, LogOut, Home } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, LogOut, Home } from 'lucide-react';
 
 export function LogoutPage() {
   const [, setLocation] = useLocation();
@@ -21,13 +15,13 @@ export function LogoutPage() {
   const performLogout = async () => {
     try {
       // Clear local storage
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_data");
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_data');
 
       // Call logout endpoint
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
       });
 
       // Small delay for user experience
@@ -35,17 +29,17 @@ export function LogoutPage() {
         setIsLoggingOut(false);
       }, 1500);
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error('Logout error:', error);
       setIsLoggingOut(false);
     }
   };
 
   const handleReturnHome = () => {
-    setLocation("/");
+    setLocation('/');
   };
 
   const handleLoginAgain = () => {
-    setLocation("/login");
+    setLocation('/login');
   };
 
   if (isLoggingOut) {

@@ -1,46 +1,46 @@
+
 use anyhow::Result;
-use serde_json::json;
 use spin_sdk::http::{Request, Response};
+use std::collections::HashMap;
 
 pub async fn handle(req: &Request) -> Result<Response> {
-    let path = req.uri().path();
-
-    match path {
-        "/api/rate-limit/check" => handle_rate_limit_check(req).await,
-        "/api/rate-limit/status" => handle_rate_limit_status(req).await,
-        _ => Ok(Response::builder()
-            .status(404)
+    // Mock rate limiting logic
+    // In real implementation, this would check against a rate limiting store
+    
+    let client_ip = req.headers()
+        .get("x-forwarded-for")
+        .or_else(|| req.headers().get("x-real-ip"))
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("unknown");
+    
+    // Mock rate limit check - allow first 15 requests, then start limiting
+    let request_count = client_ip.len() % 20; // Mock counter based on IP
+    
+    if request_count >= 15 {
+        let error_body = serde_json::json!({
+            "error": "Rate Limit Exceeded",
+            "message": "Too many requests",
+            "retry_after": 60
+        }).to_string();
+        
+        Ok(Response::builder()
+            .status(429)
             .header("Content-Type", "application/json")
-            .body(json!({"error": "Rate limit endpoint not found"}).to_string())
-            .build()),
+            .header("X-RateLimit-Remaining", "0")
+            .header("X-RateLimit-Reset", "60")
+            .body(error_body)
+            .build())
+    } else {
+        let response_body = serde_json::json!({
+            "status": "ok",
+            "requests_remaining": 15 - request_count
+        }).to_string();
+        
+        Ok(Response::builder()
+            .status(200)
+            .header("Content-Type", "application/json")
+            .header("X-RateLimit-Remaining", &(15 - request_count).to_string())
+            .body(response_body)
+            .build())
     }
-}
-
-async fn handle_rate_limit_check(_req: &Request) -> Result<Response> {
-    // TODO: Implement actual rate limiting logic
-    let result = json!({
-        "allowed": true,
-        "remaining": 95,
-        "reset_time": "2024-01-01T01:00:00Z"
-    });
-
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(result.to_string())
-        .build())
-}
-
-async fn handle_rate_limit_status(_req: &Request) -> Result<Response> {
-    let status = json!({
-        "requests_per_minute": 100,
-        "current_usage": 5,
-        "blocked_requests": 0
-    });
-
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(status.to_string())
-        .build())
 }

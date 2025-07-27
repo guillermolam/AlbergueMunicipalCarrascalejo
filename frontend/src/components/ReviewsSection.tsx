@@ -22,48 +22,48 @@ interface ReviewsData {
 
 export default function ReviewsSection() {
   const { data: reviewsData, isLoading } = useQuery<ReviewsData>({
-    queryKey: ["/api/reviews/all"],
+    queryKey: ['/api/reviews/all'],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/reviews/all");
+        const response = await fetch('/api/reviews/all');
         if (!response.ok) {
-          throw new Error("Failed to fetch reviews");
+          throw new Error('Failed to fetch reviews');
         }
         return response.json();
       } catch (error) {
         // Fallback to mock data when gateway is not available
-        const { mockReviewsData } = await import("../data/mock-reviews");
+        const { mockReviewsData } = await import('../data/mock-reviews');
         return mockReviewsData;
       }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: 1,
+    retry: 1
   });
 
   const renderStars = (rating: number, source: string) => {
     const normalizedRating = source === "Booking.com" ? rating / 2 : rating;
     const stars = [];
-
+    
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <Star
           key={i}
           className={`w-4 h-4 ${
-            i <= normalizedRating
-              ? "text-yellow-400 fill-current"
-              : "text-gray-300"
+            i <= normalizedRating 
+              ? 'text-yellow-400 fill-current' 
+              : 'text-gray-300'
           }`}
-        />,
+        />
       );
     }
     return stars;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -106,7 +106,9 @@ export default function ReviewsSection() {
               ({reviewsData.total_count} opiniones)
             </span>
           </div>
-          <p className="text-gray-600">Reseñas de Google y Booking.com</p>
+          <p className="text-gray-600">
+            Reseñas de Google y Booking.com
+          </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -130,24 +132,24 @@ export default function ReviewsSection() {
                         {renderStars(review.rating, review.source)}
                       </div>
                       <span className="text-sm text-gray-600">
-                        {review.source === "Booking.com"
-                          ? review.rating
-                          : review.rating}
-                        /5
+                        {review.source === "Booking.com" ? review.rating : review.rating}/5
                       </span>
                     </div>
                   </div>
                   <Quote className="w-5 h-5 text-gray-400 flex-shrink-0" />
                 </div>
-
-                <p className="text-gray-700 mb-4 line-clamp-4">{review.text}</p>
-
+                
+                <p className="text-gray-700 mb-4 line-clamp-4">
+                  {review.text}
+                </p>
+                
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <span>{formatDate(review.date)}</span>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs px-2 py-1 bg-gray-100 rounded">
                       {review.source}
                     </span>
+
                   </div>
                 </div>
               </CardContent>
@@ -157,8 +159,7 @@ export default function ReviewsSection() {
 
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            Las opiniones se actualizan automáticamente desde nuestras fuentes
-            verificadas
+            Las opiniones se actualizan automáticamente desde nuestras fuentes verificadas
           </p>
         </div>
       </div>

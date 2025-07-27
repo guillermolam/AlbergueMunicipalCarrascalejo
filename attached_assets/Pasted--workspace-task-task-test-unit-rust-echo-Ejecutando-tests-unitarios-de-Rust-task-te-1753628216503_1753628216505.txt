@@ -1,0 +1,515 @@
+~/workspace$ task
+task: [test:unit:rust] echo "🧪 Ejecutando tests unitarios de Rust..."
+task: [test:unit:frontend] echo "🧪 Ejecutando tests unitarios del frontend principal..."
+task: [test:unit:auth-frontend] echo "🧪 Ejecutando tests unitarios del frontend de auth..."
+task: [test:integration:api] echo "🔗 Ejecutando tests de integración de API..."
+task: [performance:k6] echo "⚡ Ejecutando tests de carga con k6..."
+task: [lint:trunk] echo "🔍 Ejecutando Trunk.io en todo el proyecto..."
+task: [setup:check] echo "🔍 Verificando entorno de desarrollo..."
+task: [sast:cargo-audit] echo "🔒 Ejecutando auditoría de seguridad de Cargo..."
+task: [test:integration:database] echo "🗄️  Ejecutando tests de integración de base de datos..."
+task: [security:dast:nuclei] echo "🔒 Ejecutando escaneo de vulnerabilidades con Nuclei..."
+task: [security:dast:zap] echo "🔒 Ejecutando escaneo de seguridad con OWASP ZAP..."
+task: [lint:rust] echo "🔍 Ejecutando clippy en todo el workspace..."
+task: [performance:lighthouse] echo "⚡ Ejecutando auditoría de rendimiento con Lighthouse..."
+task: [setup:deps:rust] echo "🦀 Instalando dependencias de Rust..."
+task: [build:backend] echo "🏗️  Construyendo todos los microservicios backend..."
+task: [test:e2e:testcafe] echo "🎭 Ejecutando tests E2E con TestCafe..."
+task: [build:frontend] echo "🏗️  Construyendo frontend principal..."
+task: [sast:trunk-security] echo "🔒 Ejecutando checks de seguridad con Trunk.io..."
+task: [lint:auth-frontend] echo "🔍 Ejecutando lint en frontend de auth..."
+task: [setup:deps:frontend] echo "📦 Instalando dependencias del frontend principal..."
+task: [format:check:auth-frontend] if command -v prettier >/dev/null 2>&1; then
+  npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Auth frontend formatting check failed"
+else
+  echo "⚠️  Prettier not available, skipping auth frontend format check"
+fi
+
+task: [test:e2e:comprehensive] echo "🎭 Ejecutando suite completa de tests E2E..."
+task: [build:auth-frontend] echo "🏗️  Construyendo frontend de auth service..."
+task: [lint:frontend] echo "🔍 Ejecutando lint en frontend principal..."
+task: [setup:deps:auth-frontend] echo "📦 Instalando dependencias del frontend de auth..."
+task: [build:gateway] echo "🏗️  Construyendo Gateway BFF..."
+task: [compatibility:browsers] echo "🌐 Ejecutando tests de compatibilidad de navegadores..."
+task: [format:check:frontend] if command -v prettier >/dev/null 2>&1; then
+  npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Frontend formatting check failed"
+else
+  echo "⚠️  Prettier not available, skipping frontend format check"
+fi
+
+task: [compatibility:devices] echo "📱 Ejecutando tests de compatibilidad de dispositivos..."
+task: [format:check:rust] cargo fmt --all -- --check
+task: [sast:semgrep] echo "🔒 Ejecutando análisis de seguridad con Semgrep..."
+🧪 Ejecutando tests unitarios de Rust...
+task: [test:unit:rust] cargo test --workspace --lib
+🔒 Ejecutando escaneo de seguridad con OWASP ZAP...
+task: [security:dast:zap] if command -v zap-baseline.py >/dev/null 2>&1; then
+  if [ -f "tests/infrastructure/security/zap-rules.tsv" ]; then
+    zap-baseline.py -t http://0.0.0.0:49985 -c tests/infrastructure/security/zap-rules.tsv
+  else
+    zap-baseline.py -t http://0.0.0.0:49985
+  fi
+else
+  echo "⚠️  OWASP ZAP not installed, skipping DAST scan"
+fi
+
+⚡ Ejecutando tests de carga con k6...
+task: [performance:k6] if command -v k6 >/dev/null 2>&1; then
+  if [ -f "tests/infrastructure/performance/api-load-test.js" ]; then
+    k6 run tests/infrastructure/performance/api-load-test.js
+  else
+    echo "⚠️  k6 load test script not found"
+  fi
+else
+  echo "⚠️  k6 not installed, skipping load tests"
+fi
+
+🏗️  Construyendo todos los microservicios backend...
+task: [build:backend] cargo build --workspace --target wasm32-wasi --release --exclude shared
+🔗 Ejecutando tests de integración de API...
+task: [test:integration:api] for test_file in *.js *.mjs; do
+  if [ -f "$test_file" ]; then
+    echo "  🧪 Ejecutando $test_file..."
+    if [[ "$test_file" == *.mjs ]]; then
+      node "$test_file" || echo "⚠️  Test $test_file failed"
+    else
+      node "$test_file" || echo "⚠️  Test $test_file failed"
+    fi
+  fi
+done
+
+🔍 Verificando entorno de desarrollo...
+task: [setup:check] rustc --version
+🏗️  Construyendo frontend principal...
+task: [build:frontend] npm run build || pnpm run build || bun run build
+🔍 Ejecutando clippy en todo el workspace...
+task: [lint:rust] cargo clippy --workspace --all-targets --all-features -- -D warnings
+📱 Ejecutando tests de compatibilidad de dispositivos...
+🔍 Ejecutando Trunk.io en todo el proyecto...
+task: [lint:trunk] if command -v trunk >/dev/null 2>&1; then
+  trunk check --all
+else
+  echo "⚠️  Trunk.io not installed, skipping"
+fi
+
+task: [compatibility:devices] # Try different ways to find testcafe
+TESTCAFE_CMD=""
+if command -v testcafe >/dev/null 2>&1; then
+  TESTCAFE_CMD="testcafe"
+elif command -v npx >/dev/null 2>&1; then
+  TESTCAFE_CMD="npx testcafe"
+elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+  TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+fi
+
+if [ -n "$TESTCAFE_CMD" ]; then
+  if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+    echo "  📱 Testing iPhone..."
+    $TESTCAFE_CMD chrome:headless:emulation:device=iPhone tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPhone test failed"
+    echo "  📱 Testing iPad..."
+    $TESTCAFE_CMD chrome:headless:emulation:device=iPad tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPad test failed"
+    echo "  🖥️  Testing Desktop..."
+    $TESTCAFE_CMD chrome:headless:emulation:device=desktop tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Desktop test failed"
+  else
+    echo "⚠️  Device compatibility test file not found"
+  fi
+else
+  echo "⚠️  TestCafe not available, skipping device compatibility tests"
+fi
+
+🏗️  Construyendo frontend de auth service...
+🔒 Ejecutando auditoría de seguridad de Cargo...
+task: [sast:cargo-audit] if ! command -v cargo-audit >/dev/null 2>&1; then
+  cargo install cargo-audit
+fi
+
+🔒 Ejecutando escaneo de vulnerabilidades con Nuclei...
+📦 Instalando dependencias del frontend principal...
+task: [security:dast:nuclei] if command -v nuclei >/dev/null 2>&1; then
+  nuclei -u http://0.0.0.0:49985 -severity medium,high,critical
+else
+  echo "⚠️  Nuclei not installed, skipping vulnerability scan"
+fi
+
+task: [setup:deps:frontend] npm install || pnpm install || bun install
+🏗️  Construyendo Gateway BFF...
+task: [build:gateway] cargo build --target wasm32-wasi --release
+🌐 Ejecutando tests de compatibilidad de navegadores...
+task: [compatibility:browsers] # Try different ways to find testcafe
+TESTCAFE_CMD=""
+if command -v testcafe >/dev/null 2>&1; then
+  TESTCAFE_CMD="testcafe"
+elif command -v npx >/dev/null 2>&1; then
+  TESTCAFE_CMD="npx testcafe"
+elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+  TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+fi
+
+if [ -n "$TESTCAFE_CMD" ]; then
+  if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+    echo "  🧪 Testing Chrome..."
+    $TESTCAFE_CMD chrome:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Chrome test failed"
+    echo "  🧪 Testing Firefox..."
+    $TESTCAFE_CMD firefox:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Firefox test failed"
+    echo "  🧪 Testing Safari..."
+    $TESTCAFE_CMD safari tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Safari not available"
+    echo "  🧪 Testing Edge..."
+    $TESTCAFE_CMD edge tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Edge not available"
+  else
+    echo "⚠️  Browser compatibility test file not found"
+  fi
+else
+  echo "⚠️  TestCafe not available, skipping browser compatibility tests"
+fi
+
+task: [build:auth-frontend] npm run build || pnpm run build || bun run build || echo "⚠️  Auth frontend build not configured"
+🧪 Ejecutando tests unitarios del frontend principal...
+task: [test:unit:frontend] bun run test
+🧪 Ejecutando tests unitarios del frontend de auth...
+task: [test:unit:auth-frontend] bun run test || echo "⚠️  Auth frontend tests not configured"
+⚠️  Prettier not available, skipping auth frontend format check
+🔒 Ejecutando checks de seguridad con Trunk.io...
+task: [sast:trunk-security] if command -v trunk >/dev/null 2>&1; then
+  trunk check --filter=security
+else
+  echo "⚠️  Trunk.io not available, skipping security checks"
+fi
+
+🔍 Ejecutando lint en frontend principal...
+task: [lint:frontend] bun run lint
+🔍 Ejecutando lint en frontend de auth...
+task: [lint:auth-frontend] bun run lint || echo "⚠️  Auth frontend lint not configured"
+⚠️  Prettier not available, skipping frontend format check
+🎭 Ejecutando suite completa de tests E2E...
+task: [test:e2e:comprehensive] if [ -f "run-comprehensive-testcafe.js" ]; then
+  node run-comprehensive-testcafe.js || echo "⚠️  Comprehensive E2E tests failed"
+else
+  echo "⚠️  Comprehensive test runner not found"
+fi
+
+📦 Instalando dependencias del frontend de auth...
+task: [setup:deps:auth-frontend] npm install || pnpm install || bun install
+🗄️  Ejecutando tests de integración de base de datos...
+task: [test:integration:database] if command -v psql >/dev/null 2>&1; then
+  for sql_file in *.sql; do
+    if [ -f "$sql_file" ]; then
+      echo "  🧪 Ejecutando test de DB: $sql_file"
+      psql "${DATABASE_URL}" -f "$sql_file" || echo "⚠️  Database test $sql_file failed"
+    fi
+  done
+else
+  echo "⚠️  PostgreSQL client not available, skipping database tests"
+fi
+
+🔒 Ejecutando análisis de seguridad con Semgrep...
+task: [sast:semgrep] if command -v semgrep >/dev/null 2>&1; then
+  semgrep --config=auto --error --strict --verbose .
+else
+  echo "⚠️  Semgrep not installed, skipping security analysis"
+fi
+
+⚡ Ejecutando auditoría de rendimiento con Lighthouse...
+task: [performance:lighthouse] # Try different ways to find lighthouse
+LIGHTHOUSE_CMD=""
+if command -v lighthouse >/dev/null 2>&1; then
+  LIGHTHOUSE_CMD="lighthouse"
+elif command -v npx >/dev/null 2>&1; then
+  LIGHTHOUSE_CMD="npx lighthouse"
+elif [ -f "frontend/node_modules/.bin/lighthouse" ]; then
+  LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+fi
+
+if [ -n "$LIGHTHOUSE_CMD" ]; then
+  mkdir -p tests/infrastructure/performance
+  echo "  🏃 Running Lighthouse audit on http://0.0.0.0:49985"
+  $LIGHTHOUSE_CMD http://0.0.0.0:49985 --output json --output-path ./tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+  echo "  🏃 Running Lighthouse audit on http://0.0.0.0:49985/admin"
+  $LIGHTHOUSE_CMD http://0.0.0.0:49985/admin --output json --output-path ./tests/infrastructure/performance/lighthouse-admin-results.json || echo "⚠️  Lighthouse admin audit failed"
+else
+  echo "⚠️  Lighthouse not available, trying to install locally..."
+  if cd frontend && bun add -D lighthouse; then
+    echo "✅ Lighthouse installed locally"
+    LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+    mkdir -p ../tests/infrastructure/performance
+    $LIGHTHOUSE_CMD http://0.0.0.0:49985 --output json --output-path ../tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+  else
+    echo "⚠️  Failed to install Lighthouse"
+  fi
+fi
+
+⚠️  OWASP ZAP not installed, skipping DAST scan
+🎭 Ejecutando tests E2E con TestCafe...
+task: [test:e2e:testcafe] # Try different ways to find testcafe
+TESTCAFE_CMD=""
+if command -v testcafe >/dev/null 2>&1; then
+  TESTCAFE_CMD="testcafe"
+elif command -v npx >/dev/null 2>&1; then
+  TESTCAFE_CMD="npx testcafe"
+elif [ -f "../../../frontend/node_modules/.bin/testcafe" ]; then
+  TESTCAFE_CMD="../../../frontend/node_modules/.bin/testcafe"
+fi
+
+if [ -n "$TESTCAFE_CMD" ]; then
+  for test_file in *.js; do
+    if [ -f "$test_file" ]; then
+      echo "  🧪 Ejecutando E2E test: $test_file"
+      $TESTCAFE_CMD chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
+    fi
+  done
+else
+  echo "⚠️  TestCafe not available, skipping E2E tests"
+  echo "💡 Hint: Run 'cd frontend && bun add -D testcafe' to install TestCafe"
+fi
+
+🦀 Instalando dependencias de Rust...
+task: [setup:deps:rust] rustup component add rustfmt clippy
+  📱 Testing iPhone...
+  🧪 Ejecutando test-dni-api.js...
+⚠️  Nuclei not installed, skipping vulnerability scan
+  🧪 Testing Chrome...
+  🧪 Ejecutando test de DB: db-integration.test.sql
+$ vitest run
+/nix/store/345523198bcsdzay55pfiimkiajq6lq8-bash-interactive-5.2p37/bin/bash: line 1: vitest: command not found
+error: script "test" exited with code 127
+error: "/nix/store/0qrgvvnnvw55xnk7bn8pbz2rqy6m8x15-coreutils-9.7/bin/test" exited with code 1
+note: a package.json script "test" was not found
+exit status 127
+~/workspace$ task
+task: [build:backend] echo "🏗️  Construyendo todos los microservicios backend..."
+task: [test:e2e:testcafe] echo "🎭 Ejecutando tests E2E con TestCafe..."
+task: [setup:check] echo "🔍 Verificando entorno de desarrollo..."
+task: [security:dast:nuclei] echo "🔒 Ejecutando escaneo de vulnerabilidades con Nuclei..."
+task: [build:gateway] echo "🏗️  Construyendo Gateway BFF..."
+task: [test:unit:auth-frontend] echo "🧪 Ejecutando tests unitarios del frontend de auth..."
+task: [build:auth-frontend] echo "🏗️  Construyendo frontend de auth service..."
+task: [compatibility:browsers] echo "🌐 Ejecutando tests de compatibilidad de navegadores..."
+task: [security:dast:zap] echo "🔒 Ejecutando escaneo de seguridad con OWASP ZAP..."
+task: [test:unit:frontend] echo "🧪 Ejecutando tests unitarios del frontend principal..."
+task: [compatibility:devices] echo "📱 Ejecutando tests de compatibilidad de dispositivos..."
+task: [test:integration:api] echo "🔗 Ejecutando tests de integración de API..."
+task: [lint:trunk] echo "🔍 Ejecutando Trunk.io en todo el proyecto..."
+task: [sast:trunk-security] echo "🔒 Ejecutando checks de seguridad con Trunk.io..."
+task: [build:frontend] echo "🏗️  Construyendo frontend principal..."
+task: [performance:lighthouse] echo "⚡ Ejecutando auditoría de rendimiento con Lighthouse..."
+task: [test:unit:rust] echo "🧪 Ejecutando tests unitarios de Rust..."
+task: [test:e2e:comprehensive] echo "🎭 Ejecutando suite completa de tests E2E..."
+task: [lint:auth-frontend] echo "🔍 Ejecutando lint en frontend de auth..."
+task: [sast:semgrep] echo "🔒 Ejecutando análisis de seguridad con Semgrep..."
+task: [lint:rust] echo "🔍 Ejecutando clippy en todo el workspace..."
+task: [lint:frontend] echo "🔍 Ejecutando lint en frontend principal..."
+task: [sast:cargo-audit] echo "🔒 Ejecutando auditoría de seguridad de Cargo..."
+task: [setup:deps:rust] echo "🦀 Instalando dependencias de Rust..."
+task: [performance:k6] echo "⚡ Ejecutando tests de carga con k6..."
+task: [test:integration:database] echo "🗄️  Ejecutando tests de integración de base de datos..."
+task: [setup:deps:auth-frontend] echo "📦 Instalando dependencias del frontend de auth..."
+🎭 Ejecutando tests E2E con TestCafe...
+task: [test:e2e:testcafe] # Try different ways to find testcafe
+TESTCAFE_CMD=""
+if command -v testcafe >/dev/null 2>&1; then
+  TESTCAFE_CMD="testcafe"
+elif command -v npx >/dev/null 2>&1; then
+  TESTCAFE_CMD="npx testcafe"
+elif [ -f "../../../frontend/node_modules/.bin/testcafe" ]; then
+  TESTCAFE_CMD="../../../frontend/node_modules/.bin/testcafe"
+fi
+
+if [ -n "$TESTCAFE_CMD" ]; then
+  for test_file in *.js; do
+    if [ -f "$test_file" ]; then
+      echo "  🧪 Ejecutando E2E test: $test_file"
+      $TESTCAFE_CMD chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
+    fi
+  done
+else
+  echo "⚠️  TestCafe not available, skipping E2E tests"
+  echo "💡 Hint: Run 'cd frontend && bun add -D testcafe' to install TestCafe"
+fi
+
+🔍 Ejecutando Trunk.io en todo el proyecto...
+task: [lint:trunk] if command -v trunk >/dev/null 2>&1; then
+  trunk check --all
+else
+  echo "⚠️  Trunk.io not installed, skipping"
+fi
+
+task: [setup:deps:frontend] echo "📦 Instalando dependencias del frontend principal..."
+🧪 Ejecutando tests unitarios del frontend de auth...
+task: [test:unit:auth-frontend] bun run test || echo "⚠️  Auth frontend tests not configured"
+🏗️  Construyendo frontend principal...
+task: [build:frontend] npm run build || pnpm run build || bun run build
+🌐 Ejecutando tests de compatibilidad de navegadores...
+task: [compatibility:browsers] # Try different ways to find testcafe
+TESTCAFE_CMD=""
+if command -v testcafe >/dev/null 2>&1; then
+  TESTCAFE_CMD="testcafe"
+elif command -v npx >/dev/null 2>&1; then
+  TESTCAFE_CMD="npx testcafe"
+elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+  TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+fi
+
+if [ -n "$TESTCAFE_CMD" ]; then
+  if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+    echo "  🧪 Testing Chrome..."
+    $TESTCAFE_CMD chrome:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Chrome test failed"
+    echo "  🧪 Testing Firefox..."
+    $TESTCAFE_CMD firefox:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Firefox test failed"
+    echo "  🧪 Testing Safari..."
+    $TESTCAFE_CMD safari tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Safari not available"
+    echo "  🧪 Testing Edge..."
+    $TESTCAFE_CMD edge tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Edge not available"
+  else
+    echo "⚠️  Browser compatibility test file not found"
+  fi
+else
+  echo "⚠️  TestCafe not available, skipping browser compatibility tests"
+fi
+
+🧪 Ejecutando tests unitarios del frontend principal...
+task: [test:unit:frontend] bun run test
+🔒 Ejecutando auditoría de seguridad de Cargo...
+task: [sast:cargo-audit] if ! command -v cargo-audit >/dev/null 2>&1; then
+  cargo install cargo-audit
+fi
+
+task: [format:check:rust] cargo fmt --all -- --check
+task: [format:check:frontend] if command -v prettier >/dev/null 2>&1; then
+  npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Frontend formatting check failed"
+else
+  echo "⚠️  Prettier not available, skipping frontend format check"
+fi
+
+🔒 Ejecutando checks de seguridad con Trunk.io...
+task: [sast:trunk-security] if command -v trunk >/dev/null 2>&1; then
+  trunk check --filter=security
+else
+  echo "⚠️  Trunk.io not available, skipping security checks"
+fi
+
+🔒 Ejecutando escaneo de vulnerabilidades con Nuclei...
+task: [security:dast:nuclei] if command -v nuclei >/dev/null 2>&1; then
+  nuclei -u http://0.0.0.0:36119 -severity medium,high,critical
+else
+  echo "⚠️  Nuclei not installed, skipping vulnerability scan"
+fi
+
+🔗 Ejecutando tests de integración de API...
+task: [test:integration:api] for test_file in *.js *.mjs; do
+  if [ -f "$test_file" ]; then
+    echo "  🧪 Ejecutando $test_file..."
+    if [[ "$test_file" == *.mjs ]]; then
+      node "$test_file" || echo "⚠️  Test $test_file failed"
+    else
+      node "$test_file" || echo "⚠️  Test $test_file failed"
+    fi
+  fi
+done
+
+task: [format:check:auth-frontend] if command -v prettier >/dev/null 2>&1; then
+  npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Auth frontend formatting check failed"
+else
+  echo "⚠️  Prettier not available, skipping auth frontend format check"
+fi
+
+🏗️  Construyendo frontend de auth service...
+task: [build:auth-frontend] npm run build || pnpm run build || bun run build || echo "⚠️  Auth frontend build not configured"
+⚡ Ejecutando auditoría de rendimiento con Lighthouse...
+task: [performance:lighthouse] # Try different ways to find lighthouse
+LIGHTHOUSE_CMD=""
+if command -v lighthouse >/dev/null 2>&1; then
+  LIGHTHOUSE_CMD="lighthouse"
+elif command -v npx >/dev/null 2>&1; then
+  LIGHTHOUSE_CMD="npx lighthouse"
+elif [ -f "frontend/node_modules/.bin/lighthouse" ]; then
+  LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+fi
+
+if [ -n "$LIGHTHOUSE_CMD" ]; then
+  mkdir -p tests/infrastructure/performance
+  echo "  🏃 Running Lighthouse audit on http://0.0.0.0:36119"
+  $LIGHTHOUSE_CMD http://0.0.0.0:36119 --output json --output-path ./tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+  echo "  🏃 Running Lighthouse audit on http://0.0.0.0:36119/admin"
+  $LIGHTHOUSE_CMD http://0.0.0.0:36119/admin --output json --output-path ./tests/infrastructure/performance/lighthouse-admin-results.json || echo "⚠️  Lighthouse admin audit failed"
+else
+  echo "⚠️  Lighthouse not available, trying to install locally..."
+  if cd frontend && bun add -D lighthouse; then
+    echo "✅ Lighthouse installed locally"
+    LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+    mkdir -p ../tests/infrastructure/performance
+    $LIGHTHOUSE_CMD http://0.0.0.0:36119 --output json --output-path ../tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+  else
+    echo "⚠️  Failed to install Lighthouse"
+  fi
+fi
+
+🔍 Verificando entorno de desarrollo...
+task: [setup:check] rustc --version
+🏗️  Construyendo todos los microservicios backend...
+task: [build:backend] cargo build --workspace --target wasm32-wasi --release --exclude shared
+📦 Instalando dependencias del frontend de auth...
+task: [setup:deps:auth-frontend] npm install || pnpm install || bun install
+🏗️  Construyendo Gateway BFF...
+task: [build:gateway] cargo build --target wasm32-wasi --release
+📦 Instalando dependencias del frontend principal...
+task: [setup:deps:frontend] npm install || pnpm install || bun install
+🎭 Ejecutando suite completa de tests E2E...
+task: [test:e2e:comprehensive] if [ -f "run-comprehensive-testcafe.js" ]; then
+  node run-comprehensive-testcafe.js || echo "⚠️  Comprehensive E2E tests failed"
+else
+  echo "⚠️  Comprehensive test runner not found"
+fi
+
+📱 Ejecutando tests de compatibilidad de dispositivos...
+task: [compatibility:devices] # Try different ways to find testcafe
+TESTCAFE_CMD=""
+if command -v testcafe >/dev/null 2>&1; then
+  TESTCAFE_CMD="testcafe"
+elif command -v npx >/dev/null 2>&1; then
+  TESTCAFE_CMD="npx testcafe"
+elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+  TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+fi
+
+if [ -n "$TESTCAFE_CMD" ]; then
+  if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+    echo "  📱 Testing iPhone..."
+    $TESTCAFE_CMD chrome:headless:emulation:device=iPhone tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPhone test failed"
+    echo "  📱 Testing iPad..."
+    $TESTCAFE_CMD chrome:headless:emulation:device=iPad tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPad test failed"
+    echo "  🖥️  Testing Desktop..."
+    $TESTCAFE_CMD chrome:headless:emulation:device=desktop tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Desktop test failed"
+  else
+    echo "⚠️  Device compatibility test file not found"
+  fi
+else
+  echo "⚠️  TestCafe not available, skipping device compatibility tests"
+fi
+
+🔍 Ejecutando lint en frontend de auth...
+task: [lint:auth-frontend] bun run lint || echo "⚠️  Auth frontend lint not configured"
+🔒 Ejecutando escaneo de seguridad con OWASP ZAP...
+task: [security:dast:zap] if command -v zap-baseline.py >/dev/null 2>&1; then
+  if [ -f "tests/infrastructure/security/zap-rules.tsv" ]; then
+    zap-baseline.py -t http://0.0.0.0:36119 -c tests/infrastructure/security/zap-rules.tsv
+  else
+    zap-baseline.py -t http://0.0.0.0:36119
+  fi
+else
+  echo "⚠️  OWASP ZAP not installed, skipping DAST scan"
+fi
+
+    Updating crates.io index
+🔍 Ejecutando clippy en todo el workspace...
+task: [lint:rust] cargo clippy --workspace --all-targets --all-features -- -D warnings
+error: "/nix/store/0qrgvvnnvw55xnk7bn8pbz2rqy6m8x15-coreutils-9.7/bin/test" exited with code 1
+note: a package.json script "test" was not found
+⚠️  Auth frontend tests not configured
+🧪 Ejecutando tests unitarios de Rust...
+task: [test:unit:rust] cargo test --workspace --lib
+🦀 Instalando dependencias de Rust...
+task: [setup:deps:rust] rustup component add rustfmt clippy
+  🧪 Testing Chrome...
+     Ignored package `cargo-audit v0.21.2` is already installed, use --force to override
+warning: be sure to add `/home/runner/.cargo/bin` to your PATH to be able to run the installed binaries
+$ vitest run
+error: no such command: `fmt`

@@ -1,6 +1,6 @@
-import { useAuth0 } from "@/hooks/useAuth0";
-import { Auth0Login } from "@/components/Auth0Login";
-import AdminDashboard from "@/components/AdminDashboard";
+import { useAuth0 } from '@/hooks/useAuth0';
+import { Auth0Login } from '@/components/Auth0Login';
+import AdminDashboard from '@/components/AdminDashboard';
 
 export default function AdminPage() {
   const { isAuthenticated, isLoading, user, login, logout } = useAuth0();
@@ -16,7 +16,7 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-sage-50 to-sage-100 flex items-center justify-center p-4">
-        <Auth0Login
+        <Auth0Login 
           onLogin={login}
           onLogout={logout}
           isAuthenticated={isAuthenticated}
@@ -30,7 +30,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gradient-to-br from-sage-50 to-sage-100">
       <div className="container mx-auto py-8 px-4">
         <div className="mb-6">
-          <Auth0Login
+          <Auth0Login 
             onLogin={login}
             onLogout={logout}
             isAuthenticated={isAuthenticated}
