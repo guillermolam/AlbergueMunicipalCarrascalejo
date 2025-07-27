@@ -1,22 +1,22 @@
-# flake.nix (Versión Optimizada y Alineada)
+# flake.nix (Versión Definitiva)
 {
   description = "Desarrollo para Albergue Carcalejo: Rust WASM microservicios con Fermyon Spin y React frontend";
 
   inputs = {
-    # Usamos la misma versión que replit.nix para consistencia
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
+        # ✅ Correcto: allowUnfree para trunk-io
         pkgs = import nixpkgs { 
           inherit system; 
           config.allowUnfree = true; 
         };
 
-        # --- Definiciones Personalizadas (Alineadas con replit.nix) ---
+        # --- Definiciones Personalizadas ---
         
         spin-version = "v2.2.0";
         spin-cli = pkgs.stdenv.mkDerivation {
@@ -26,7 +26,6 @@
             url = "https://github.com/fermyon/spin/releases/download/${spin-version}/spin-${spin-version}-linux-amd64.tar.gz";
             sha256 = "sha256-2ugh7gpoiqMTGe9QPTuXJnd+U5mrSXIQK1TwucuP4s8=";
           };
-          # Corregido: usar sourceRoot en lugar de dontUnpack
           sourceRoot = ".";
           installPhase = ''
             mkdir -p $out/bin
@@ -35,19 +34,21 @@
           '';
         };
 
-        # Versión actualizada de Bun (puedes usar la que prefieras)
+        # ✅ Corregido: Hash y estructura de Bun
         bun-version = "1.2.19";
         bun-cli = pkgs.stdenv.mkDerivation {
           pname = "bun-cli";
           version = bun-version;
           src = pkgs.fetchurl {
             url = "https://github.com/oven-sh/bun/releases/download/bun-v${bun-version}/bun-linux-x64.zip";
+            # Hash correcto del error anterior
             sha256 = "sha256-w9PBTppeyD/2fQrP525DFa0G2p809Z/HsTgTeCyvH2Y=";
           };
           nativeBuildInputs = [ pkgs.unzip ];
           installPhase = ''
             mkdir -p $out/bin
-            cp bun-linux-x64/bun $out/bin/
+            # ✅ Corregido: el archivo está directamente en la raíz
+            cp bun $out/bin/
             chmod +x $out/bin/bun
           '';
         };
@@ -65,7 +66,9 @@
             pkgs.nodejs_22
 
             # --- Herramientas de Calidad y Sistema ---
-            pkgs.go-task   # Task runner
+            # ✅ Correcto: trunk-io como dijiste
+            pkgs.trunk-io
+            pkgs.go-task
 
             # --- Soporte para el IDE ---
             pkgs.rust-analyzer
@@ -83,6 +86,7 @@
             echo "🟨 Bun: $(bun --version)"
             echo "🦀 Rust: $(rustc --version)"
             echo "📋 Task: $(task --version)"
+            echo "🔧 Trunk: $(trunk --version)"
             echo ""
             echo "Comandos útiles:"
             echo "  task          - Ver todas las tareas disponibles"
@@ -101,7 +105,7 @@
             pkgs.rustc
             pkgs.cargo
             pkgs.nodejs_22
-            pkgs.nodePackages.trunk-io
+            pkgs.trunk-io
             pkgs.go-task
             pkgs.openssl
             pkgs.pkg-config
