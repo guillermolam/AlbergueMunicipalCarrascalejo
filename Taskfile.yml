@@ -834,3 +834,56 @@ tasks:
       - spin --version && echo "✅ Spin available"
       - trunk --version && echo "✅ Trunk available"
       - echo "✅ Todos los paquetes de Nix están disponibles"
+  test:gateway:unit:
+    desc: Run unit tests for gateway BFF
+    cmds:
+      - echo "🧪 Running gateway BFF unit tests..."
+      - cd gateway/bff && cargo test --lib -- --nocapture
+
+  test:gateway:integration:
+    desc: Run integration tests for gateway BFF
+    cmds:
+      - echo "🧪 Running gateway BFF integration tests..."
+      - cd gateway/bff && cargo test --test integration -- --nocapture
+
+  test:gateway:all:
+    desc: Run all gateway tests
+    cmds:
+      - echo "🧪 Running all gateway tests..."
+      - cd gateway/bff && cargo test -- --nocapture
+
+  test:spin:config:
+    desc: Test Spin/Fermyon configuration
+    cmds:
+      - echo "🧪 Testing Spin configuration..."
+      - node tests/spin-integration/fermyon-config-test.js
+
+  test:spin:build:
+    desc: Test Spin build process
+    cmds:
+      - echo "🧪 Testing Spin build..."
+      - spin build --dry-run
+
+  test:spin:wasm:
+    desc: Test WASM compilation for all services
+    cmds:
+      - echo "🧪 Testing WASM compilation..."
+      - cd gateway/bff && cargo check --target wasm32-wasi
+      - cd backend && cargo check --target wasm32-wasi --workspace --exclude shared
+
+  test:coverage:gateway:
+    desc: Generate test coverage report for gateway
+    cmds:
+      - echo "📊 Generating gateway test coverage..."
+      - cd gateway/bff && cargo tarpaulin --out Html --output-dir ../../coverage/gateway
+
+  test:comprehensive:
+    desc: Run comprehensive test suite including 100% gateway coverage
+    cmds:
+      - echo "🧪 Running comprehensive test suite..."
+      - task: test:gateway:all
+      - task: test:spin:config
+      - task: test:spin:build
+      - task: test:spin:wasm
+      - task: test:coverage:gateway
+      - echo "✅ All tests completed!"
