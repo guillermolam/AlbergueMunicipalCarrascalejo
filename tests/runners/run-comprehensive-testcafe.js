@@ -284,3 +284,34 @@ runAllTests().catch(error => {
   console.error('\n💥 Fatal error in test execution:', error);
   process.exit(1);
 });
+const createTestCafe = require('testcafe');
+const path = require('path');
+
+async function runTests() {
+    const testcafe = await createTestCafe();
+    const runner = testcafe.createRunner();
+    
+    const testFiles = [
+        path.join(__dirname, '../e2e/testcafe/test-dni-simple.js'),
+        path.join(__dirname, '../e2e/testcafe/testcafe-document-formats.js'),
+        path.join(__dirname, '../e2e/testcafe/testcafe-full-registration-flow.js')
+    ];
+    
+    try {
+        const failedCount = await runner
+            .src(testFiles)
+            .browsers(['chrome:headless'])
+            .screenshots({
+                path: 'tests/e2e/outputs/',
+                takeOnFails: true
+            })
+            .run();
+            
+        console.log(`Tests failed: ${failedCount}`);
+        return failedCount;
+    } finally {
+        await testcafe.close();
+    }
+}
+
+runTests().catch(console.error);
