@@ -36,13 +36,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
-        '@/components': resolve(__dirname, 'src/components'),
-        '@/lib': resolve(__dirname, 'src/lib'),
-        '@/hooks': resolve(__dirname, 'src/hooks'),
-        '@/pages': resolve(__dirname, 'src/pages'),
-        '@/store': resolve(__dirname, 'src/stores'),
-        '@/contexts': resolve(__dirname, 'src/contexts'),
-        '@/utils': resolve(__dirname, 'src/lib'),
+        '@ui': resolve(__dirname, 'packages/components/ui/src'),
+        '@auth': resolve(__dirname, 'packages/contexts/auth/src'),
+        '@i18n': resolve(__dirname, 'packages/contexts/i18n/src'),
+        '@registration-form': resolve(__dirname, 'packages/components/registration-form/src'),
         '@assets': resolve(__dirname, '../tests/attached_assets'),
         '@shared': resolve(__dirname, '../backend/shared/src'),
       },
