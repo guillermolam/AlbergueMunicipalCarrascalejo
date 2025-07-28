@@ -1,17 +1,39 @@
 spin_manifest_version = 2
 
 [application]
-name = "albergue-frontend"
-version = "0.1.0"
-description = "Frontend application for Albergue Municipal Carrascalejo"
+name = "albergue-microfrontends"
+version = "1.0.0"
+description = "Microfrontend architecture for Albergue Municipal"
 authors = ["Albergue Team"]
 
 [[trigger.http]]
-route = "/..."
-component = "frontend"
+route = "/"
+component = "shell"
 
-[component.frontend]
-source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b2f7493b8d2d8d6fb381f9dc2b4e5b4d6e9c0b7b5d6c5a5b5b5b5b5b5b5b" }
-files = [{ source = "dist", destination = "/" }]
-[component.frontend.build]
-command = "npm install && npm run build"
+[[trigger.http]]
+route = "/auth/..."
+component = "auth"
+
+[[trigger.http]]
+route = "/booking/..."
+component = "booking"
+
+[[trigger.http]]
+route = "/dashboard/..."
+component = "dashboard"
+
+[component.shell]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
+files = [{ source = "apps/shell/dist", destination = "/" }]
+
+[component.auth]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
+files = [{ source = "apps/auth/dist", destination = "/" }]
+
+[component.booking]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
+files = [{ source = "apps/booking/dist", destination = "/" }]
+
+[component.dashboard]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
+files = [{ source = "apps/dashboard/dist", destination = "/" }]
