@@ -11,13 +11,13 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         # ✅ Correcto: allowUnfree para trunk-io
-        pkgs = import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
+        pkgs = import nixpkgs { 
+          inherit system; 
+          config.allowUnfree = true; 
         };
 
         # --- Definiciones Personalizadas ---
-
+        
         spin-version = "v2.2.0";
         spin-cli = pkgs.stdenv.mkDerivation {
           pname = "spin-cli";
@@ -100,13 +100,49 @@
         # Shell alternativo solo para CI/CD (más ligero)
         devShells.ci = pkgs.mkShell {
           buildInputs = [
+            # --- Runtimes Core ---
             spin-cli
             bun-cli
             pkgs.rustc
             pkgs.cargo
+            pkgs.rustfmt
+            pkgs.clippy
             pkgs.nodejs_22
+          
+            # --- Herramientas de Sistema ---
             pkgs.trunk-io
             pkgs.go-task
+            pkgs.caddy              # Gateway
+            pkgs.semgrep           # SAST
+            
+            # --- Base de Datos ---
+            pkgs.postgresql        # Para migraciones y tests
+            pkgs.postgresql_16     # PostgreSQL 16 client
+            pkgs.sqlx-cli          # Para SQLx migrations
+            
+            # --- Testing Completo ---
+            pkgs.nodePackages.testcafe    # E2E testing
+            pkgs.nodePackages.lighthouse  # Performance
+            pkgs.nodePackages.prettier    # Code formatting
+            pkgs.nodePackages.eslint      # Linting
+            pkgs.nodePackages.typescript  # TypeScript support
+            pkgs.k6                       # Load testing
+            pkgs.nuclei                   # Security scanning
+            pkgs.semgrep                  # SAST analysis
+            
+            # --- Herramientas de Seguridad ---
+            pkgs.cargo-audit       # Rust security audit
+            pkgs.zap               # OWASP ZAP
+            pkgs.semgrep           # SAST analysis
+            pkgs.nuclei            # Vulnerability scanning
+            
+            # --- Utilidades ---
+            pkgs.curl              # Health checks
+            pkgs.jq                # JSON processing
+            pkgs.git               # Version control
+            
+            # --- Desarrollo ---
+            pkgs.rust-analyzer
             pkgs.openssl
             pkgs.pkg-config
             pkgs.unzip

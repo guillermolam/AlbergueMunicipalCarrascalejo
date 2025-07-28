@@ -31,8 +31,7 @@ mod tests {
             CardType::EmergencyContacts,
             "Emergency".to_string(),
             "Emergency info".to_string(),
-        )
-        .with_links(vec![link.clone()]);
+        ).with_links(vec![link.clone()]);
 
         assert_eq!(card.links.len(), 1);
         assert_eq!(card.links[0].title, "Test Link");
@@ -46,10 +45,10 @@ mod tests {
             "Weather".to_string(),
             "Sunny".to_string(),
         );
-
+        
         // Set cache duration to 0 hours to test expiry
         card.cache_duration_hours = 0;
-
+        
         // Should be expired immediately
         assert!(card.is_cache_expired());
     }
@@ -57,7 +56,7 @@ mod tests {
     #[test]
     fn test_route_map_default() {
         let route = RouteMapData::default();
-
+        
         assert_eq!(route.current_location, "Albergue del Carrascalejo");
         assert_eq!(route.next_stage, "Almendralejo");
         assert_eq!(route.distance_km, 21.5);

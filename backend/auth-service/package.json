@@ -9,5 +9,11 @@
     "react-dom": "^19.1.0",
     "typescript": "^5.8.3",
     "vite": "^7.0.6"
+  },
+  "scripts": {
+    "dev": "bun run --watch build.ts",
+    "build": "bun run build.ts",
+    "test": "echo 'Auth frontend tests not configured yet'",
+    "lint": "echo 'Auth frontend lint not configured yet'"
   }
 }

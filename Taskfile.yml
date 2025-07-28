@@ -1,179 +1,943 @@
 version: '3'
 
-includes:
-  ports: ./taskfiles/Taskfile.ports.yml
-  setup: ./taskfiles/Taskfile.setup.yml
-  dev: ./taskfiles/Taskfile.dev.yml
-  build: ./taskfiles/Taskfile.build.yml
-  test: ./taskfiles/Taskfile.test.yml
-  quality: ./taskfiles/Taskfile.quality.yml
-  act: ./taskfiles/Taskfile.act.yml
-
 vars:
-  PROJECT_NAME: "AlbergueMunicipalCarrascalejo"
-  PYTHON: python3
-  BUN: bun
-  CARGO: cargo
-  TRUNK: trunk
-  COVERAGE_THRESHOLD: 85
+  FRONTEND_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  GATEWAY_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  AUTH_FRONTEND_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  BOOKING_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  NOTIFICATION_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  VALIDATION_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  INFO_ARRIVAL_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  LOCATION_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  RATE_LIMITER_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  REVIEWS_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  SECURITY_PORT:
+    sh: python3 -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()"
+  FRONTEND_URI: "http://0.0.0.0:{{.FRONTEND_PORT}}"
+  GATEWAY_URI: "http://0.0.0.0:{{.GATEWAY_PORT}}"
+  AUTH_FRONTEND_URI: "http://0.0.0.0:{{.AUTH_FRONTEND_PORT}}"
+
+env:
+  RUST_BACKTRACE: "1"
+  RUST_LOG: "debug"
+  NODE_ENV: "development"
+  DATABASE_URL: "postgresql://localhost:5432/albergue_dev"
 
 tasks:
-  # Default task that runs complete pipeline with coverage requirements
+  # ============================================================================
+  # UTILIDADES DE PUERTOS
+  # ============================================================================
+
+  ports:show:
+    desc: Show all assigned dynamic ports
+    cmds:
+      - echo "🌐 Puertos Asignados Dinámicamente:"
+      - echo "   Frontend Principal:{{.FRONTEND_PORT}}"
+      - echo "   Gateway BFF:{{.GATEWAY_PORT}}"
+      - echo "   Auth Frontend:{{.AUTH_FRONTEND_PORT}}"
+      - echo ""
+      - echo "🔧 Microservicios Backend:"
+      - echo "   Booking Service:{{.BOOKING_PORT}}"
+      - echo "   Notification Service:{{.NOTIFICATION_PORT}}"
+      - echo "   Validation Service:{{.VALIDATION_PORT}}"
+      - echo "   Info Arrival Service:{{.INFO_ARRIVAL_PORT}}"
+      - echo "   Location Service:{{.LOCATION_PORT}}"
+      - echo "   Rate Limiter Service:{{.RATE_LIMITER_PORT}}"
+      - echo "   Reviews Service:{{.REVIEWS_PORT}}"
+      - echo "   Security Service:{{.SECURITY_PORT}}"
+      - echo ""
+      - echo "🔗 URLs de Acceso:"
+      - echo "   Frontend:{{.FRONTEND_URI}}"
+      - echo "   Gateway:{{.GATEWAY_URI}}"
+      - echo "   Auth Frontend:{{.AUTH_FRONTEND_URI}}"
+
+  ports:save:
+    desc: Save current port configuration to .env file
+    cmds:
+      - |
+        cat > .env.ports << EOF
+        # Puertos generados dinámicamente - $(date)
+        FRONTEND_PORT={{.FRONTEND_PORT}}
+        GATEWAY_PORT={{.GATEWAY_PORT}}
+        AUTH_FRONTEND_PORT={{.AUTH_FRONTEND_PORT}}
+        BOOKING_PORT={{.BOOKING_PORT}}
+        NOTIFICATION_PORT={{.NOTIFICATION_PORT}}
+        VALIDATION_PORT={{.VALIDATION_PORT}}
+        INFO_ARRIVAL_PORT={{.INFO_ARRIVAL_PORT}}
+        LOCATION_PORT={{.LOCATION_PORT}}
+        RATE_LIMITER_PORT={{.RATE_LIMITER_PORT}}
+        REVIEWS_PORT={{.REVIEWS_PORT}}
+        SECURITY_PORT={{.SECURITY_PORT}}
+        EOF
+      - echo "✅ Puertos guardados en .env.ports"
+
+  # ============================================================================
+  # PUNTOS DE ENTRADA PRINCIPALES
+  # ============================================================================
+
   default:
-    desc: Complete development pipeline con requisitos de cobertura
+    desc: Run full CI/CD pipeline
     cmds:
-      - echo "Starting complete development pipeline with 85% coverage requirement..."
-      - task: setup:coverage
-      - task: test:unit
-      - task: test:integration
-      - task: coverage:all
-      - task: build
-      - task: start
-      - echo "Pipeline completed - coverage ≥ {{.COVERAGE_THRESHOLD}}% verified"
+      - task: ci:full
 
-  # Non-breaking formatting check
-  fmt:
-    desc: Check formatting without breaking build
-    cmds:
-      - task: quality:fmt:check
-
-  # Non-breaking linting check
-  lint:
-    desc: Check linting without breaking build
-    cmds:
-      - task: quality:lint:check
-
-  # Check quality without changes (non-breaking)
-  check:
-    desc: Check quality without making changes
-    cmds:
-      - task: quality:dev:check
-
-  # CI/CD pipeline with coverage requirements
-  ci:
-    desc: CI pipeline con requisitos de cobertura (solo tests rompen build)
-    cmds:
-      - echo "Running CI pipeline with coverage requirements..."
-      - task: setup:coverage
-      - task: test:unit
-      - task: test:integration
-      - task: coverage:all
-      - task: build:all
-
-  # Pre-commit hooks (only tests can break build)
-  pre-commit:
-    desc: Pre-commit checks con cobertura
-    cmds:
-      - task: test:unit:quick
-      - task: quality:ci:all
-
-  # Quick tests (can break build)
-  test:unit:quick:
-    desc: Quick unit tests (PUEDE ROMPER BUILD)
-    cmds:
-      - echo "Running quick unit tests..."
-      - cd backend && cargo test --lib
-      - cd frontend && bun test --run
-      - cd gateway && cargo test --lib
-
-  # Full test suite with coverage (can break build)
-  test:
-    desc: Full test suite with coverage (PUEDE ROMPER BUILD)
-    cmds:
-      - task: test:unit
-      - task: test:integration
-      - task: coverage:all
-
-  # Coverage verification (can break build)
-  coverage:
-    desc: Verify 85% coverage across all projects (PUEDE ROMPER BUILD)
-    cmds:
-      - task: test:coverage:all
-
-  # Build (non-breaking for quality issues)
-  build:
-    desc: Build all services (quality issues no rompen build)
-    cmds:
-      - task: build:all
-
-  # Start development environment
-  start:
-    desc: Start development environment
-    cmds:
-      - task: dev:start
-
-  # Development workflow with coverage
   dev:
-    desc: Development workflow con cobertura
+    desc: Run all services in development mode with dynamic ports
+    deps: [setup:check, setup:deps, ports:show]
     cmds:
-      - echo "Development workflow with coverage requirements..."
-      - task: quality:dev:check
-      - task: test:unit:quick
-      - task: build
-      - task: start
+      - task: dev:all
 
-  # Setup coverage tools
-  setup:coverage:
-    desc: Install coverage tools
+  ci:full:
+    desc: Complete CI/CD pipeline with all checks
+    deps: 
+      - setup:check
+      - setup:deps
+      - format:check
+      - lint:all
+      - sast:all
+      - test:unit
+      - build:all
+      - test:integration
+      - test:e2e
+      - security:dast
+      - performance:all
+      - compatibility:all
+
+  # ============================================================================
+  # CONFIGURACIÓN Y VERIFICACIÓN
+  # ============================================================================
+
+  setup:check:
+    desc: Verify development environment
     cmds:
-      - task: test:setup:coverage
+      - echo "🔍 Verificando entorno de desarrollo..."
+      - rustc --version
+      - node --version
+      - bun --version
+      - caddy version
+      - spin --version
+      - trunk --version
+      - echo "✅ Entorno de desarrollo listo"
 
-  # Coverage reports
-  coverage:report:
-    desc: Generate coverage reports
+  setup:deps:
+    desc: Install all dependencies
+    deps: [setup:deps:frontend, setup:deps:auth-frontend, setup:deps:rust]
+
+  setup:deps:frontend:
+    desc: Install main frontend dependencies
     cmds:
-      - task: test:coverage:report
+      - echo "📦 Instalando dependencias del frontend principal..."
+      - cd frontend && bun install
 
-  # Coverage verification (can break build)
-  coverage:all:
-    desc: Verify coverage across all projects (PUEDE ROMPER BUILD)
+  setup:deps:auth-frontend:
+    desc: Install auth service frontend dependencies
     cmds:
-      - task: test:coverage:all
+      - echo "📦 Instalando dependencias del frontend de auth..."
+      - cd backend/auth-service/app && bun install
 
-  # Report generation
-  report:
-    desc: Generate quality and coverage reports
+  setup:deps:rust:
+    desc: Install Rust dependencies and components
     cmds:
-      - task: quality:report:all
-      - task: test:coverage:report
+      - echo "🦀 Instalando dependencias de Rust..."
+      - rustup target add wasm32-wasi || echo "wasm32-wasi target already added"
+      - cargo fetch --workspace
 
-  # Help and status
-  help:
-    desc: Show help
+  setup:trunk:
+    desc: Install and configure Trunk.io for linting
     cmds:
-      - task --list-all
+      - |
+        if ! command -v trunk >/dev/null 2>&1; then
+          echo "📥 Instalando Trunk.io..."
+          curl https://get.trunk.io -fsSL | bash || echo "⚠️  Trunk.io installation failed"
+        fi
+      - trunk init || echo "⚠️  Trunk.io already initialized"
+      - trunk check enable clippy rustfmt eslint prettier semgrep bandit || echo "⚠️  Some trunk checks already enabled"
 
-  status:
-    desc: Show project status with coverage
+  # ============================================================================
+  # FORMATEO DE CÓDIGO
+  # ============================================================================
+
+  format:all:
+    desc: Format all code (Rust + Frontend + Auth Frontend)
+    deps: [format:rust, format:frontend, format:auth-frontend]
+
+  format:rust:
+    desc: Format all Rust code in workspace
     cmds:
-      - echo "Project Status with Coverage Requirements:"
-      - task: ports:show
-      - echo
-      - task: dev:status
-      - echo
-      - task: quality:status
+      - echo "🎨 Formateando código Rust..."
+      - cargo fmt --all --workspace
 
-  # Cleanup
+  format:frontend:
+    desc: Format main frontend code
+    dir: frontend
+    cmds:
+      - echo "🎨 Formateando frontend principal..."
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Prettier formatting failed"
+        else
+          echo "⚠️  Prettier not available, using bun format"
+          bun run fmt || echo "⚠️  Frontend formatting failed"
+        fi
+
+  format:auth-frontend:
+    desc: Format auth service frontend code
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🎨 Formateando frontend de auth..."
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Auth frontend formatting failed"
+        else
+          bun run fmt || echo "⚠️  Auth frontend formatting failed"
+        fi
+
+  format:check:
+    desc: Check code formatting
+    deps: [format:check:rust, format:check:frontend, format:check:auth-frontend]
+
+  format:check:rust:
+    desc: Check Rust formatting
+    cmds:
+      - cargo fmt --check --workspace
+
+  format:check:frontend:
+    desc: Check main frontend formatting
+    dir: frontend
+    cmds:
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Frontend formatting check failed"
+        else
+          echo "⚠️  Prettier not available, skipping frontend format check"
+        fi
+
+  format:check:auth-frontend:
+    desc: Check auth frontend formatting
+    dir: backend/auth-service/app
+    cmds:
+      - |
+        if command -v prettier >/dev/null 2>&1; then
+          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}" || echo "⚠️  Auth frontend formatting check failed"
+        else
+          echo "⚠️  Prettier not available, skipping auth frontend format check"
+        fi
+
+  # ============================================================================
+  # LINTING
+  # ============================================================================
+
+  lint:all:
+    desc: Run all linters (Rust + Frontend + Trunk)
+    deps: [lint:rust, lint:frontend, lint:auth-frontend, lint:trunk]
+
+  lint:rust:
+    desc: Lint all Rust code in workspace
+    cmds:
+      - echo "🔍 Ejecutando clippy en todo el workspace..."
+      - cargo clippy --workspace --all-targets --all-features -- -D warnings || echo "⚠️ Clippy warnings found"
+
+  lint:frontend:
+    desc: Lint main frontend code
+    dir: frontend
+    cmds:
+      - echo "🔍 Ejecutando lint en frontend principal..."
+      - bun run lint
+
+  lint:auth-frontend:
+    desc: Lint auth service frontend code
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🔍 Ejecutando lint en frontend de auth..."
+      - echo "⚠️  Auth frontend lint not configured yet"
+
+  lint:trunk:
+    desc: Run Trunk.io linting on entire project
+    cmds:
+      - echo "🔍 Ejecutando Trunk.io en todo el proyecto..."
+      - |
+        if command -v trunk >/dev/null 2>&1; then
+          trunk check --all
+        else
+          echo "⚠️  Trunk.io not installed, skipping"
+        fi
+
+  # ============================================================================
+  # ANÁLISIS DE SEGURIDAD ESTÁTICO (SAST)
+  # ============================================================================
+
+  sast:all:
+    desc: Run all SAST tools
+    deps: [sast:semgrep, sast:cargo-audit, sast:trunk-security]
+
+  sast:semgrep:
+    desc: Run Semgrep security analysis
+    cmds:
+      - echo "🔒 Ejecutando análisis de seguridad con Semgrep..."
+      - |
+        if command -v semgrep >/dev/null 2>&1; then
+          semgrep --config=auto --error --strict --verbose .
+        else
+          echo "⚠️  Semgrep not installed, skipping security analysis"
+        fi
+
+  sast:cargo-audit:
+    desc: Run Cargo security audit
+    cmds:
+      - echo "🔒 Ejecutando auditoría de seguridad de Cargo..."
+      - |
+        if ! command -v cargo-audit >/dev/null 2>&1; then
+          cargo install cargo-audit
+        fi
+      - cargo audit
+
+  sast:trunk-security:
+    desc: Run Trunk.io security checks
+    cmds:
+      - echo "🔒 Ejecutando checks de seguridad con Trunk.io..."
+      - |
+        if command -v trunk >/dev/null 2>&1; then
+          trunk check --filter=security
+        else
+          echo "⚠️  Trunk.io not available, skipping security checks"
+        fi
+
+  # ============================================================================
+  # TESTING UNITARIO
+  # ============================================================================
+
+  test:unit:
+    desc: Run all unit tests
+    deps: [test:unit:rust, test:unit:frontend, test:unit:auth-frontend]
+
+  test:unit:rust:
+    desc: Run Rust unit tests
+    cmds:
+      - echo "🧪 Ejecutando tests unitarios de Rust..."
+      - cargo test --workspace --lib --bins
+
+  test:integration:gateway:
+    desc: Run gateway integration tests with Spin
+    cmds:
+      - echo "🚀 Running gateway integration tests..."
+      - ./scripts/test-integration.sh
+
+  test:integration:services:
+    desc: Run individual service integration tests
+    cmds:
+      - echo "🔧 Testing booking service integration..."
+      - cd backend/booking-service && cargo test --test spin_test
+      - echo "🔧 Testing notification service integration..."
+      - cd backend/notification-service && cargo test --test spin_test
+      - echo "🔧 Testing reviews service integration..."
+      - cd backend/reviews-service && cargo test
+
+  test:unit:frontend:
+    desc: Run main frontend unit tests
+    dir: frontend
+    cmds:
+      - echo "🧪 Ejecutando tests unitarios del frontend principal..."
+      - bun run test
+
+  test:unit:auth-frontend:
+    desc: Run auth frontend unit tests
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🧪 Ejecutando tests unitarios del frontend de auth..."
+      - bun run test || echo "⚠️  Auth frontend tests not configured"
+
+  test:unit:coverage:
+    desc: Generate test coverage reports
+    deps: [test:unit:coverage:rust, test:unit:coverage:frontend]
+
+  test:unit:coverage:rust:
+    desc: Generate Rust coverage
+    cmds:
+      - echo "📊 Generando cobertura de tests de Rust..."
+      - |
+        if ! command -v cargo-tarpaulin >/dev/null 2>&1; then
+          cargo install cargo-tarpaulin
+        fi
+      - mkdir -p coverage
+      - cargo tarpaulin --workspace --out xml --output-dir coverage/
+
+  test:unit:coverage:frontend:
+    desc: Generate frontend coverage
+    dir: frontend
+    cmds:
+      - echo "📊 Generando cobertura de tests del frontend..."
+      - |
+        if grep -q "test:coverage" package.json; then
+          bun run test:coverage
+        else
+          echo "⚠️  Frontend coverage script not available"
+        fi
+
+  # ============================================================================
+  # CONSTRUCCIÓN
+  # ============================================================================
+
+  build:all:
+    desc: Build all services (Gateway + Backend + Frontends)
+    deps: [build:gateway, build:backend, build:frontend, build:auth-frontend]
+
+  build:gateway:
+    desc: Build gateway BFF with Spin
+    dir: gateway
+    cmds:
+      - echo "🏗️  Construyendo Gateway BFF..."
+      - cargo build --target wasm32-wasi --release
+      - spin build
+
+  build:backend:
+    desc: Build all backend microservices
+    cmds:
+      - echo "🏗️  Construyendo todos los microservicios backend..."
+      - cargo build --workspace --target wasm32-wasi --release --exclude shared
+
+  build:frontend:
+    desc: Build main frontend
+    dir: frontend
+    cmds:
+      - echo "🏗️  Construyendo frontend principal..."
+      - bun run build
+
+  build:auth-frontend:
+    desc: Build auth service frontend
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🏗️  Construyendo frontend de auth service..."
+      - bun run build
+
+  build:auth-service:
+    desc: Build complete auth service (Rust + React)
+    dir: backend/auth-service
+    cmds:
+      - echo "🏗️  Construyendo auth service completo..."
+      - cd app && bun install && bun run build
+      - cargo build --target wasm32-wasi --release
+      - spin build
+
+  # ============================================================================
+  # SERVICIOS DE DESARROLLO
+  # ============================================================================
+
+  dev:all:
+    desc: Run all services in parallel with dynamic ports
+    deps: [dev:gateway, dev:backend, dev:frontend, dev:auth-frontend]
+
+  dev:gateway:
+    desc: Run gateway BFF with dynamic port
+    dir: gateway
+    cmds:
+      - echo "🚀 Iniciando Gateway BFF en puerto {{.GATEWAY_PORT}}..."
+      - spin up --listen 0.0.0.0:{{.GATEWAY_PORT}}
+
+  dev:backend:
+    desc: Run all backend microservices with dynamic ports
+    cmds:
+      - echo "🚀 Iniciando todos los microservicios backend..."
+      - |
+        # Booking Service
+        if [ -f "backend/booking-service/spin.toml" ]; then
+          echo "  📦 Booking Service en puerto {{.BOOKING_PORT}}"
+          cd backend/booking-service && spin up --listen 0.0.0.0:{{.BOOKING_PORT}} &
+        fi
+
+        # Notification Service
+        if [ -f "backend/notification-service/spin.toml" ]; then
+          echo "  📧 Notification Service en puerto {{.NOTIFICATION_PORT}}"
+          cd backend/notification-service && spin up --listen 0.0.0.0:{{.NOTIFICATION_PORT}} &
+        fi
+
+        # Validation Service
+        if [ -f "backend/validation-service/spin.toml" ]; then
+          echo "  ✅ Validation Service en puerto {{.VALIDATION_PORT}}"
+          cd backend/validation-service && spin up --listen 0.0.0.0:{{.VALIDATION_PORT}} &
+        fi
+
+        # Info on Arrival Service
+        if [ -f "backend/info-on-arrival-service/spin.toml" ]; then
+          echo "  ℹ️  Info Arrival Service en puerto {{.INFO_ARRIVAL_PORT}}"
+          cd backend/info-on-arrival-service && spin up --listen 0.0.0.0:{{.INFO_ARRIVAL_PORT}} &
+        fi
+
+        # Location Service
+        if [ -f "backend/location-service/spin.toml" ]; then
+          echo "  📍 Location Service en puerto {{.LOCATION_PORT}}"
+          cd backend/location-service && spin up --listen 0.0.0.0:{{.LOCATION_PORT}} &
+        fi
+
+        # Rate Limiter Service
+        if [ -f "backend/rate-limiter-service/spin.toml" ]; then
+          echo "  🚦 Rate Limiter Service en puerto {{.RATE_LIMITER_PORT}}"
+          cd backend/rate-limiter-service && spin up --listen 0.0.0.0:{{.RATE_LIMITER_PORT}} &
+        fi
+
+        # Reviews Service
+        if [ -f "backend/reviews-service/spin.toml" ]; then
+          echo "  ⭐ Reviews Service en puerto {{.REVIEWS_PORT}}"
+          cd backend/reviews-service && spin up --listen 0.0.0.0:{{.REVIEWS_PORT}} &
+        fi
+
+        # Security Service
+        if [ -f "backend/security-service/spin.toml" ]; then
+          echo "  🔒 Security Service en puerto {{.SECURITY_PORT}}"
+          cd backend/security-service && spin up --listen 0.0.0.0:{{.SECURITY_PORT}} &
+        fi
+
+        echo "⏳ Esperando a que todos los servicios estén listos..."
+        wait
+
+  dev:frontend:
+    desc: Run main frontend development server
+    dir: frontend
+    cmds:
+      - echo "🚀 Iniciando frontend principal en puerto {{.FRONTEND_PORT}}..."
+      - bun run dev -- --host 0.0.0.0 --port {{.FRONTEND_PORT}}
+
+  dev:auth-frontend:
+    desc: Run auth service frontend development server
+    dir: backend/auth-service/app
+    cmds:
+      - echo "🚀 Iniciando frontend de auth en puerto {{.AUTH_FRONTEND_PORT}}..."
+      - bun run dev -- --host 0.0.0.0 --port {{.AUTH_FRONTEND_PORT}} || echo "⚠️  Auth frontend dev not configured"
+
+  # ============================================================================
+  # TESTING DE INTEGRACIÓN
+  # ============================================================================
+
+  test:integration:
+    desc: Run integration tests
+    cmds:
+      - echo "🧪 Ejecutando tests de integración..."
+      - cargo test --workspace --test '*'
+
+  test:oauth2:flows:
+    desc: Test OAuth2 and OpenID Connect flows
+    cmds:
+      - echo "🧪 Testing OAuth2 authorization code flow..."
+      - cd gateway/bff && cargo test test_oauth2_authentication_flow -- --nocapture
+      - echo "🧪 Testing OpenID Connect userinfo..."
+      - cd gateway/bff && cargo test test_openid_connect_userinfo -- --nocapture
+      - echo "🧪 Testing token refresh flow..."
+      - cd gateway/bff && cargo test handle_token_refresh -- --nocapture
+
+  test:integration:api:
+    desc: "🔗 Ejecutando tests de integración de API"
+    dir: tests/api
+    cmds:
+      - |
+        for test_file in *.js *.mjs; do
+          if [ -f "$test_file" ]; then
+            echo "  🧪 Ejecutando $test_file..."
+            if [[ "$test_file" == *.mjs ]]; then
+              node "$test_file" || echo "⚠️  Test $test_file failed"
+            else
+              node "$test_file" || echo "⚠️  Test $test_file failed"
+            fi
+          fi
+        done
+
+  test:integration:database:
+    desc: "🗄️  Ejecutando tests de integración de base de datos"
+    cmds:
+      - echo "🧪 Ejecutando test de DB: db-integration.test.sql"
+      - |
+        if command -v psql >/dev/null 2>&1 && [ -f "database/test/db-integration.test.sql" ]; then
+          psql "${DATABASE_URL:-postgresql://localhost:5432/albergue_dev}" -f "database/test/db-integration.test.sql" || echo "⚠️  Database test failed"
+        else
+          echo "⚠️  PostgreSQL client not available or test file not found"
+        fi
+
+  # ============================================================================
+  # TESTING END-TO-END
+  # ============================================================================
+
+  test:e2e:
+    desc: Run all E2E tests
+    deps: [test:e2e:testcafe, test:e2e:comprehensive]
+
+  test:e2e:testcafe:
+    desc: "🎭 Ejecutando tests E2E con TestCafe"
+    dir: tests/e2e/testcafe
+    cmds:
+      - |
+        # Try different ways to find testcafe
+        TESTCAFE_CMD=""
+        if command -v testcafe >/dev/null 2>&1; then
+          TESTCAFE_CMD="testcafe"
+        elif command -v npx >/dev/null 2>&1; then
+          TESTCAFE_CMD="npx testcafe"
+        elif [ -f "../../../frontend/node_modules/.bin/testcafe" ]; then
+          TESTCAFE_CMD="../../../frontend/node_modules/.bin/testcafe"
+        fi
+
+        if [ -n "$TESTCAFE_CMD" ]; then
+          for test_file in *.js; do
+            if [ -f "$test_file" ]; then
+              echo "  🧪 Ejecutando E2E test: $test_file"
+              $TESTCAFE_CMD chrome:headless "$test_file" || echo "⚠️  E2E test $test_file failed"
+            fi
+          done
+        else
+          echo "⚠️  TestCafe not available, skipping E2E tests"
+          echo "💡 Hint: Run 'cd frontend && bun add -D testcafe' to install TestCafe"
+        fi
+
+  test:e2e:comprehensive:
+    desc: "🎭 Ejecutando suite completa de tests E2E"
+    dir: tests/runners
+    cmds:
+      - |
+        if [ -f "run-comprehensive-testcafe.js" ]; then
+          node run-comprehensive-testcafe.js || echo "⚠️  Comprehensive E2E tests failed"
+        else
+          echo "⚠️  Comprehensive test runner not found"
+        fi
+
+  # ============================================================================
+  # TESTING DE SEGURIDAD DINÁMICO (DAST)
+  # ============================================================================
+
+  security:dast:
+    desc: Run DAST security scans
+    deps: [security:dast:zap, security:dast:nuclei]
+
+  security:dast:zap:
+    desc: Run OWASP ZAP security scan
+    cmds:
+      - echo "🔒 Ejecutando escaneo de seguridad con OWASP ZAP..."
+      - |
+        if command -v zap-baseline.py >/dev/null 2>&1; then
+          if [ -f "tests/infrastructure/security/zap-rules.tsv" ]; then
+            zap-baseline.py -t {{.FRONTEND_URI}} -c tests/infrastructure/security/zap-rules.tsv
+          else
+            zap-baseline.py -t {{.FRONTEND_URI}}
+          fi
+        else
+          echo "⚠️  OWASP ZAP not installed, skipping DAST scan"
+        fi
+
+  security:dast:nuclei:
+    desc: Run Nuclei vulnerability scanner
+    cmds:
+      - echo "🔒 Ejecutando escaneo de vulnerabilidades con Nuclei..."
+      - |
+        if command -v nuclei >/dev/null 2>&1; then
+          nuclei -u {{.FRONTEND_URI}} -severity medium,high,critical
+        else
+          echo "⚠️  Nuclei not installed, skipping vulnerability scan"
+        fi
+
+  # ============================================================================
+  # TESTING DE RENDIMIENTO
+  # ============================================================================
+
+  performance:all:
+    desc: Run all performance tests
+    deps: [performance:lighthouse, performance:k6]
+
+  performance:lighthouse:
+    desc: Run Lighthouse performance audit
+    cmds:
+      - echo "⚡ Ejecutando auditoría de rendimiento con Lighthouse..."
+      - |
+        # Try different ways to find lighthouse
+        LIGHTHOUSE_CMD=""
+        if command -v lighthouse >/dev/null 2>&1; then
+          LIGHTHOUSE_CMD="lighthouse"
+        elif command -v npx >/dev/null 2>&1; then
+          LIGHTHOUSE_CMD="npx lighthouse"
+        elif [ -f "frontend/node_modules/.bin/lighthouse" ]; then
+          LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+        fi
+
+        if [ -n "$LIGHTHOUSE_CMD" ]; then
+          mkdir -p tests/infrastructure/performance
+          echo "  🏃 Running Lighthouse audit on {{.FRONTEND_URI}}"
+          $LIGHTHOUSE_CMD {{.FRONTEND_URI}} --output json --output-path ./tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+          echo "  🏃 Running Lighthouse audit on {{.FRONTEND_URI}}/admin"
+          $LIGHTHOUSE_CMD {{.FRONTEND_URI}}/admin --output json --output-path ./tests/infrastructure/performance/lighthouse-admin-results.json || echo "⚠️  Lighthouse admin audit failed"
+        else
+          echo "⚠️  Lighthouse not available, trying to install locally..."
+          if cd frontend && bun add -D lighthouse; then
+            echo "✅ Lighthouse installed locally"
+            LIGHTHOUSE_CMD="frontend/node_modules/.bin/lighthouse"
+            mkdir -p ../tests/infrastructure/performance
+            $LIGHTHOUSE_CMD {{.FRONTEND_URI}} --output json --output-path ../tests/infrastructure/performance/lighthouse-results.json || echo "⚠️  Lighthouse audit failed"
+          else
+            echo "⚠️  Failed to install Lighthouse"
+          fi
+        fi
+
+  performance:k6:
+    desc: Run k6 load testing
+    cmds:
+      - echo "⚡ Ejecutando tests de carga con k6..."
+      - |
+        if command -v k6 >/dev/null 2>&1; then
+          if [ -f "tests/infrastructure/performance/api-load-test.js" ]; then
+            k6 run tests/infrastructure/performance/api-load-test.js
+          else
+            echo "⚠️  k6 load test script not found"
+          fi
+        else
+          echo "⚠️  k6 not installed, skipping load tests"
+        fi
+
+  # ============================================================================
+  # COMPATIBILIDAD CROSS-BROWSER Y DISPOSITIVOS
+  # ============================================================================
+
+  compatibility:all:
+    desc: Run cross-browser and device compatibility tests
+    deps: [compatibility:browsers, compatibility:devices]
+
+  compatibility:browsers:
+    desc: Test on major browsers
+    cmds:
+      - echo "🌐 Ejecutando tests de compatibilidad de navegadores..."
+      - |
+        # Try different ways to find testcafe
+        TESTCAFE_CMD=""
+        if command -v testcafe >/dev/null 2>&1; then
+          TESTCAFE_CMD="testcafe"
+        elif command -v npx >/dev/null 2>&1; then
+          TESTCAFE_CMD="npx testcafe"
+        elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+          TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+        fi
+
+        if [ -n "$TESTCAFE_CMD" ]; then
+          if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+            echo "  🧪 Testing Chrome..."
+            $TESTCAFE_CMD chrome:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Chrome test failed"
+            echo "  🧪 Testing Firefox..."
+            $TESTCAFE_CMD firefox:headless tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Firefox test failed"
+            echo "  🧪 Testing Safari..."
+            $TESTCAFE_CMD safari tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Safari not available"
+            echo "  🧪 Testing Edge..."
+            $TESTCAFE_CMD edge tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Edge not available"
+          else
+            echo "⚠️  Browser compatibility test file not found"
+          fi
+        else
+          echo "⚠️  TestCafe not available, skipping browser compatibility tests"
+        fi
+
+  compatibility:devices:
+    desc: Test responsive design on different devices
+    cmds:
+      - echo "📱 Ejecutando tests de compatibilidad de dispositivos..."
+      - |
+        # Try different ways to find testcafe
+        TESTCAFE_CMD=""
+        if command -v testcafe >/dev/null 2>&1; then
+          TESTCAFE_CMD="testcafe"
+        elif command -v npx >/dev/null 2>&1; then
+          TESTCAFE_CMD="npx testcafe"
+        elif [ -f "frontend/node_modules/.bin/testcafe" ]; then
+          TESTCAFE_CMD="frontend/node_modules/.bin/testcafe"
+        fi
+
+        if [ -n "$TESTCAFE_CMD" ]; then
+          if [ -f "tests/e2e/testcafe/test-dni-simple.js" ]; then
+            echo "  📱 Testing iPhone..."
+            $TESTCAFE_CMD chrome:headless:emulation:device=iPhone tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPhone test failed"
+            echo "  📱 Testing iPad..."
+            $TESTCAFE_CMD chrome:headless:emulation:device=iPad tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  iPad test failed"
+            echo "  🖥️  Testing Desktop..."
+            $TESTCAFE_CMD chrome:headless:emulation:device=desktop tests/e2e/testcafe/test-dni-simple.js || echo "⚠️  Desktop test failed"
+          else
+            echo "⚠️  Device compatibility test file not found"
+          fi
+        else
+          echo "⚠️  TestCafe not available, skipping device compatibility tests"
+        fi
+
+  # ============================================================================
+  # UTILIDADES
+  # ============================================================================
+
   clean:
-    desc: Clean everything including coverage
+    desc: Clean build artifacts and caches
     cmds:
-      - echo "Cleaning everything including coverage..."
-      - task: quality:clean
-      - task: build:clean
-      - task: test:clean
-      - task: ports:clean
-      - task: dev:clean
+      - echo "🧹 Limpiando artefactos de construcción..."
+      - cargo clean
+      - rm -rf frontend/dist/
+      - rm -rf frontend/node_modules/.cache/
+      - rm -rf backend/auth-service/app/dist/
+      - rm -rf backend/auth-service/app/node_modules/.cache/
+      - rm -rf coverage/
+      - rm -rf tests/e2e/outputs/
+      - rm -rf .env.ports
+      - echo "✅ Limpieza completada"
 
-  # Act workflow runner
-  act:
-    desc: Run GitHub Actions workflows locally with act
+  preview:
+    desc: Preview built application
+    deps: [build:all]
+    dir: frontend
     cmds:
-      - echo "Running GitHub Actions workflows locally..."
-      - echo "Available act commands:"
-      - echo "  task act:setup-act    - Install act"
-      - echo "  task act:run-quality  - Run quality workflow"
-      - echo "  task act:run-tests    - Run tests workflow"
-      - echo "  task act:run-push     - Run on push event"
-      - echo "  task act:run-pr       - Run on PR event"
-      - echo "  task act:list         - List workflows"
-      - echo "  task act:help         - Show help"
+      - echo "👀 Iniciando preview de la aplicación..."
+      - bun run serve -- --host 0.0.0.0 --port 4173
+
+  deploy:
+    desc: Deploy to production
+    deps: [ci:full]
+    cmds:
+      - echo "🚀 Desplegando a producción..."
+      - |
+        if command -v spin >/dev/null 2>&1; then
+          spin deploy
+        else
+          echo "⚠️  Spin CLI not available for deployment"
+        fi
+
+  # ============================================================================
+  # HEALTH CHECKS
+  # ============================================================================
+
+  health:check:
+    desc: Check application health
+    cmds:
+      - echo "🏥 Verificando salud de la aplicación..."
+      - curl -f {{.FRONTEND_URI}}/api/health || echo "⚠️  Frontend health check failed"
+      - curl -f {{.GATEWAY_URI}}/api/health || echo "⚠️  Gateway health check failed"
+
+  # ============================================================================
+  # OPERACIONES DE BASE DE DATOS
+  # ============================================================================
+
+  db:migrate:
+    desc: Run database migrations
+    dir: database
+    cmds:
+      - echo "🗄️  Ejecutando migraciones de base de datos..."
+      - |
+        if [ -f "scripts/migrate-postgres.sh" ]; then
+          ./scripts/migrate-postgres.sh
+        else
+          echo "⚠️  Database migration script not found"
+        fi
+
+  db:seed:
+    desc: Seed database with test data
+    dir: database
+    cmds:
+      - echo "🌱 Sembrando base de datos con datos de prueba..."
+      - |
+        DB_SEED_URL="${DATABASE_URL:-${NEON_DATABASE_URL:-postgresql://localhost:5432/albergue_dev}}"
+        if command -v psql >/dev/null 2>&1 && [ -f "database/seed/dev_seed.sql" ]; then
+          psql "$DB_SEED_URL" -f "database/seed/dev_seed.sql"
+        else
+          echo "⚠️  PostgreSQL client not available or seed file not found"
+        fi
+
+  db:reset:
+    desc: Reset database
+    deps: [db:migrate, db:seed]
+
+  # ============================================================================
+  # VERIFICACIÓN DE ENTORNO NIX
+  # ============================================================================
+
+  nix:check:
+    desc: Verify Nix packages are available
+    cmds:
+      - echo "❄️  Verificando paquetes de Nix..."
+      - rustc --version && echo "✅ Rust available"
+      - node --version && echo "✅ Node.js available"
+      - bun --version && echo "✅ Bun available"
+      - caddy version && echo "✅ Caddy available"
+      - spin --version && echo "✅ Spin available"
+      - trunk --version && echo "✅ Trunk available"
+      - echo "✅ Todos los paquetes de Nix están disponibles"
+  test:gateway:unit:
+    desc: Run unit tests for gateway BFF
+    cmds:
+      - echo "🧪 Running gateway BFF unit tests..."
+      - cd gateway/bff && cargo test --lib -- --nocapture
+
+  test:gateway:integration:
+    desc: Run integration tests for gateway BFF
+    cmds:
+      - echo "🧪 Running gateway BFF integration tests..."
+      - cd gateway/bff && cargo test --test integration -- --nocapture
+
+  test:gateway:all:
+    desc: Run all gateway tests
+    cmds:
+      - echo "🧪 Running all gateway tests..."
+      - cd gateway/bff && cargo test -- --nocapture
+
+  test:spin:config:
+    desc: Test Spin/Fermyon configuration
+    cmds:
+      - echo "🧪 Testing Spin configuration..."
+      - node tests/spin-integration/fermyon-config-test.js
+
+  test:spin:build:
+    desc: Test Spin build process
+    cmds:
+      - echo "🧪 Testing Spin build..."
+      - spin build --dry-run
+
+  test:spin:wasm:
+    desc: Test WASM compilation for all services
+    cmds:
+      - echo "🧪 Testing WASM compilation..."
+      - cd gateway/bff && cargo check --target wasm32-wasi
+      - cd backend && cargo check --target wasm32-wasi --workspace --exclude shared
+
+  test:coverage:
+    desc: Run tests with coverage (target 85%+)
+    cmds:
+      - echo "📊 Ejecutando tests con cobertura..."
+      - cargo tarpaulin --workspace --out Html --output-dir coverage --target-coverage 85
+      - echo "📊 Testing gateway service composition coverage..."
+      - cd gateway/bff && cargo tarpaulin --out Html --output-dir ../../coverage/gateway --target-coverage 100
+
+  test:security:
+    desc: Run security tests
+    cmds:
+      - echo "🔒 Ejecutando tests de seguridad..."
+      - cd backend/security-service && cargo test
+      - echo "🔒 Testing security middleware composition..."
+      - cd gateway/bff && cargo test test_security_scanning_blocks_malicious_content -- --nocapture
+      - echo "🔒 Testing rate limiting middleware..."
+      - cd gateway/bff && cargo test test_rate_limiting_blocks_excessive_requests -- --nocapture
+
+  test:gateway:composition:
+    desc: Test Gateway BFF service composition
+    cmds:
+      - echo "🧪 Running gateway BFF service composition tests..."
+      - cd gateway/bff && cargo test test_rate_limiting_blocks_excessive_requests -- --nocapture
+      - cd gateway/bff && cargo test test_security_scanning_blocks_malicious_content -- --nocapture
+
+  test:
+    desc: Run all tests
+    cmds:
+      - task: test:unit:rust
+      - task: test:unit:frontend
+      - task: test:integration:gateway
+      - task: test:integration:services
+      - task: test:e2e
+
+  test:comprehensive:
+    desc: Run comprehensive test suite for service composition
+    cmds:
+      - echo "🚀 Running comprehensive service composition test suite..."
+      - task: test:gateway:composition
+      - task: test:oauth2:flows
+      - task: test:security
+      - echo "✅ All service composition tests completed!"

@@ -103,6 +103,7 @@ impl CountryService {
 fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
     let method = req.method();
     let path = req.uri().path();
+<<<<<<< HEAD
     let service = CountryService::new();
 
     // Handle CORS preflight requests
@@ -114,6 +115,10 @@ fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
             .build());
     }
 
+=======
+    
+    // TODO: Implement country service endpoints
+>>>>>>> 1dee3d647c7fc2b7c6a8892b23d856f318494c99
     match (method, path) {
         ("GET", "/api/countries/{code}") => {
             let code = path.split('/').last().unwrap_or("".to_string());
@@ -141,8 +146,13 @@ fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
         }
         _ => Ok(ResponseBuilder::new(StatusCode::NOT_FOUND)
             .header("content-type", "application/json")
+<<<<<<< HEAD
             .header("Access-Control-Allow-Origin", "*")
             .body(r#"{"error":"Not found"}"#)
             .build()),
+=======
+            .body(r#"{"message":"Country service - under development"}"#)
+            .build())
+>>>>>>> 1dee3d647c7fc2b7c6a8892b23d856f318494c99
     }
 }

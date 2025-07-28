@@ -36,6 +36,7 @@ shared = { path = "../shared" }
 
 # Error handling
 anyhow = "1.0"
+<<<<<<< HEAD
 thiserror = "1.0"
 
 # Additional dependencies
@@ -44,3 +45,6 @@ redis = "0.21"
 tokio = { version = "1.32", features = ["full"] }
 serde_qs = "0.10"
 chrono = "0.4"
+=======
+thiserror = "1.0"
+>>>>>>> 1dee3d647c7fc2b7c6a8892b23d856f318494c99

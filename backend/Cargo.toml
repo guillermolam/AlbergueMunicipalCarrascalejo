@@ -1,5 +1,6 @@
 [workspace]
 members = [
+<<<<<<< HEAD
   "shared",
   "booking-service",
   "notification-service",
@@ -10,6 +11,18 @@ members = [
   "location-service",
   "rate-limiter-service",
   "auth-service", "services/redis_service", "services/country_cache_service",
+=======
+    "shared",
+    "booking-service",
+    "notification-service",
+    "reviews-service",
+    "security-service",
+    "validation-service",
+    "info-on-arrival-service",
+    "location-service",
+    "rate-limiter-service",
+    "auth-service"
+>>>>>>> 1dee3d647c7fc2b7c6a8892b23d856f318494c99
 ]
 
 [workspace.dependencies]

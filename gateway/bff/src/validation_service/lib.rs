@@ -1,35 +1,47 @@
 use anyhow::Result;
-use serde_json::json;
 use spin_sdk::http::{Request, Response};
 
 pub async fn handle(req: &Request) -> Result<Response> {
     let path = req.uri().path();
+    let method = req.method().as_str();
 
-    match path {
-        "/api/validation/document" => handle_document_validation(req).await,
-        "/api/validation/form" => handle_form_validation(req).await,
-        _ => Ok(Response::builder()
-            .status(404)
-            .header("Content-Type", "application/json")
-            .body(json!({"error": "Validation endpoint not found"}).to_string())
-            .build()),
+    match (method, path) {
+        ("GET", "/api/validation/status") => {
+            let response_body = serde_json::json!({
+                "status": "ready",
+                "supported_documents": ["DNI", "NIE", "Passport"]
+            }).to_string();
+
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
+        ("POST", "/api/validation/upload") => {
+            let response_body = serde_json::json!({
+                "id": "validation_123",
+                "status": "processing",
+                "message": "Document uploaded successfully"
+            }).to_string();
+
+            Ok(Response::builder()
+                .status(201)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
+        _ => {
+            let error_body = serde_json::json!({
+                "error": "Not Found",
+                "message": "Validation endpoint not found"
+            }).to_string();
+
+            Ok(Response::builder()
+                .status(404)
+                .header("Content-Type", "application/json")
+                .body(error_body)
+                .build())
+        }
     }
-}
-
-async fn handle_document_validation(_req: &Request) -> Result<Response> {
-    // TODO: Implement document validation logic
-    Ok(Response::builder()
-        .status(501)
-        .header("Content-Type", "application/json")
-        .body(json!({"error": "Not implemented yet"}).to_string())
-        .build())
-}
-
-async fn handle_form_validation(_req: &Request) -> Result<Response> {
-    // TODO: Implement form validation logic
-    Ok(Response::builder()
-        .status(501)
-        .header("Content-Type", "application/json")
-        .body(json!({"error": "Not implemented yet"}).to_string())
-        .build())
 }

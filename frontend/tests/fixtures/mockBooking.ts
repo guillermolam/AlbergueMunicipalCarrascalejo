@@ -1,13 +1,4 @@
 // Mock data for testing - DO NOT USE IN PRODUCTION
-
-// Bed organization: 3 dorms with 4 double beds each (8 beds per dorm)
-const DORMS = [
-  { name: 'D1', beds: Array.from({ length: 8 }, (_, i) => `D1-${i + 1}`) },
-  { name: 'D2', beds: Array.from({ length: 8 }, (_, i) => `D2-${i + 1}`) },
-  { name: 'D3', beds: Array.from({ length: 8 }, (_, i) => `D3-${i + 1}`) },
-];
-
-// Mock booking data
 export const mockBookingData = {
   id: 'test-booking-123',
   guestName: 'Juan García López',

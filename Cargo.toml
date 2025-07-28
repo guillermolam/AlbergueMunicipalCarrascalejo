@@ -1,15 +1,16 @@
 [workspace]
 members = [
-  "backend/shared",
-  "backend/booking-service",
-  "backend/notification-service",
-  "backend/reviews-service",
-  "backend/security-service",
-  "backend/validation-service",
-  "backend/info-on-arrival-service",
-  "backend/location-service",
-  "backend/rate-limiter-service",
-  "backend/auth-service",
+    "gateway/bff",
+    "backend/shared",
+    "backend/auth-service",
+    "backend/booking-service", 
+    "backend/notification-service",
+    "backend/reviews-service",
+    "backend/security-service", 
+    "backend/validation-service",
+    "backend/info-on-arrival-service",
+    "backend/location-service",
+    "backend/rate-limiter-service"
 ]
 
 [workspace.dependencies]
