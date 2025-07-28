@@ -13,10 +13,10 @@ mod tests {
             .unwrap();
 
         let result = handle_request(req).unwrap();
-
+        
         // Check that we get a 200 response
         assert_eq!(result.status(), 200);
-
+        
         // Check content type
         assert_eq!(
             result.headers().get("content-type").unwrap(),
@@ -33,7 +33,7 @@ mod tests {
             .unwrap();
 
         let result = handle_request(req).unwrap();
-
+        
         assert_eq!(result.status(), 200);
         assert_eq!(
             result.headers().get("content-type").unwrap(),
@@ -50,7 +50,7 @@ mod tests {
             .unwrap();
 
         let result = handle_request(req).unwrap();
-
+        
         assert_eq!(result.status(), 201);
     }
 
@@ -63,7 +63,7 @@ mod tests {
             .unwrap();
 
         let result = handle_request(req).unwrap();
-
+        
         assert_eq!(result.status(), 404);
     }
 }

@@ -5,13 +5,12 @@ This directory contains training and test data for OCR validation of Spanish ide
 ## Structure
 
 - `dni-nif/` - Spanish DNI (Documento Nacional de Identidad) samples
-- `nie-tie/` - NIE (Número de Identidad de Extranjero) samples
+- `nie-tie/` - NIE (Número de Identidad de Extranjero) samples  
 - `passports/` - International passport samples
 
 ## Data Privacy
 
 All training data should be:
-
 - Anonymized or synthetic
 - Compliant with GDPR
 - Not contain real personal information

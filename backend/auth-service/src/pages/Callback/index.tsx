@@ -1,4 +1,4 @@
-import { useHandleSignInCallback } from "@logto/react";
+import { useHandleSignInCallback } from '@logto/react';
 
 const Callback = () => {
   const { isLoading } = useHandleSignInCallback(() => {

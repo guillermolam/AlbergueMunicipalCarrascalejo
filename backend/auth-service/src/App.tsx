@@ -1,4 +1,4 @@
-import { LogtoProvider, LogtoConfig } from "@logto/react";
+import { LogtoProvider, LogtoConfig } from '@logto/react';
 
 const config: LogtoConfig = {
   endpoint: `https://${LOGTO_ENDPOINT}/`,
@@ -6,7 +6,7 @@ const config: LogtoConfig = {
 };
 
 // Assuming react-router
-<Route path="/callback" element={<Callback />} />;
+<Route path="/callback" element={<Callback />} />
 
 const App = () => (
   <LogtoProvider config={config}>
