@@ -1,17 +1,5 @@
 [workspace]
 members = [
-<<<<<<< HEAD
-  "shared",
-  "booking-service",
-  "notification-service",
-  "reviews-service",
-  "security-service",
-  "validation-service",
-  "info-on-arrival-service",
-  "location-service",
-  "rate-limiter-service",
-  "auth-service", "services/redis_service", "services/country_cache_service",
-=======
     "shared",
     "booking-service",
     "notification-service",
@@ -22,19 +10,17 @@ members = [
     "location-service",
     "rate-limiter-service",
     "auth-service"
->>>>>>> 1dee3d647c7fc2b7c6a8892b23d856f318494c99
 ]
 
 [workspace.dependencies]
-anymap = "0.12.0"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-spin-sdk = { version = "2.1", features = ["http"] }
 tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
+spin-sdk = "2.1"
 wit-bindgen = "0.25"
 http = "1.1"
 sqlx = { version = "0.7", features = ["postgres", "chrono", "uuid"] }

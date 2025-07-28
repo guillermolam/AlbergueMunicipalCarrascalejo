@@ -1,4 +1,4 @@
-import { RegistrationForm } from "../components/RegistrationForm";
+import RegistrationForm from "../components/registration-form-mobile";
 
 export default function BookingPage() {
   return (
