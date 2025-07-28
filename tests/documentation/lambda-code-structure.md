@@ -1,3 +1,4 @@
+
 # AWS Lambda Rust OCR Code Structure
 
 ## ASCII Directory Tree
@@ -73,7 +74,6 @@ spanish-document-ocr-lambda/
 ## Key Files Content Overview
 
 ### 1. `src/main.rs` - Lambda Entry Point
-
 ```rust
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use lambda_web::{is_running_on_lambda, launch, LambdaError};
@@ -82,7 +82,7 @@ use spanish_document_ocr::handler;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     tracing_subscriber::init();
-
+    
     if is_running_on_lambda() {
         launch(handler).await
     } else {
@@ -96,7 +96,6 @@ async fn main() -> Result<(), Error> {
 ```
 
 ### 2. `src/lib.rs` - Main Handler
-
 ```rust
 pub mod ocr;
 pub mod validation;
@@ -119,7 +118,6 @@ pub async fn handler(request: Request) -> Result<Response<Body>, LambdaError> {
 ```
 
 ### 3. `Cargo.toml` - Dependencies
-
 ```toml
 [package]
 name = "spanish-document-ocr"
@@ -156,7 +154,6 @@ anyhow = "1.0"
 ## CORS Configuration
 
 The template includes proper CORS headers for:
-
 - Replit development domains
 - Production deployment domains
 - Local development (localhost)
@@ -167,7 +164,4 @@ The template includes proper CORS headers for:
 - **Timeout**: 30 seconds (sufficient for document processing)
 - **Free Tier**: Supports ~720 requests/month at 24 users/day
 - **Cold Start**: ~2-3 seconds, warm requests ~200ms
-
-```
-
 ```

@@ -1,47 +1,65 @@
+
 use anyhow::Result;
-use serde_json::json;
 use spin_sdk::http::{Request, Response};
 
 pub async fn handle(req: &Request) -> Result<Response> {
     let path = req.uri().path();
-
-    match path {
-        "/api/auth/user" => handle_user_info(req).await,
-        "/api/auth/permissions" => handle_permissions(req).await,
-        _ => Ok(Response::builder()
-            .status(404)
-            .header("Content-Type", "application/json")
-            .body(json!({"error": "Auth service endpoint not found"}).to_string())
-            .build()),
+    let method = req.method().as_str();
+    
+    match (method, path) {
+        ("POST", "/api/auth/login") => {
+            let response_body = serde_json::json!({
+                "access_token": "mock_access_token_123",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "user": {
+                    "id": "user_123",
+                    "email": "test@example.com"
+                }
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
+        ("GET", "/api/auth/callback") => {
+            let response_body = serde_json::json!({
+                "status": "success",
+                "message": "OAuth callback processed successfully"
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
+        ("POST", "/api/auth/userinfo") => {
+            let response_body = serde_json::json!({
+                "sub": "user_123",
+                "email": "test@example.com",
+                "name": "Test User"
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
+        },
+        _ => {
+            let error_body = serde_json::json!({
+                "error": "Not Found",
+                "message": "Auth endpoint not found"
+            }).to_string();
+            
+            Ok(Response::builder()
+                .status(404)
+                .header("Content-Type", "application/json")
+                .body(error_body)
+                .build())
+        }
     }
-}
-
-async fn handle_user_info(_req: &Request) -> Result<Response> {
-    // TODO: Extract user info from JWT token
-    let user = json!({
-        "id": "demo-user",
-        "email": "demo@example.com",
-        "name": "Demo User",
-        "roles": ["user"]
-    });
-
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(user.to_string())
-        .build())
-}
-
-async fn handle_permissions(_req: &Request) -> Result<Response> {
-    let permissions = json!({
-        "can_book": true,
-        "can_cancel": true,
-        "can_modify": true
-    });
-
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(permissions.to_string())
-        .build())
 }

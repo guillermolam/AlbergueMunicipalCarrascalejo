@@ -1,12 +1,13 @@
+
 use anyhow::Result;
-use futures::future::try_join_all;
 use http::{Method, Request, StatusCode};
-use serde::{Deserialize, Serialize};
 use spin_sdk::http::{IntoResponse, ResponseBuilder};
 use spin_sdk::http_component;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::task;
+use futures::future::try_join_all;
 
 #[derive(Serialize, Deserialize, Clone)]
 struct RateLimitEntry {
@@ -46,7 +47,7 @@ fn calculate_rate_limit(
     max_requests: u32,
 ) -> (bool, RateLimitEntry, u32) {
     let window_duration = window_seconds as u64;
-
+    
     match entry {
         Some(mut existing) => {
             // Reset window if expired
@@ -91,7 +92,7 @@ async fn check_multiple_limits(
     checks: Vec<(String, u32, u32)>, // (endpoint, window_seconds, max_requests)
 ) -> Result<Vec<(String, bool, u32)>> {
     let current_time = get_current_timestamp();
-
+    
     let tasks: Vec<_> = checks
         .into_iter()
         .map(|(endpoint, window_seconds, max_requests)| {
@@ -99,16 +100,20 @@ async fn check_multiple_limits(
             task::spawn(async move {
                 // Simulate storage lookup
                 tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
-
+                
                 let entry = None; // Would fetch from storage
-                let (allowed, _new_entry, remaining) =
-                    calculate_rate_limit(entry, current_time, window_seconds, max_requests);
-
+                let (allowed, _new_entry, remaining) = calculate_rate_limit(
+                    entry,
+                    current_time,
+                    window_seconds,
+                    max_requests,
+                );
+                
                 Ok::<(String, bool, u32), anyhow::Error>((endpoint, allowed, remaining))
             })
         })
         .collect();
-
+    
     let results = try_join_all(tasks).await?;
     Ok(results.into_iter().collect::<Result<Vec<_>, _>>()?)
 }
@@ -121,29 +126,33 @@ async fn perform_rate_limit_check(
     let client_id = extract_client_id(req);
     let path = req.uri().path();
     let method = req.method().as_str();
-
+    
     let endpoint_key = format!("{}:{}", method, path);
-
+    
     if let Some(&(window_seconds, max_requests)) = config.get(&endpoint_key) {
         let current_time = get_current_timestamp();
-
+        
         // Simulate async storage operations
         let storage_task = task::spawn(async move {
             tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
             None::<RateLimitEntry> // Would fetch from Redis/database
         });
-
+        
         let entry = storage_task.await?;
-        let (allowed, new_entry, remaining) =
-            calculate_rate_limit(entry, current_time, window_seconds, max_requests);
-
+        let (allowed, new_entry, remaining) = calculate_rate_limit(
+            entry,
+            current_time,
+            window_seconds,
+            max_requests,
+        );
+        
         // Simulate async storage save
         let _save_task = task::spawn(async move {
             tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
             // Would save new_entry to storage
             Ok::<(), anyhow::Error>(())
         });
-
+        
         Ok(RateLimitResponse {
             allowed,
             remaining,
@@ -171,25 +180,27 @@ fn build_rate_limit_response(
         .header("Access-Control-Allow-Origin", "*")
         .header("X-RateLimit-Remaining", response.remaining.to_string())
         .header("X-RateLimit-Reset", response.reset_time.to_string());
-
+    
     if let Some(retry_after) = response.retry_after {
         builder = builder.header("Retry-After", retry_after.to_string());
     }
-
-    Ok(builder.body(serde_json::to_string(response)?).build())
+    
+    Ok(builder
+        .body(serde_json::to_string(response)?)
+        .build())
 }
 
 #[http_component]
 async fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
     let method = req.method();
     let path = req.uri().path();
-
+    
     // Configure rate limits for different endpoints
     let mut config = HashMap::new();
     config.insert("POST:/booking".to_string(), (60, 10)); // 10 requests per minute
     config.insert("POST:/validation".to_string(), (60, 20)); // 20 requests per minute
     config.insert("GET:/reviews".to_string(), (60, 100)); // 100 requests per minute
-
+    
     match (method, path) {
         (&Method::POST, "/rate-limit/check") => handle_rate_limit_check(req, config).await,
         (&Method::GET, "/rate-limit/status") => handle_rate_limit_status(req).await,
@@ -197,7 +208,7 @@ async fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
         _ => Ok(ResponseBuilder::new(StatusCode::NOT_FOUND)
             .header("content-type", "application/json")
             .body(r#"{"error":"Rate limit endpoint not found"}"#)
-            .build()),
+            .build())
     }
 }
 
@@ -206,22 +217,22 @@ async fn handle_rate_limit_check(
     config: HashMap<String, (u32, u32)>,
 ) -> Result<impl IntoResponse> {
     let result = perform_rate_limit_check(&req, config).await?;
-
+    
     let status = if result.allowed {
         StatusCode::OK
     } else {
         StatusCode::TOO_MANY_REQUESTS
     };
-
+    
     build_rate_limit_response(status, &result)
 }
 
 async fn handle_rate_limit_status(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
     let client_id = extract_client_id(&req);
-
+    
     let status_task = task::spawn(async move {
         tokio::time::sleep(tokio::time::Duration::from_millis(15)).await;
-
+        
         serde_json::json!({
             "client_id": client_id,
             "global_limit": {
@@ -245,9 +256,9 @@ async fn handle_rate_limit_status(req: Request<Vec<u8>>) -> Result<impl IntoResp
             }
         })
     });
-
+    
     let status = status_task.await?;
-
+    
     Ok(ResponseBuilder::new(StatusCode::OK)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
@@ -259,10 +270,10 @@ async fn handle_rate_limit_reset(req: Request<Vec<u8>>) -> Result<impl IntoRespo
     let body = std::str::from_utf8(req.body())?;
     let reset_req: serde_json::Value = serde_json::from_str(body)?;
     let client_id = reset_req["client_id"].as_str().unwrap_or("unknown");
-
+    
     let reset_task = task::spawn(async move {
         tokio::time::sleep(tokio::time::Duration::from_millis(20)).await;
-
+        
         // Simulate clearing rate limit entries for client
         serde_json::json!({
             "success": true,
@@ -270,9 +281,9 @@ async fn handle_rate_limit_reset(req: Request<Vec<u8>>) -> Result<impl IntoRespo
             "timestamp": get_current_timestamp()
         })
     });
-
+    
     let result = reset_task.await?;
-
+    
     Ok(ResponseBuilder::new(StatusCode::OK)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")

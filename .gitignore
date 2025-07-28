@@ -1,8 +1,12 @@
-# OS
+node_modules
+dist
+target
 .DS_Store
-
+server/public
+vite.config.ts.*
+*.tar.gz
 # Logs
-logs/
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -10,32 +14,91 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Build artifacts
-dist/
-build/
-coverage/
-*.tar.gz
-
-# Vite/Bun-specific
-node_modules/
-.bun/
-.vite/
-server/public/
-vite.config.ts.*
-
-# UPM (if previously used)
+# UPM (not needed with Nix)
 .upm/
 
-# Rust
-target/
-Cargo.lock  # Remove this only if you use Cargo workspaces exclusively
+# === Rust / Cargo ===
+/target
+**/*.rs.bk
+Cargo.lock
 
-# Trunk.io
-.trunk/cache/
-.trunk/tmp/
-.trunk/logs/
-.trunk/out/
-.vscode/.trunk/
+# === Node.js / npm / React / Vite ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+dist/
+build/
+.vite/
+.cache/
+*.env
+*.env.*
 
-# Optional: Keep to pin plugin versions (recommended)
-# !.trunk/toolchain.lock
+# === Bun ===
+.bun/
+bun.lockb
+
+# === Nix ===
+result
+result-*
+*.drv
+*.gc-root/
+*.nix-chroot/
+.nix-defexpr/
+.nix-profile
+.nix-store/
+.nix-channels/
+*.nixpkglock
+
+# === Replit ===
+.replit
+.replit.nix
+.idea/
+*.sw?
+*.bak
+*.backup
+.DS_Store
+*.log
+*.pid
+
+# === Editor & OS noise ===
+.vscode/
+*.iml
+*.sublime*
+*.code-workspace
+Thumbs.db
+ehthumbs.db
+*.orig
+*.rej
+*.tmp
+*.swp
+*.swo
+
+# === Testing & Coverage ===
+coverage/
+*.lcov
+*.log
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+*.snap
+
+# === Local runtime or deployment artifacts ===
+*.local
+*.pem
+*.crt
+*.key
+*.db
+*.sqlite
+*.sqlite3
+*.lock
+*.sock
+
+# === Misc ===
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

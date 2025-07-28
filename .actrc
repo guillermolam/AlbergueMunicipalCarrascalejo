@@ -1,6 +1,0 @@
-# Act configuration for local GitHub Actions testing
---container-architecture linux/amd64
---bind
---reuse
---secret-file .secrets
---env-file .env

@@ -5,9 +5,9 @@ pub mod db;
 pub mod dto;
 pub mod error;
 
-use serde::{Deserialize, Serialize};
-use std::sync::Once;
 use tokio::runtime::Runtime;
+use std::sync::Once;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 // Re-export common types for microservices
@@ -113,7 +113,6 @@ impl RoomAvailability {
 
 // Booking request DTO
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[wasm_bindgen]
 pub struct BookingRequest {
     pub pilgrim_name: String,
     pub pilgrim_email: String,
@@ -124,9 +123,7 @@ pub struct BookingRequest {
     pub number_of_nights: u32,
 }
 
-#[wasm_bindgen]
 impl BookingRequest {
-    #[wasm_bindgen(constructor)]
     pub fn new(
         pilgrim_name: String,
         pilgrim_email: String,
@@ -135,8 +132,8 @@ impl BookingRequest {
         check_in_date: String,
         check_out_date: String,
         number_of_nights: u32,
-    ) -> BookingRequest {
-        BookingRequest {
+    ) -> Self {
+        Self {
             pilgrim_name,
             pilgrim_email,
             pilgrim_phone,
@@ -150,11 +147,10 @@ impl BookingRequest {
 
 // Validation result for document processing
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[wasm_bindgen]
 pub struct ValidationResult {
     pub valid: bool,
     pub confidence: f64,
-    pub extracted_data: JsonValue,
+    pub extracted_data: serde_json::Value,
     pub errors: Vec<String>,
 }
 
@@ -202,7 +198,9 @@ static mut RUNTIME: Option<Runtime> = None;
 pub fn get_or_create_runtime() -> &'static Runtime {
     unsafe {
         INIT.call_once(|| {
-            RUNTIME = Some(Runtime::new().expect("Failed to create Tokio runtime"));
+            RUNTIME = Some(
+                Runtime::new().expect("Failed to create Tokio runtime")
+            );
         });
         RUNTIME.as_ref().unwrap()
     }
@@ -210,15 +208,12 @@ pub fn get_or_create_runtime() -> &'static Runtime {
 
 // Async utility functions
 pub mod async_utils {
+    use tokio::time::{Duration, sleep};
     use futures::future::try_join_all;
     use std::future::Future;
-    use tokio::time::{sleep, Duration};
 
     // Stateless function to execute tasks with timeout
-    pub async fn with_timeout<T, F>(
-        future: F,
-        timeout_ms: u64,
-    ) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
+    pub async fn with_timeout<T, F>(future: F, timeout_ms: u64) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
     where
         F: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
     {
@@ -262,8 +257,8 @@ pub mod async_utils {
         Fut: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
         T: Send + 'static,
     {
-        use std::sync::Arc;
         use tokio::sync::Semaphore;
+        use std::sync::Arc;
 
         let semaphore = Arc::new(Semaphore::new(concurrency_limit));
         let handles: Vec<_> = tasks
@@ -287,6 +282,6 @@ pub mod async_utils {
 }
 
 // Re-export common async traits and types
-pub use async_utils::*;
-pub use futures::future::{join_all, try_join_all};
 pub use tokio::task;
+pub use futures::future::{join_all, try_join_all};
+pub use async_utils::*;

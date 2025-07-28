@@ -1,45 +1,46 @@
 use anyhow::Result;
-use serde_json::json;
 use spin_sdk::http::{Request, Response};
 
 pub async fn handle(req: &Request) -> Result<Response> {
     let path = req.uri().path();
+    let method = req.method().as_str();
 
-    match path {
-        "/api/location/info" => handle_location_info().await,
-        "/api/location/directions" => handle_directions(req).await,
-        _ => Ok(Response::builder()
-            .status(404)
-            .header("Content-Type", "application/json")
-            .body(json!({"error": "Location endpoint not found"}).to_string())
-            .build()),
-    }
-}
+    match (method, path) {
+        ("GET", path) if path.starts_with("/api/location/search") => {
+            let response_body = serde_json::json!({
+                "locations": [
+                    {
+                        "name": "Mérida Historic Center",
+                        "latitude": 38.9165,
+                        "longitude": -6.3363,
+                        "distance": "0.5km"
+                    },
+                    {
+                        "name": "Roman Theatre",
+                        "latitude": 38.9156,
+                        "longitude": -6.3356,
+                        "distance": "0.8km"
+                    }
+                ]
+            }).to_string();
 
-async fn handle_location_info() -> Result<Response> {
-    let location = json!({
-        "name": "Albergue del Carrascalejo",
-        "address": "Carrascalejo, Extremadura, Spain",
-        "coordinates": {
-            "lat": 39.2436,
-            "lng": -5.8739
+            Ok(Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(response_body)
+                .build())
         },
-        "camino_stage": "Mérida to Alcuéscar",
-        "distance_from_merida_km": 18.5
-    });
+        _ => {
+            let error_body = serde_json::json!({
+                "error": "Not Found",
+                "message": "Location endpoint not found"
+            }).to_string();
 
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(location.to_string())
-        .build())
-}
-
-async fn handle_directions(_req: &Request) -> Result<Response> {
-    // TODO: Implement directions logic
-    Ok(Response::builder()
-        .status(501)
-        .header("Content-Type", "application/json")
-        .body(json!({"error": "Not implemented yet"}).to_string())
-        .build())
+            Ok(Response::builder()
+                .status(404)
+                .header("Content-Type", "application/json")
+                .body(error_body)
+                .build())
+        }
+    }
 }

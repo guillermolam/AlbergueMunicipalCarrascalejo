@@ -28,7 +28,7 @@ gateway/
 The BFF follows a composed microservice pattern where all services are compiled into a single WASM component with internal routing:
 
 1. **Security Service** (`/api/security/*`) - First line of defense
-2. **Rate Limiter** (`/api/rate-limit/*`) - Traffic control
+2. **Rate Limiter** (`/api/rate-limit/*`) - Traffic control  
 3. **Auth Verify** (`/api/auth/*`) - Auth0 JWT validation
 4. **Booking Service** (`/api/booking/*`) - Core business logic
 

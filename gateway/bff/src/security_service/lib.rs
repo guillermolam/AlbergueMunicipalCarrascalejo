@@ -1,41 +1,48 @@
 use anyhow::Result;
-use serde_json::json;
 use spin_sdk::http::{Request, Response};
 
 pub async fn handle(req: &Request) -> Result<Response> {
-    let path = req.uri().path();
+    // Mock security scanning logic
+    // In real implementation, this would scan for malicious patterns
 
-    match path {
-        "/api/security/scan" => handle_security_scan(req).await,
-        "/api/security/validate" => handle_validation(req).await,
-        _ => Ok(Response::builder()
-            .status(404)
-            .header("Content-Type", "application/json")
-            .body(json!({"error": "Security endpoint not found"}).to_string())
-            .build()),
+    let body = std::str::from_utf8(req.body()).unwrap_or("");
+
+    // Check for common XSS and SQL injection patterns
+    let malicious_patterns = vec![
+        "<script>",
+        "javascript:",
+        "DROP TABLE",
+        "'; DELETE",
+        "'; UPDATE",
+        "'; INSERT",
+        "data:text/html",
+    ];
+
+    for pattern in malicious_patterns {
+        if body.to_lowercase().contains(&pattern.to_lowercase()) {
+            let error_body = serde_json::json!({
+                "error": "Security Threat Detected",
+                "message": "Request blocked due to security policy violation",
+                "pattern_detected": pattern
+            }).to_string();
+
+            return Ok(Response::builder()
+                .status(403)
+                .header("Content-Type", "application/json")
+                .body(error_body)
+                .build());
+        }
     }
-}
 
-async fn handle_security_scan(_req: &Request) -> Result<Response> {
-    // TODO: Implement security scanning logic
-    let result = json!({
+    // If no threats detected
+    let response_body = serde_json::json!({
         "status": "clean",
-        "threats_detected": 0,
-        "scan_time": "2024-01-01T00:00:00Z"
-    });
+        "message": "No security threats detected"
+    }).to_string();
 
     Ok(Response::builder()
         .status(200)
         .header("Content-Type", "application/json")
-        .body(result.to_string())
-        .build())
-}
-
-async fn handle_validation(_req: &Request) -> Result<Response> {
-    // TODO: Implement validation logic
-    Ok(Response::builder()
-        .status(501)
-        .header("Content-Type", "application/json")
-        .body(json!({"error": "Not implemented yet"}).to_string())
+        .body(response_body)
         .build())
 }

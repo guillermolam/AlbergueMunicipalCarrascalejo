@@ -16,7 +16,10 @@ component = "bff"
 
 [component.bff]
 source = "bff/target/wasm32-wasi/release/bff.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech", "https://api.auth0.com"]
+allowed_outbound_hosts = [
+    "https://*.neon.tech",
+    "https://api.auth0.com"
+]
 
 [component.bff.build]
 command = "cargo build --target wasm32-wasi --release"

@@ -1,7 +1,8 @@
+
 #[cfg(test)]
 mod spin_tests {
+    use spin_sdk::http::{Request, Method};
     use serde_json;
-    use spin_sdk::http::{Method, Request};
 
     #[tokio::test]
     async fn test_notification_service_health() {

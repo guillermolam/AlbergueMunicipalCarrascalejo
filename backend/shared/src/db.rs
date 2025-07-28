@@ -25,9 +25,17 @@ impl DatabaseConfig {
         };
 
         let connection_string = match database_type {
-            DatabaseType::PostgreSQL => std::env::var("NEON_DATABASE_URL")
-                .or_else(|_| std::env::var("DATABASE_URL"))
-                .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string()),
+            DatabaseType::PostgreSQL => {
+                // In production/Spin, use NEON_DATABASE_URL; in development, use DATABASE_URL
+                if std::env::var("SPIN_COMPONENT_ROUTE").is_ok() {
+                    std::env::var("NEON_DATABASE_URL")
+                        .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string())
+                } else {
+                    std::env::var("DATABASE_URL")
+                        .or_else(|_| std::env::var("NEON_DATABASE_URL"))
+                        .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string())
+                }
+            },
             DatabaseType::SQLite => {
                 std::env::var("SQLITE_DATABASE").unwrap_or_else(|_| "./albergue.db".to_string())
             }

@@ -1,32 +1,34 @@
-modules = ["bun-1.2", "postgresql-16"]
+# .replit (Versión Optimizada)
 
-run = "spin up"
+# Solo PostgreSQL como módulo. Bun viene de replit.nix ahora.
+modules = ["postgresql-16"]
 
-# The main configuration file for your project.
+# Comando principal para desarrollo
+run = "task"
+
+# Punto de entrada del proyecto
 entrypoint = "spin.toml"
 
-# Hides clutter from the file tree.
-hidden = [".config", "bun.lockb", "target", "node_modules", ".cache"]
+# Archivos y carpetas ocultos en el explorador
+hidden = [".config", "bun.lockb", "target", "node_modules", ".cache", ".trunk"]
 
-# This section configures the Nix environment.
-# NOTICE: The 'channel' line has been REMOVED.
-# This tells Replit to use its own default, stable channel, which avoids the error.
+# Configuración de Nix (sin channel específico)
 [nix]
 
-# Provides language server support for Rust.
+[languages.python]
+pattern = "**/*.py"
+
+# Language server para Rust
 [languages.rust]
 pattern = "**/*.rs"
 [languages.rust.languageServer]
 start = "rust-analyzer"
 
-# Provides language server support for TOML files.
-[languages.toml]
-pattern = "**/*.toml"
-[languages.toml.languageServer]
-start = "taplo lsp"
-
+# Configuración de workflows
 [workflows]
+runButton = "Run"
 
+# Workflow principal: desarrollo local
 [[workflows.workflow]]
 name = "Run"
 author = 41744552
@@ -34,85 +36,77 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd frontend && bun run build"
+args = "task setup:check"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd gateway && cargo build --target wasm32-wasi --release"
+args = "task build:all"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
+args = "task local"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "spin build"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "spin up --listen 0.0.0.0:3000"
-
+# Workflow de construcción completa
 [[workflows.workflow]]
-name = "build:all"
+name = "Build All"
 author = 41744552
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd frontend && bun run build"
+args = "task build:all"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd gateway && cargo build --target wasm32-wasi --release"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "sqlx migrate run --database-url $DATABASE_URL"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "spin build"
-
+# Workflow de testing completo
 [[workflows.workflow]]
-name = "deploy:local"
+name = "Test All"
 author = 41744552
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd frontend && bun run build"
+args = "task test:all"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd gateway && cargo build --target wasm32-wasi --release"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd backend && cargo build --target wasm32-wasi --release --workspace --exclude shared"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "sqlx migrate run --database-url $DATABASE_URL"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "spin build"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "spin up --listen 0.0.0.0:3000"
-
+# Workflow de calidad de código
 [[workflows.workflow]]
-name = "deploy:prod"
+name = "Quality Check"
 author = 41744552
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "trunk check --all"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "trunk fmt --all"
+
+# Workflow de despliegue a producción
+[[workflows.workflow]]
+name = "Deploy Production"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+name= "Build everything"
+task = "shell.exec"
+args = "task build:all"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "task prod"
+
+# Workflow de despliegue a producción
+[[workflows.workflow]]
+name = "deploy:production"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "export NODE_ENV=production"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "cd frontend && bun run build"
 
 [[workflows.workflow.tasks]]
@@ -125,7 +119,7 @@ args = "cd backend && cargo build --target wasm32-wasi --release --workspace --e
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "sqlx migrate run --database-url $DATABASE_URL"
+args = "sqlx migrate run --database-url $NEON_DATABASE_URL"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
@@ -138,3 +132,29 @@ args = "spin login"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "spin deploy"
+
+[[workflows.workflow]]
+name = "migrate:dev"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "export NODE_ENV=development"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $DATABASE_URL"
+
+[[workflows.workflow]]
+name = "migrate:prod"
+author = 41744552
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "export NODE_ENV=production"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sqlx migrate run --database-url $NEON_DATABASE_URL"

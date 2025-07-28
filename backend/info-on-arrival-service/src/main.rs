@@ -1,14 +1,14 @@
-use shared::{AlbergueError, AlbergueResult};
 use wasm_bindgen::prelude::*;
+use shared::{AlbergueError, AlbergueResult};
 
-mod adapters;
-mod application;
 mod domain;
-mod infrastructure;
+mod application;
 mod ports;
+mod adapters;
+mod infrastructure;
 
-pub use application::*;
 pub use domain::*;
+pub use application::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -94,11 +94,7 @@ impl InfoOnArrivalService {
     }
 
     #[wasm_bindgen]
-    pub async fn update_card_content(
-        &self,
-        card_id: &str,
-        content: &str,
-    ) -> Result<String, JsValue> {
+    pub async fn update_card_content(&self, card_id: &str, content: &str) -> Result<String, JsValue> {
         self.service
             .update_card_content(card_id, content)
             .await

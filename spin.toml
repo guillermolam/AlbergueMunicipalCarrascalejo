@@ -8,7 +8,7 @@ authors = ["Albergue Del Carrascalejo"]
 description = "Microservices architecture for albergue management"
 
 [variables]
-database_url = { required = true }
+database_url = { required = true, default = "postgresql://localhost:5432/albergue_dev" }
 neon_database_url = { required = true }
 auth0_domain = { required = true }
 auth0_client_id = { required = true }
@@ -29,12 +29,12 @@ component = "gateway-bff"
 [component.gateway-bff]
 source = "gateway/bff/target/wasm32-wasi/release/bff.wasm"
 allowed_outbound_hosts = [
-  "https://*.neon.tech",
-  "https://api.auth0.com",
-  "https://smtp.resend.com",
-  "https://api.twilio.com",
-  "https://api.telegram.org",
-  "https://maps.googleapis.com",
+    "https://*.neon.tech",
+    "https://api.auth0.com",
+    "https://smtp.resend.com",
+    "https://api.twilio.com",
+    "https://api.telegram.org",
+    "https://maps.googleapis.com"
 ]
 
 [component.gateway-bff.build]
@@ -48,7 +48,7 @@ auth0_client_secret = "{{ auth0_client_secret }}"
 log_level = "{{ log_level }}"
 
 [component.gateway-bff.key_value_stores]
-default = { label = "gateway-kv" }
+default = "gateway-kv"
 
 # Booking Service
 [[trigger.http]]
@@ -67,7 +67,7 @@ database_url = "{{ database_url }}"
 log_level = "{{ log_level }}"
 
 [component.booking-service.key_value_stores]
-default = { label = "booking-kv" }
+default = "booking-kv"
 
 # Notification Service
 [[trigger.http]]
@@ -77,10 +77,10 @@ component = "notification-service"
 [component.notification-service]
 source = "backend/notification-service/target/wasm32-wasi/release/notification_service.wasm"
 allowed_outbound_hosts = [
-  "https://*.neon.tech",
-  "https://smtp.resend.com",
-  "https://api.twilio.com",
-  "https://api.telegram.org",
+    "https://*.neon.tech",
+    "https://smtp.resend.com",
+    "https://api.twilio.com",
+    "https://api.telegram.org"
 ]
 
 [component.notification-service.build]
@@ -96,7 +96,7 @@ telegram_bot_token = "{{ telegram_bot_token }}"
 log_level = "{{ log_level }}"
 
 [component.notification-service.key_value_stores]
-default = { label = "notification-kv" }
+default = "notification-kv"
 
 # Reviews Service
 [[trigger.http]]
@@ -115,7 +115,7 @@ database_url = "{{ database_url }}"
 log_level = "{{ log_level }}"
 
 [component.reviews-service.key_value_stores]
-default = { label = "reviews-kv" }
+default = "reviews-kv"
 
 # Security Service
 [[trigger.http]]
@@ -134,7 +134,7 @@ database_url = "{{ database_url }}"
 log_level = "{{ log_level }}"
 
 [component.security-service.key_value_stores]
-default = { label = "security-kv" }
+default = "security-kv"
 
 # Validation Service
 [[trigger.http]]
@@ -153,7 +153,7 @@ database_url = "{{ database_url }}"
 log_level = "{{ log_level }}"
 
 [component.validation-service.key_value_stores]
-default = { label = "validation-kv" }
+default = "validation-kv"
 
 # Info on Arrival Service
 [[trigger.http]]
@@ -172,7 +172,7 @@ database_url = "{{ database_url }}"
 log_level = "{{ log_level }}"
 
 [component.info-on-arrival-service.key_value_stores]
-default = { label = "info-kv" }
+default = "info-kv"
 
 # Location Service
 [[trigger.http]]
@@ -181,7 +181,10 @@ component = "location-service"
 
 [component.location-service]
 source = "backend/location-service/target/wasm32-wasi/release/location_service.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech", "https://maps.googleapis.com"]
+allowed_outbound_hosts = [
+    "https://*.neon.tech",
+    "https://maps.googleapis.com"
+]
 
 [component.location-service.build]
 command = "cd backend/location-service && cargo build --target wasm32-wasi --release"
@@ -192,7 +195,7 @@ google_places_api_key = "{{ google_places_api_key }}"
 log_level = "{{ log_level }}"
 
 [component.location-service.key_value_stores]
-default = { label = "location-kv" }
+default = "location-kv"
 
 # Rate Limiter Service
 [[trigger.http]]
@@ -211,7 +214,7 @@ database_url = "{{ database_url }}"
 log_level = "{{ log_level }}"
 
 [component.rate-limiter-service.key_value_stores]
-default = { label = "rate-limiter-kv" }
+default = "rate-limiter-kv"
 
 # Auth Service
 [[trigger.http]]
@@ -220,7 +223,10 @@ component = "auth-service"
 
 [component.auth-service]
 source = "backend/auth-service/target/wasm32-wasi/release/auth_service.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech", "https://api.auth0.com"]
+allowed_outbound_hosts = [
+    "https://*.neon.tech",
+    "https://api.auth0.com"
+]
 
 [component.auth-service.build]
 command = "cd backend/auth-service && cargo build --target wasm32-wasi --release"
@@ -233,4 +239,4 @@ auth0_client_secret = "{{ auth0_client_secret }}"
 log_level = "{{ log_level }}"
 
 [component.auth-service.key_value_stores]
-default = { label = "auth-kv" }
+default = "auth-kv"

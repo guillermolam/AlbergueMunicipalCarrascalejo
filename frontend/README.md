@@ -49,27 +49,24 @@ frontend/
 ## Key Features
 
 ### Path Aliases
-
 - `@` → `./src` (source code)
 - `@assets` → `../tests/attached_assets` (test assets)
 - `@shared` → `../services/shared/src` (shared Rust types)
 - `@wasm` → `../pkg` (compiled WASM services)
 
 ### WASM Integration
-
 ```typescript
-import { loadWasmService } from "@/lib/utils";
+import { loadWasmService } from '@/lib/utils';
 
 // Load booking service
-const bookingService = await loadWasmService("booking-service");
+const bookingService = await loadWasmService('booking-service');
 ```
 
 ### API Configuration
-
 ```typescript
-import { getApiBaseUrl } from "@/lib/utils";
+import { getApiBaseUrl } from '@/lib/utils';
 
-const apiUrl = getApiBaseUrl();
+const apiUrl = getApiBaseUrl(); 
 // Development: http://localhost:8000
 // Production: https://www.alberguedelcarrascalejo.com/reservas/api
 ```
@@ -77,7 +74,6 @@ const apiUrl = getApiBaseUrl();
 ## Development
 
 ### Start Development Server
-
 ```bash
 # From project root
 npm run dev
@@ -87,13 +83,11 @@ cd frontend && npm run dev
 ```
 
 ### Build for Production
-
 ```bash
 npm run build
 ```
 
 ### Preview Production Build
-
 ```bash
 npm run preview
 ```
@@ -101,14 +95,12 @@ npm run preview
 ## Environment Configuration
 
 ### Development
-
 - **Host**: `0.0.0.0:5173`
 - **Allowed Hosts**: `.replit.dev`
 - **API Base**: `http://localhost:8000`
 - **Hot Reload**: Enabled with service exclusions
 
 ### Production
-
 - **Host**: `0.0.0.0:4173`
 - **Allowed Hosts**: `www.alberguedelcarrascalejo.com`
 - **API Base**: `https://www.alberguedelcarrascalejo.com/reservas/api`
@@ -125,14 +117,13 @@ The frontend seamlessly integrates with Rust WASM microservices:
 5. **rate-limiter-service**: Request throttling
 
 ### Usage Example
-
 ```typescript
 // Document validation
-import { useWasmService } from "@/hooks/useWasmService";
+import { useWasmService } from '@/hooks/useWasmService';
 
 const ValidationComponent = () => {
-  const validationService = useWasmService("validation-service");
-
+  const validationService = useWasmService('validation-service');
+  
   const validateDocument = async (documentData: ArrayBuffer) => {
     return await validationService.validate_dni(documentData);
   };

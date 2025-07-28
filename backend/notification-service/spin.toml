@@ -25,10 +25,10 @@ component = "notification-service"
 [component.notification-service]
 source = "target/wasm32-wasi/release/notification_service.wasm"
 allowed_outbound_hosts = [
-  "https://api.twilio.com",
-  "https://api.telegram.org",
-  "https://*.smtp.com",
-  "https://*.neon.tech",
+    "https://api.twilio.com",
+    "https://api.telegram.org",
+    "https://*.smtp.com",
+    "https://*.neon.tech"
 ]
 
 [component.notification-service.build]

@@ -12,10 +12,7 @@ mod tests {
             "Test message".to_string(),
         );
 
-        assert_eq!(
-            notification.notification_type,
-            NotificationType::ReservationCreated
-        );
+        assert_eq!(notification.notification_type, NotificationType::ReservationCreated);
         assert_eq!(notification.channel, NotificationChannel::Email);
         assert_eq!(notification.recipient, "test@example.com");
         assert_eq!(notification.message, "Test message");
@@ -29,13 +26,9 @@ mod tests {
             NotificationChannel::Email,
             "test@example.com".to_string(),
             "Payment received".to_string(),
-        )
-        .with_subject("Payment Confirmation".to_string());
+        ).with_subject("Payment Confirmation".to_string());
 
-        assert_eq!(
-            notification.subject,
-            Some("Payment Confirmation".to_string())
-        );
+        assert_eq!(notification.subject, Some("Payment Confirmation".to_string()));
     }
 
     #[test]
@@ -64,12 +57,9 @@ mod tests {
             "invalid".to_string(),
             "Test".to_string(),
         );
-
+        
         failed_notification.mark_failed("Invalid phone number".to_string());
         assert_eq!(failed_notification.status, NotificationStatus::Failed);
-        assert_eq!(
-            failed_notification.error_message,
-            Some("Invalid phone number".to_string())
-        );
+        assert_eq!(failed_notification.error_message, Some("Invalid phone number".to_string()));
     }
 }

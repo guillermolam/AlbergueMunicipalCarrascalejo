@@ -11,7 +11,7 @@ export default function BookingPage() {
           Albergue del Carrascalejo - Camino de Santiago
         </p>
       </div>
-
+      
       <RegistrationForm />
     </div>
   );
