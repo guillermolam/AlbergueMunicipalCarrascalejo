@@ -1,0 +1,36 @@
+version: "3"
+
+# Note: This file is now included by the root Taskfile.yml
+# All port variables are now defined in the root Taskfile.yml
+
+tasks:
+  run-all:
+    desc: Run all services in development mode with unique random ports
+    cmds:
+      - ./scripts/dev-services.sh start
+
+  start:
+    desc: Start development services
+    cmds:
+      - ./scripts/dev-services.sh start
+
+  stop:
+    desc: Stop development services
+    cmds:
+      - ./scripts/dev-services.sh stop
+
+  restart:
+    desc: Restart development services
+    cmds:
+      - ./scripts/dev-services.sh restart
+
+  status:
+    desc: Show development services status
+    cmds:
+      - ./scripts/dev-services.sh status
+
+  clean:
+    desc: Clean development environment
+    cmds:
+      - ./scripts/dev-services.sh stop
+      - echo "✅ Development environment cleaned"

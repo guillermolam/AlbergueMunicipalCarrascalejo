@@ -1,0 +1,25 @@
+version: "3"
+
+tasks:
+  generate:
+    desc: Generate unique port assignments
+    cmds:
+      - ./scripts/port-management.sh generate
+
+  show:
+    desc: Display current port assignments
+    cmds:
+      - ./scripts/port-management.sh show
+
+  clean:
+    desc: Clean port configuration files
+    cmds:
+      - ./scripts/port-management.sh clean
+
+  validate:
+    desc: Validate port assignments
+    cmds:
+      - ./scripts/port-management.sh validate
+
+  # Port variables are now only used within tasks that need them
+  # and have proper fallback handling

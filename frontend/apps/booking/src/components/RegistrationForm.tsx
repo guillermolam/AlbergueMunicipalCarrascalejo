@@ -2,18 +2,18 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@albergue/components/ui/card";
-import { Button } from "@albergue/components/ui/button";
-import { Input } from "@albergue/components/ui/input";
-import { Label } from "@albergue/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@ui/shared";
+import { Button } from "@ui/shared";
+import { Input } from "@ui/shared";
+import { Label } from "@ui/shared";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@albergue/components/ui/select";
-import { Alert, AlertDescription } from "@albergue/components/ui/alert";
+} from "@ui/shared";
+import { Alert, AlertDescription } from "@ui/shared";
 import {
   Calendar,
   User,

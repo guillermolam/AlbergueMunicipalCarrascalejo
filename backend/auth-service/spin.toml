@@ -1,18 +1,18 @@
 spin_manifest_version = 2
 
 [application]
-name = "auth-service"
+name = "auth"
 version = "0.1.0"
 authors = ["Guillermo Lam <guillermolam.m@gmail.com>"]
 description = "OIDC and OAuth2 Service"
 
 [[trigger.http]]
-route = "/authorize"
-component = "auth-service"
+route = "/api/auth/...
+component = "auth"
 
-[component.auth-service]
-source = "target/wasm32-wasi/release/auth_service.wasm"
-allowed_outbound_hosts = []
-[component.auth-service.build]
-command = "cargo build --target wasm32-wasi --release"
+[component.auth]
+source = "target/wasm32-wasi/release/auth.wasm"
+allowed_outbound_hosts = ["https://*.logto.app", "https://*.zitadel.cloud"]
+[component.auth.build]
+command = "cargo build --target wasm32-wasi --release --bin auth"
 watch = ["src/**/*.rs", "Cargo.toml"]

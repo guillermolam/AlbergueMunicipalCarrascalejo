@@ -1,0 +1,214 @@
+# Backend Services Taskfile
+# Cross-platform task runner for all backend services
+
+version: '3'
+
+vars:
+  CARGO:
+    sh: which cargo || echo "cargo"
+  SERVICES:
+    sh: find . -maxdepth 2 -name "Cargo.toml" -exec dirname {} \; | grep -v "^\.$" | sort
+  WASM_TARGET: wasm32-wasi
+
+env:
+  RUST_LOG: info
+  RUST_BACKTRACE: 1
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list-all
+
+  install-tools:
+    desc: Install required development tools
+    cmds:
+      - echo "Installing Rust development tools..."
+      - rustup target add {{.WASM_TARGET}}
+      - cargo install cargo-tarpaulin cargo-audit cargo-watch || true
+      - echo "Tools installation completed"
+
+  discover:
+    desc: Discover all available services
+    cmds:
+      - |
+        echo "Discovered services:"
+        for service in $(echo "{{.SERVICES}}" | tr '\n' ' '); do
+          echo "  - $service"
+        done
+
+  test:
+    desc: Run tests for all services
+    cmds:
+      - echo "Running tests for all services..."
+      - cargo test --workspace -- --nocapture
+
+  test:service:
+    desc: Run tests for a specific service
+    cmds:
+      - echo "Running tests for {{.SERVICE}}..."
+      - cd {{.SERVICE}} && cargo test -- --nocapture
+    requires:
+      vars: [SERVICE]
+
+  test:rate-limiter:
+    desc: Run tests specifically for rate-limiter-service
+    cmds:
+      - task: test:service
+        vars: {SERVICE: rate-limiter-service}
+
+  test:location:
+    desc: Run tests specifically for location-service
+    cmds:
+      - task: test:service
+        vars: {SERVICE: location-service}
+
+  test:auth:
+    desc: Run tests specifically for auth-service
+    cmds:
+      - task: test:service
+        vars: {SERVICE: auth-service}
+
+  coverage:
+    desc: Generate coverage reports for all services
+    cmds:
+      - echo "Generating coverage reports..."
+      - mkdir -p coverage
+      - cargo tarpaulin --workspace --out Html --output-dir coverage/workspace --timeout 300 --exclude-files "*/target/*"
+      - echo "Coverage report generated at coverage/workspace/index.html"
+
+  coverage:service:
+    desc: Generate coverage for a specific service
+    cmds:
+      - echo "Generating coverage for {{.SERVICE}}..."
+      - mkdir -p coverage/{{.SERVICE}}
+      - cd {{.SERVICE}} && cargo tarpaulin --out Html --output-dir "../coverage/{{.SERVICE}}" --timeout 120
+    requires:
+      vars: [SERVICE]
+
+  coverage:rate-limiter:
+    desc: Generate coverage specifically for rate-limiter-service
+    cmds:
+      - task: coverage:service
+        vars: {SERVICE: rate-limiter-service}
+
+  build:
+    desc: Build all services
+    cmds:
+      - echo "Building all services..."
+      - cargo build --workspace
+
+  build:release:
+    desc: Build all services in release mode
+    cmds:
+      - echo "Building all services in release mode..."
+      - cargo build --workspace --release
+
+  build:wasm:
+    desc: Build WASM targets for all services
+    cmds:
+      - |
+        echo "Building WASM targets..."
+        for service in $(echo "{{.SERVICES}}" | tr '\n' ' '); do
+          if [[ -f "$service/Cargo.toml" ]] && grep -q "cdylib" "$service/Cargo.toml" 2>/dev/null; then
+            echo "Building WASM for $service..."
+            cd $service && cargo build --target {{.WASM_TARGET}} --release && cd ..
+          fi
+        done
+
+  clippy:
+    desc: Run clippy for all services
+    cmds:
+      - echo "Running clippy checks..."
+      - cargo clippy --workspace -- -D warnings
+
+  clippy:fix:
+    desc: Fix clippy warnings automatically
+    cmds:
+      - echo "Fixing clippy warnings..."
+      - cargo clippy --workspace --fix --allow-dirty --allow-staged
+
+  fmt:
+    desc: Format all code
+    cmds:
+      - echo "Formatting code..."
+      - cargo fmt --all
+
+  fmt:check:
+    desc: Check code formatting
+    cmds:
+      - echo "Checking code formatting..."
+      - cargo fmt --all -- --check
+
+  audit:
+    desc: Run security audit
+    cmds:
+      - echo "Running security audit..."
+      - cargo audit
+
+  clean:
+    desc: Clean all build artifacts
+    cmds:
+      - echo "Cleaning build artifacts..."
+      - cargo clean
+      - rm -rf coverage/
+
+  check:
+    desc: Run all checks (format, clippy, test)
+    deps: [fmt:check, clippy, test]
+
+  all:
+    desc: Run complete test suite with coverage
+    deps: [install-tools, fmt:check, clippy, test, coverage, audit]
+
+  watch:
+    desc: Watch for changes and run tests
+    cmds:
+      - cargo watch -x "test --workspace"
+
+  watch:service:
+    desc: Watch a specific service for changes
+    cmds:
+      - cd {{.SERVICE}} && cargo watch -x test
+    requires:
+      vars: [SERVICE]
+
+  # Service-specific tasks
+  rate-limiter:test:
+    desc: Run rate-limiter-service tests with coverage
+    cmds:
+      - task: test:rate-limiter
+      - task: coverage:rate-limiter
+
+  rate-limiter:build:
+    desc: Build rate-limiter-service for WASM
+    cmds:
+      - cd rate-limiter-service && cargo build --target {{.WASM_TARGET}} --release
+
+  rate-limiter:watch:
+    desc: Watch rate-limiter-service for changes
+    cmds:
+      - task: watch:service
+        vars: {SERVICE: rate-limiter-service}
+
+  # Development workflow
+  dev:
+    desc: Start development environment
+    cmds:
+      - task: install-tools
+      - task: fmt
+      - task: clippy
+      - task: test
+      - echo "Development environment ready!"
+
+  ci:
+    desc: Run CI pipeline locally
+    cmds:
+      - task: install-tools
+      - task: fmt:check
+      - task: clippy
+      - task: test
+      - task: build:wasm
+      - task: audit
+      - task: coverage
+      - echo "CI pipeline completed!"

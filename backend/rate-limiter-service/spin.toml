@@ -7,9 +7,9 @@ version = "0.1.0"
 authors = ["Albergue Del Carrascalejo"]
 
 [variables]
-rate_limit_requests = { default = "100" }
-rate_limit_window = { default = "3600" }
-log_level = { default = "info" }
+rate_limit_requests = { default = "10" }
+rate_limit_window = { default = "60" }
+log_level = { default = "debug" }
 
 [[trigger.http]]
 route = "/..."

@@ -1,9 +1,8 @@
-
 #[cfg(test)]
 mod spin_tests {
-    use spin_sdk::http::{Request, Method};
-    use spin_sdk::http_component;
     use serde_json;
+    use spin_sdk::http::{Method, Request};
+    use spin_sdk::http_component;
 
     #[tokio::test]
     async fn test_booking_service_health() {

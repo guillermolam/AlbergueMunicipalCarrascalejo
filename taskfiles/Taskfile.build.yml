@@ -1,0 +1,38 @@
+version: "3"
+
+vars:
+  TARGET: wasm32-wasip1
+  BUILD_MODE: release
+
+tasks:
+  gateway:
+    desc: Build gateway service
+    cmds:
+      - ./scripts/build-services.sh gateway $BUILD_MODE
+
+  backend:
+    desc: Build all backend services
+    cmds:
+      - ./scripts/build-services.sh backend $BUILD_MODE
+
+  frontend:
+    desc: Build frontend applications
+    cmds:
+      - ./scripts/build-services.sh frontend $BUILD_MODE
+
+  all:
+    desc: Build all services
+    cmds:
+      - ./scripts/build-services.sh all $BUILD_MODE
+
+  debug:
+    desc: Build all services in debug mode
+    cmds:
+      - ./scripts/build-services.sh all debug
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - ./scripts/clean-rust.sh .
+      - ./scripts/clean-rust.sh backend
+      - echo "✅ Build artifacts cleaned"

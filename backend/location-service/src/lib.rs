@@ -1,18 +1,41 @@
+mod models;
+mod service;
+mod handlers;
+
+pub use models::{ApiResponse, CacheEntry, CountryData};
+pub use service::CountryService;
+pub use handlers::RequestHandler;
+
 use anyhow::Result;
-use http::{Request, StatusCode};
-use spin_sdk::http::{IntoResponse, ResponseBuilder};
+use spin_sdk::http::{Request, Response};
 use spin_sdk::http_component;
 
 #[http_component]
-fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
-    let method = req.method();
-    let path = req.uri().path();
-    
-    // TODO: Implement country service endpoints
-    match (method, path) {
-        _ => Ok(ResponseBuilder::new(StatusCode::NOT_IMPLEMENTED)
-            .header("content-type", "application/json")
-            .body(r#"{"message":"Country service - under development"}"#)
-            .build())
+async fn handle_request(req: Request<Vec<u8>>) -> Result<Response> {
+    let response = RequestHandler::handle_request(req).await?;
+    Ok(response.into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use http::{Method, Request, StatusCode};
+
+    #[tokio::test]
+    async fn test_module_structure() {
+        let service = CountryService::new();
+        assert_eq!(service.cache_size(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_handle_request_integration() {
+        let request = Request::builder()
+            .method(Method::GET)
+            .uri("/api/countries/ES")
+            .body(vec![])
+            .unwrap();
+
+        let response = handle_request(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }

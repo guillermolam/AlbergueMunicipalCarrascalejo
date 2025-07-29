@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from './input';
 import { useI18n } from '@contexts/i18n';
-import { countryService } from '@services/country';
-import { type AddressInfo } from '@services/country/types';
+
+interface CountryInfo {
+  country: string;
+  countryCode: string;
+  callingCode: string;
+  flag: string;
+}
 
 interface AddressInputProps {
   value: string;
   onChange: (value: string) => void;
-  onCountryChange?: (countryInfo: AddressInfo) => void;
+  onCountryChange?: (countryInfo: CountryInfo) => void;
   placeholder?: string;
   className?: string;
 }
@@ -21,24 +26,51 @@ export function AddressInput({
 }: AddressInputProps) {
   const { t } = useI18n();
   const [address, setAddress] = useState(value);
-  const [countryInfo, setCountryInfo] = useState<AddressInfo | null>(null);
+  const [countryInfo, setCountryInfo] = useState<CountryInfo | null>(null);
   const [isAutocompleteReady, setIsAutocompleteReady] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // API endpoint for country service
+  const API_BASE_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://alberguedelcarrascalejo.com'
+    : 'https://*.picard.replit.dev';
+
+  const getCountryInfo = async (countryCode: string): Promise<CountryInfo | null> => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/countries/${countryCode}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching country info:', error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let autocomplete: google.maps.places.Autocomplete | null = null;
 
     if (window.google?.maps?.places) {
-      const input = document.querySelector(`#${addressInputId}`);
+      const input = document.querySelector('#address-input') as HTMLInputElement;
       if (input) {
-        autocomplete = new window.google.maps.places.Autocomplete(
-          input as HTMLInputElement,
-          {
-            componentRestrictions: { country: ['ES', 'FR', 'PT', 'IT'] },
-            types: ['address'],
-          }
-        );
+        autocomplete = new window.google.maps.places.Autocomplete(input, {
+          componentRestrictions: { country: ['ES', 'FR', 'PT', 'IT'] },
+          types: ['address'],
+        });
 
-        autocomplete.addListener('place_changed', () => {
+        autocomplete.addListener('place_changed', async () => {
           const place = autocomplete.getPlace();
           if (place && place.address_components) {
             const components = place.address_components;
@@ -48,68 +80,80 @@ export function AddressInput({
 
             if (country) {
               const countryCode = country.short_name;
-              countryService.getCountryInfo(countryCode).then((data) => {
-                if (data) {
-                  const countryInfo: AddressInfo = {
-                    country: data.name,
-                    countryCode: data.countryCode,
-                    callingCode: data.callingCodes[0],
-                    flag: data.flag,
-                  };
-                  setCountryInfo(countryInfo);
-                  onCountryChange?.(countryInfo);
+              const data = await getCountryInfo(countryCode);
+              
+              if (data) {
+                setCountryInfo(data);
+                onCountryChange?.(data);
+              }
+            }
+          }
+        });
+
+        setIsAutocompleteReady(true);
+      }
+    }
+
+    return () => {
+      if (autocomplete) {
+        google.maps.event.clearInstanceListeners(autocomplete);
+      }
+    };
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setAddress(newValue);
+    onChange(newValue);
+  };
+
+  const handleCountrySelect = async (countryCode: string) => {
+    const data = await getCountryInfo(countryCode);
+    if (data) {
+      setCountryInfo(data);
+      onCountryChange?.(data);
+    }
   };
 
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="addressCountry">{t('country')}</Label>
-        <select
-          id="addressCountry"
-          {...addressCountry}
-          onChange={handleCountryChange}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value="ES">España</option>
-          <option value="FR">Francia</option>
-          <option value="PT">Portugal</option>
-          <option value="IT">Italia</option>
-          <option value="OT">{t('other_country')}</option>
-        </select>
-        {errors?.addressCountry && (
-          <AlertDescription className="text-red-500">
-            {errors.addressCountry.message}
-          </AlertDescription>
-        )}
-      </div>
-      <div>
-        <Label htmlFor="addressStreet">{t('street')}</Label>
+        <label htmlFor="address-input" className="block text-sm font-medium mb-2">
+          {t('address')}
+        </label>
         <Input
-          id="addressStreet"
-          {...addressStreet}
-          placeholder={t('street_placeholder')}
+          id="address-input"
+          type="text"
+          value={address}
+          onChange={handleInputChange}
+          placeholder={placeholder}
+          className={className}
+          disabled={!isAutocompleteReady}
         />
-        {errors?.addressStreet && (
-          <AlertDescription className="text-red-500">
-            {errors.addressStreet.message}
-          </AlertDescription>
+        {!isAutocompleteReady && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {t('loading_address_autocomplete')}
+          </p>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="addressCity">{t('city')}</Label>
-          <Input
-            id="addressCity"
-            {...addressCity}
-            placeholder={t('city_placeholder')}
+
+      {countryInfo && (
+        <div className="flex items-center space-x-2 p-3 bg-muted rounded-md">
+          <img 
+            src={countryInfo.flag} 
+            alt={countryInfo.country} 
+            className="w-6 h-4 object-cover rounded"
           />
-          {errors?.addressCity && (
-            <AlertDescription className="text-red-500">
-              {errors.addressCity.message}
-            </AlertDescription>
-          )}
-            <span className="font-medium">{countryInfo.callingCode}</span>
-          </div>
+          <span className="font-medium">{countryInfo.country}</span>
+          <span className="text-sm text-muted-foreground">
+            ({countryInfo.callingCode})
+          </span>
+        </div>
+      )}
+
+      {loading && (
+        <div className="text-sm text-muted-foreground">
+          {t('loading_country_info')}
         </div>
       )}
     </div>

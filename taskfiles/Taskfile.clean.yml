@@ -1,0 +1,71 @@
+version: "3"
+
+tasks:
+  frontend:
+    desc: Clean frontend using centralized script
+    cmds:
+      - echo "🧹 Cleaning frontend via centralized script..."
+      - ./scripts/clean-frontend.sh frontend
+      - echo "✅ Frontend cleaned"
+
+  auth_service:
+    desc: Clean auth service frontend using centralized script
+    cmds:
+      - echo "🧹 Cleaning auth service frontend via centralized script..."
+      - ./scripts/clean-frontend.sh backend/auth-service
+      - echo "✅ Auth service frontend cleaned"
+
+  fmt:
+    desc: Format code using package.json scripts
+    cmds:
+      - echo "🖥️  Formatting code..."
+      - cd frontend && npm run fmt || bun run fmt || echo "⚠️  No fmt script found"
+      - cd backend/auth-service && npm run fmt || bun run fmt || echo "⚠️  No fmt script found"
+      - echo "✅ Code formatted"
+
+  lint:
+    desc: Lint code using package.json scripts
+    cmds:
+      - echo "🔍  Linting code..."
+      - cd frontend && npm run lint || bun run lint || echo "⚠️  No lint script found"
+      - cd backend/auth-service && npm run lint || bun run lint || echo "⚠️  No lint script found"
+      - echo "✅ Code linted"
+
+  lint:fix:
+    desc: Fix linting issues using package.json scripts
+    cmds:
+      - echo "🔧  Fixing linting issues..."
+      - cd frontend && npm run lint:fix || bun run lint:fix || echo "⚠️  No lint:fix script found"
+      - cd backend/auth-service && npm run lint:fix || bun run lint:fix || echo "⚠️  No lint:fix script found"
+      - echo "✅ Linting issues fixed"
+
+  node_modules:
+    desc: Remove node_modules directories using centralized script
+    cmds:
+      - echo "🧹 Removing node_modules..."
+      - rm -rf frontend/node_modules 2>/dev/null || echo "⚠️  Could not remove some node_modules files"
+      - rm -rf backend/auth-service/node_modules 2>/dev/null || echo "⚠️  Could not remove some node_modules files"
+      - echo "✅ node_modules cleanup completed"
+
+  all_targets:
+    desc: Force clean all target directories using centralized script
+    cmds:
+      - echo "🔥 Force cleaning all target directories..."
+      - ./scripts/clean-rust.sh .
+      - ./scripts/clean-rust.sh backend
+      - find backend -name "target" -type d -exec rm -rf {} + 2>/dev/null || true
+      - echo "✅ All target directories cleaned"
+
+  main:
+    desc: Clean development environment using centralized script
+    cmds:
+      - echo "🧹 Cleaning development environment..."
+      - ./scripts/clean-all.sh rust
+      - echo "✅ Development environment cleaned"
+
+  default:
+    desc: Clean build artifacts and stop all services using centralized script
+    cmds:
+      - echo "🧹 Starting comprehensive cleanup..."
+      - ./scripts/clean-all.sh all
+      - echo "🎉 Development environment fully cleaned"

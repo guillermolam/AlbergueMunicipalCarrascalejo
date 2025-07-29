@@ -1,16 +1,15 @@
-
-pub mod domain;
-pub mod application;
-pub mod ports;
 pub mod adapters;
+pub mod application;
+pub mod domain;
 pub mod infrastructure;
+pub mod ports;
 
 pub use application::notification_service::NotificationService;
 pub use domain::notification::{Notification, NotificationChannel, NotificationStatus};
 
 // Add Tokio runtime support for WASM
-use tokio::runtime::Runtime;
 use std::sync::Once;
+use tokio::runtime::Runtime;
 
 static INIT: Once = Once::new();
 static mut RUNTIME: Option<Runtime> = None;

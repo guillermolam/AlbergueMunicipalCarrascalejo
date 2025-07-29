@@ -19,6 +19,12 @@ component = "reviews-service"
 source = "target/wasm32-wasi/release/reviews_service.wasm"
 allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
 
+[component.reviews-service.test]
+command = "cargo test --no-run"
+
+[component.reviews-service.coverage]
+command = "cargo tarpaulin --test-threads 1 --skip-clean"
+
 [component.reviews-service.build]
 command = "cargo build --target wasm32-wasi --release"
 
