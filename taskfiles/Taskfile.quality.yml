@@ -1,0 +1,42 @@
+version: "3"
+
+tasks:
+  format:rust:
+    desc: Format Rust code
+    cmds:
+      - ./scripts/quality-checks.sh format rust
+
+  format:frontend:
+    desc: Format frontend code
+    cmds:
+      - ./scripts/quality-checks.sh format frontend
+
+  format:all:
+    desc: Format all code
+    cmds:
+      - ./scripts/quality-checks.sh format all
+
+  lint:rust:
+    desc: Lint Rust code
+    cmds:
+      - ./scripts/quality-checks.sh lint rust
+
+  lint:frontend:
+    desc: Lint frontend code
+    cmds:
+      - ./scripts/quality-checks.sh lint frontend
+
+  lint:all:
+    desc: Lint all code
+    cmds:
+      - ./scripts/quality-checks.sh lint all
+
+  security:
+    desc: Run security audit
+    cmds:
+      - ./scripts/quality-checks.sh security
+
+  all:
+    desc: Run all quality checks
+    cmds:
+      - ./scripts/quality-checks.sh all all

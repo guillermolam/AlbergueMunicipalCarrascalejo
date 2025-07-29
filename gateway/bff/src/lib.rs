@@ -14,6 +14,7 @@ use chrono;
 mod auth_service;
 mod auth_verify;
 mod booking_service;
+mod country_service;
 mod info_on_arrival_service;
 mod location_service;
 mod notification_service;
@@ -241,6 +242,7 @@ async fn route_to_business_service(req: &Request, context: &MiddlewareContext) -
         path if path.starts_with("/api/location/") => location_service::handle(req).await,
         path if path.starts_with("/api/info/") => info_on_arrival_service::handle(req).await,
         path if path.starts_with("/api/validation/") => validation_service::handle(req).await,
+        path if path.starts_with("/api/countries/") => country_service::handle(req).await,
         _ => {
             let error_body = serde_json::json!({
                 "error": "Not Found",
@@ -253,7 +255,8 @@ async fn route_to_business_service(req: &Request, context: &MiddlewareContext) -
                     "/api/notifications/*",
                     "/api/location/*",
                     "/api/info/*",
-                    "/api/validation/*"
+                    "/api/validation/*",
+                    "/api/countries/*"
                 ]
             }).to_string();
             Ok(build_response_with_cors(404, "application/json", error_body))

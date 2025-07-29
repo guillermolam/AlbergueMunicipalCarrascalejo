@@ -1,8 +1,13 @@
 -- Initial schema for Albergue del Carrascalejo management system
 -- Based on services/shared/schema.ts types and requirements
+-- Optimized for NeonDB with connection pooling
+
+-- Enable necessary extensions for NeonDB
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Users table for authentication
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
@@ -10,7 +15,7 @@ CREATE TABLE users (
 );
 
 -- Pilgrims table with GDPR/NIS2 compliance (encrypted fields)
-CREATE TABLE pilgrims (
+CREATE TABLE IF NOT EXISTS pilgrims (
     id SERIAL PRIMARY KEY,
     -- Encrypted personal data (marked with _encrypted suffix)
     first_name_encrypted TEXT NOT NULL,
@@ -19,151 +24,174 @@ CREATE TABLE pilgrims (
     birth_date_encrypted TEXT NOT NULL,
     document_type VARCHAR(50) NOT NULL,
     document_number_encrypted TEXT NOT NULL,
-    document_support VARCHAR(100),
-    gender VARCHAR(10) NOT NULL,
-    nationality VARCHAR(100),
-    phone_encrypted TEXT NOT NULL,
+    nationality_encrypted TEXT NOT NULL,
+    phone_encrypted TEXT,
     email_encrypted TEXT,
-    address_country VARCHAR(100) NOT NULL,
-    address_street_encrypted TEXT NOT NULL,
-    address_street_2_encrypted TEXT,
-    address_city_encrypted TEXT NOT NULL,
-    address_postal_code VARCHAR(20) NOT NULL,
-    address_province VARCHAR(100),
-    address_municipality_code VARCHAR(20),
-    id_photo_url TEXT,
-    language VARCHAR(10) DEFAULT 'es',
+    address_encrypted TEXT,
+    
+    -- Non-encrypted operational data
+    arrival_date DATE NOT NULL,
+    departure_date DATE,
+    accommodation_type VARCHAR(50) NOT NULL,
+    status VARCHAR(50) DEFAULT 'active',
+    
     -- GDPR compliance fields
     consent_given BOOLEAN DEFAULT TRUE,
     consent_date TIMESTAMP DEFAULT NOW(),
-    data_retention_until TIMESTAMP,
-    last_access_date TIMESTAMP DEFAULT NOW(),
+    data_retention_until DATE,
+    
+    -- Audit fields
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Beds table for room and bed management
-CREATE TABLE beds (
-    id SERIAL PRIMARY KEY,
-    bed_number INTEGER NOT NULL,
-    room_number INTEGER NOT NULL,
-    room_name VARCHAR(100) NOT NULL,
-    room_type VARCHAR(50) DEFAULT 'dormitory', -- dormitory, private
-    price_per_night DECIMAL(10,2) NOT NULL DEFAULT 15.00,
-    currency VARCHAR(10) DEFAULT 'EUR',
-    is_available BOOLEAN DEFAULT TRUE,
-    status VARCHAR(50) DEFAULT 'available', -- available, reserved, occupied, maintenance, cleaning
-    reserved_until TIMESTAMP,
-    last_cleaned_at TIMESTAMP,
-    maintenance_notes TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    -- Indexes for performance
+    INDEX idx_pilgrims_arrival (arrival_date),
+    INDEX idx_pilgrims_status (status),
+    INDEX idx_pilgrims_created (created_at)
 );
 
 -- Bookings table
-CREATE TABLE bookings (
+CREATE TABLE IF NOT EXISTS bookings (
     id SERIAL PRIMARY KEY,
-    pilgrim_id INTEGER REFERENCES pilgrims(id) NOT NULL,
-    reference_number VARCHAR(100) NOT NULL UNIQUE,
+    pilgrim_id INTEGER NOT NULL REFERENCES pilgrims(id) ON DELETE CASCADE,
+    accommodation_type VARCHAR(50) NOT NULL,
     check_in_date DATE NOT NULL,
-    check_out_date DATE NOT NULL,
-    number_of_nights INTEGER NOT NULL,
-    number_of_persons INTEGER DEFAULT 1,
-    number_of_rooms INTEGER DEFAULT 1,
-    has_internet BOOLEAN DEFAULT FALSE,
-    status VARCHAR(50) DEFAULT 'reserved', -- reserved, confirmed, checked_in, checked_out, cancelled, expired
-    bed_assignment_id INTEGER REFERENCES beds(id),
-    estimated_arrival_time VARCHAR(20),
-    notes TEXT,
-    total_amount DECIMAL(10,2) NOT NULL,
-    -- Reservation timeout fields (2-hour window)
-    reservation_expires_at TIMESTAMP NOT NULL,
-    payment_deadline TIMESTAMP NOT NULL,
-    auto_cleanup_processed BOOLEAN DEFAULT FALSE,
+    check_out_date DATE,
+    nights INTEGER NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    special_requests TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    INDEX idx_bookings_pilgrim (pilgrim_id),
+    INDEX idx_bookings_checkin (check_in_date),
+    INDEX idx_bookings_status (status)
 );
 
--- Payments table
-CREATE TABLE payments (
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
     id SERIAL PRIMARY KEY,
-    booking_id INTEGER REFERENCES bookings(id) NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    payment_type VARCHAR(50) NOT NULL, -- efect, tarjeta, bizum, transferencia
-    payment_status VARCHAR(50) DEFAULT 'awaiting_payment', -- awaiting_payment, completed, failed, cancelled, expired
-    currency VARCHAR(10) DEFAULT 'EUR',
-    receipt_number VARCHAR(100),
-    payment_date TIMESTAMP,
-    payment_deadline TIMESTAMP NOT NULL,
-    transaction_id VARCHAR(255),
-    gateway_response JSONB, -- For card payments
+    pilgrim_id INTEGER NOT NULL REFERENCES pilgrims(id) ON DELETE CASCADE,
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    title VARCHAR(255),
+    content TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    INDEX idx_reviews_pilgrim (pilgrim_id),
+    INDEX idx_reviews_rating (rating)
 );
 
--- Pricing table for dynamic pricing
-CREATE TABLE pricing (
+-- Notifications table
+CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
-    room_type VARCHAR(50) NOT NULL, -- dormitory, private
-    bed_type VARCHAR(50) NOT NULL, -- shared, private
+    pilgrim_id INTEGER REFERENCES pilgrims(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    scheduled_for TIMESTAMP,
+    sent_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    
+    INDEX idx_notifications_pilgrim (pilgrim_id),
+    INDEX idx_notifications_type (type),
+    INDEX idx_notifications_read (is_read),
+    INDEX idx_notifications_scheduled (scheduled_for)
+);
+
+-- Info on arrival table
+CREATE TABLE IF NOT EXISTS info_on_arrival (
+    id SERIAL PRIMARY KEY,
+    pilgrim_id INTEGER NOT NULL REFERENCES pilgrims(id) ON DELETE CASCADE,
+    info_type VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    language VARCHAR(10) DEFAULT 'es',
+    created_at TIMESTAMP DEFAULT NOW(),
+    
+    INDEX idx_info_pilgrim (pilgrim_id),
+    INDEX idx_info_type (info_type),
+    INDEX idx_info_language (language)
+);
+
+-- Location services table
+CREATE TABLE IF NOT EXISTS locations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address TEXT,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    type VARCHAR(50),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    
+    INDEX idx_locations_type (type),
+    INDEX idx_locations_coords (latitude, longitude)
+);
+
+-- Audit log table for GDPR/NIS2 compliance
+CREATE TABLE IF NOT EXISTS audit_log (
+    id SERIAL PRIMARY KEY,
+    table_name VARCHAR(100) NOT NULL,
+    record_id INTEGER NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    old_values JSONB,
+    new_values JSONB,
+    user_id INTEGER,
+    timestamp TIMESTAMP DEFAULT NOW(),
+    ip_address INET,
+    user_agent TEXT,
+    
+    INDEX idx_audit_table (table_name),
+    INDEX idx_audit_record (table_name, record_id),
+    INDEX idx_audit_timestamp (timestamp)
+);
+
+-- Pricing table
+CREATE TABLE IF NOT EXISTS pricing (
+    id SERIAL PRIMARY KEY,
+    accommodation_type VARCHAR(50) NOT NULL UNIQUE,
     price_per_night DECIMAL(10,2) NOT NULL,
-    currency VARCHAR(10) DEFAULT 'EUR',
-    is_active BOOLEAN DEFAULT TRUE,
+    currency VARCHAR(3) DEFAULT 'EUR',
+    valid_from DATE DEFAULT CURRENT_DATE,
+    valid_until DATE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Government submissions table for SOAP API compliance
-CREATE TABLE government_submissions (
-    id SERIAL PRIMARY KEY,
-    booking_id INTEGER REFERENCES bookings(id) NOT NULL,
-    xml_content TEXT NOT NULL,
-    submission_status VARCHAR(50) DEFAULT 'pending', -- pending, success, failed
-    response_data JSONB,
-    attempts INTEGER DEFAULT 0,
-    last_attempt TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW()
-);
+-- Insert default pricing
+INSERT INTO pricing (accommodation_type, price_per_night, currency) VALUES
+    ('albergue', 8.00, 'EUR'),
+    ('hostal', 25.00, 'EUR'),
+    ('hotel', 45.00, 'EUR')
+ON CONFLICT (accommodation_type) DO NOTHING;
 
--- Insert default pricing data
-INSERT INTO pricing (room_type, bed_type, price_per_night, currency) VALUES
-('dormitory', 'shared', 15.00, 'EUR');
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
 
--- Insert default bed configuration: 3 dormitorios with 8 beds each (24 total beds)
-INSERT INTO beds (bed_number, room_number, room_name, room_type, price_per_night) VALUES
--- Dormitorio 1: 8 beds
-(1, 1, 'Dormitorio 1', 'dormitory', 15.00),
-(2, 1, 'Dormitorio 1', 'dormitory', 15.00),
-(3, 1, 'Dormitorio 1', 'dormitory', 15.00),
-(4, 1, 'Dormitorio 1', 'dormitory', 15.00),
-(5, 1, 'Dormitorio 1', 'dormitory', 15.00),
-(6, 1, 'Dormitorio 1', 'dormitory', 15.00),
-(7, 1, 'Dormitorio 1', 'dormitory', 15.00),
-(8, 1, 'Dormitorio 1', 'dormitory', 15.00),
--- Dormitorio 2: 8 beds
-(1, 2, 'Dormitorio 2', 'dormitory', 15.00),
-(2, 2, 'Dormitorio 2', 'dormitory', 15.00),
-(3, 2, 'Dormitorio 2', 'dormitory', 15.00),
-(4, 2, 'Dormitorio 2', 'dormitory', 15.00),
-(5, 2, 'Dormitorio 2', 'dormitory', 15.00),
-(6, 2, 'Dormitorio 2', 'dormitory', 15.00),
-(7, 2, 'Dormitorio 2', 'dormitory', 15.00),
-(8, 2, 'Dormitorio 2', 'dormitory', 15.00),
--- Dormitorio 3: 8 beds
-(1, 3, 'Dormitorio 3', 'dormitory', 15.00),
-(2, 3, 'Dormitorio 3', 'dormitory', 15.00),
-(3, 3, 'Dormitorio 3', 'dormitory', 15.00),
-(4, 3, 'Dormitorio 3', 'dormitory', 15.00),
-(5, 3, 'Dormitorio 3', 'dormitory', 15.00),
-(6, 3, 'Dormitorio 3', 'dormitory', 15.00),
-(7, 3, 'Dormitorio 3', 'dormitory', 15.00),
-(8, 3, 'Dormitorio 3', 'dormitory', 15.00);
+-- Create triggers for updated_at
+CREATE TRIGGER update_pilgrims_updated_at BEFORE UPDATE ON pilgrims
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Create indexes for performance
-CREATE INDEX idx_bookings_pilgrim_id ON bookings(pilgrim_id);
-CREATE INDEX idx_bookings_status ON bookings(status);
-CREATE INDEX idx_bookings_dates ON bookings(check_in_date, check_out_date);
-CREATE INDEX idx_beds_status ON beds(status);
-CREATE INDEX idx_beds_room ON beds(room_number, room_name);
-CREATE INDEX idx_payments_booking_id ON payments(booking_id);
-CREATE INDEX idx_payments_status ON payments(payment_status);
+CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON reviews
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Create indexes for better performance with NeonDB
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_pilgrims_document_hash 
+    ON pilgrims USING HASH (document_number_encrypted);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bookings_date_range 
+    ON bookings (check_in_date, check_out_date);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_notifications_unread 
+    ON notifications (pilgrim_id, is_read) WHERE is_read = FALSE;
