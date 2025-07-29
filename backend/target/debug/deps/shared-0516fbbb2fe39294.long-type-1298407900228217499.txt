@@ -1,2 +1,0 @@
-std::string::String: std::marker::Copy
-std::option::Option<std::string::String>

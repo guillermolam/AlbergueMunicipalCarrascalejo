@@ -1,2 +1,0 @@
-cargo:rustc-env=SDK_VERSION=2-2
-cargo:rustc-env=SDK_COMMIT=unknown
