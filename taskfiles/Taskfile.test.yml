@@ -1,0 +1,83 @@
+version: "3"
+
+vars:
+  COVERAGE_DIR: "coverage"
+  COVERAGE_THRESHOLD: 80
+
+tasks:
+  # Rust Coverage
+  coverage:rust:
+    desc: Generate Rust test coverage report
+    cmds:
+      - ./scripts/test-services.sh coverage rust
+
+  coverage:gateway:
+    desc: Generate Gateway BFF coverage report
+    cmds:
+      - ./scripts/test-services.sh coverage gateway
+
+  coverage:backend:
+    desc: Generate backend services coverage report
+    cmds:
+      - ./scripts/test-services.sh coverage backend
+
+  coverage:frontend:
+    desc: Generate frontend coverage report
+    cmds:
+      - ./scripts/test-services.sh coverage frontend
+
+  coverage:auth-frontend:
+    desc: Generate auth frontend coverage report
+    cmds:
+      - ./scripts/test-services.sh coverage backend/auth-service/app
+
+  coverage:all:
+    desc: Generate coverage reports for all components
+    cmds:
+      - ./scripts/test-services.sh coverage all
+
+  coverage:summary:
+    desc: Generate coverage summary across all components
+    cmds:
+      - ./scripts/test-services.sh coverage all
+      - echo "📊 Coverage reports generated in $COVERAGE_DIR/"
+
+  coverage:clean:
+    desc: Clean coverage reports
+    cmds:
+      - ./scripts/test-services.sh clean
+
+  # Unit Tests
+  unit:rust:
+    desc: Run Rust unit tests
+    cmds:
+      - ./scripts/test-services.sh unit rust
+
+  unit:frontend:
+    desc: Run frontend unit tests
+    cmds:
+      - ./scripts/test-services.sh unit frontend
+
+  unit:all:
+    desc: Run all unit tests
+    cmds:
+      - ./scripts/test-services.sh unit all
+
+  # Integration Tests
+  integration:
+    desc: Run integration tests
+    cmds:
+      - ./scripts/test-services.sh integration
+
+  # Quick Tests
+  quick:
+    desc: Run quick tests (unit tests only)
+    cmds:
+      - ./scripts/test-services.sh unit all
+
+  # Full Test Suite
+  full:
+    desc: Run full test suite with coverage
+    deps: [unit:all, integration, coverage:all]
+    cmds:
+      - echo "🏆 Full test suite completed"

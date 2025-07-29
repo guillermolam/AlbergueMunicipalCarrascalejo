@@ -1,0 +1,49 @@
+version: "3"
+
+tasks:
+  deploy:local:
+    desc: Deploy to local environment
+    cmds:
+      - echo "🚀 Deploying to local environment..."
+      - ./scripts/build-services.sh all
+      - ./scripts/dev-services.sh start
+      - echo "✅ Local deployment complete"
+
+  deploy:staging:
+    desc: Deploy to staging environment
+    cmds:
+      - echo "🚀 Deploying to staging..."
+      - echo "⚠️ Staging deployment not configured"
+
+  deploy:production:
+    desc: Deploy to production environment
+    cmds:
+      - echo "🚀 Deploying to production..."
+      - echo "⚠️ Production deployment not configured"
+
+  health:check:
+    desc: Check service health
+    cmds:
+      - echo "🏥 Checking service health..."
+      - ./scripts/health-check.sh || echo "Health check script not found, running basic checks..."
+      - curl -f http://localhost:3000/health || echo "⚠️ Gateway health check failed"
+      - curl -f http://localhost:5173/health || echo "⚠️ Frontend health check failed"
+      - echo "✅ Health checks completed"
+
+  logs:gateway:
+    desc: View gateway logs
+    cmds:
+      - echo "📝 Viewing gateway logs..."
+      - tail -f gateway/logs/*.log 2>/dev/null || echo "No gateway logs found"
+
+  logs:backend:
+    desc: View backend logs
+    cmds:
+      - echo "📝 Viewing backend logs..."
+      - tail -f backend/*/logs/*.log 2>/dev/null || echo "No backend logs found"
+
+  logs:all:
+    desc: View all service logs
+    cmds:
+      - echo "📝 Viewing all service logs..."
+      - tail -f */logs/*.log 2>/dev/null || echo "No logs found"

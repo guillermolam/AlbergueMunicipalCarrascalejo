@@ -1,0 +1,43 @@
+version: "3"
+
+vars:
+  RUST_VERSION: "1.87.0"
+  NODE_VERSION: "20.x"
+  BUN_VERSION: "1.2.x"
+  SPIN_VERSION: "3.3.x"
+
+tasks:
+  check:
+    desc: Verify development environment
+    cmds:
+      - ./scripts/setup-environment.sh check
+
+  install:rust:
+    desc: Install Rust toolchain
+    cmds:
+      - ./scripts/setup-environment.sh rust
+
+  install:node:
+    desc: Install Node.js dependencies
+    cmds:
+      - ./scripts/setup-environment.sh node
+
+  install:spin:
+    desc: Install Spin CLI
+    cmds:
+      - ./scripts/setup-environment.sh spin
+
+  install:all:
+    desc: Install all dependencies
+    cmds:
+      - ./scripts/setup-environment.sh all
+
+  install:deps:
+    desc: Install project dependencies
+    cmds:
+      - ./scripts/setup-environment.sh deps
+
+  install:database:
+    desc: Setup database
+    cmds:
+      - ./scripts/setup-environment.sh database

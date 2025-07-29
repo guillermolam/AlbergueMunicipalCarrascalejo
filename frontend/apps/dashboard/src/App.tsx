@@ -1,16 +1,16 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DashboardPage } from './pages/DashboardPage';
-import { AdminDashboard } from './components/AdminDashboard';
 
 function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-      </Routes>
-    </div>
+    <Router>
+      <div className="min-h-screen bg-background">
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

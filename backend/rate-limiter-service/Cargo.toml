@@ -37,3 +37,36 @@ thiserror = "1.0"
 
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
+
+# Async runtime
+tokio = { version = "1.0", features = ["rt", "macros", "time"] }
+futures = "0.3"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["rt", "macros", "time", "test-util"] }
+serde_json = "1.0"
+http-body-util = "0.1"
+tower = "0.4"
+tower-service = "0.3"
+hyper = "1.0"
+hyper-util = "0.1"
+
+[[test]]
+name = "integration_tests"
+path = "tests/integration_tests.rs"
+
+[[test]]
+name = "unit_tests"
+path = "tests/unit_tests.rs"
+
+[[test]]
+name = "rate_limit_algorithm_tests"
+path = "tests/rate_limit_algorithm_tests.rs"
+
+[[test]]
+name = "edge_case_tests"
+path = "tests/edge_case_tests.rs"
+
+[[test]]
+name = "performance_tests"
+path = "tests/performance_tests.rs"
