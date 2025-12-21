@@ -1,6 +1,6 @@
 use location_service::*;
 use models::{ApiResponse, CacheEntry, CountryData};
-use service::CountryService;
+use service::LocationService;
 
 #[cfg(test)]
 mod country_data_tests {
@@ -21,7 +21,7 @@ mod country_data_tests {
 
         let serialized = serde_json::to_string(&country).unwrap();
         let deserialized: CountryData = serde_json::from_str(&serialized).unwrap();
-        
+
         assert_eq!(country.code, deserialized.code);
         assert_eq!(country.name, deserialized.name);
         assert_eq!(country.flag, deserialized.flag);
@@ -47,7 +47,7 @@ mod country_data_tests {
 
         let serialized = serde_json::to_string(&country).unwrap();
         let deserialized: CountryData = serde_json::from_str(&serialized).unwrap();
-        
+
         assert_eq!(country.code, deserialized.code);
         assert_eq!(country.name, deserialized.name);
         assert!(deserialized.flag.is_none());
@@ -111,34 +111,34 @@ mod cache_entry_tests {
 
         let serialized = serde_json::to_string(&cache_entry).unwrap();
         let deserialized: CacheEntry = serde_json::from_str(&serialized).unwrap();
-        
+
         assert_eq!(cache_entry.data.code, deserialized.data.code);
         assert_eq!(cache_entry.timestamp, deserialized.timestamp);
     }
 }
 
 #[cfg(test)]
-mod country_service_tests {
+mod location_service_tests {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[tokio::test]
-    async fn test_country_service_new() {
-        let service = CountryService::new();
+    async fn test_location_service_new() {
+        let service = LocationService::new();
         assert_eq!(service.cache_size(), 0);
         assert_eq!(service.cache_ttl, 3600);
     }
 
     #[tokio::test]
-    async fn test_country_service_with_custom_ttl() {
-        let service = CountryService::with_cache_ttl(7200);
+    async fn test_location_service_with_custom_ttl() {
+        let service = LocationService::with_cache_ttl(7200);
         assert_eq!(service.cache_ttl, 7200);
     }
 
     #[tokio::test]
     async fn test_get_country_data_known_country() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         // Test Spain
         let result = service.get_country_data("ES").await.unwrap();
         assert!(result.is_some());
@@ -155,21 +155,21 @@ mod country_service_tests {
 
     #[tokio::test]
     async fn test_get_country_data_unknown_country() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         let result = service.get_country_data("XX").await.unwrap();
         assert!(result.is_none());
     }
 
     #[tokio::test]
     async fn test_get_country_data_case_insensitive() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         // Test lowercase
         let result = service.get_country_data("es").await.unwrap();
         assert!(result.is_some());
         assert_eq!(result.unwrap().code, "ES");
-        
+
         // Test mixed case
         let result = service.get_country_data("Fr").await.unwrap();
         assert!(result.is_some());
@@ -178,38 +178,38 @@ mod country_service_tests {
 
     #[tokio::test]
     async fn test_get_country_data_empty_code() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         let result = service.get_country_data("").await.unwrap();
         assert!(result.is_none());
     }
 
     #[tokio::test]
     async fn test_cache_functionality() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         // First call should populate cache
         let result1 = service.get_country_data("PT").await.unwrap();
         assert!(result1.is_some());
         assert_eq!(service.cache_size(), 1);
-        
+
         // Second call should use cache
         let result2 = service.get_country_data("PT").await.unwrap();
         assert!(result2.is_some());
         assert_eq!(service.cache_size(), 1);
-        
+
         // Verify cache entry
         assert!(service.is_cached("PT"));
     }
 
     #[tokio::test]
     async fn test_cache_expiration() {
-        let mut service = CountryService::with_cache_ttl(1); // 1 second TTL
-        
+        let mut service = LocationService::with_cache_ttl(1); // 1 second TTL
+
         // Populate cache
         service.get_country_data("IT").await.unwrap();
         assert!(service.is_cached("IT"));
-        
+
         // Wait for expiration (in test, we'll simulate)
         // In real tests, we'd use mock time
         assert_eq!(service.cache_size(), 1);
@@ -217,11 +217,11 @@ mod country_service_tests {
 
     #[tokio::test]
     async fn test_clear_cache() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         service.get_country_data("ES").await.unwrap();
         assert_eq!(service.cache_size(), 1);
-        
+
         service.clear_cache();
         assert_eq!(service.cache_size(), 0);
         assert!(!service.is_cached("ES"));
@@ -229,16 +229,16 @@ mod country_service_tests {
 
     #[tokio::test]
     async fn test_warm_cache() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         assert_eq!(service.cache_size(), 0);
-        
+
         let countries = ["ES", "FR", "PT", "IT"];
         let result = service.warm_cache(&countries).await;
-        
+
         assert!(result.is_ok());
         assert_eq!(service.cache_size(), 4);
-        
+
         // Verify all countries are cached
         for country_code in countries {
             assert!(service.is_cached(country_code));
@@ -247,11 +247,11 @@ mod country_service_tests {
 
     #[tokio::test]
     async fn test_warm_cache_with_unknown_countries() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         let countries = ["ES", "XX", "FR", "YY"];
         let result = service.warm_cache(&countries).await;
-        
+
         assert!(result.is_ok());
         assert_eq!(service.cache_size(), 2); // Only ES and FR should be cached
         assert!(service.is_cached("ES"));
@@ -262,21 +262,21 @@ mod country_service_tests {
 
     #[tokio::test]
     async fn test_warm_cache_empty_list() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         let countries: &[&str] = &[];
         let result = service.warm_cache(countries).await;
-        
+
         assert!(result.is_ok());
         assert_eq!(service.cache_size(), 0);
     }
 
     #[tokio::test]
     async fn test_is_cached_function() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         assert!(!service.is_cached("ES"));
-        
+
         service.get_country_data("ES").await.unwrap();
         assert!(service.is_cached("ES"));
         assert!(!service.is_cached("XX"));
@@ -284,23 +284,23 @@ mod country_service_tests {
 
     #[tokio::test]
     async fn test_cache_size_tracking() {
-        let mut service = CountryService::new();
-        
+        let mut service = LocationService::new();
+
         assert_eq!(service.cache_size(), 0);
-        
+
         service.get_country_data("ES").await.unwrap();
         assert_eq!(service.cache_size(), 1);
-        
+
         service.get_country_data("FR").await.unwrap();
         assert_eq!(service.cache_size(), 2);
-        
+
         service.clear_cache();
         assert_eq!(service.cache_size(), 0);
     }
 
     #[tokio::test]
     async fn test_default_implementation() {
-        let service = CountryService::default();
+        let service = LocationService::default();
         assert_eq!(service.cache_size(), 0);
         assert_eq!(service.cache_ttl, 3600);
     }

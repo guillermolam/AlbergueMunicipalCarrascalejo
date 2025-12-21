@@ -13,21 +13,19 @@ booking_timeout_hours = { default = "2" }
 log_level = { default = "info" }
 
 [[trigger.http]]
-route = "/..."
+route = "/api/*"
 component = "booking-service"
 
 [component.booking-service]
-source = "target/wasm32-wasi/release/booking_service.wasm"
+source = "target/wasm32-wasip1/release/booking_service.wasm"
 allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
+key_value_stores = ["default"]
 
 [component.booking-service.build]
-command = "cargo build --target wasm32-wasi --release"
+command = "cargo build --target wasm32-wasip1 --release"
 
 [component.booking-service.variables]
 database_url = "{{ database_url }}"
 neon_database_url = "{{ neon_database_url }}"
 booking_timeout_hours = "{{ booking_timeout_hours }}"
 log_level = "{{ log_level }}"
-
-[component.booking-service.key_value_stores]
-default = { label = "booking-kv" }

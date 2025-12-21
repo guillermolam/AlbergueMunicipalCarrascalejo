@@ -25,12 +25,14 @@ location-service/
 ## Running Tests
 
 ### Quick Start
+
 ```bash
 # From the location-service directory
 ./run_tests.sh
 ```
 
 ### Individual Test Suites
+
 ```bash
 # Run unit tests only
 cargo test --test unit_tests
@@ -43,6 +45,7 @@ cargo test --all
 ```
 
 ### With Coverage
+
 ```bash
 # Install cargo-tarpaulin first
 cargo install cargo-tarpaulin
@@ -56,16 +59,19 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 ### 1. Unit Tests (`tests/unit_tests.rs`)
 
 #### CountryData Tests
+
 - Serialization/deserialization
 - Handling of None values
 - JSON format validation
 
 #### CacheEntry Tests
+
 - Timestamp handling
 - Data integrity
 - Serialization
 
-#### CountryService Tests
+#### LocationService Tests
+
 - Cache functionality
 - Cache expiration
 - Case insensitivity
@@ -73,6 +79,7 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 - Warm cache functionality
 
 #### HTTP Handler Tests
+
 - CORS preflight handling
 - GET country endpoints
 - POST warm cache endpoint
@@ -83,16 +90,19 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 ### 2. Integration Tests (`tests/integration_tests.rs`)
 
 #### Full Request/Response Cycle
+
 - Complete HTTP flow testing
 - Response format validation
 - Header verification
 
 #### CORS Testing
+
 - Preflight request handling
 - CORS headers presence
 - Cross-origin compatibility
 
 #### Performance Testing
+
 - Response time validation
 - Concurrent request handling
 - Cache warmup integration
@@ -100,12 +110,14 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 ### 3. Edge Case Tests
 
 #### Input Validation
+
 - Special characters in country codes
 - Unicode handling
 - Numeric codes
 - Whitespace handling
 
 #### Cache Behavior
+
 - Concurrent access patterns
 - Cache size limits
 - Expiration scenarios
@@ -113,6 +125,7 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 ## Test Scenarios Covered
 
 ### Positive Scenarios
+
 - ✅ Known country retrieval (ES, FR, PT, IT)
 - ✅ Cache hit scenarios
 - ✅ Cache warmup functionality
@@ -120,6 +133,7 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 - ✅ JSON serialization/deserialization
 
 ### Negative Scenarios
+
 - ❌ Unknown country codes
 - ❌ Empty country codes
 - ❌ Invalid HTTP methods
@@ -127,6 +141,7 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 - ❌ Cache expiration
 
 ### Edge Cases
+
 - ⚡ Case insensitivity (es, ES, eS)
 - ⚡ Special characters in input
 - ⚡ Unicode handling
@@ -136,12 +151,14 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 ## Test Data
 
 ### Known Countries
+
 - **ES**: Spain (🇪🇸, +34, EUR)
 - **FR**: France (🇫🇷, +33, EUR)
 - **PT**: Portugal (🇵🇹, +351, EUR)
 - **IT**: Italy (🇮🇹, +39, EUR)
 
 ### Test Country Codes
+
 - Valid: ES, FR, PT, IT
 - Invalid: XX, YY, ZZ, 123, ""
 - Edge cases: "es", "ES ", "es!@#"
@@ -149,11 +166,13 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 ## Performance Benchmarks
 
 ### Response Time
+
 - Individual requests: < 100ms
 - Concurrent requests (10): < 200ms total
 - Cache warmup: < 50ms
 
 ### Memory Usage
+
 - Cache size: Limited to known countries
 - Memory leaks: None detected
 - Concurrent access: Thread-safe
@@ -161,6 +180,7 @@ cargo tarpaulin --tests --out Html --output-dir coverage
 ## Continuous Integration
 
 ### GitHub Actions Integration
+
 ```yaml
 name: Test Location Service
 on: [push, pull_request]
@@ -184,11 +204,13 @@ jobs:
 ## Debugging Tests
 
 ### Common Issues
+
 1. **Test failures**: Check for missing dependencies
 2. **Build errors**: Ensure WASM target is installed
 3. **Coverage issues**: Verify cargo-tarpaulin installation
 
 ### Debug Commands
+
 ```bash
 # Verbose test output
 cargo test -- --nocapture
@@ -203,12 +225,14 @@ cargo build --target wasm32-wasi
 ## Test Maintenance
 
 ### Adding New Tests
+
 1. Add unit tests to `tests/unit_tests.rs`
 2. Add integration tests to `tests/integration_tests.rs`
 3. Update test documentation
 4. Ensure 100% coverage is maintained
 
 ### Test Guidelines
+
 - Use descriptive test names
 - Include both positive and negative test cases
 - Test edge cases explicitly
@@ -218,6 +242,7 @@ cargo build --target wasm32-wasi
 ## Coverage Report
 
 After running tests with coverage, check the `coverage/` directory for:
+
 - HTML coverage report
 - Line-by-line coverage analysis
 - Function coverage metrics
@@ -226,6 +251,7 @@ After running tests with coverage, check the `coverage/` directory for:
 ## Troubleshooting
 
 ### Build Issues
+
 ```bash
 # Install WASM target
 rustup target add wasm32-wasi
@@ -238,6 +264,7 @@ cargo clean && cargo build
 ```
 
 ### Test Failures
+
 ```bash
 # Check specific test
 cargo test test_name -- --exact

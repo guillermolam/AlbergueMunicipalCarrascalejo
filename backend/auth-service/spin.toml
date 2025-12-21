@@ -7,12 +7,13 @@ authors = ["Guillermo Lam <guillermolam.m@gmail.com>"]
 description = "OIDC and OAuth2 Service"
 
 [[trigger.http]]
-route = "/api/auth/...
-component = "auth"
+[[trigger.http]]
+route = "/api/auth/*"
+component = "auth-service"
 
-[component.auth]
-source = "target/wasm32-wasi/release/auth.wasm"
+[component.auth-service]
+source = "target/wasm32-wasip1/release/auth.wasm"
 allowed_outbound_hosts = ["https://*.logto.app", "https://*.zitadel.cloud"]
-[component.auth.build]
-command = "cargo build --target wasm32-wasi --release --bin auth"
+[component.auth-service.build]
+command = "cargo build --target wasm32-wasip1 --release --bin auth"
 watch = ["src/**/*.rs", "Cargo.toml"]

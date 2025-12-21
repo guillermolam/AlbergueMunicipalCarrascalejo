@@ -1,6 +1,7 @@
 // Shared types and utilities for WASM microservices
 // Types are now generated from database/ folder schema definitions
 
+pub mod config;
 pub mod db;
 pub mod dto;
 pub mod error;

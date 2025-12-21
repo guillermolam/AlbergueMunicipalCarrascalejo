@@ -6,29 +6,23 @@ version = "0.1.0"
 
 [variables]
 database_url = { required = true }
-auth0_domain = { required = true }
-auth0_client_id = { required = true }
-auth0_client_secret = { required = true }
+logto_domain = { required = true }
+logto_client_id = { required = true }
+logto_client_secret = { required = true }
 
 [[trigger.http]]
-route = "/api/..."
+route = "/api/*"
 component = "bff"
 
 [component.bff]
-source = "bff/target/wasm32-wasi/release/bff.wasm"
-allowed_outbound_hosts = [
-    "https://*.neon.tech",
-    "https://api.auth0.com"
-]
+source = "bff/target/wasm32-wasip1/release/bff.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech", "https://api.logto.com"]
 
 [component.bff.build]
-command = "cargo build --target wasm32-wasi --release"
+command = "cargo build --target wasm32-wasip1 --release"
 
 [component.bff.variables]
 database_url = "{{ database_url }}"
-auth0_domain = "{{ auth0_domain }}"
-auth0_client_id = "{{ auth0_client_id }}"
-auth0_client_secret = "{{ auth0_client_secret }}"
-
-[component.bff.key_value_stores]
-default = { label = "gateway-kv" }
+logto_domain = "{{ logto_domain }}"
+logto_client_id = "{{ logto_client_id }}"
+logto_client_secret = "{{ logto_client_secret }}"

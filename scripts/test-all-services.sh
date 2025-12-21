@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Run all tests for Spin services
@@ -12,27 +11,27 @@ cd backend
 
 # Services to test
 services=(
-    "shared"
-    "booking-service"
-    "notification-service" 
-    "reviews-service"
-    "security-service"
-    "validation-service"
-    "info-on-arrival-service"
-    "location-service"
-    "rate-limiter-service"
-    "auth-service"
+	"shared"
+	"booking-service"
+	"notification-service"
+	"reviews-service"
+	"security-service"
+	"document-document-validation-service"
+	"info-on-arrival-service"
+	"location-service"
+	"rate-limiter-service"
+	"auth-service"
 )
 
 for service in "${services[@]}"; do
-    echo "🧪 Testing $service..."
-    cd "$service"
-    
-    # Run all tests including Spin tests
-    cargo test
-    
-    echo "✅ $service tests passed"
-    cd ..
+	echo "🧪 Testing $service..."
+	cd "$service"
+
+	# Run all tests including Spin tests
+	cargo test
+
+	echo "✅ $service tests passed"
+	cd ..
 done
 
 echo "🎉 All service tests passed!"

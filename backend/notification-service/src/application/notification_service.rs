@@ -12,11 +12,16 @@ pub struct NotificationService {
 }
 
 impl NotificationService {
-    pub fn new(
-        email_adapter: Arc<dyn EmailPort + Send + Sync>,
-        sms_adapter: Arc<dyn SmsPort + Send + Sync>,
-        telegram_adapter: Arc<dyn TelegramPort + Send + Sync>,
-    ) -> Self {
+    pub fn new() -> Self {
+        use crate::adapters::email::nodemailer::NodemailerAdapter;
+        use crate::adapters::sms::whatsapp::WhatsAppAdapter;
+        use crate::adapters::telegram::telegraf::TelegrafAdapter;
+        use std::sync::Arc;
+
+        let email_adapter = Arc::new(NodemailerAdapter::new());
+        let sms_adapter = Arc::new(WhatsAppAdapter::new());
+        let telegram_adapter = Arc::new(TelegrafAdapter::new());
+
         Self {
             email_adapter,
             sms_adapter,
@@ -52,7 +57,7 @@ impl NotificationService {
             }
             NotificationChannel::Telegram => {
                 self.telegram_adapter
-                    .send_message(&notification.recipient, &notification.body)
+                    .send_telegram(&notification.recipient, &notification.body)
                     .await
             }
         }

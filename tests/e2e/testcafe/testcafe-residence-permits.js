@@ -13,7 +13,7 @@ test('Process TIE residence permit card', async t => {
   
   await t
     .click(Selector('button').withText(/start registration|comenzar registro/i))
-    .expect(Selector('[data-testid="registration-form"]').exists).ok();
+    .expect(Selector('[data-testid="booking"]').exists).ok();
 
   // Select TIE/Residence Permit document type
   await t

@@ -8,9 +8,9 @@ You are a developer working inside the Replit monorepo for **Albergue Del Carras
 
 ```
 gateway/
-services/validation-service/src/
+services/document-document-validation-service/src/
 services/booking-service/src/
-services/country-service/src/
+services/location-service/src/
 services/security-service/src/
 services/rate-limiter-service/src/
 frontend/
@@ -27,10 +27,10 @@ Use this prompt to plan and execute the refactor in modular, test-first iteratio
 Refactor to match the architecture and scaffold:
 
 * Each Rust service adopts the DDD + hexagonal layout (`domain/`, `application/`, `ports/`, `adapters/`, `infrastructure/`).
-* Move existing logic in validation-service (e.g. OCR, document validators) into `validation-service/src/domain/…` etc.
+* Move existing logic in document-document-validation-service (e.g. OCR, document validators) into `document-document-validation-service/src/domain/…` etc.
 * Ensure services use shared DTOs in `shared/` crate.
 * Frontend: separate `/admin`, `/customer`, `/components`, add Zustand for global state.
-* Move OCR training data into `services/validation-service/tests/ocr-training/…`, not in attached\_assets.
+* Move OCR training data into `services/document-document-validation-service/tests/ocr-training/…`, not in attached\_assets.
 * Remove legacy Express code if present.
 * Update `package.json` and Cargo workspace structure to match.
 
@@ -44,12 +44,12 @@ Refactor to match the architecture and scaffold:
 * Check `spin.toml` routes all `services/*/target` components.
 * Test: run `cargo build --workspace`.
 
-**Task 2: validation-service OCR refactor**
+**Task 2: document-document-validation-service OCR refactor**
 
 * Move existing `ocr`, `dni`, `mrz` logic files from `src/` to `src/domain/validators/`.
 * Create `ports/ocr_client.rs` trait; implement adapter in `adapters/tesseract.rs`.
-* Move training data to `services/validation-service/tests/ocr-training/{dni-nif, passports, nie-tie}`.
-* Add unit tests in `validation-service/tests/` referencing the training data.
+* Move training data to `services/document-document-validation-service/tests/ocr-training/{dni-nif, passports, nie-tie}`.
+* Add unit tests in `document-document-validation-service/tests/` referencing the training data.
 
 **Task 3: booking-service DDD layout**
 
@@ -71,7 +71,7 @@ Refactor to match the architecture and scaffold:
 
 * After each task implementation, run:
 
-  * In Rust services: `cargo test -p validation-service`, `cargo test` workspace.
+  * In Rust services: `cargo test -p document-document-validation-service`, `cargo test` workspace.
   * In frontend: `npm run test:ui`, `storybook --ci`, `npm run lint:ui`.
 * Ensure no lint warnings/errors, and diesel/sqlx migration tasks still pass if relevant.
 

@@ -8,17 +8,11 @@ pub use application::notification_service::NotificationService;
 pub use domain::notification::{Notification, NotificationChannel, NotificationStatus};
 
 // Add Tokio runtime support for WASM
-use std::sync::Once;
+use std::sync::OnceLock;
 use tokio::runtime::Runtime;
 
-static INIT: Once = Once::new();
-static mut RUNTIME: Option<Runtime> = None;
+static RUNTIME: OnceLock<Runtime> = OnceLock::new();
 
 pub fn get_runtime() -> &'static Runtime {
-    unsafe {
-        INIT.call_once(|| {
-            RUNTIME = Some(Runtime::new().expect("Failed to create Tokio runtime"));
-        });
-        RUNTIME.as_ref().unwrap()
-    }
+    RUNTIME.get_or_init(|| Runtime::new().expect("Failed to create Tokio runtime"))
 }

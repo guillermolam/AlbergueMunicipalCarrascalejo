@@ -15,7 +15,7 @@ test('Process NIE document with X-format number', async t => {
   // Navigate to registration form
   await t
     .click(Selector('button').withText(/start registration|comenzar registro/i))
-    .expect(Selector('[data-testid="registration-form"]').exists).ok('Registration form should be visible');
+    .expect(Selector('[data-testid="booking"]').exists).ok('Registration form should be visible');
 
   // Select NIE document type
   await t
@@ -58,7 +58,7 @@ test('Process NIE document with Y-format number', async t => {
   
   await t
     .click(Selector('button').withText(/start registration|comenzar registro/i))
-    .expect(Selector('[data-testid="registration-form"]').exists).ok();
+    .expect(Selector('[data-testid="booking"]').exists).ok();
 
   // Select NIE document type
   await t

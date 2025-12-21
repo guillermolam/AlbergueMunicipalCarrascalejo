@@ -1,6 +1,3 @@
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-
 // Database configuration for both PostgreSQL and SQLite
 #[derive(Debug, Clone)]
 pub struct DatabaseConfig {
@@ -25,6 +22,9 @@ pub enum SslMode {
     Disable,
 }
 
+#[cfg(target_arch = "wasm32")]
+use crate::config::get_database_url;
+
 impl DatabaseConfig {
     pub fn from_env() -> Self {
         let database_type = if std::env::var("SPIN_COMPONENT_ROUTE").is_ok() {
@@ -35,21 +35,30 @@ impl DatabaseConfig {
 
         let connection_string = match database_type {
             DatabaseType::PostgreSQL => {
-                // Use NEON_DATABASE_URL for production, DATABASE_URL for development
-                // Both URLs include connection pooling
-                if cfg!(debug_assertions) {
-                    // Development environment
+                // For Spin deployments, try KV store first
+                #[cfg(target_arch = "wasm32")]
+                {
+                    match get_database_url() {
+                        Ok(url) => url,
+                        Err(_) => {
+                            // Fallback to environment variables
+                            std::env::var("DATABASE_URL")
+                                .or_else(|_| std::env::var("NEON_DATABASE_URL"))
+                                .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string())
+                        }
+                    }
+                }
+
+                // For non-Spin environments, use environment variables
+                #[cfg(not(target_arch = "wasm32"))]
+                {
                     std::env::var("DATABASE_URL")
-                        .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string())
-                } else {
-                    // Production environment
-                    std::env::var("NEON_DATABASE_URL")
+                        .or_else(|_| std::env::var("NEON_DATABASE_URL"))
                         .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string())
                 }
             }
             DatabaseType::SQLite => {
-                std::env::var("SQLITE_DATABASE")
-                    .unwrap_or_else(|_| "./albergue.db".to_string())
+                std::env::var("SQLITE_DATABASE").unwrap_or_else(|_| "./albergue.db".to_string())
             }
         };
 
@@ -65,15 +74,17 @@ impl DatabaseConfig {
         // Check for channel binding
         let channel_binding = connection_string.contains("channel_binding=require");
 
+        let max_connections = if database_type == DatabaseType::PostgreSQL {
+            // Higher connection limit for pooled connections
+            20
+        } else {
+            5
+        };
+
         Self {
             database_type,
             connection_string,
-            max_connections: if database_type == DatabaseType::PostgreSQL {
-                // Higher connection limit for pooled connections
-                20
-            } else {
-                5
-            },
+            max_connections,
             connection_timeout_seconds: 30,
             ssl_mode,
             channel_binding,
@@ -167,18 +178,20 @@ impl DatabaseConfig {
             DatabaseType::PostgreSQL => {
                 // Extract database name from connection string
                 if let Some(db_name) = self.connection_string.rsplit('/').next() {
-                    db_name.split('?').next().unwrap_or("albergue-carrascalejo").to_string()
+                    db_name
+                        .split('?')
+                        .next()
+                        .unwrap_or("albergue-carrascalejo")
+                        .to_string()
                 } else {
                     "albergue-carrascalejo".to_string()
                 }
             }
-            DatabaseType::SQLite => {
-                std::path::Path::new(&self.connection_string)
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("albergue")
-                    .to_string()
-            }
+            DatabaseType::SQLite => std::path::Path::new(&self.connection_string)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("albergue")
+                .to_string(),
         }
     }
 }
@@ -201,8 +214,9 @@ impl std::fmt::Display for Environment {
 }
 
 // Database connection utilities
+#[cfg(not(target_arch = "wasm32"))]
 impl DatabaseConfig {
-    pub fn create_connection_pool(&self) -> Result<sqlx::PgPool, sqlx::Error> {
+    pub async fn create_connection_pool(&self) -> Result<sqlx::PgPool, sqlx::Error> {
         if self.database_type != DatabaseType::PostgreSQL {
             return Err(sqlx::Error::Configuration(
                 "Invalid database type for PostgreSQL pool".into(),
@@ -210,17 +224,13 @@ impl DatabaseConfig {
         }
 
         let pool_config = self.get_pool_config();
-        
-        let mut options = sqlx::postgres::PgPoolOptions::new()
-            .max_connections(pool_config.max_connections)
-            .connect_timeout(pool_config.connection_timeout);
 
-        // Configure SSL for NeonDB
-        if pool_config.ssl_mode != SslMode::Disable {
-            options = options.ssl_mode(sqlx::postgres::PgSslMode::Require);
-        }
+        let options = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(pool_config.max_connections);
 
-        options.connect(&self.connection_string)
+        // Configure SSL for NeonDB (handled via connection string in newer sqlx versions)
+
+        options.connect(&self.connection_string).await
     }
 
     pub fn validate_connection_string(&self) -> Result<(), String> {
@@ -231,21 +241,27 @@ impl DatabaseConfig {
         match self.database_type {
             DatabaseType::PostgreSQL => {
                 if !self.connection_string.starts_with("postgresql://") {
-                    return Err("PostgreSQL connection string must start with postgresql://".to_string());
+                    return Err(
+                        "PostgreSQL connection string must start with postgresql://".to_string()
+                    );
                 }
-                
+
                 // Check for required SSL configuration for NeonDB
                 if self.connection_string.contains("neon.tech") {
                     if !self.connection_string.contains("sslmode=require") {
                         return Err("NeonDB requires sslmode=require".to_string());
                     }
                     if !self.connection_string.contains("pooler") {
-                        return Err("NeonDB connection pooling should use pooler endpoints".to_string());
+                        return Err(
+                            "NeonDB connection pooling should use pooler endpoints".to_string()
+                        );
                     }
                 }
             }
             DatabaseType::SQLite => {
-                if !self.connection_string.ends_with(".db") && !self.connection_string.contains(":memory:") {
+                if !self.connection_string.ends_with(".db")
+                    && !self.connection_string.contains(":memory:")
+                {
                     return Err("SQLite connection should end with .db or be :memory:".to_string());
                 }
             }
@@ -278,7 +294,7 @@ mod tests {
         // Test with mock environment variables
         std::env::set_var("DATABASE_URL", "postgresql://localhost/test");
         std::env::remove_var("SPIN_COMPONENT_ROUTE");
-        
+
         let config = DatabaseConfig::from_env();
         assert_eq!(config.database_type, DatabaseType::PostgreSQL);
         assert!(config.connection_string.contains("postgresql://"));

@@ -1,36 +1,170 @@
 version: "3"
 
-# Note: This file is now included by the root Taskfile.yml
-# All port variables are now defined in the root Taskfile.yml
+# Development tasks for the Albergue Municipal Carrascalejo project
+# This file is included by the root Taskfile.yml
+# Includes @gateway/ and @frontend/ services
+
+vars:
+  # Default ports - these will be overridden by port management
+  FRONTEND_PORT: 3000
+  GATEWAY_PORT: 3001
+  AUTH_PORT: 3002
 
 tasks:
+  default:
+    desc: Show available development tasks
+    cmds:
+      - task --list-all
+
+  # Main development task - builds and starts all services
   run-all:
-    desc: Run all services in development mode with unique random ports
+    desc: Build and run all services (frontend, gateway, backend) in dev mode
     cmds:
-      - ./scripts/dev-services.sh start
+      - task: build
+      - task: start
 
+  # Build all services
+  build:
+    desc: Build all services (frontend, gateway, backend)
+    deps:
+      - frontend
+      - bff
+      - auth-service
+      - booking-service
+      - document-validation-service
+      - info-on-arrival-service
+      - location-service
+      - notification-service
+      - rate-limiter-service
+      - redis-service
+      - reviews-service
+      - security-service
+
+  # Start all services
   start:
-    desc: Start development services
+    desc: Start all development services with Spin (multi-service dev)
     cmds:
-      - ./scripts/dev-services.sh start
+      - cd gateway/bff && spin up &
+      - cd backend/auth-service && spin up &
+      - cd backend/booking-service && spin up &
+      - cd backend/document-validation-service && spin up &
+      - cd backend/info-on-arrival-service && spin up &
+      - cd backend/location-service && spin up &
+      - cd backend/notification-service && spin up &
+      - cd backend/rate-limiter-service && spin up &
+      - cd backend/redis-service && spin up &
+      - cd backend/reviews-service && spin up &
+      - cd backend/security-service && spin up &
+      - cd frontend && pnpm dev &
+      - wait
 
+  # Stop all services
   stop:
-    desc: Stop development services
+    desc: Stop all development services
     cmds:
-      - ./scripts/dev-services.sh stop
+      - pkill -f 'spin up' || true
+      - pkill -f 'bun run dev' || true
+      - echo "✅ All dev services stopped"
 
+  # Restart all services
   restart:
     desc: Restart development services
     cmds:
-      - ./scripts/dev-services.sh restart
+      - task: stop
+      - task: start
 
+  # Show service status
   status:
     desc: Show development services status
     cmds:
-      - ./scripts/dev-services.sh status
+      - ps aux | grep 'spin up'
+      - ps aux | grep 'bun run dev'
 
+  # Clean development environment
   clean:
     desc: Clean development environment
     cmds:
-      - ./scripts/dev-services.sh stop
+      - pkill -f 'spin up' || true
+      - pkill -f 'bun run dev' || true
+      - rm -f .ports.json .env.ports
       - echo "✅ Development environment cleaned"
+
+  # Setup development environment
+  setup:
+    desc: Setup development environment
+    cmds:
+      - ./scripts/dev-setup.sh
+      - ./scripts/port-management.sh generate
+      - echo "✅ Development environment setup complete"
+
+  # Dev task for backend/info-on-arrival-service
+  info-on-arrival-service:
+    desc: Dev task for backend/info-on-arrival-service
+    cmds:
+      - cd backend/info-on-arrival-service && spin build
+
+  # Dev task for backend/auth-service
+  auth-service:
+    desc: Dev task for backend/auth-service
+    cmds:
+      - cd backend/auth-service && spin build
+
+  # Frontend build
+  frontend:
+    desc: Build frontend (dev)
+    cmds:
+      - cd frontend && pnpm run build
+
+  # Gateway BFF build
+  bff:
+    desc: Build gateway/bff (dev)
+    cmds:
+      - cd gateway/bff && spin build
+
+  # Booking service build
+  booking-service:
+    desc: Build backend/booking-service
+    cmds:
+      - cd backend/booking-service && spin build
+
+  # Document validation service build
+  document-validation-service:
+    desc: Build backend/document-validation-service
+    cmds:
+      - cd backend/document-validation-service && spin build
+
+  # Location service build
+  location-service:
+    desc: Build backend/location-service
+    cmds:
+      - cd backend/location-service && spin build
+
+  # Notification service build
+  notification-service:
+    desc: Build backend/notification-service
+    cmds:
+      - cd backend/notification-service && spin build
+
+  # Rate limiter service build
+  rate-limiter-service:
+    desc: Build backend/rate-limiter-service
+    cmds:
+      - cd backend/rate-limiter-service && spin build
+
+  # Redis service build
+  redis-service:
+    desc: Build backend/redis-service
+    cmds:
+      - cd backend/redis-service && spin build
+
+  # Reviews service build
+  reviews-service:
+    desc: Build backend/reviews-service
+    cmds:
+      - cd backend/reviews-service && spin build
+
+  # Security service build
+  security-service:
+    desc: Build backend/security-service
+    cmds:
+      - cd backend/security-service && spin build

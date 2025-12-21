@@ -1,4 +1,4 @@
-# flake.nix (Versión Definitiva)
+# flake.nix
 {
   description = "Desarrollo para Albergue Carcalejo: Rust WASM microservicios con Fermyon Spin y React frontend";
 
@@ -35,23 +35,8 @@
         };
 
         # ✅ Corregido: Hash y estructura de Bun
-        bun-version = "1.2.19";
-        bun-cli = pkgs.stdenv.mkDerivation {
-          pname = "bun-cli";
-          version = bun-version;
-          src = pkgs.fetchurl {
-            url = "https://github.com/oven-sh/bun/releases/download/bun-v${bun-version}/bun-linux-x64.zip";
-            # Hash correcto del error anterior
-            sha256 = "sha256-w9PBTppeyD/2fQrP525DFa0G2p809Z/HsTgTeCyvH2Y=";
-          };
-          nativeBuildInputs = [ pkgs.unzip ];
-          installPhase = ''
-            mkdir -p $out/bin
-            # ✅ Corregido: el archivo está directamente en la raíz
-            cp bun $out/bin/
-            chmod +x $out/bin/bun
-          '';
-        };
+        # Usar paquete oficial de nixpkgs para Bun
+        bun-cli = pkgs.bun;
 
       in
       {
@@ -64,6 +49,7 @@
             pkgs.rustc
             pkgs.cargo
             pkgs.nodejs_22
+            pkgs.pnpm
 
             # --- Herramientas de Calidad y Sistema ---
             # ✅ Correcto: trunk-io como dijiste
@@ -94,6 +80,14 @@
             echo "  trunk fmt     - Formatear todo el código"
             echo "  spin up       - Ejecutar el servidor local"
             echo ""
+            echo "Atajos Fermyon:"
+            echo "  fermyon login   -> spin cloud login"
+            echo "  fermyon status  -> spin cloud login --status"
+            echo "  fermyon deploy  -> spin deploy"
+            echo ""
+            alias fermyon='spin cloud'
+            alias fermyon-status='spin cloud login --status'
+            alias fermyon-deploy='spin deploy'
           '';
         };
 
@@ -108,6 +102,7 @@
             pkgs.rustfmt
             pkgs.clippy
             pkgs.nodejs_22
+            pkgs.pnpm
           
             # --- Herramientas de Sistema ---
             pkgs.trunk-io
@@ -147,6 +142,10 @@
             pkgs.pkg-config
             pkgs.unzip
           ];
+          shellHook = ''
+            # Bun ya incluido en devShell; no se requiere Corepack/pnpm
+            :
+          '';
         };
 
         # Paquetes que puedes instalar individualmente

@@ -1,0 +1,30 @@
+spin_manifest_version = 2
+
+[application]
+name = "redis-service"
+version = "0.1.0"
+description = "Redis caching service for distributed applications"
+
+[variables]
+redis_url = { required = true }
+redis_max_connections = { default = "10" }
+redis_connection_timeout = { default = "5" }
+redis_default_ttl = { default = "3600" }
+
+[[trigger.http]]
+route = "/api/redis/*"
+component = "redis-service"
+
+[component.redis-service]
+source = "target/wasm32-wasip1/release/redis_service.wasm"
+allowed_outbound_hosts = ["redis://*"]
+key_value_stores = ["default"]
+
+[component.redis-service.build]
+command = "cargo build --target wasm32-wasip1 --release"
+
+[component.redis-service.variables]
+redis_url = "{{ redis_url }}"
+redis_max_connections = "{{ redis_max_connections }}"
+redis_connection_timeout = "{{ redis_connection_timeout }}"
+redis_default_ttl = "{{ redis_default_ttl }}"

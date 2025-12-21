@@ -12,20 +12,18 @@ rate_limit_window = { default = "60" }
 log_level = { default = "debug" }
 
 [[trigger.http]]
-route = "/..."
+route = "/api/*"
 component = "rate-limiter-service"
 
 [component.rate-limiter-service]
-source = "target/wasm32-wasi/release/rate_limiter_service.wasm"
+source = "target/wasm32-wasip1/release/rate_limiter_service.wasm"
 allowed_outbound_hosts = []
+key_value_stores = ["default"]
 
 [component.rate-limiter-service.build]
-command = "cargo build --target wasm32-wasi --release"
+command = "cargo build --target wasm32-wasip1 --release"
 
 [component.rate-limiter-service.variables]
 rate_limit_requests = "{{ rate_limit_requests }}"
 rate_limit_window = "{{ rate_limit_window }}"
 log_level = "{{ log_level }}"
-
-[component.rate-limiter-service.key_value_stores]
-default = { label = "rate-limiter-kv" }

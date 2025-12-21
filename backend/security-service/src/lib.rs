@@ -145,28 +145,29 @@ async fn perform_comprehensive_scan(
 ) -> Result<SecurityScanResult> {
     let start_time = std::time::Instant::now();
 
-    // Run different scans concurrently
+    let content_arc = std::sync::Arc::new(content);
+
     let xss_task = task::spawn({
-        let content = content.clone();
-        async move { detect_xss_patterns(&content) }
+        let c = content_arc.clone();
+        async move { detect_xss_patterns(c.as_str()) }
     });
 
     let sql_task = task::spawn({
-        let content = content.clone();
-        async move { detect_sql_injection(&content) }
+        let c = content_arc.clone();
+        async move { detect_sql_injection(c.as_str()) }
     });
 
     let malware_task = task::spawn({
-        let content = content.clone();
-        async move { detect_malware_signatures(&content) }
+        let c = content_arc.clone();
+        async move { detect_malware_signatures(c.as_str()) }
     });
 
     // Additional async security checks
     let entropy_task = task::spawn({
-        let content = content.clone();
+        let c = content_arc.clone();
         async move {
             tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-            calculate_entropy(&content)
+            calculate_entropy(c.as_str())
         }
     });
 
@@ -192,7 +193,7 @@ async fn perform_comprehensive_scan(
 
     let threats_count = all_threats.len() as u32;
     let risk_level = determine_risk_level(&all_threats);
-    let confidence_score = calculate_confidence_score(&all_threats, &content);
+    let confidence_score = calculate_confidence_score(&all_threats, content_arc.as_str());
 
     Ok(SecurityScanResult {
         status: if threats_count > 0 {
@@ -281,10 +282,12 @@ async fn perform_encryption(data: String, key_id: Option<String>) -> Result<Encr
             encrypted_data: encrypted,
             key_id: actual_key_id,
             algorithm: "AES-256-GCM".to_string(),
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
+            timestamp: {
+                let dur = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_else(|_| std::time::Duration::from_secs(0));
+                dur.as_secs()
+            },
         }
     });
 

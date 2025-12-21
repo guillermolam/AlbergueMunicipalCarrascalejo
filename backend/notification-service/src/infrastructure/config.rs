@@ -12,10 +12,9 @@ pub struct NotificationConfig {
     pub smtp_user: String,
     pub smtp_password: String,
     pub from_email: String,
-    pub twilio_account_sid: String,
-    pub twilio_auth_token: String,
-    pub twilio_phone_number: String,
-    pub twilio_whatsapp_number: String,
+    pub whatsapp_app_id: String,
+    pub whatsapp_business_number: String,
+    pub whatsapp_business_account_id: String,
     pub telegram_bot_token: String,
     pub telegram_chat_id: String,
 }
@@ -32,10 +31,10 @@ impl NotificationConfig {
             smtp_password: std::env::var("SMTP_PASSWORD").unwrap_or_default(),
             from_email: std::env::var("FROM_EMAIL")
                 .unwrap_or_else(|_| "albergue@carrascalejo.com".to_string()),
-            twilio_account_sid: std::env::var("TWILIO_ACCOUNT_SID").unwrap_or_default(),
-            twilio_auth_token: std::env::var("TWILIO_AUTH_TOKEN").unwrap_or_default(),
-            twilio_phone_number: std::env::var("TWILIO_PHONE_NUMBER").unwrap_or_default(),
-            twilio_whatsapp_number: std::env::var("TWILIO_WHATSAPP_NUMBER").unwrap_or_default(),
+            whatsapp_app_id: std::env::var("WHATSAPP_APP_ID").unwrap_or_default(),
+            whatsapp_business_number: std::env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default(),
+            whatsapp_business_account_id: std::env::var("WHATSAPP_BUSINESS_ACCOUNT_ID")
+                .unwrap_or_default(),
             telegram_bot_token: std::env::var("TELEGRAM_BOT_TOKEN").unwrap_or_default(),
             telegram_chat_id: std::env::var("TELEGRAM_CHAT_ID").unwrap_or_default(),
         })

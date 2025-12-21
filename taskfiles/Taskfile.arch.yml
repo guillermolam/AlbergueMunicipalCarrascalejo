@@ -1,0 +1,45 @@
+version: "3"
+
+tasks:
+  # Architecture validation
+  validate:
+    desc: Validate architecture and dependencies
+    cmds:
+      - echo "🔍 Validating architecture..."
+      - ./scripts/arch/validate-dependencies.sh
+      - ./scripts/arch/validate-imports.sh
+
+  # Dependency analysis
+  deps:analyze:
+    desc: Analyze project dependencies
+    cmds:
+      - echo "📊 Analyzing dependencies..."
+      - ./scripts/arch/analyze-dependencies.sh
+
+  # Circular dependency check
+  deps:circular:
+    desc: Check for circular dependencies
+    cmds:
+      - echo "🔄 Checking for circular dependencies..."
+      - ./scripts/arch/check-circular-deps.sh
+
+  # Architecture diagrams
+  diagram:generate:
+    desc: Generate architecture diagrams
+    cmds:
+      - echo "📝 Generating architecture diagrams..."
+      - ./scripts/arch/generate-diagrams.sh
+
+  # Code metrics
+  metrics:
+    desc: Calculate code metrics
+    cmds:
+      - echo "📈 Calculating code metrics..."
+      - ./scripts/arch/calculate-metrics.sh
+
+  # API contract validation
+  api:validate:
+    desc: Validate API contracts
+    cmds:
+      - echo "📄 Validating API contracts..."
+      - ./scripts/arch/validate-api.sh

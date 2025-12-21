@@ -4,74 +4,89 @@ use serde_json;
 use shared::{AlbergueError, AlbergueResult};
 
 pub struct CardsServiceImpl {
-    storage: Box<dyn StoragePort>,
+    storage: Box<crate::adapters::storage::PostgresCardsRepository>,
     scraper: Box<dyn ScraperPort>,
 }
 
 impl CardsServiceImpl {
-    pub fn new() -> Self {
-        Self {
-            storage: Box::new(crate::adapters::storage::PostgresCardsRepository::new()),
-            scraper: Box::new(crate::adapters::scraper::MeridaScraperAdapter::new()),
-        }
+    pub fn new(
+        storage: Box<crate::adapters::storage::PostgresCardsRepository>,
+        scraper: Box<dyn ScraperPort>,
+    ) -> Self {
+        Self { storage, scraper }
     }
 
-    pub async fn get_merida_attractions(&self) -> AlbergueResult<String> {
-        // Try to get cached content first
-        if let Ok(cached_card) = self
-            .storage
-            .get_card_by_type(CardType::MeridaAttractions)
-            .await
-        {
+    async fn get_or_create_card<F, Fut>(&self, card_type: CardType, create_card: F) -> AlbergueResult<String>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = AlbergueResult<InfoCard>>,
+    {
+        if let Ok(cached_card) = self.storage.get_card_by_type(card_type).await {
             if !cached_card.is_cache_expired() {
                 return Ok(serde_json::to_string(&cached_card)?);
             }
         }
+        let card = create_card().await?;
+        self.storage.save_card(card.clone()).await?;
+        Ok(serde_json::to_string(&card)?)
+    }
 
-        // Scrape fresh content
-        let scraped_content = self.scraper.scrape_merida_attractions().await?;
-
-        let attractions_card = InfoCard::new(
-            CardType::MeridaAttractions,
-            "Qué ver en Mérida".to_string(),
-            format!(
-                "Descubre los tesoros romanos de Mérida:\n\n{}\n\nMérida es un verdadero museo al aire libre con más de 2000 años de historia.",
-                scraped_content.content
-            ),
-        )
-        .with_links(vec![
-            InfoLink {
-                title: "Teatro Romano".to_string(),
-                url: "https://www.consorciomerida.org/teatro-romano".to_string(),
-                description: Some("Espectacular teatro del siglo I a.C.".to_string()),
-                link_type: LinkType::Website,
-            },
-            InfoLink {
-                title: "Anfiteatro Romano".to_string(),
-                url: "https://www.consorciomerida.org/anfiteatro".to_string(),
-                description: Some("Donde luchaban los gladiadores".to_string()),
-                link_type: LinkType::Website,
-            },
-            InfoLink {
-                title: "Museo Nacional de Arte Romano".to_string(),
-                url: "https://www.culturaydeporte.gob.es/mnar".to_string(),
-                description: Some("Impresionante colección de arte romano".to_string()),
-                link_type: LinkType::Website,
-            },
-            InfoLink {
-                title: "Puente Romano".to_string(),
-                url: "https://goo.gl/maps/example".to_string(),
-                description: Some("Uno de los puentes romanos mejor conservados".to_string()),
-                link_type: LinkType::Map,
-            },
-        ])
-        .with_priority(1)
-        .with_source_url(scraped_content.source_url);
-
-        // Save to cache
-        self.storage.save_card(attractions_card.clone()).await?;
-
-        Ok(serde_json::to_string(&attractions_card)?)
+    pub async fn get_merida_attractions(&self) -> AlbergueResult<String> {
+        self.get_or_create_card(CardType::MeridaAttractions, || async {
+            let scraped_content = self.scraper.scrape_merida_attractions().await?;
+            Ok(InfoCard::new(
+                CardType::MeridaAttractions,
+                "Qué ver en Mérida".to_string(),
+                format!(
+                    "Descubre los tesoros romanos de Mérida:\n\n{}\n\nMérida es un verdadero museo al aire libre con más de 2000 años de historia.",
+                    scraped_content.content
+                ),
+            )
+            .with_links(vec![
+                InfoLink {
+                    title: "Teatro Romano".to_string(),
+                    url: "https://www.consorciomerida.org/teatro-romano".to_string(),
+                    description: Some("Espectacular teatro del siglo I a.C.".to_string()),
+                    link_type: LinkType::Website,
+                    phone: None,
+                    address: None,
+                    rating: None,
+                    price_range: None,
+                },
+                InfoLink {
+                    title: "Anfiteatro Romano".to_string(),
+                    url: "https://www.consorciomerida.org/anfiteatro".to_string(),
+                    description: Some("Donde luchaban los gladiadores".to_string()),
+                    link_type: LinkType::Website,
+                    phone: None,
+                    address: None,
+                    rating: None,
+                    price_range: None,
+                },
+                InfoLink {
+                    title: "Museo Nacional de Arte Romano".to_string(),
+                    url: "https://www.culturaydeporte.gob.es/mnar".to_string(),
+                    description: Some("Impresionante colección de arte romano".to_string()),
+                    link_type: LinkType::Website,
+                    phone: None,
+                    address: None,
+                    rating: None,
+                    price_range: None,
+                },
+                InfoLink {
+                    title: "Puente Romano".to_string(),
+                    url: "https://goo.gl/maps/example".to_string(),
+                    description: Some("Uno de los puentes romanos mejor conservados".to_string()),
+                    link_type: LinkType::Map,
+                    phone: None,
+                    address: None,
+                    rating: None,
+                    price_range: None,
+                },
+            ])
+            .with_priority(1)
+            .with_source_url(scraped_content.source_url))
+        }).await
     }
 
     pub async fn get_carrascalejo_info(&self) -> AlbergueResult<String> {
@@ -120,12 +135,20 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
                 url: "tel:+34924123456".to_string(),
                 description: Some("Información municipal".to_string()),
                 link_type: LinkType::Phone,
+                phone: Some("+34924123456".to_string()),
+                address: None,
+                rating: None,
+                price_range: None,
             },
             InfoLink {
                 title: "Centro de Salud".to_string(),
                 url: "tel:+34924654321".to_string(),
                 description: Some("Atención médica básica".to_string()),
                 link_type: LinkType::Phone,
+                phone: Some("+34924654321".to_string()),
+                address: None,
+                rating: None,
+                price_range: None,
             },
         ])
         .with_priority(2);
@@ -146,36 +169,60 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
                 url: "tel:112".to_string(),
                 description: Some("Número europeo de emergencias (24h)".to_string()),
                 link_type: LinkType::Emergency,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
             InfoLink {
                 title: "👮 Guardia Civil".to_string(),
                 url: "tel:062".to_string(),
                 description: Some("Fuerzas de seguridad (24h)".to_string()),
                 link_type: LinkType::Emergency,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
             InfoLink {
                 title: "🏥 Centro de Salud Mérida".to_string(),
                 url: "tel:+34924330000".to_string(),
                 description: Some("Hospital más cercano (20 km)".to_string()),
                 link_type: LinkType::Phone,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
             InfoLink {
                 title: "💊 Farmacia Almendralejo".to_string(),
                 url: "tel:+34924660123".to_string(),
                 description: Some("Farmacia 24h más cercana".to_string()),
                 link_type: LinkType::Phone,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
             InfoLink {
                 title: "🚕 Taxi Local".to_string(),
                 url: "tel:+34924987654".to_string(),
                 description: Some("Servicio de taxi local".to_string()),
                 link_type: LinkType::Phone,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
             InfoLink {
                 title: "ℹ️ Oficina de Turismo Mérida".to_string(),
                 url: "tel:+34924315353".to_string(),
                 description: Some("Información turística (9-14h, 16-19h)".to_string()),
                 link_type: LinkType::Phone,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
         ])
         .with_priority(10); // High priority for emergency info

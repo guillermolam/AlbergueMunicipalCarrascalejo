@@ -1,4 +1,18 @@
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum LocationServiceError {
+    #[error("Redis error: {0}")]
+    Redis(String),
+    #[error("Cache error: {0}")]
+    Cache(String),
+    #[error("Invalid request: {0}")]
+    InvalidRequest(String),
+    #[error("Not found: {0}")]
+    NotFound(String),
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct CountryData {
@@ -10,6 +24,16 @@ pub struct CountryData {
     pub capital: Option<String>,
     pub currency: Option<String>,
     pub languages: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub calling_code: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct CountryResponse {
+    pub country: String,
+    pub country_code: String,
+    pub calling_code: String,
+    pub flag: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -39,6 +63,21 @@ impl<T> ApiResponse<T> {
             success: false,
             data: None,
             message: Some(message),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CacheConfig {
+    pub enabled: bool,
+    pub ttl: Duration,
+}
+
+impl Default for CacheConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            ttl: Duration::from_secs(3600), // 1 hour default
         }
     }
 }

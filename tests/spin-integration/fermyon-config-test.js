@@ -55,9 +55,9 @@ class SpinConfigTester {
         const requiredVars = [
             'database_url',
             'neon_database_url', 
-            'auth0_domain',
-            'auth0_client_id',
-            'auth0_client_secret'
+            'logto_domain',
+            'logto_client_id',
+            'logto_client_secret'
         ];
 
         const spinToml = fs.readFileSync(this.spinTomlPath, 'utf8');
@@ -108,7 +108,7 @@ class SpinConfigTester {
         
         const requiredHosts = [
             'https://*.neon.tech',
-            'https://api.auth0.com'
+            'https://1y6uln.logto.app'
         ];
         
         for (const host of requiredHosts) {
@@ -204,9 +204,9 @@ class SpinConfigTester {
         
         const expectedMappings = [
             'database_url = "{{ database_url }}"',
-            'auth0_domain = "{{ auth0_domain }}"',
-            'auth0_client_id = "{{ auth0_client_id }}"',
-            'auth0_client_secret = "{{ auth0_client_secret }}"'
+            'logto_domain = "{{ logto_domain }}"',
+            'logto_client_id = "{{ logto_client_id }}"',
+            'logto_client_secret = "{{ logto_client_secret }}"'
         ];
         
         for (const mapping of expectedMappings) {

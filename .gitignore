@@ -106,3 +106,33 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+spin
+spin.sig
+.env
+/frontend/v3
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe
+
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe
+
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe
+
+# local backups / artifacts
+v10/
+
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe

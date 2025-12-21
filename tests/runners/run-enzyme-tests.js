@@ -123,8 +123,8 @@ async function generateTestReport() {
 - **Coverage**: Document upload, OCR processing, file validation
 - **Test Types**: User interactions, state management, error handling
 
-### ✅ RegistrationForm Component
-- **File**: \`tests/enzyme-components/RegistrationForm.test.tsx\`
+### ✅ Booking Component
+- **File**: \`tests/enzyme-components/Booking.test.tsx\`
 - **Coverage**: Form validation, step navigation, data binding
 - **Test Types**: Complex integration, multi-step workflow, validation
 
@@ -202,7 +202,7 @@ async function main() {
     
     if (testsPassed) {
       console.log(`${COLORS.green}✅ All React component tests passed successfully${COLORS.reset}`);
-      console.log(`${COLORS.blue}📊 Components tested: App, MultiDocumentCapture, RegistrationForm, CountryPhoneInput${COLORS.reset}`);
+      console.log(`${COLORS.blue}📊 Components tested: App, MultiDocumentCapture, Booking, CountryPhoneInput${COLORS.reset}`);
       console.log(`${COLORS.magenta}🔬 Test types: Shallow rendering, full mount, integration, error handling${COLORS.reset}`);
       console.log(`${COLORS.yellow}📋 View detailed results in: enzyme-test-summary.md${COLORS.reset}`);
     } else {

@@ -6,13 +6,12 @@ members = [
   "notification-service",
   "reviews-service",
   "security-service",
-  "validation-service",
+  "document-validation-service",
   "info-on-arrival-service",
   "location-service",
   "rate-limiter-service",
-  "auth",
-  "redis_service",
-  "country_cache_service",
+  "auth-service",
+  "redis-service",
 ]
 
 [workspace.package]
@@ -38,21 +37,4 @@ tower-service = "0.3"
 hyper = "1.0"
 hyper-util = "0.1"
 
-[workspace.profile.dev]
-opt-level = 0
-debug = true
-overflow-checks = true
-lto = false
-
-[workspace.profile.test]
-opt-level = 0
-debug = true
-overflow-checks = true
-lto = false
-
-[workspace.profile.release]
-opt-level = 3
-debug = false
-overflow-checks = false
-lto = true
-codegen-units = 1
+## Profiles are not supported under [workspace]; remove to silence warnings.
