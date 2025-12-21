@@ -1,0 +1,16 @@
+---
+const { title = "Camino Dashboard" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-stone-50 text-stone-900">
+    <slot />
+    <script type="module" src="/src/scripts/runtime.ts"></script>
+  </body>
+</html>

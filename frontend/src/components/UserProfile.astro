@@ -1,0 +1,116 @@
+---
+import type { Pilgrim } from "../stores/user";
+import "./UserProfile.css";
+
+const getStatusText = (status: Pilgrim["status"]) => {
+  if (status === "pending") return t("pending", "Pendiente");
+  if (status === "confirmed") return t("confirmed", "Confirmado");
+  if (status === "cancelled") return t("cancelled", "Cancelado");
+  return t("unknownStatus", "Estado desconocido");  
+};
+
+const formatDate = (dateString: string) => {
+  try {
+    return new Date(dateString).toLocaleDateString("es-ES");
+  } catch {
+    return dateString;
+  }
+};
+
+let pilgrim: Pilgrim | null = null;
+
+try {
+  const cookie = Astro.request.headers.get("cookie") ?? "";
+  const res = await fetch("/api/user/current", { headers: { cookie }, cache: "no-store" });
+  if (res.ok) pilgrim = (await res.json()) as Pilgrim;
+} catch {}
+---
+<div class="user-profile">
+  {pilgrim ? (
+    <div class="relative">
+      <canvas id="profileSketch" class="absolute inset-0 pointer-events-none"></canvas>
+      <div class="profile-card">
+        <div class="profile-header mb-4">
+          <h3>Hola, {pilgrim.name}</h3>
+          <span class="user-email">{pilgrim.email}</span>
+        </div>
+
+        {pilgrim.country && (
+          <div class="user-detail flex gap-2 py-1">
+            <span class="detail-label font-semibold text-slate-700">País:</span>
+            <span class="detail-value text-slate-600">{pilgrim.country}</span>
+          </div>
+        )}
+
+        {pilgrim.phone && (
+          <div class="user-detail flex gap-2 py-1">
+            <span class="detail-label font-semibold text-slate-700">Teléfono:</span>
+            <span class="detail-value text-slate-600">{pilgrim.phone}</span>
+          </div>
+        )}
+
+        {pilgrim.arrivalDate && (
+          <div class="user-detail flex gap-2 py-1">
+            <span class="detail-label font-semibold text-slate-700">Llegada:</span>
+            <span class="detail-value text-slate-600">{formatDate(pilgrim.arrivalDate)}</span>
+          </div>
+        )}
+
+        {pilgrim.status && (
+          <div class="user-status">
+            <span class="status-badge {pilgrim.status}">{getStatusText(pilgrim.status)}</span>
+          </div>
+        )}
+
+        <div>
+          <button id="logoutBtn" class="logout-button">Cerrar sesión</button>
+          <div id="logoutError" class="error-message hidden text-red-600" role="alert" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div class="guest-message">
+      <p class="mb-4 text-slate-700">Bienvenido peregrino</p>
+      <a href="/auth" class="login-link">Iniciar sesión</a>
+    </div>
+  )}
+</div>
+
+<script type="module">
+  const canvas = document.getElementById('profileSketch');
+  const card = canvas?.nextElementSibling;
+  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutError = document.getElementById('logoutError');
+
+  async function draw() {
+    if (!canvas || !card) return;
+    const rect = card.getBoundingClientRect();
+    canvas.width = Math.ceil(rect.width);
+    canvas.height = Math.ceil(rect.height);
+    const { default: rough } = await import('https://unpkg.com/roughjs@5.2.0/bundled/rough.esm.js');
+    const rc = rough.canvas(canvas);
+    rc.rectangle(6, 6, canvas.width - 12, canvas.height - 12, { roughness: 2.2, bowing: 2.4, stroke: '#334155', fill: '#ffffff', fillStyle: 'zigzag', hachureGap: 10 });
+  }
+
+  const ro = new ResizeObserver(() => draw());
+  if (card) ro.observe(card);
+  draw();
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        logoutBtn.setAttribute('disabled', 'true');
+        if (logoutError) logoutError.textContent = '';
+        await fetch('/api/user/logout', { method: 'POST' });
+        location.reload();
+      } catch (e) {
+        if (logoutError) {
+          logoutError.textContent = 'Error al cerrar sesión';
+          logoutError.classList.remove('hidden');
+        }
+      } finally {
+        logoutBtn.removeAttribute('disabled');
+      }
+    });
+  }
+</script>

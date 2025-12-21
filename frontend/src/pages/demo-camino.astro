@@ -1,0 +1,27 @@
+---
+import Layout from "../layouts/Layout.astro";
+import CaminoDashboard from "../components/CaminoDashboard.solid.tsx";
+---
+
+<Layout title="Demo: Mi Camino - Albergue Municipal Carrascalejo" description="Demo interactiva de tu progreso en el Camino de Santiago">
+  <main class="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
+          🥾 Demo: Mi Camino Interactivo
+        </h1>
+        <p class="text-xl text-slate-600 max-w-2xl mx-auto">
+          Explora tu progreso con estadísticas nerds, recomendaciones inteligentes y datos curiosos sobre tu viaje
+        </p>
+      </div>
+      
+      <CaminoDashboard client:load />
+      
+      <div class="text-center mt-12">
+        <a href="/dashboard" class="inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+          ← Volver al Dashboard Principal
+        </a>
+      </div>
+    </div>
+  </main>
+</Layout>

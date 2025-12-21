@@ -1,0 +1,281 @@
+---
+export interface Props {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  primaryAction?: {
+    text: string;
+    href: string;
+    icon?: string;
+    variant?: 'primary' | 'secondary' | 'outline';
+  };
+  secondaryAction?: {
+    text: string;
+    href: string;
+    icon?: string;
+    variant?: 'ghost' | 'outline';
+  };
+  background?: 'gradient' | 'image' | 'solid' | 'doodle';
+  gradientColors?: string[];
+  imageSrc?: string;
+  imageAlt?: string;
+  overlay?: boolean;
+  particles?: boolean;
+  animated?: boolean;
+  align?: 'left' | 'center' | 'right';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  class?: string;
+}
+
+import RoughIcon from '../components/core/RoughIcon.astro';
+import Button from './Button.astro';
+
+const {
+  title,
+  subtitle,
+  description,
+  primaryAction,
+  secondaryAction,
+  background = 'gradient',
+  gradientColors = ['#00AB39', '#EAC102', '#0071BC'],
+  imageSrc = '/hero-bg.jpg',
+  imageAlt = 'Hero background',
+  overlay = true,
+  particles = true,
+  animated = true,
+  align = 'center',
+  size = 'lg',
+  class: className = ''
+} = Astro.props;
+
+const alignClasses = {
+  left: 'text-left',
+  center: 'text-center mx-auto',
+  right: 'text-right ml-auto'
+};
+
+const sizeClasses = {
+  sm: 'py-12 md:py-16',
+  md: 'py-16 md:py-24',
+  lg: 'py-20 md:py-32',
+  xl: 'py-24 md:py-40'
+};
+
+const titleSizes = {
+  sm: 'text-3xl md:text-4xl lg:text-5xl',
+  md: 'text-4xl md:text-5xl lg:text-6xl',
+  lg: 'text-5xl md:text-6xl lg:text-7xl',
+  xl: 'text-6xl md:text-7xl lg:text-8xl'
+};
+
+const subtitleSizes = {
+  sm: 'text-lg md:text-xl',
+  md: 'text-xl md:text-2xl',
+  lg: 'text-2xl md:text-3xl',
+  xl: 'text-3xl md:text-4xl'
+};
+
+const descriptionSizes = {
+  sm: 'text-sm md:text-base',
+  md: 'text-base md:text-lg',
+  lg: 'text-lg md:text-xl',
+  xl: 'text-xl md:text-2xl'
+};
+
+// Generate unique gradient ID for this component
+const gradientId = `hero-gradient-${Math.random().toString(36).substr(2, 9)}`;
+
+// Background styles based on variant
+const backgroundStyles = {
+  gradient: `bg-gradient-to-br from-[${gradientColors[0]}] via-[${gradientColors[1]}] to-[${gradientColors[2]}]`,
+  image: `bg-cover bg-center bg-no-repeat`,
+  solid: 'bg-gradient-to-br from-green-500 to-emerald-600',
+  doodle: 'bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500'
+};
+---
+
+<section class={`relative overflow-hidden ${sizeClasses[size]} ${className}`}>
+  <!-- Background -->
+  <div class={`absolute inset-0 ${backgroundStyles[background]} ${background === 'image' && imageSrc ? `bg-[url(${imageSrc})]` : ''}`}>
+    {background === 'image' && overlay && (
+      <div class="absolute inset-0 bg-linear-to-br from-black/40 via-black/20 to-transparent"></div>
+    )}
+  </div>
+  
+  <!-- Animated particles -->
+  {particles && (
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="particles-container">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div 
+            class={`particle particle-${i % 4} ${animated ? 'animate-float' : ''}`}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${3 + Math.random() * 2}s`
+            }}
+          >
+            <RoughIcon name={['star', 'dot', 'circle', 'star'][i % 4]} size="sm" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+  
+  <!-- Decorative doodle elements -->
+  <div class="absolute inset-0 pointer-events-none">
+    <div class={`absolute top-10 left-10 w-20 h-20 ${animated ? 'animate-float' : ''}`}>
+      <RoughIcon name="shell" size="xl" color="primary" animated />
+    </div>
+    <div class={`absolute bottom-10 right-10 w-16 h-16 ${animated ? 'animate-float' : ''}`} style="animation-delay: 1s;">
+      <RoughIcon name="star" size="lg" color="secondary" animated />
+    </div>
+    <div class={`absolute top-1/2 left-10 w-12 h-12 ${animated ? 'animate-pulse' : ''}`}>
+      <RoughIcon name="circle" size="md" color="error" animated />
+    </div>
+  </div>
+  
+  <!-- Content -->
+  <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class={`max-w-4xl ${alignClasses[align]}`}>
+      <!-- Subtitle -->
+      {subtitle && (
+        <div class={`${animated ? 'animate-slide-in-up' : ''} mb-4`} style="animation-delay: 0.1s;">
+          <p class={`${subtitleSizes[size]} font-semibold text-white/90 mb-2`}>
+            {subtitle}
+          </p>
+        </div>
+      )}
+      
+      <!-- Title -->
+      <h1 class={`${titleSizes[size]} font-extrabold text-white mb-6 leading-tight ${animated ? 'animate-slide-in-up' : ''}`} style="animation-delay: 0.2s;">
+</span>
+          {title}
+        </span>
+      </h1>
+      
+      <!-- Description -->
+      {description && (
+        <p class={`${descriptionSizes[size]} text-white/80 mb-8 leading-relaxed max-w-2xl ${align === 'center' ? 'mx-auto' : ''} ${animated ? 'animate-slide-in-up' : ''}`} style="animation-delay: 0.3s;">
+          {description}
+        </p>
+      )}
+      
+      <!-- Actions -->
+      {(primaryAction || secondaryAction) && (
+        <div class={`flex flex-col sm:flex-row gap-4 ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'} ${animated ? 'animate-slide-in-up' : ''}`} style="animation-delay: 0.4s;">
+          {primaryAction && (
+            <Button
+              href={primaryAction.href}
+              variant={primaryAction.variant || 'primary'}
+              size={size === 'xl' ? 'lg' : size === 'lg' ? 'md' : 'sm'}
+              icon={primaryAction.icon}
+              rounded
+              shadow
+              glow
+            >
+              {primaryAction.text}
+            </Button>
+          )}
+          
+          {secondaryAction && (
+            <Button
+              href={secondaryAction.href}
+              variant={secondaryAction.variant || 'outline'}
+              size={size === 'xl' ? 'lg' : size === 'lg' ? 'md' : 'sm'}
+              icon={secondaryAction.icon}
+              rounded
+            >
+              {secondaryAction.text}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+  
+  <!-- Scroll indicator -->
+  {animated && (
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+      <RoughIcon name="arrow-down" size="lg"/>
+    </div>
+  )}
+</section>
+
+<style>
+  /* Particle animations */
+  .particles-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .particle {
+    position: absolute;
+    animation: float 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  
+  .particle-0 { animation-duration: 4s; }
+  .particle-1 { animation-duration: 5s; animation-delay: 1s; }
+  .particle-2 { animation-duration: 3.5s; animation-delay: 0.5s; }
+  .particle-3 { animation-duration: 4.5s; animation-delay: 1.5s; }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+    50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+  }
+  
+  /* Enhanced animations */
+  @keyframes slideInUp {
+    from { 
+      transform: translateY(30px); 
+      opacity: 0; 
+    }
+    to { 
+      transform: translateY(0); 
+      opacity: 1; 
+    }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes bounceIn {
+    0% { 
+      transform: scale(0.3); 
+      opacity: 0; 
+    }
+    50% { 
+      transform: scale(1.05); 
+    }
+    70% { 
+      transform: scale(0.9); 
+    }
+    100% { 
+      transform: scale(1); 
+      opacity: 1; 
+    }
+  }
+  
+  /* Shimmer effect for gradient text */
+  .bg-gradient-to-r {
+    background-size: 200% 200%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .particle {
+      display: none;
+    }
+  }
+</style>

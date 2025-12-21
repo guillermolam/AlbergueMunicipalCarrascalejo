@@ -1,0 +1,184 @@
+---
+/**
+ * SketchyButton - Hand-drawn button component
+ * Pure Astro version - no JavaScript frameworks
+ * Uses Tailwind v4 + Doodle CSS
+ */
+
+const {
+  text,
+  href,
+  size = 'md',
+  emphasis = false,
+  variant = 'primary',
+  class: className = '',
+  ...props
+} = Astro.props;
+
+const sizeClasses = {
+  sm: 'px-4 py-2 text-sm',
+  md: 'px-6 py-2.5 text-sm md:text-base',
+  lg: 'px-8 py-3 text-base md:text-lg',
+};
+
+const variantClasses = {
+  primary: 'bg-[#00AB39] text-white border-[#1A1A1A]',
+  secondary: 'bg-[#EAC102] text-[#1A1A1A] border-[#1A1A1A]',
+  outline: 'bg-white text-[#00AB39] border-[#00AB39]',
+};
+
+const Component = href ? 'a' : 'button';
+const additionalProps = href ? { href } : { type: 'button' };
+---
+
+<Component
+  {...additionalProps}
+  {...props}
+  class:list={[
+    'relative cursor-pointer overflow-visible',
+    'doodle-border border-[2.5px] font-bold',
+    'transition-all duration-200',
+    'hover:scale-105 hover:rotate-[-2deg] hover:translate-y-[-4px]',
+    'active:scale-95',
+    emphasis && 'wobble',
+    sizeClasses[size],
+    variantClasses[variant],
+    className
+  ]}
+  style={{
+    fontFamily: 'Cabin Sketch, cursive',
+    textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+  }}
+>
+  <!-- Shadow layer -->
+  <svg class="absolute inset-0 w-full h-full pointer-events-none -z-10" style="filter: blur(3px); opacity: 0.15;">
+    <rect x="3" y="3" width="calc(100% - 6px)" height="calc(100% - 6px)" fill="black" rx="10" />
+  </svg>
+
+  <!-- Button background with sketchy effect -->
+  <svg class="absolute inset-0 w-full h-full pointer-events-none -z-5">
+    <rect
+      x="2"
+      y="2"
+      width="calc(100% - 4px)"
+      height="calc(100% - 4px)"
+      fill="currentColor"
+      stroke="currentColor"
+      stroke-width="2.5"
+      rx="10"
+      style="opacity: 0.1;"
+    />
+  </svg>
+
+  <!-- Button text -->
+  <span class="relative z-10">
+    <slot>{text}</slot>
+  </span>
+
+  <!-- Sparkles effect (pure CSS) -->
+  {emphasis && (
+    <span class="sparkles">
+      <span class="sparkle"></span>
+      <span class="sparkle"></span>
+      <span class="sparkle"></span>
+      <span class="sparkle"></span>
+    </span>
+  )}
+</Component>
+
+<style>
+  /* Enhanced hover shadow */
+  button:hover svg:first-child,
+  a:hover svg:first-child {
+    transform: translateY(6px);
+    opacity: 0.3;
+  }
+
+  /* Sparkles animation for emphasis buttons */
+  .sparkles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+  }
+
+  .sparkle:nth-child(1) {
+    top: -3px;
+    left: 25%;
+    animation: sparkle 0.5s infinite;
+  }
+
+  .sparkle:nth-child(2) {
+    top: -3px;
+    left: 45%;
+    animation: sparkle 0.5s infinite 0.05s;
+  }
+
+  .sparkle:nth-child(3) {
+    top: -3px;
+    left: 65%;
+    animation: sparkle 0.5s infinite 0.1s;
+  }
+
+  .sparkle:nth-child(4) {
+    top: -3px;
+    left: 85%;
+    animation: sparkle 0.5s infinite 0.15s;
+  }
+
+  @keyframes sparkle {
+    0%, 100% {
+      opacity: 0;
+      transform: translateY(0) scale(0);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(-8px) scale(1);
+    }
+  }
+
+  /* Emphasis wobble enhancement */
+  button.wobble:not(:hover),
+  a.wobble:not(:hover) {
+    animation: emphasis-wobble 2s ease-in-out infinite;
+  }
+
+  @keyframes emphasis-wobble {
+    0%, 100% {
+      transform: rotate(0deg) translateY(0);
+    }
+    25% {
+      transform: rotate(-1deg) translateY(-2px);
+    }
+    50% {
+      transform: rotate(1deg) translateY(0);
+    }
+    75% {
+      transform: rotate(-1deg) translateY(-2px);
+    }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    button, a {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    button:hover, a:hover {
+      transform: none !important;
+    }
+
+    .sparkle {
+      animation: none !important;
+    }
+  }
+</style>

@@ -1,0 +1,156 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Admin Dashboard" activeSection="dashboard">
+  <div class="space-y-6">
+    <!-- Welcome Section -->
+    <div class="hero bg-base-200 rounded-box p-8">
+      <div class="hero-content text-center">
+        <div class="max-w-md">
+          <h1 class="text-4xl font-bold">Admin Dashboard</h1>
+          <p class="py-6 text-base-content/70">
+            Welcome to the Albergue Municipal administration panel. 
+            Monitor services, manage bookings, and oversee pilgrim data.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="stat bg-base-200 rounded-box">
+        <div class="stat-figure text-primary">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <div class="stat-title">Active Pilgrims</div>
+        <div class="stat-value text-primary">24</div>
+        <div class="stat-desc">Currently checked in</div>
+      </div>
+
+      <div class="stat bg-base-200 rounded-box">
+        <div class="stat-figure text-success">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div class="stat-title">Today's Bookings</div>
+        <div class="stat-value text-success">12</div>
+        <div class="stat-desc">3 pending confirmation</div>
+      </div>
+
+      <div class="stat bg-base-200 rounded-box">
+        <div class="stat-figure text-info">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="stat-title">System Health</div>
+        <div class="stat-value text-info">87.5%</div>
+        <div class="stat-desc">7/8 services healthy</div>
+      </div>
+
+      <div class="stat bg-base-200 rounded-box">
+        <div class="stat-figure text-warning">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="stat-title">Avg Response</div>
+        <div class="stat-value text-warning">68ms</div>
+        <div class="stat-desc">Across all services</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="space-y-4">
+      <h2 class="text-xl font-semibold text-base-content">Quick Actions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a href="/admin/services" class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+          <div class="card-body items-center text-center">
+            <svg class="w-12 h-12 text-primary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <h3 class="card-title">Monitor Services</h3>
+            <p class="text-base-content/70">Check health status of all system services</p>
+          </div>
+        </a>
+
+        <a href="/admin/bookings" class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+          <div class="card-body items-center text-center">
+            <svg class="w-12 h-12 text-success mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 class="card-title">Manage Bookings</h3>
+            <p class="text-base-content/70">Review and manage pilgrim bookings</p>
+          </div>
+        </a>
+
+        <a href="/admin/pilgrims" class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+          <div class="card-body items-center text-center">
+            <svg class="w-12 h-12 text-info mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <h3 class="card-title">View Pilgrims</h3>
+            <p class="text-base-content/70">Browse pilgrim profiles and check-ins</p>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="space-y-4">
+      <h2 class="text-xl font-semibold text-base-content">Recent Activity</h2>
+      <div class="card bg-base-200">
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Service</th>
+                  <th>Event</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono text-sm">14:32:15</td>
+                  <td>PostgreSQL</td>
+                  <td>Health check passed</td>
+                  <td><span class="badge badge-success badge-sm">Healthy</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono text-sm">14:31:45</td>
+                  <td>API Gateway</td>
+                  <td>Connection timeout</td>
+                  <td><span class="badge badge-error badge-sm">Error</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono text-sm">14:30:22</td>
+                  <td>Redis</td>
+                  <td>High memory usage</td>
+                  <td><span class="badge badge-warning badge-sm">Warning</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono text-sm">14:29:18</td>
+                  <td>Fermyon Spin</td>
+                  <td>Health check passed</td>
+                  <td><span class="badge badge-success badge-sm">Healthy</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono text-sm">14:28:05</td>
+                  <td>MQTT Broker</td>
+                  <td>Health check passed</td>
+                  <td><span class="badge badge-success badge-sm">Healthy</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

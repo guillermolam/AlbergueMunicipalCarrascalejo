@@ -1,0 +1,146 @@
+---
+/**
+ * InfoBadge - Hand-drawn info badge component
+ * Pure Astro version - no JavaScript frameworks
+ * Uses Tailwind v4 + Doodle CSS
+ */
+
+const {
+  label,
+  value,
+  sublabel,
+  icon,
+  color = 'green',
+  size = 'md',
+  animated = false,
+  class: className = '',
+  ...props
+} = Astro.props;
+
+const colorClasses = {
+  green: 'bg-[#E8F5E9] text-[#00AB39] border-[#00AB39]',
+  yellow: 'bg-[#FFF9F0] text-[#8B6914] border-[#EAC102]',
+  blue: 'bg-[#E3F2FD] text-[#0071BC] border-[#0071BC]',
+  red: 'bg-[#FFE5E5] text-[#ED1C24] border-[#ED1C24]',
+  cream: 'bg-white text-[#5D4E37] border-[#D4A574]',
+};
+
+const sizeClasses = {
+  sm: 'p-2 md:p-3',
+  md: 'p-3 md:p-4',
+  lg: 'p-4 md:p-6',
+};
+
+const valueSizeClasses: Record<typeof size, string> = {
+  sm: 'text-xl md:text-2xl',
+  md: 'text-2xl md:text-3xl',
+  lg: 'text-3xl md:text-4xl',
+};
+
+const labelSizeClasses = {
+  sm: 'text-[10px] md:text-xs',
+  md: 'text-xs',
+  lg: 'text-xs md:text-sm',
+};
+---
+
+<div
+  {...props}
+  class:list={[
+    'relative inline-block',
+    'doodle-border doodle-shadow wired-border paper-texture',
+    'border-2',
+    'transition-transform duration-300',
+    'hover:scale-105 hover:-rotate-1',
+    animated && 'animate-float',
+      colorClasses[color as keyof typeof colorClasses],
+    sizeClasses[size as keyof typeof sizeClasses],
+    className
+  ]}
+>
+  <!-- Icon (if provided) -->
+  {icon && (
+    <div class="text-center mb-1 wobble">
+      <span class="text-2xl md:text-3xl">{icon}</span>
+    </div>
+  )}
+
+  <!-- Label -->
+  {label && (
+    <p class:list={[
+      'text-center uppercase tracking-wide font-medium opacity-75',
+      labelSizeClasses[size as keyof typeof labelSizeClasses]
+    ]}>
+      {label}
+    </p>
+  )}
+
+  <!-- Value -->
+  <p class:list={[
+    'text-center font-bold leading-none',
+    'sketch-title',
+    valueSizeClasses[size]
+  ]}>
+    {value}
+  </p>
+
+  <!-- Sublabel -->
+  {sublabel && (
+    <p class:list={[
+      'text-center opacity-60 mt-0.5',
+      labelSizeClasses[size as keyof typeof labelSizeClasses]
+    ]}>
+      {sublabel}
+    </p>
+  )}
+
+  <!-- Slot for additional content -->
+  <slot />
+</div>
+
+<style>
+  /* Enhanced shadow on hover */
+  div:hover {
+    box-shadow:
+      3px 3px 0 rgba(0, 0, 0, 0.15),
+      6px 6px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  /* Subtle pulse animation for animated badges */
+  .animate-float {
+    animation:
+      float 3s ease-in-out infinite,
+      subtle-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes subtle-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.95;
+      transform: scale(1.02);
+    }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    div {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    div:hover {
+      transform: none !important;
+    }
+
+    .animate-float {
+      animation: none !important;
+    }
+
+    .wobble {
+      animation: none !important;
+    }
+  }
+</style>

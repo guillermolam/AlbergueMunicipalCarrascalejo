@@ -1,0 +1,268 @@
+# Connectivity Testing Taskfile
+# Frontend ↔ Gateway ↔ Database integration testing
+
+version: '3'
+
+vars:
+  FRONTEND_DIR: "./frontend"
+  GATEWAY_DIR: "./gateway"
+  DATABASE_DIR: "./database"
+  PORT_FRONTEND: "3000"
+  PORT_GATEWAY: "3001"
+  DB_PORT: "5432"
+  DB_NAME: "albergue_test"
+  DB_USER: "postgres"
+  DB_PASSWORD: "postgres"
+  DATABASE_URL: "postgres://postgres:postgres@127.0.0.1:5432/albergue_test"
+  PUBLIC_API_MODE: "{{.PUBLIC_API_MODE | default \"local\"}}"
+  PUBLIC_API_BASE_URL: "{{.PUBLIC_API_BASE_URL | default 'http://127.0.0.1:3001'}}"
+
+env:
+  PORT_FRONTEND: "{{.PORT_FRONTEND}}"
+  PORT_GATEWAY: "{{.PORT_GATEWAY}}"
+  DB_PORT: "{{.DB_PORT}}"
+  DB_NAME: "{{.DB_NAME}}"
+  DB_USER: "{{.DB_USER}}"
+  DB_PASSWORD: "{{.DB_PASSWORD}}"
+  DATABASE_URL: "{{.DATABASE_URL}}"
+  PUBLIC_API_MODE: "{{.PUBLIC_API_MODE}}"
+  PUBLIC_API_BASE_URL: "{{.PUBLIC_API_BASE_URL}}"
+
+tasks:
+  # Database tasks
+  db:up:
+    desc: Start PostgreSQL database container
+    cmds:
+      - echo "🗄️ Starting PostgreSQL database..."
+      - |
+        docker run -d \
+          --name albergue-postgres \
+          -e POSTGRES_DB={{.DB_NAME}} \
+          -e POSTGRES_USER={{.DB_USER}} \
+          -e POSTGRES_PASSWORD={{.DB_PASSWORD}} \
+          -p {{.DB_PORT}}:5432 \
+          postgres:15-alpine
+      - echo "⏳ Waiting for database to be ready..."
+      - |
+        timeout 30 bash -c 'until docker exec albergue-postgres pg_isready -U {{.DB_USER}}; do sleep 1; done'
+      - echo "✅ Database is ready"
+
+  db:down:
+    desc: Stop and remove PostgreSQL container
+    cmds:
+      - echo "🛑 Stopping PostgreSQL database..."
+      - docker stop albergue-postgres || true
+      - docker rm albergue-postgres || true
+      - echo "✅ Database stopped"
+
+  db:migrate:
+    desc: Apply database migrations
+    dir: "{{.DATABASE_DIR}}"
+    deps: [db:wait]
+    cmds:
+      - echo "🔄 Applying database migrations..."
+      - |
+        docker exec -i albergue-postgres psql -U {{.DB_USER}} -d {{.DB_NAME}} < migrations/*.sql
+      - echo "✅ Migrations applied"
+
+  db:seed:test:
+    desc: Apply test seed data
+    dir: "{{.DATABASE_DIR}}"
+    deps: [db:wait]
+    cmds:
+      - echo "🌱 Applying test seed data..."
+      - |
+        docker exec -i albergue-postgres psql -U {{.DB_USER}} -d {{.DB_NAME}} < seed/test_seed.sql
+      - echo "✅ Test seed data applied"
+
+  db:test:sql:
+    desc: Run SQL tests
+    dir: "{{.DATABASE_DIR}}"
+    deps: [db:wait]
+    cmds:
+      - echo "🧪 Running SQL tests..."
+      - |
+        for test_file in test/*.sql; do
+          echo "Running $test_file..."
+          docker exec -i albergue-postgres psql -U {{.DB_USER}} -d {{.DB_NAME}} < "$test_file"
+        done
+      - echo "✅ SQL tests passed"
+
+  db:wait:
+    desc: Wait for database to be ready
+    cmds:
+      - |
+        timeout 30 bash -c 'until docker exec albergue-postgres pg_isready -U {{.DB_USER}}; do sleep 1; done'
+
+  # Gateway tasks
+  gateway:test:
+    desc: Run gateway tests
+    dir: "{{.GATEWAY_DIR}}"
+    cmds:
+      - echo "🧪 Running gateway tests..."
+      - cargo test
+      - echo "✅ Gateway tests passed"
+
+  gateway:spin:up:
+    desc: Start gateway with Spin
+    dir: "{{.GATEWAY_DIR}}"
+    cmds:
+      - echo "🚀 Starting gateway with Spin..."
+      - spin build
+      - spin up --listen 127.0.0.1:{{.PORT_GATEWAY}} &
+      - echo "⏳ Waiting for gateway to be ready..."
+      - |
+        timeout 30 bash -c 'until curl -f http://127.0.0.1:{{.PORT_GATEWAY}}/health; do sleep 1; done'
+      - echo "✅ Gateway is ready"
+
+  gateway:spin:down:
+    desc: Stop gateway
+    cmds:
+      - echo "🛑 Stopping gateway..."
+      - pkill -f "spin up" || true
+      - echo "✅ Gateway stopped"
+
+  gateway:smoke:
+    desc: Smoke test gateway
+    cmds:
+      - echo "🚬 Smoke testing gateway..."
+      - |
+        response=$(curl -s -w "\n%{http_code}" http://127.0.0.1:{{.PORT_GATEWAY}}/health)
+        http_code=$(echo "$response" | tail -n1)
+        if [ "$http_code" = "200" ]; then
+          echo "✅ Gateway health check passed"
+        else
+          echo "❌ Gateway health check failed"
+          exit 1
+        fi
+
+  # Frontend tasks
+  frontend:test:unit:
+    desc: Run frontend unit tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🧪 Running frontend unit tests..."
+      - pnpm test:unit
+      - echo "✅ Unit tests passed"
+
+  frontend:test:integration:
+    desc: Run frontend integration tests
+    dir: "{{.FRONTEND_DIR}}"
+    deps: [frontend:build]
+    cmds:
+      - echo "🔌 Running frontend integration tests..."
+      - pnpm test:integration
+      - echo "✅ Integration tests passed"
+
+  frontend:test:e2e:
+    desc: Run frontend e2e tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🎭 Running frontend e2e tests..."
+      - pnpm test:e2e
+      - echo "✅ E2E tests passed"
+
+  frontend:build:
+    desc: Build frontend
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🏗️ Building frontend..."
+      - pnpm build
+      - echo "✅ Frontend built"
+
+  frontend:dev:
+    desc: Start frontend dev server
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🚀 Starting frontend dev server..."
+      - pnpm dev
+
+  # Connectivity modes
+  run:mode:local:
+    desc: Run frontend in local mode
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🏠 Running frontend in LOCAL mode..."
+      - |
+        PUBLIC_API_MODE=local pnpm dev
+
+  run:mode:mock:
+    desc: Run frontend in mock mode
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🎭 Running frontend in MOCK mode..."
+      - |
+        PUBLIC_API_MODE=mock pnpm dev
+
+  run:mode:gateway:
+    desc: Run frontend with gateway
+    dir: "{{.FRONTEND_DIR}}"
+    deps: [gateway:spin:up]
+    cmds:
+      - echo "🌐 Running frontend with GATEWAY mode..."
+      - |
+        PUBLIC_API_MODE=gateway \
+        PUBLIC_API_BASE_URL=http://127.0.0.1:{{.PORT_GATEWAY}} \
+        pnpm dev
+
+  # Integrated smoke tests
+  smoke:e2e:integrated:
+    desc: Full integrated smoke test
+    deps: [db:up, db:migrate, db:seed:test, gateway:spin:up]
+    cmds:
+      - echo "🔥 Running integrated smoke test..."
+      - task: db:test:sql
+      - task: gateway:smoke
+      - |
+        # Start frontend in gateway mode for smoke test
+        cd {{.FRONTEND_DIR}} && \
+        PUBLIC_API_MODE=gateway \
+        PUBLIC_API_BASE_URL=http://127.0.0.1:{{.PORT_GATEWAY}} \
+        timeout 30 pnpm dev &
+      - |
+        # Wait for frontend
+        timeout 30 bash -c 'until curl -f http://127.0.0.1:{{.PORT_FRONTEND}}/api/health; do sleep 1; done'
+      - |
+        # Run smoke tests
+        cd {{.FRONTEND_DIR}} && pnpm test:e2e
+      - echo "✅ Integrated smoke test passed"
+
+  smoke:spin:cloud:
+    desc: Smoke test against cloud Spin
+    cmds:
+      - echo "☁️ Smoke testing against cloud Spin..."
+      - |
+        if [ -z "$SPIN_APP_URL" ]; then
+          echo "⚠️ SPIN_APP_URL not set, skipping cloud smoke test"
+          exit 0
+        fi
+      - |
+        response=$(curl -s -w "\n%{http_code}" $SPIN_APP_URL/health)
+        http_code=$(echo "$response" | tail -n1)
+        if [ "$http_code" = "200" ]; then
+          echo "✅ Cloud Spin health check passed"
+        else
+          echo "❌ Cloud Spin health check failed"
+          exit 1
+        fi
+
+  # Cleanup
+  clean:all:
+    desc: Clean up all services
+    cmds:
+      - echo "🧹 Cleaning up all services..."
+      - task: gateway:spin:down
+      - task: db:down
+      - echo "✅ Cleanup completed"
+
+  # Default
+  default:
+    desc: Show available connectivity tasks
+    cmds:
+      - echo "Available connectivity tasks:"
+      - echo "  db:up, db:down, db:migrate, db:seed:test, db:test:sql"
+      - echo "  gateway:test, gateway:spin:up, gateway:smoke"
+      - echo "  frontend:test:*, frontend:build, frontend:dev"
+      - echo "  run:mode:local, run:mode:mock, run:mode:gateway"
+      - echo "  smoke:e2e:integrated, smoke:spin:cloud"
+      - echo "  clean:all"

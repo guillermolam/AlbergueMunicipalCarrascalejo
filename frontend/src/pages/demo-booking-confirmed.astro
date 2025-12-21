@@ -1,0 +1,21 @@
+---
+import Layout from "../layouts/Layout.astro";
+import BookingConfirmation from "../components/BookingConfirmation.solid.tsx";
+---
+
+<Layout title="Demo: Reserva Confirmada - Albergue Municipal Carrascalejo" description="Demo de confirmación de reserva">
+  <main class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <BookingConfirmation 
+      client:load
+      bookingReference="BK7A9F2C"
+      pilgrimName="María García López"
+      arrivalDate="2024-01-15"
+      departureDate="2024-01-18"
+      nights={3}
+      roomType="shared"
+      totalAmount={45}
+      confirmationCode="CONF-ABC123"
+      status="confirmed"
+    />
+  </main>
+</Layout>

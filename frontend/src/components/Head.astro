@@ -1,0 +1,33 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  canonical?: string;
+}
+
+const { title, description, image, canonical } = Astro.props;
+const siteTitle = title ? `${title} | Albergue Municipal Carrascalejo` : "Albergue Municipal Carrascalejo";
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="generator" content={Astro.generator} />
+
+<!-- SEO -->
+<title>{siteTitle}</title>
+{description && <meta name="description" content={description} />}
+{image && <meta property="og:image" content={image} />}
+{canonical && <link rel="canonical" href={canonical} />}
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+
+<!-- Tailwind CSS -->
+<link rel="stylesheet" href="/src/styles/global.css" />

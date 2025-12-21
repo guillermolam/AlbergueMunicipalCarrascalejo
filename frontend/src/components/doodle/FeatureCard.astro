@@ -1,0 +1,195 @@
+---
+/**
+ * FeatureCard - Feature display card component
+ * Pure Astro version - no JavaScript frameworks
+ * Uses Tailwind v4 + Doodle CSS
+ */
+
+interface Props {
+  icon?: string;
+  emoji?: string;
+  title?: string;
+  description?: string;
+  badge?: string;
+  color?: ColorType;
+  hoverable?: boolean;
+  href?: string;
+  class?: string;
+  [key: string]: any;
+}
+
+const {
+  icon,
+  emoji,
+  title,
+  description,
+  badge,
+  color = 'green' as ColorType,
+  hoverable = true,
+  href,
+  class: className = 'FeatureCard',
+  ...props
+} = Astro.props as Props;
+
+type ColorType = 'green' | 'yellow' | 'blue' | 'red' | 'cream';
+
+const colorClasses: Record<ColorType, string> = {
+  green: 'bg-[#00AB39]',
+  yellow: 'bg-[#EAC102]',
+  blue: 'bg-[#0071BC]',
+  red: 'bg-[#ED1C24]',
+  cream: 'bg-[#D4A574]',
+};
+
+const Component = href ? 'a' : 'div';
+const additionalProps = href ? { href } : {};
+
+const hoverClasses = hoverable
+  ? 'hover:scale-105 hover:rotate-[-1deg] hover:shadow-xl cursor-pointer'
+  : '';
+---
+
+<Component
+  {...additionalProps}
+  {...props}
+  class:list={[
+    'relative',
+    'doodle-border doodle-shadow wired-border paper-texture',
+    'bg-white border-2 border-[#5D4E37]',
+    'p-6 md:p-8',
+    'transition-all duration-300',
+    hoverClasses,
+    className
+  ]}
+>
+  <!-- Icon/Emoji -->
+  {(icon || emoji) && (
+    <div class:list={[
+      'w-12 h-12 md:w-14 md:h-14',
+      'rounded-full',
+      'flex items-center justify-center',
+      'mb-4',
+      'wobble',
+      colorClasses[color]
+    ]}>
+      {emoji && (
+        <span class="text-2xl md:text-3xl">{emoji}</span>
+      )}
+      {icon && !emoji && (
+        <svg class="w-6 h-6 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icon} />
+        </svg>
+      )}
+    </div>
+  )}
+
+  <!-- Title -->
+  {title && (
+    <h3 class="sketch-title text-xl md:text-2xl text-[#1A1A1A] mb-2">
+      {title}
+    </h3>
+  )}
+
+  <!-- Badge (if provided) -->
+  {badge && (
+    <div class="inline-block mb-3">
+      <span class="doodle-border px-3 py-1 text-xs font-bold text-[#00AB39] bg-[#E8F5E9] border border-[#00AB39]">
+        {badge}
+      </span>
+    </div>
+  )}
+
+  <!-- Description -->
+  {description && (
+    <p class="text-gray-700 leading-relaxed">
+      {description}
+    </p>
+  )}
+
+  <!-- Slot for additional content -->
+  <slot />
+
+  <!-- Arrow indicator for links -->
+  {href && (
+    <div class="mt-4 text-[#00AB39] font-bold hand-drawn text-sm flex items-center gap-2">
+      <span>Ver más</span>
+      <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
+  )}
+</Component>
+
+<style>
+  /* Enhanced hover effect */
+  a:hover,
+  div.cursor-pointer:hover {
+    animation: feature-pop 0.3s ease-out forwards;
+  }
+
+  @keyframes feature-pop {
+    0% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.05) rotate(-1deg);
+    }
+    100% {
+      transform: scale(1.05) rotate(-1deg) translateY(-4px);
+    }
+  }
+
+  /* Focus state for accessibility */
+  a:focus-visible,
+  div:focus-visible {
+    outline: 3px solid rgba(0, 171, 57, 0.4);
+    outline-offset: 2px;
+  }
+
+  /* Icon wobble animation */
+  .wobble {
+    animation: gentle-wobble 4s ease-in-out infinite;
+    animation-delay: calc(var(--delay, 0) * 0.2s);
+  }
+
+  @keyframes gentle-wobble {
+    0%, 100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(3deg);
+    }
+    50% {
+      transform: rotate(0deg);
+    }
+    75% {
+      transform: rotate(-3deg);
+    }
+  }
+
+  /* Arrow animation on hover */
+  a:hover svg,
+  div.cursor-pointer:hover svg {
+    transform: translateX(4px);
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    a, div {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    a:hover, div:hover {
+      transform: none !important;
+    }
+
+    .wobble {
+      animation: none !important;
+    }
+
+    svg {
+      transition: none !important;
+    }
+  }
+</style>

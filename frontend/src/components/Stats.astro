@@ -1,0 +1,75 @@
+---
+export interface Props {
+  title: string;
+  count: number | string;
+  unit?: string;
+  description?: string;
+  animated?: boolean;
+  class?: string;
+}
+
+const {
+  title,
+  count,
+  unit = '',
+  description = '',
+  animated = true,
+  class: className = ''
+}: Props = Astro.props;
+---
+
+<div class={`native-stat ${className}`} aria-label={`Stat ${title}: ${count}${unit ? ` ${unit}` : ''}`}>
+  <div class={`stat-card ${animated ? 'animate-fade-in' : ''}`}>
+    <div class="stat-header">
+      <h3 class="stat-title">{title}</h3>
+    </div>
+    <div class="stat-value">
+      <span class="value">{count}</span>
+      {unit && <span class="unit">{unit}</span>}
+    </div>
+    {description && (
+      <p class="stat-desc">{description}</p>
+    )}
+    {animated && (
+      <div class="progress">
+        <div class="bar"></div>
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  /* Custom animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes fillProgress {
+    from { width: 0%; }
+    to { width: 85%; }
+  }
+  
+  .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+  
+  .native-stat { display: grid; }
+  .stat-card {
+    position: relative;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    background: #ffffff;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+  }
+  .stat-card:hover { transform: translateY(-2px) scale(1.02); }
+  .stat-header { margin-bottom: 8px; }
+  .stat-title { font-size: 0.875rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .08em; }
+  .stat-value { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .value { font-size: 2rem; font-weight: 800; color: #1e293b; }
+  .unit { font-size: 1rem; color: #64748b; font-weight: 500; }
+  .stat-desc { font-size: 0.9rem; color: #64748b; }
+  .progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #e2e8f0; }
+  .bar { height: 100%; width: 0%; background: linear-gradient(90deg, #00AB39, #EAC102, #0071BC); animation: fillProgress 2s ease-out forwards; }
+</style>

@@ -1,0 +1,154 @@
+---
+/**
+ * DoodleBadge - Hand-drawn style badge component
+ * Perfect for status indicators, tags, and labels with playful aesthetics
+ */
+
+export interface Props {
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  outline?: boolean;
+  dot?: boolean;
+  class?: string;
+  id?: string;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  outline = false,
+  dot = false,
+  class: className = '',
+  id,
+} = Astro.props;
+
+// Variant styles (solid)
+const solidVariantClasses = {
+  primary: 'bg-primary-500 text-white border-primary-600',
+  secondary: 'bg-secondary-yellow text-neutral-900 border-secondary-yellow/80',
+  success: 'bg-success-500 text-white border-success-600',
+  warning: 'bg-warning-500 text-white border-warning-600',
+  error: 'bg-error-500 text-white border-error-600',
+  info: 'bg-info-500 text-white border-info-600',
+  neutral: 'bg-neutral-200 text-neutral-800 border-neutral-300',
+};
+
+// Variant styles (outline)
+const outlineVariantClasses = {
+  primary: 'bg-primary-50 text-primary-700 border-primary-500',
+  secondary: 'bg-yellow-50 text-yellow-800 border-secondary-yellow',
+  success: 'bg-success-50 text-success-700 border-success-500',
+  warning: 'bg-warning-50 text-warning-700 border-warning-500',
+  error: 'bg-error-50 text-error-700 border-error-500',
+  info: 'bg-info-50 text-info-700 border-info-500',
+  neutral: 'bg-neutral-50 text-neutral-700 border-neutral-400',
+};
+
+// Dot colors
+const dotColorClasses = {
+  primary: 'bg-primary-500',
+  secondary: 'bg-secondary-yellow',
+  success: 'bg-success-500',
+  warning: 'bg-warning-500',
+  error: 'bg-error-500',
+  info: 'bg-info-500',
+  neutral: 'bg-neutral-500',
+};
+
+// Size styles
+const sizeClasses = {
+  xs: 'px-2 py-0.5 text-xs',
+  sm: 'px-2.5 py-1 text-sm',
+  md: 'px-3 py-1.5 text-sm',
+  lg: 'px-4 py-2 text-base',
+};
+
+// Dot size styles
+const dotSizeClasses = {
+  xs: 'w-1.5 h-1.5',
+  sm: 'w-2 h-2',
+  md: 'w-2.5 h-2.5',
+  lg: 'w-3 h-3',
+};
+
+const variantClass = outline ? outlineVariantClasses[variant] : solidVariantClasses[variant];
+
+const baseClasses = `
+  inline-flex items-center gap-1.5
+  font-medium rounded-full
+  border-2
+  doodle-badge
+  ${variantClass}
+  ${sizeClasses[size]}
+  ${className}
+`;
+---
+
+<span
+  id={id}
+  class={baseClasses}
+>
+  {dot && (
+    <span
+      class={`rounded-full animate-pulse ${dotColorClasses[variant]} ${dotSizeClasses[size]}`}
+      aria-hidden="true"
+    />
+  )}
+  <slot />
+</span>
+
+<style>
+  /* Hand-drawn badge styling */
+  .doodle-badge {
+    position: relative;
+    box-shadow:
+      1px 1px 0 rgba(0, 0, 0, 0.1),
+      2px 2px 0 rgba(0, 0, 0, 0.05);
+    transform: rotate(-0.5deg);
+  }
+
+  /* Sketchy border overlay */
+  .doodle-badge::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border: 1px solid currentColor;
+    border-radius: inherit;
+    opacity: 0.2;
+    pointer-events: none;
+    transform: rotate(1deg);
+  }
+
+  /* Subtle texture */
+  .doodle-badge::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 255, 255, 0.05) 2px,
+        rgba(255, 255, 255, 0.05) 4px
+      );
+    pointer-events: none;
+  }
+
+  /* Hover effect (optional) */
+  .doodle-badge:hover {
+    transform: rotate(0deg) scale(1.05);
+    transition: transform 0.2s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .doodle-badge:hover {
+      transform: rotate(-0.5deg);
+    }
+
+    .doodle-badge .animate-pulse {
+      animation: none;
+    }
+  }
+</style>
