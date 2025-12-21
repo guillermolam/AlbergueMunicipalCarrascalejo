@@ -1,5 +1,0 @@
-[component]
-sqlite_databases = ["default"]
-
-[component.spin_key_value]
-key_value_stores = ["default"]
