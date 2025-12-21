@@ -1,6 +1,25 @@
 version: "3"
 
 includes:
+  # Main development pipeline
+  main:
+    taskfile: ./taskfiles/Taskfile.main.yml
+    dir: .
+    optional: false
+  
+  # Service-specific taskfiles
+  frontend:
+    taskfile: ./taskfiles/Taskfile.frontend.yml
+    dir: .
+    optional: false
+  
+  # Connectivity testing pipeline
+  connectivity:
+    taskfile: ./taskfiles/Taskfile.connectivity.yml
+    dir: .
+    optional: false
+  
+  # Legacy taskfiles (for compatibility)
   dev:
     taskfile: ./taskfiles/Taskfile.dev.yml
     dir: .
@@ -33,12 +52,21 @@ includes:
     taskfile: ./taskfiles/Taskfile.act.yml
     dir: .
     optional: false
+  deploy:
+    taskfile: ./taskfiles/Taskfile.deploy.yml
+    dir: .
+    optional: false
+  arch:
+    taskfile: ./taskfiles/Taskfile.arch.yml
+    dir: .
+    optional: false
 
 env:
   RUST_BACKTRACE: "1"
   RUST_LOG: debug
   NODE_ENV: development
-  DATABASE_URL: postgresql://localhost:5432/albergue_dev
+  # Database URL should be set via environment variables or KV store
+  # DATABASE_URL: postgresql://localhost:5432/albergue_dev
 
 tasks:
   # Root-level convenience tasks that delegate to included taskfiles
@@ -103,7 +131,7 @@ tasks:
     desc: Clean development environment
     cmds:
       - task: clean:default
-  
+
   generate:tree:
     desc: Generate ASCII project tree via Rust Script (respects .gitignore)
     cmds:

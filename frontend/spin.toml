@@ -1,40 +1,43 @@
-@ -1,39 +0,0 @@
 spin_manifest_version = 2
 
 [application]
-name = "albergue-microfrontends"
+name = "albergue-frontend"
 version = "1.0.0"
-description = "Microfrontend architecture for Albergue Municipal"
+description = "Frontend for Albergue Municipal Carrascalejo"
 authors = ["Albergue Team"]
 
+# ──────────────────────── HTTP triggers ────────────────────────
+# Serve static assets first (CSS, JS, images, etc.)
 [[trigger.http]]
-route = "/"
-component = "shell"
+route = "/assets/..."
+component = "static-assets"
 
+# Serve public assets
 [[trigger.http]]
-route = "/auth/..."
-component = "auth"
+route = "/public/..."
+component = "public-assets"
 
+# API routes should be handled by backend services (not here)
+# All other routes go to the main app for React Router client-side routing
 [[trigger.http]]
-route = "/booking/..."
-component = "booking"
+route = "/..."
+component = "main-app"
 
-[[trigger.http]]
-route = "/dashboard/..."
-component = "dashboard"
+# ──────────────────────── Components ───────────────────────────
+# Main app - serves the React Router SPA
+# This component serves index.html for all routes, allowing React Router to handle client-side routing
+[component."main-app"]
+source = "spin:fileserver"
+files = [{ source = "dist", destination = "/" }]
+# Note: Spin's fileserver will serve index.html for routes that don't match files
+# This allows React Router to handle all client-side routing
 
-[component.shell]
-source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
-files = [{ source = "apps/shell/dist", destination = "/" }]
+# Static assets from the build
+[component."static-assets"]
+source = "spin:fileserver"
+files = [{ source = "dist/assets", destination = "/assets" }]
 
-[component.auth]
-source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
-files = [{ source = "apps/auth/dist", destination = "/" }]
-
-[component.booking]
-source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
-files = [{ source = "apps/booking/dist", destination = "/" }]
-
-[component.dashboard]
-source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.2.1/spin_static_fs.wasm", digest = "sha256:5f05b15f0f7cd353d390bc5ebffec7fe13c7e69d4b8a6a3269918202a4a48f4f" }
-files = [{ source = "apps/dashboard/dist", destination = "/" }]
+# Public assets
+[component."public-assets"]
+source = "spin:fileserver"
+files = [{ source = "public", destination = "/public" }]

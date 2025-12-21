@@ -1,71 +1,83 @@
 version: "3"
 
+# Clean tasks for the Albergue Municipal Carrascalejo project
+# This file is included by the root Taskfile.yml
+# Includes @gateway/ and @frontend/ services
+
 tasks:
   frontend:
-    desc: Clean frontend using centralized script
+    desc: Clean frontend build and node_modules
     cmds:
-      - echo "🧹 Cleaning frontend via centralized script..."
-      - ./scripts/clean-frontend.sh frontend
-      - echo "✅ Frontend cleaned"
+      - cd frontend && bun run clean || rm -rf dist node_modules
 
-  auth_service:
-    desc: Clean auth service frontend using centralized script
+  bff:
+    desc: Clean gateway BFF build artifacts
     cmds:
-      - echo "🧹 Cleaning auth service frontend via centralized script..."
-      - ./scripts/clean-frontend.sh backend/auth-service
-      - echo "✅ Auth service frontend cleaned"
+      - cd gateway/bff && cargo clean
 
-  fmt:
-    desc: Format code using package.json scripts
+  # Backend services
+  auth-service:
+    desc: Clean backend/auth-service build artifacts
     cmds:
-      - echo "🖥️  Formatting code..."
-      - cd frontend && npm run fmt || bun run fmt || echo "⚠️  No fmt script found"
-      - cd backend/auth-service && npm run fmt || bun run fmt || echo "⚠️  No fmt script found"
-      - echo "✅ Code formatted"
+      - cd backend/auth-service && cargo clean
 
-  lint:
-    desc: Lint code using package.json scripts
+  booking-service:
+    desc: Clean backend/booking-service build artifacts
     cmds:
-      - echo "🔍  Linting code..."
-      - cd frontend && npm run lint || bun run lint || echo "⚠️  No lint script found"
-      - cd backend/auth-service && npm run lint || bun run lint || echo "⚠️  No lint script found"
-      - echo "✅ Code linted"
+      - cd backend/booking-service && cargo clean
 
-  lint:fix:
-    desc: Fix linting issues using package.json scripts
+  document-validation-service:
+    desc: Clean backend/document-validation-service build artifacts
     cmds:
-      - echo "🔧  Fixing linting issues..."
-      - cd frontend && npm run lint:fix || bun run lint:fix || echo "⚠️  No lint:fix script found"
-      - cd backend/auth-service && npm run lint:fix || bun run lint:fix || echo "⚠️  No lint:fix script found"
-      - echo "✅ Linting issues fixed"
+      - cd backend/document-validation-service && cargo clean
 
-  node_modules:
-    desc: Remove node_modules directories using centralized script
+  info-on-arrival-service:
+    desc: Clean backend/info-on-arrival-service build artifacts
     cmds:
-      - echo "🧹 Removing node_modules..."
-      - rm -rf frontend/node_modules 2>/dev/null || echo "⚠️  Could not remove some node_modules files"
-      - rm -rf backend/auth-service/node_modules 2>/dev/null || echo "⚠️  Could not remove some node_modules files"
-      - echo "✅ node_modules cleanup completed"
+      - cd backend/info-on-arrival-service && cargo clean
 
-  all_targets:
-    desc: Force clean all target directories using centralized script
+  location-service:
+    desc: Clean backend/location-service build artifacts
     cmds:
-      - echo "🔥 Force cleaning all target directories..."
-      - ./scripts/clean-rust.sh .
-      - ./scripts/clean-rust.sh backend
-      - find backend -name "target" -type d -exec rm -rf {} + 2>/dev/null || true
-      - echo "✅ All target directories cleaned"
+      - cd backend/location-service && cargo clean
 
-  main:
-    desc: Clean development environment using centralized script
+  notification-service:
+    desc: Clean backend/notification-service build artifacts
     cmds:
-      - echo "🧹 Cleaning development environment..."
-      - ./scripts/clean-all.sh rust
-      - echo "✅ Development environment cleaned"
+      - cd backend/notification-service && cargo clean
 
-  default:
-    desc: Clean build artifacts and stop all services using centralized script
+  rate-limiter-service:
+    desc: Clean backend/rate-limiter-service build artifacts
     cmds:
-      - echo "🧹 Starting comprehensive cleanup..."
-      - ./scripts/clean-all.sh all
-      - echo "🎉 Development environment fully cleaned"
+      - cd backend/rate-limiter-service && cargo clean
+
+  redis-service:
+    desc: Clean backend/redis-service build artifacts
+    cmds:
+      - cd backend/redis-service && cargo clean
+
+  reviews-service:
+    desc: Clean backend/reviews-service build artifacts
+    cmds:
+      - cd backend/reviews-service && cargo clean
+
+  security-service:
+    desc: Clean backend/security-service build artifacts
+    cmds:
+      - cd backend/security-service && cargo clean
+
+  all:
+    desc: Clean all build artifacts and node_modules
+    deps:
+      - frontend
+      - bff
+      - auth-service
+      - booking-service
+      - document-validation-service
+      - info-on-arrival-service
+      - location-service
+      - notification-service
+      - rate-limiter-service
+      - redis-service
+      - reviews-service
+      - security-service

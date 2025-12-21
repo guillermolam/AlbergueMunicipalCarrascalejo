@@ -4,6 +4,10 @@
 
 [key_value_stores]
 
+[key_value_stores.config]
+type = "spin"
+description = "Key-value store for sensitive configuration data like database URLs"
+
 [key_value_stores.booking-kv]
 type = "spin"
 description = "Key-value store for booking data caching and session management"

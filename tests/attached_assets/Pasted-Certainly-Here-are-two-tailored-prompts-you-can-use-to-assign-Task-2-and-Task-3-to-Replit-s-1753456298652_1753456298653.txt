@@ -4,42 +4,42 @@ Certainly! Here are two tailored prompts you can use to assign **Task 2** and **
 
 ## 🧩 Prompt for Task 2 – *Validation Service OCR Refactor*
 
-**Task 2: Refactor `validation-service` module**
+**Task 2: Refactor `document-document-validation-service` module**
 You will refactor the existing OCR and document validation logic to fit the DDD + hexagonal architecture and relocate test assets.
 
 ### Instructions:
 
-1. In `services/validation-service/src/`, move current OCR logic, DNI/NIE/MRZ parsers into:
+1. In `services/document-document-validation-service/src/`, move current OCR logic, DNI/NIE/MRZ parsers into:
 
    ```
-   validation-service/src/domain/validators/
+   document-document-validation-service/src/domain/validators/
    ```
 2. Define a Trait `OcrClient` in the `ports/` folder to abstract validation operations.
 3. Create an adapter implementation in:
 
    ```
-   validation-service/src/adapters/tesseract.rs
+   document-document-validation-service/src/adapters/tesseract.rs
    ```
 
    that implements `OcrClient` and processes the OCR logic.
 4. Move all training data files currently under `attached_assets/` into:
 
    ```
-   services/validation-service/tests/ocr-training/
+   services/document-document-validation-service/tests/ocr-training/
      ├─ dni-nif/
      ├─ passports/
      └─ nie-tie/
    ```
 
-   and update unit tests under `validation-service/tests/` to use these files programmatically.
-5. Add new unit tests in `validation-service/tests/` to assert:
+   and update unit tests under `document-document-validation-service/tests/` to use these files programmatically.
+5. Add new unit tests in `document-document-validation-service/tests/` to assert:
 
    * Known DNI/NIE/Passport samples return expected parsed output.
    * Invalid or missing input returns proper validation errors.
 
 ### Testing:
 
-* Run `cargo test -p validation-service`
+* Run `cargo test -p document-document-validation-service`
 * All tests must pass.
 * Tests must cleanly reference the training assets loaded at runtime by relative paths.
 

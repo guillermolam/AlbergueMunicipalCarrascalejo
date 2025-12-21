@@ -1,0 +1,160 @@
+version: "3"
+
+vars:
+  FRONTEND_PORT:
+    sh: |
+      python3 scripts/port-manager.py show >/dev/null 2>&1 \
+        && python3 -c "import json; print(json.load(open('.ports.json'))['FRONTEND'])" \
+        || (python3 scripts/port-manager.py generate >/dev/null 2>&1; python3 -c "import json; print(json.load(open('.ports.json'))['FRONTEND'])")
+
+tasks:
+  frontend:local:
+    desc: Build frontend and run locally with Spin (serving dist/) on Rancher Desktop host
+    deps: [build:frontend]
+    cmds:
+      - |
+        echo "🚀 Starting frontend locally with Spin..."
+        echo "📦 Ensuring build artifacts..."
+        (cd frontend && bun run build)
+        echo "🔌 Using port: {{.FRONTEND_PORT}}"
+        echo "🌐 URL: http://127.0.0.1:{{.FRONTEND_PORT}}"
+        cd frontend && spin up --listen 127.0.0.1:{{.FRONTEND_PORT}}
+
+  frontend:cloud:
+    desc: Deploy ONLY the frontend Spin app to Fermyon Cloud (interactive login)
+    cmds:
+      - |
+        echo "🚀 Deploying frontend to Fermyon Cloud..."
+        if ! ./spin cloud login --status 2>/dev/null; then
+          echo "❌ Not logged in to Fermyon Cloud"
+          echo "Please run: ./spin cloud login"
+          exit 1
+        fi
+        (cd frontend && bun run build)
+        (cd frontend && spin deploy)
+        echo "✅ Frontend deployed"
+
+  frontend:cloud-with-token:
+    desc: Deploy ONLY the frontend Spin app to Fermyon Cloud using FERMYON_CLOUD_TOKEN
+    cmds:
+      - |
+        if [ -z "$FERMYON_CLOUD_TOKEN" ]; then
+          echo "❌ FERMYON_CLOUD_TOKEN not set"
+          exit 1
+        fi
+        echo "$FERMYON_CLOUD_TOKEN" | ./spin cloud login --token
+        (cd frontend && bun run build)
+        (cd frontend && spin deploy --no-prompt)
+        echo "✅ Frontend deployed (token)"
+
+  fermyon-with-token:
+    desc: Deploy to Fermyon Cloud using Personal Access Token (for CI/CD)
+    cmds:
+      - |
+        echo "🚀 Deploying to Fermyon Cloud with PAT..."
+        echo "Target: https://alberguecarrascalejo.fermyon.app/"
+        echo ""
+
+        # Check for required environment variable
+        if [ -z "$FERMYON_CLOUD_TOKEN" ]; then
+          echo "❌ FERMYON_CLOUD_TOKEN environment variable not set"
+          echo "Please set it with: export FERMYON_CLOUD_TOKEN=your_token"
+          echo "Or create a .env file with: FERMYON_CLOUD_TOKEN=your_token"
+          exit 1
+        fi
+
+        echo "📦 Building all services..."
+        task build
+        echo "✅ Build completed"
+        echo ""
+
+        echo "🔐 Authenticating with Personal Access Token..."
+        echo "$FERMYON_CLOUD_TOKEN" | spin cloud login --token
+
+        echo "🌐 Deploying to Fermyon Cloud..."
+        spin deploy --no-prompt
+
+        echo ""
+        echo "✅ Deployment completed!"
+        echo "🌍 Your application is available at: https://alberguecarrascalejo.fermyon.app/"
+
+  fermyon:
+    desc: Deploy entire application to Fermyon Cloud (interactive login)
+    cmds:
+      - |
+        echo "🚀 Deploying to Fermyon Cloud..."
+        echo "Target: https://alberguecarrascalejo.fermyon.app/"
+        echo ""
+
+        if ! spin cloud login --status 2>/dev/null; then
+          echo "❌ Not logged in to Fermyon Cloud"
+          echo "Please run: ./spin cloud login"
+          exit 1
+        fi
+
+        echo "📦 Building all services..."
+        task build
+        echo "✅ Build completed"
+        echo ""
+
+        echo "🌐 Deploying to Fermyon Cloud..."
+        spin deploy
+
+        echo ""
+        echo "✅ Deployment completed!"
+        echo "🌍 Your application is available at: https://alberguecarrascalejo.fermyon.app/"
+
+  setup-token:
+    desc: Guide to create and set up Fermyon Cloud Personal Access Token
+    cmds:
+      - |
+        echo "📝 Setting up Fermyon Cloud Personal Access Token"
+        echo ""
+        echo "1️⃣  Create a Personal Access Token:"
+        echo "   Visit: https://cloud.fermyon.com/user-settings?page=tokens"
+        echo "   - Click 'Add a Token'"
+        echo "   - Give it a descriptive name (e.g., 'CI-CD-Deployment')"
+        echo "   - Copy the token (you won't see it again!)"
+        echo ""
+        echo "2️⃣  Set the token as environment variable:"
+        echo "   Linux/Mac:"
+        echo "     export FERMYON_CLOUD_TOKEN='your_token_here'"
+        echo ""
+        echo "   Windows PowerShell:"
+        echo "     \$env:FERMYON_CLOUD_TOKEN='your_token_here'"
+        echo ""
+        echo "3️⃣  Or create a .env file in the project root:"
+        echo "   FERMYON_CLOUD_TOKEN=your_token_here"
+        echo ""
+        echo "4️⃣  Test the deployment:"
+        echo "   task deploy:fermyon-with-token"
+        echo ""
+        echo "⚠️  Never commit your token to version control!"
+        echo "   Add .env to .gitignore"
+
+  test-connection:
+    desc: Test Fermyon Cloud connection with token
+    cmds:
+      - |
+        if [ -z "$FERMYON_CLOUD_TOKEN" ]; then
+          echo "❌ FERMYON_CLOUD_TOKEN not set"
+          echo "Run: task deploy:setup-token for instructions"
+          exit 1
+        fi
+
+        echo "🔐 Testing authentication..."
+        echo "$FERMYON_CLOUD_TOKEN" | spin cloud login --token
+
+        if spin cloud login --status 2>/dev/null; then
+          echo "✅ Authentication successful!"
+          echo "You can now deploy with: task deploy:fermyon-with-token"
+        else
+          echo "❌ Authentication failed"
+          echo "Please check your token and try again"
+          exit 1
+        fi
+
+  all:
+    desc: Deploy all deployable components (frontend + backend services)
+    cmds:
+      - task deploy:fermyon

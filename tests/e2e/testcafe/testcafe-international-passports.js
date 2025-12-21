@@ -13,7 +13,7 @@ test('Process US Passport with MRZ', async t => {
   
   await t
     .click(Selector('button').withText(/start registration|comenzar registro/i))
-    .expect(Selector('[data-testid="registration-form"]').exists).ok();
+    .expect(Selector('[data-testid="booking"]').exists).ok();
 
   // Select Passport document type
   await t

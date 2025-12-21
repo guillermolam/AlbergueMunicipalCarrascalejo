@@ -13,21 +13,19 @@ encryption_key = { required = true }
 log_level = { default = "info" }
 
 [[trigger.http]]
-route = "/..."
+route = "/api/*"
 component = "security-service"
 
 [component.security-service]
-source = "target/wasm32-wasi/release/security_service.wasm"
+source = "target/wasm32-wasip1/release/security_service.wasm"
 allowed_outbound_hosts = ["https://*.neon.tech"]
+key_value_stores = ["default"]
 
 [component.security-service.build]
-command = "cargo build --target wasm32-wasi --release"
+command = "cargo build --target wasm32-wasip1 --release"
 
 [component.security-service.variables]
 database_url = "{{ database_url }}"
 rate_limit_requests = "{{ rate_limit_requests }}"
 encryption_key = "{{ encryption_key }}"
 log_level = "{{ log_level }}"
-
-[component.security-service.key_value_stores]
-default = { label = "security-kv" }
