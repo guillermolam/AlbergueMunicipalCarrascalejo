@@ -41,3 +41,80 @@ tasks:
     desc: Setup database
     cmds:
       - ./scripts/setup-environment.sh database
+
+  frontend:
+    desc: Install frontend dependencies
+    cmds:
+      - cd frontend && pnpm install
+
+  bff:
+    desc: Install gateway BFF dependencies (if any)
+    cmds:
+      - cd gateway/bff && cargo fetch
+
+  # Backend services
+  auth-service:
+    desc: Install backend/auth-service dependencies
+    cmds:
+      - cd backend/auth-service && cargo fetch
+
+  booking-service:
+    desc: Install backend/booking-service dependencies
+    cmds:
+      - cd backend/booking-service && cargo fetch
+
+  document-validation-service:
+    desc: Install backend/document-validation-service dependencies
+    cmds:
+      - cd backend/document-validation-service && cargo fetch
+
+  info-on-arrival-service:
+    desc: Install backend/info-on-arrival-service dependencies
+    cmds:
+      - cd backend/info-on-arrival-service && cargo fetch
+
+  location-service:
+    desc: Install backend/location-service dependencies
+    cmds:
+      - cd backend/location-service && cargo fetch
+
+  notification-service:
+    desc: Install backend/notification-service dependencies
+    cmds:
+      - cd backend/notification-service && cargo fetch
+
+  rate-limiter-service:
+    desc: Install backend/rate-limiter-service dependencies
+    cmds:
+      - cd backend/rate-limiter-service && cargo fetch
+
+  redis-service:
+    desc: Install backend/redis-service dependencies
+    cmds:
+      - cd backend/redis-service && cargo fetch
+
+  reviews-service:
+    desc: Install backend/reviews-service dependencies
+    cmds:
+      - cd backend/reviews-service && cargo fetch
+
+  security-service:
+    desc: Install backend/security-service dependencies
+    cmds:
+      - cd backend/security-service && cargo fetch
+
+  all:
+    desc: Install all dependencies
+    deps:
+      - frontend
+      - bff
+      - auth-service
+      - booking-service
+      - document-validation-service
+      - info-on-arrival-service
+      - location-service
+      - notification-service
+      - rate-limiter-service
+      - redis-service
+      - reviews-service
+      - security-service

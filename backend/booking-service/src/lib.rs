@@ -1,7 +1,5 @@
-use anyhow::Result;
-use http::{Method, Request, StatusCode};
 use serde::{Deserialize, Serialize};
-use spin_sdk::http::{IntoResponse, ResponseBuilder};
+use spin_sdk::http::{Method, Request, Response, ResponseBuilder};
 use spin_sdk::http_component;
 
 #[derive(Serialize, Deserialize)]
@@ -50,66 +48,106 @@ pub struct Pricing {
 }
 
 #[http_component]
-fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
+fn handle_request(req: Request) -> Response {
     let method = req.method();
-    let path = req.uri().path();
+    let path = req.uri();
 
     match (method, path) {
-        (&Method::GET, "/bookings") => get_bookings(),
-        (&Method::POST, "/bookings") => create_booking(req),
-        (&Method::GET, "/rooms") => get_rooms(),
-        (&Method::GET, "/dashboard/stats") => get_dashboard_stats(),
-        (&Method::GET, "/pricing") => get_pricing(),
-        _ => Ok(ResponseBuilder::new(StatusCode::NOT_FOUND)
-            .header("content-type", "application/json")
-            .body(r#"{"error":"Not found"}"#)
-            .build()),
+        (&Method::Get, "/bookings") => get_bookings(),
+        (&Method::Post, "/bookings") => create_booking(req),
+        (&Method::Get, "/rooms") => get_rooms(),
+        (&Method::Get, "/dashboard/stats") => get_dashboard_stats(),
+        (&Method::Get, "/pricing") => get_pricing(),
+        _ => error_response(404, "Not found"),
     }
 }
 
-fn get_bookings() -> Result<impl IntoResponse> {
-    let bookings = vec![Booking {
-        id: "1".to_string(),
-        guest_name: "Juan Pérez".to_string(),
-        guest_email: "juan@example.com".to_string(),
-        guest_phone: Some("+34666123456".to_string()),
-        room_type: "dorm-a".to_string(),
-        check_in: "2024-01-15".to_string(),
-        check_out: "2024-01-16".to_string(),
-        num_guests: 1,
-        total_price: 1500,
-        status: "confirmed".to_string(),
-        payment_status: "paid".to_string(),
-    }];
+use serde_json::Value;
+use std::env;
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&bookings)?)
-        .build())
+fn register_whatsapp_client(
+    client_phone: &str,
+    business_phone: &str,
+) -> Result<(), String> {
+    // Placeholder: Implement WhatsApp API call to register client
+    println!(
+        "Registering WhatsApp client {} with business phone {}",
+        client_phone, business_phone
+    );
+    Ok(())
 }
 
-fn create_booking(_req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
+fn create_booking(req: Request) -> Response {
+    // Parse request body with error handling
+    let body_bytes = req.body();
+    let body_json: Value = match serde_json::from_slice(body_bytes) {
+        Ok(json) => json,
+        Err(err) => return error_response(400, &format!("Invalid JSON: {err}")),
+    };
+
+    let guest_phone = body_json
+        .get("guest_phone")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
+    // Read WhatsApp business phone number from env
+    let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
+
+    if !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
+        if let Err(err) = register_whatsapp_client(guest_phone, &whatsapp_business_phone) {
+            return error_response(502, &format!("WhatsApp registration failed: {err}"));
+        }
+    }
+
+    // Create booking as before
     let new_booking = Booking {
         id: "new_id".to_string(),
-        guest_name: "New Guest".to_string(),
-        guest_email: "guest@example.com".to_string(),
-        guest_phone: None,
-        room_type: "dorm-a".to_string(),
-        check_in: "2024-01-20".to_string(),
-        check_out: "2024-01-21".to_string(),
-        num_guests: 1,
-        total_price: 1500,
+        guest_name: body_json
+            .get("guest_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("New Guest")
+            .to_string(),
+        guest_email: body_json
+            .get("guest_email")
+            .and_then(|v| v.as_str())
+            .unwrap_or("guest@example.com")
+            .to_string(),
+        guest_phone: if guest_phone.is_empty() {
+            None
+        } else {
+            Some(guest_phone.to_string())
+        },
+        room_type: body_json
+            .get("room_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("dorm-a")
+            .to_string(),
+        check_in: body_json
+            .get("check_in")
+            .and_then(|v| v.as_str())
+            .unwrap_or("2024-01-20")
+            .to_string(),
+        check_out: body_json
+            .get("check_out")
+            .and_then(|v| v.as_str())
+            .unwrap_or("2024-01-21")
+            .to_string(),
+        num_guests: body_json
+            .get("num_guests")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(1) as i32,
+        total_price: body_json
+            .get("total_price")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(1500) as i32,
         status: "confirmed".to_string(),
         payment_status: "pending".to_string(),
     };
 
-    Ok(ResponseBuilder::new(StatusCode::CREATED)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&new_booking)?)
-        .build())
+    json_response(201, &new_booking)
 }
 
-fn get_dashboard_stats() -> Result<impl IntoResponse> {
+fn get_dashboard_stats() -> Response {
     let stats = DashboardStats {
         occupancy: OccupancyStats {
             available: 24,
@@ -120,22 +158,16 @@ fn get_dashboard_stats() -> Result<impl IntoResponse> {
         revenue: 4500,
     };
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&stats)?)
-        .build())
+    json_response(200, &stats)
 }
 
-fn get_pricing() -> Result<impl IntoResponse> {
+fn get_pricing() -> Response {
     let pricing = Pricing { dormitory: 15 };
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&pricing)?)
-        .build())
+    json_response(200, &pricing)
 }
 
-fn get_rooms() -> Result<impl IntoResponse> {
+fn get_rooms() -> Response {
     let rooms = vec![
         Room {
             id: "dorm-a".to_string(),
@@ -191,8 +223,45 @@ fn get_rooms() -> Result<impl IntoResponse> {
         },
     ];
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&rooms)?)
-        .build())
+    json_response(200, &rooms)
+}
+
+fn get_bookings() -> Response {
+    let bookings = vec![Booking {
+        id: "1".to_string(),
+        guest_name: "Juan Pérez".to_string(),
+        guest_email: "juan@example.com".to_string(),
+        guest_phone: Some("+34666123456".to_string()),
+        room_type: "dorm-a".to_string(),
+        check_in: "2024-01-15".to_string(),
+        check_out: "2024-01-16".to_string(),
+        num_guests: 1,
+        total_price: 1500,
+        status: "confirmed".to_string(),
+        payment_status: "paid".to_string(),
+    }];
+
+    json_response(200, &bookings)
+}
+
+fn json_response<T: Serialize>(status: u16, body: &T) -> Response {
+    match serde_json::to_string(body) {
+        Ok(json) => ResponseBuilder::new(status)
+            .header("content-type", "application/json")
+            .body(json)
+            .build(),
+        Err(err) => error_response(
+            500,
+            &format!("Failed to serialize response body: {err}"),
+        ),
+    }
+}
+
+fn error_response(status: u16, message: &str) -> Response {
+    json_response(
+        status,
+        &serde_json::json!({
+            "error": message
+        }),
+    )
 }

@@ -15,7 +15,7 @@ test('Complete registration flow - Document to Success Screen', async t => {
   console.log('📝 Step 1: Starting registration process');
   await t
     .click(Selector('button').withText(/start registration|comenzar registro/i))
-    .expect(Selector('[data-testid="registration-form"]').exists).ok('Registration form should be visible');
+    .expect(Selector('[data-testid="booking"]').exists).ok('Registration form should be visible');
 
   // Step 2: Select stay dates and check availability
   console.log('📅 Step 2: Selecting stay dates and checking availability');

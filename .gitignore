@@ -1,4 +1,5 @@
 node_modules
+target
 dist
 .DS_Store
 server/public
@@ -12,6 +13,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+v10
+v3
+.vercel
+.trunk
 
 # UPM (not needed with Nix)
 .upm/
@@ -22,6 +27,7 @@ Cargo.lock
 
 # === Node.js / npm / React / Vite ===
 node_modules/
+target/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -100,3 +106,33 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+spin
+spin.sig
+.env
+/frontend/v3
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe
+
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe
+
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe
+
+# local backups / artifacts
+v10/
+
+# ignore binaries
+spin
+spin.exe
+*.bin
+*.exe

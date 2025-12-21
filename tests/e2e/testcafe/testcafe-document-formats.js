@@ -13,7 +13,7 @@ test('Process PDF document with DNI front and back photos', async t => {
   
   await t
     .click(Selector('button').withText(/start registration|comenzar registro/i))
-    .expect(Selector('[data-testid="registration-form"]').exists).ok();
+    .expect(Selector('[data-testid="booking"]').exists).ok();
 
   // Select Other document type for PDF
   await t

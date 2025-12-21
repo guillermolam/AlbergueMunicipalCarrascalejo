@@ -5,6 +5,7 @@ This directory contains all Rust WASM microservices following Domain-Driven Desi
 ## Architecture Overview
 
 All services follow this consistent structure:
+
 ```
 services/<service-name>/
 ├── src/
@@ -22,53 +23,61 @@ services/<service-name>/
 ## Services Inventory
 
 ### 1. **shared** - Common Types & Utilities
+
 - **Purpose**: Shared DTOs, error types, and database utilities
 - **Key Features**: Cross-platform database support (PostgreSQL/SQLite)
 - **Dependencies**: sqlx, serde, uuid, chrono
 
 ### 2. **booking-service** - Reservation Management
+
 - **Purpose**: Handle all booking operations and bed management
 - **Key Features**: 2-hour reservation windows, bed assignment, payment tracking
 - **Ports**: BookingRepository, NotificationPort
 - **Database**: Bookings, beds, pricing tables
 
-### 3. **validation-service** - Document Processing
+### 3. **document-validation-service** - Document Processing
+
 - **Purpose**: OCR and document validation (DNI, NIE, passports)
 - **Key Features**: Tesseract OCR, checksum validation, confidence scoring
 - **Ports**: OCRPort, ChecksumPort
 - **Training Data**: `tests/ocr-training/` with real document samples
 
-### 4. **country-service** - Nationality & Visa Handling
+### 4. **location-service** - Nationality & Visa Handling
+
 - **Purpose**: Country information and visa requirements
 - **Key Features**: RESTCountries API integration, caching
 - **Ports**: RestCountriesAPIPort
 - **Cache**: In-memory country data with TTL
 
 ### 5. **security-service** - Authentication & Encryption
+
 - **Purpose**: JWT validation, PII encryption, audit logging
 - **Key Features**: Auth0 integration, AES-256-GCM encryption
 - **Ports**: JWTPort
 - **Compliance**: GDPR/NIS2 audit trails
 
 ### 6. **rate-limiter-service** - Request Throttling
+
 - **Purpose**: API rate limiting and reservation timeouts
 - **Key Features**: Token bucket algorithm, Redis storage
 - **Ports**: StoragePort
 - **Use Cases**: Prevent booking spam, enforce 2-hour limits
 
 ### 7. **notification-service** - Multi-Channel Messaging ✨ NEW
+
 - **Purpose**: Send notifications via email, SMS, WhatsApp, Telegram
-- **Key Features**: 
+- **Key Features**:
   - Template system with Handlebars
   - Multi-channel delivery with fallbacks
   - Booking confirmations, payment receipts, alerts
-- **Adapters**: 
+- **Adapters**:
   - `email/nodemailer.rs` - SMTP via Resend/Nodemailer
   - `sms/twilio.rs` - SMS & WhatsApp via Twilio
   - `telegram/telegraf.rs` - Telegram Bot API
 - **Templates**: Spanish localized notification templates
 
 ### 8. **info-on-arrival-service** - Content Management ✨ NEW
+
 - **Purpose**: Provide arrival information cards to pilgrims
 - **Key Features**:
   - Four card types: Mérida attractions, Carrascalejo info, emergencies, route maps
@@ -83,6 +92,7 @@ services/<service-name>/
 ## Deployment Architecture
 
 ### Development (WASM in Browser)
+
 ```bash
 # Build all services
 cargo build --target wasm32-unknown-unknown
@@ -97,6 +107,7 @@ import { InfoOnArrivalService } from '@wasm/info-on-arrival-service';
 ```
 
 ### Production (Spin/Fermyon)
+
 ```toml
 # spin.toml
 [[component]]
@@ -111,6 +122,7 @@ source = "services/info-on-arrival-service/target/wasm32-wasi/release/info_on_ar
 ## Cross-Service Communication
 
 Services communicate through:
+
 1. **Shared Types**: Common DTOs in `services/shared/src/lib.rs`
 2. **Event Bus**: Notification events between booking → notification service
 3. **Database**: Shared tables with foreign key relationships
@@ -119,11 +131,13 @@ Services communicate through:
 ## Testing Strategy
 
 Each service includes:
+
 - **Unit Tests**: `tests/unit_tests.rs` - Domain logic validation
 - **Integration Tests**: `tests/integration_tests.rs` - End-to-end workflows
-- **Training Data**: `tests/ocr-training/` (validation-service only)
+- **Training Data**: `tests/ocr-training/` (document-validation-service only)
 
 Run tests for all services:
+
 ```bash
 cargo test --workspace
 ```
@@ -131,6 +145,7 @@ cargo test --workspace
 ## Environment Configuration
 
 Required environment variables:
+
 ```bash
 # Database
 DATABASE_URL=postgresql://user:pass@host/db
@@ -144,7 +159,7 @@ TWILIO_AUTH_TOKEN=xxx
 TELEGRAM_BOT_TOKEN=xxx
 
 # External APIs
-AUTH0_DOMAIN=albergue.eu.auth0.com
+LOGTO_DOMAIN=1y6uln.logto.app
 REST_COUNTRIES_API_KEY=xxx
 ```
 
@@ -153,13 +168,13 @@ REST_COUNTRIES_API_KEY=xxx
 ```mermaid
 graph TD
     A[shared] --> B[booking-service]
-    A --> C[validation-service]
-    A --> D[country-service]
+    A --> C[document-validation-service]
+    A --> D[location-service]
     A --> E[security-service]
     A --> F[rate-limiter-service]
     A --> G[notification-service]
     A --> H[info-on-arrival-service]
-    
+
     B --> G
     B --> F
     E --> B

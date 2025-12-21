@@ -1,0 +1,271 @@
+# Frontend Development Taskfile
+# SSR-safe configuration with Supabase integration
+
+version: '3'
+
+vars:
+  FRONTEND_DIR: "./frontend"
+  NODE_ENV: "{{.NODE_ENV | default "development"}}"
+  SUPABASE_URL: "{{.SUPABASE_URL | default ""}}"
+  SUPABASE_ANON_KEY: "{{.SUPABASE_ANON_KEY | default ""}}"
+  JWT_SECRET: "{{.JWT_SECRET | default ""}}"
+  ENCRYPTION_KEY: "{{.ENCRYPTION_KEY | default ""}}"
+
+env:
+  NODE_ENV: "{{.NODE_ENV}}"
+  SUPABASE_URL: "{{.SUPABASE_URL}}"
+  SUPABASE_ANON_KEY: "{{.SUPABASE_ANON_KEY}}"
+  JWT_SECRET: "{{.JWT_SECRET}}"
+  ENCRYPTION_KEY: "{{.ENCRYPTION_KEY}}"
+  PUBLIC_SUPABASE_URL: "{{.SUPABASE_URL}}"
+  PUBLIC_SUPABASE_ANON_KEY: "{{.SUPABASE_ANON_KEY}}"
+  PUBLIC_API_URL: "{{.PUBLIC_API_URL | default "/api"}}"
+  PUBLIC_APP_URL: "{{.PUBLIC_APP_URL | default "https://alberguecarrascalejo.fermyon.app"}}"
+
+tasks:
+  # Frontend development tasks
+  frontend:install:
+    desc: Install frontend dependencies
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "📦 Installing frontend dependencies..."
+      - pnpm install --frozen-lockfile
+      - echo "✅ Frontend dependencies installed"
+
+  frontend:dev:
+    desc: Start frontend development server
+    dir: "{{.FRONTEND_DIR}}"
+    deps: [frontend:check-env]
+    cmds:
+      - echo "🚀 Starting frontend development server..."
+      - pnpm dev
+
+  frontend:build:
+    desc: Build frontend for production
+    dir: "{{.FRONTEND_DIR}}"
+    deps: [frontend:check-env, frontend:type-check, frontend:lint]
+    cmds:
+      - echo "🏗️ Building frontend for production..."
+      - pnpm build
+      - echo "✅ Frontend built successfully"
+
+  frontend:preview:
+    desc: Preview built frontend
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "👀 Previewing built frontend..."
+      - pnpm preview
+
+  frontend:type-check:
+    desc: Run TypeScript type checking
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🔍 Running TypeScript type checking..."
+      - pnpm type-check
+      - echo "✅ Type checking passed"
+
+  frontend:lint:
+    desc: Lint frontend code
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🔧 Linting frontend code..."
+      - pnpm lint
+      - echo "✅ Linting completed"
+
+  frontend:format:
+    desc: Format frontend code
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "💅 Formatting frontend code..."
+      - pnpm format
+      - echo "✅ Code formatted"
+
+  frontend:test:
+    desc: Run frontend tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🧪 Running frontend tests..."
+      - pnpm test
+      - echo "✅ Tests completed"
+
+  frontend:test:watch:
+    desc: Run frontend tests in watch mode
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "👀 Running frontend tests in watch mode..."
+      - pnpm test:watch
+
+  frontend:test:coverage:
+    desc: Run frontend tests with coverage
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "📊 Running frontend tests with coverage..."
+      - pnpm test:coverage
+      - echo "✅ Coverage report generated"
+
+  frontend:clean:
+    desc: Clean frontend build artifacts
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🧹 Cleaning frontend build artifacts..."
+      - pnpm clean
+      - echo "✅ Frontend cleaned"
+
+  frontend:analyze:
+    desc: Analyze frontend bundle size
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "📈 Analyzing frontend bundle..."
+      - pnpm build:analyze
+      - echo "✅ Bundle analysis complete"
+
+  frontend:astro-check:
+    desc: Run Astro check for component validation
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🚀 Running Astro check..."
+      - pnpm astro-check
+      - echo "✅ Astro check completed"
+
+  frontend:check-env:
+    desc: Check required environment variables
+    cmds:
+      - echo "🔍 Checking frontend environment variables..."
+      - |
+        if [ -z "$SUPABASE_URL" ]; then
+          echo "⚠️  Warning: SUPABASE_URL not set, using fallback configuration"
+        else
+          echo "✅ SUPABASE_URL configured"
+        fi
+      - |
+        if [ -z "$SUPABASE_ANON_KEY" ]; then
+          echo "⚠️  Warning: SUPABASE_ANON_KEY not set, using fallback configuration"
+        else
+          echo "✅ SUPABASE_ANON_KEY configured"
+        fi
+      - |
+        if [ -z "$JWT_SECRET" ]; then
+          echo "⚠️  Warning: JWT_SECRET not set, using fallback configuration"
+        else
+          echo "✅ JWT_SECRET configured"
+        fi
+      - |
+        if [ -z "$ENCRYPTION_KEY" ]; then
+          echo "⚠️  Warning: ENCRYPTION_KEY not set, using fallback configuration"
+        else
+          echo "✅ ENCRYPTION_KEY configured"
+        fi
+
+  frontend:generate-types:
+    desc: Generate TypeScript types from database
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "📝 Generating TypeScript types..."
+      - pnpm supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/database.ts
+      - echo "✅ TypeScript types generated"
+
+  frontend:db:migrate:
+    desc: Run database migrations
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🗄️ Running database migrations..."
+      - pnpm supabase migration up
+      - echo "✅ Database migrations completed"
+
+  frontend:db:reset:
+    desc: Reset database and run migrations
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🔄 Resetting database..."
+      - pnpm supabase db reset
+      - echo "✅ Database reset completed"
+
+  frontend:db:seed:
+    desc: Seed database with sample data
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🌱 Seeding database..."
+      - pnpm supabase seed
+      - echo "✅ Database seeded"
+
+  frontend:dev:debug:
+    desc: Start frontend with debug logging
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🐛 Starting frontend with debug logging..."
+      - DEBUG=astro:* pnpm dev
+
+  frontend:spin-build:
+    desc: Build frontend for Spin/WASM deployment
+    dir: "{{.FRONTEND_DIR}}"
+    deps: [frontend:check-env, frontend:type-check]
+    cmds:
+      - echo "🚀 Building frontend for Spin/WASM deployment..."
+      - pnpm build
+      - echo "✅ Frontend built for Spin deployment"
+
+  frontend:spin-preview:
+    desc: Preview frontend in Spin environment
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🔄 Previewing frontend in Spin environment..."
+      - spin build
+      - spin up
+
+  # i18n tasks
+  frontend:i18n:generate:
+    desc: Generate i18n locale files for all languages
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🌐 Generating i18n locale files..."
+      - node scripts/create-locale-files.js
+      - echo "✅ i18n locale files generated"
+
+  frontend:i18n:validate:
+    desc: Validate i18n configuration and files
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🔍 Validating i18n configuration..."
+      - node scripts/validate-i18n.js
+      - echo "✅ i18n validation completed"
+
+  frontend:i18n:test:
+    desc: Run i18n specific tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🌐 Running i18n tests..."
+      - pnpm test tests/i18n/
+      - echo "✅ i18n tests completed"
+
+  frontend:i18n:check:
+    desc: Check i18n implementation status
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "🔍 Checking i18n implementation..."
+      - node scripts/check-i18n.js
+      - echo "✅ i18n implementation check completed"
+
+  # Combined tasks
+  frontend:quality:
+    desc: Run all quality checks (type-check, lint, format)
+    deps: [frontend:type-check, frontend:lint, frontend:format]
+    cmds:
+      - echo "✅ All quality checks completed"
+
+  frontend:setup:
+    desc: Complete frontend setup
+    deps: [frontend:install, frontend:db:migrate, frontend:generate-types, frontend:i18n:generate]
+    cmds:
+      - echo "✅ Frontend setup completed"
+
+  frontend:full-build:
+    desc: Complete frontend build with all checks
+    deps: [frontend:quality, frontend:test, frontend:i18n:test, frontend:build]
+    cmds:
+      - echo "✅ Frontend full build completed"
+
+  # Default task
+  default:
+    desc: Start frontend development (default task)
+    cmds:
+      - task: frontend:dev

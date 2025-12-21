@@ -1,0 +1,374 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Mi Camino - Camino Dashboard" description="Tu progreso y estadísticas del Camino de Santiago">
+  <main class="container mx-auto px-4 py-8">
+    
+    <!-- Hero Section -->
+    <section class="text-center mb-12 animate-fade-in-up">
+      <div class="card mx-auto max-w-4xl">
+        <div class="flex flex-col items-center text-center">
+          <div class="text-6xl mb-4">🥾</div>
+          <h1 class="text-4xl md:text-5xl font-bold text-primary-900 mb-4">
+            Mi Camino
+          </h1>
+          <p class="text-lg text-primary-600 mb-6 max-w-2xl">
+            Tu viaje personal por el Camino de Santiago con estadísticas detalladas y progreso en tiempo real
+          </p>
+          <div class="flex flex-wrap justify-center gap-4">
+            <div class="badge badge-blue">📍 Etapa Actual: Mérida → Alcuéscar</div>
+            <div class="badge badge-green">🎯 127 km recorridos</div>
+            <div class="badge badge-yellow">⏱️ 7 días en camino</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Progress Overview -->
+    <section class="mb-12">
+      <h2 class="text-3xl font-bold text-primary-900 mb-8 text-center">Progreso General</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Overall Progress -->
+        <div class="lg:col-span-2">
+          <div class="card">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="text-3xl">📊</div>
+              <div>
+                <h3 class="text-xl font-bold text-primary-900">Avance Total</h3>
+                <p class="text-sm text-primary-600">Tu progreso en el Camino de Santiago</p>
+              </div>
+            </div>
+            
+            <div class="space-y-6">
+              <!-- Progress Bar -->
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <span class="text-sm font-semibold text-primary-700">Total del Camino</span>
+                  <span class="text-sm font-bold text-accent-green-600">15%</span>
+                </div>
+                <div class="w-full bg-primary-200 rounded-full h-3">
+                  <div class="bg-gradient-primary h-3 rounded-full w-15"></div>
+                </div>
+                <div class="flex justify-between text-sm text-primary-600 mt-2">
+                  <span>127 km recorridos</span>
+                  <span>720 km restantes</span>
+                  <span>847 km total</span>
+                </div>
+              </div>
+              
+              <!-- Stats Grid -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-primary-50 p-4 rounded-lg text-center">
+                  <div class="text-2xl mb-2">📅</div>
+                  <div class="text-2xl font-bold text-primary-900">7</div>
+                  <div class="text-sm text-primary-600">Días</div>
+                </div>
+                <div class="bg-primary-50 p-4 rounded-lg text-center">
+                  <div class="text-2xl mb-2">🏃</div>
+                  <div class="text-2xl font-bold text-primary-900">18.1</div>
+                  <div class="text-sm text-primary-600">km/día</div>
+                </div>
+                <div class="bg-primary-50 p-4 rounded-lg text-center">
+                  <div class="text-2xl mb-2">⏱️</div>
+                  <div class="text-2xl font-bold text-primary-900">4.2</div>
+                  <div class="text-sm text-primary-600">h/día</div>
+                </div>
+                <div class="bg-primary-50 p-4 rounded-lg text-center">
+                  <div class="text-2xl mb-2">🔥</div>
+                  <div class="text-2xl font-bold text-primary-900">18,932</div>
+                  <div class="text-sm text-primary-600">calorías</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="space-y-6">
+          <div class="card">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="text-2xl">⚡</div>
+              <h3 class="text-lg font-bold text-primary-900">Estadísticas Rápidas</h3>
+            </div>
+            <div class="space-y-4">
+              <div class="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">📅</span>
+                  <div>
+                    <div class="font-semibold text-primary-900">7</div>
+                    <div class="text-sm text-primary-600">Días en camino</div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">🏃</span>
+                  <div>
+                    <div class="font-semibold text-primary-900">18.1 km/día</div>
+                    <div class="text-sm text-primary-600">Promedio</div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">⏱️</span>
+                  <div>
+                    <div class="font-semibold text-primary-900">4.2 h/día</div>
+                    <div class="text-sm text-primary-600">Caminando</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="text-2xl">🏆</div>
+              <h3 class="text-lg font-bold text-primary-900">Logros</h3>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-3 bg-accent-green-50 rounded-lg">
+                <span class="text-xl">🌅</span>
+                <div>
+                  <div class="font-semibold text-primary-900">Amanecer Mágico</div>
+                  <div class="text-sm text-primary-600">Primer amanecer en el camino</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-accent-green-50 rounded-lg">
+                <span class="text-xl">🦶</span>
+                <div>
+                  <div class="font-semibold text-primary-900">100km Club</div>
+                  <div class="text-sm text-primary-600">Más de 100 km completados</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-primary-100 rounded-lg opacity-50">
+                <span class="text-xl">🏔️</span>
+                <div>
+                  <div class="font-semibold text-primary-700">Montañero</div>
+                  <div class="text-sm text-primary-500">Próximamente</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Current Stage -->
+    <section class="mb-12">
+      <div class="card">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="text-3xl">🗺️</div>
+          <div>
+            <h2 class="text-2xl font-bold text-primary-900">Etapa Actual</h2>
+            <p class="text-sm text-primary-600">Mérida → Alcuéscar (38.2 km)</p>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-sm font-semibold text-primary-700">Progreso de Etapa</span>
+              <span class="text-sm font-bold text-accent-green-600">68%</span>
+            </div>
+            <div class="w-full bg-primary-200 rounded-full h-3 mb-4">
+              <div class="bg-gradient-primary h-3 rounded-full w-17/25"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm text-primary-600">
+              <div class="bg-primary-50 p-3 rounded-lg">
+                <div class="font-semibold">26 km</div>
+                <div class="text-xs">Completados</div>
+              </div>
+              <div class="bg-primary-50 p-3 rounded-lg">
+                <div class="font-semibold">12.2 km</div>
+                <div class="text-xs">Restantes</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-primary-50 p-4 rounded-lg">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xl">📍</span>
+                <div class="font-semibold text-primary-900">Punto de Partida</div>
+              </div>
+              <div class="text-sm text-primary-600">Mérida</div>
+              <div class="text-xs text-primary-500">08:30 AM</div>
+            </div>
+            <div class="bg-primary-50 p-4 rounded-lg">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xl">🎯</span>
+                <div class="font-semibold text-primary-900">Destino</div>
+              </div>
+              <div class="text-sm text-primary-600">Alcuéscar</div>
+              <div class="text-xs text-primary-500">Est. 4:30 PM</div>
+            </div>
+            <div class="bg-primary-50 p-4 rounded-lg">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xl">⏱️</span>
+                <div class="font-semibold text-primary-900">Tiempo Caminando</div>
+              </div>
+              <div class="text-sm text-primary-600">5h 15m</div>
+              <div class="text-xs text-primary-500">2h 45m restantes</div>
+            </div>
+            <div class="bg-primary-50 p-4 rounded-lg">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xl">📈</span>
+                <div class="font-semibold text-primary-900">Ritmo Actual</div>
+              </div>
+              <div class="text-sm text-primary-600">4.9 km/h</div>
+              <div class="text-xs text-primary-500">Buen ritmo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recommendations -->
+    <section class="mb-12">
+      <div class="card">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="text-3xl">💡</div>
+          <div>
+            <h2 class="text-2xl font-bold text-primary-900">Recomendaciones Inteligentes</h2>
+            <p class="text-sm text-primary-600">Basadas en tu progreso y condición</p>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-accent-red-50 border border-accent-red-200 rounded-lg p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-2xl">🚨</span>
+              <h3 class="text-lg font-bold text-accent-red-800">Importante</h3>
+            </div>
+            <p class="text-accent-red-700 mb-4">
+              Considera tomarte un día de descanso en Alcuéscar. Tu ritmo ha sido constante pero exigente.
+            </p>
+            <div class="flex gap-2">
+              <span class="badge badge-red">7 días seguidos</span>
+              <span class="badge badge-red">18.1 km/día</span>
+            </div>
+          </div>
+          
+          <div class="bg-accent-green-50 border border-accent-green-200 rounded-lg p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-2xl">🌟</span>
+              <h3 class="text-lg font-bold text-accent-green-800">Optimización</h3>
+            </div>
+            <p class="text-accent-green-700 mb-4">
+              Tu ritmo actual es excelente. Podrías alcanzar Santiago en 34 días si mantienes este ritmo.
+            </p>
+            <div class="flex gap-2">
+              <span class="badge badge-green">Est. 34 días</span>
+              <span class="badge badge-green">Ritmo óptimo</span>
+            </div>
+          </div>
+          
+          <div class="bg-accent-blue-50 border border-accent-blue-200 rounded-lg p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-2xl">🏃</span>
+              <h3 class="text-lg font-bold text-accent-blue-800">Próxima Etapa</h3>
+            </div>
+            <p class="text-accent-blue-700 mb-4">
+              Alcuéscar → Cáceres (23.1 km). Etapa más corta, perfecta para recuperar energías.
+            </p>
+            <div class="flex gap-2">
+              <span class="badge badge-blue">23.1 km</span>
+              <span class="badge badge-blue">Est. 5-6 horas</span>
+            </div>
+          </div>
+          
+          <div class="bg-accent-yellow-50 border border-accent-yellow-200 rounded-lg p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-2xl">⚡</span>
+              <h3 class="text-lg font-bold text-accent-yellow-800">Rendimiento</h3>
+            </div>
+            <p class="text-accent-yellow-700 mb-4">
+              Has mantenido un ritmo constante. Tu velocidad promedio de 4.9 km/h es ideal para el Camino.
+            </p>
+            <div class="flex gap-2">
+              <span class="badge badge-yellow">4.9 km/h</span>
+              <span class="badge badge-yellow">Ritmo estable</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fun Facts -->
+    <section class="mb-12">
+      <div class="card">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="text-3xl">🎉</div>
+          <div>
+            <h2 class="text-2xl font-bold text-primary-900">Curiosidades Camperas</h2>
+            <p class="text-sm text-primary-600">Datos fascinantes sobre tu viaje</p>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-primary-50 p-6 rounded-lg">
+            <div class="flex items-center gap-4 mb-4">
+              <span class="text-3xl">🌍</span>
+              <h3 class="text-lg font-bold text-primary-900">Has caminado el equivalente a...</h3>
+            </div>
+            <p class="text-primary-700">
+              ¡Cruzar la península ibérica de este a oeste! Tu distancia recorrida (127 km) es similar a la anchura de España en su punto más estrecho.
+            </p>
+          </div>
+          
+          <div class="bg-primary-50 p-6 rounded-lg">
+            <div class="flex items-center gap-4 mb-4">
+              <span class="text-3xl">🔥</span>
+              <h3 class="text-lg font-bold text-primary-900">Calorías quemadas</h3>
+            </div>
+            <p class="text-primary-700">
+              Las 18,932 calorías que has quemado equivalen a aproximadamente 37 bocadillos de tortilla española o 75 cafés con leche. ¡Eso es mucha energía!
+            </p>
+          </div>
+          
+          <div class="bg-primary-50 p-6 rounded-lg">
+            <div class="flex items-center gap-4 mb-4">
+              <span class="text-3xl">👣</span>
+              <h3 class="text-lg font-bold text-primary-900">Pasos dados</h3>
+            </div>
+            <p class="text-primary-700">
+              Tus 168,420 pasos equivalen a subir y bajar la Torre Eiffel aproximadamente 28 veces. ¡Qué altura!
+            </p>
+          </div>
+          
+          <div class="bg-primary-50 p-6 rounded-lg">
+            <div class="flex items-center gap-4 mb-4">
+              <span class="text-3xl">⏰</span>
+              <h3 class="text-lg font-bold text-primary-900">Tiempo de calidad</h3>
+            </div>
+            <p class="text-primary-700">
+              Has pasado 29.4 horas caminando, lo que equivale a ver 14 películas largas o leer aproximadamente 147 páginas de un buen libro.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <section class="text-center">
+      <div class="card mx-auto max-w-2xl">
+        <h3 class="text-xl font-bold text-primary-900 mb-4">¿Qué te gustaría hacer?</h3>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/book" class="btn btn-primary text-white">
+            🏨 Reservar Albergue
+          </a>
+          <a href="/camino" class="btn btn-outline text-primary-700 border-primary-300">
+            📊 Ver Más Estadísticas
+          </a>
+          <button class="btn btn-ghost text-primary-600">
+            🔄 Actualizar Progreso
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</Layout>

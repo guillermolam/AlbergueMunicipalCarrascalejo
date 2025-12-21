@@ -1,9 +1,6 @@
 use async_trait::async_trait;
-use chrono::{Duration};
-use openidconnect::{
-    core::CoreProviderMetadata,
-    IssuerUrl, ClientId, ClientSecret, RedirectUrl,
-};
+use chrono::Duration;
+use openidconnect::{core::CoreProviderMetadata, ClientId, ClientSecret, IssuerUrl, RedirectUrl};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -53,24 +50,27 @@ pub struct Claims {
 }
 
 pub async fn load_config() -> anyhow::Result<AppConfig> {
-    let logto_issuer = env::var("LOGTO_ISSUER")?;
-    let zitadel_issuer = env::var("ZITADEL_ISSUER")?;
-    let client_id = env::var("CLIENT_ID")?;
-    let client_secret = env::var("CLIENT_SECRET")?;
-    let redirect_uri = env::var("REDIRECT_URI")?;
+    let logto_issuer = env::var("LOGTO_ISSUER_ENDPOINT")?;
+    let zitadel_domain = env::var("ZITADEL_DOMAIN")?;
+    let client_id = env::var("LOGTO_APP_ID")?;
+    let client_secret = env::var("LOGTO_APP_SECRET")?;
+    let redirect_uri = format!("{}/sign-in-callback", env::var("LOGTO_ORIGIN_URL")?);
     let jwt_secret = env::var("JWT_SECRET").unwrap_or_default().into_bytes();
-    let ttl_secs: i64 = env::var("TOKEN_TTL").unwrap_or_else(|_| "3600".into()).parse()?;
+    let ttl_secs: i64 = env::var("TOKEN_TTL")
+        .unwrap_or_else(|_| "3600".into())
+        .parse()?;
 
     // Discover OIDC metadata
     let client = Client::new();
-    let logto_meta = CoreProviderMetadata::discover_async(
-        IssuerUrl::new(logto_issuer.clone())?,
-        client.clone(),
-    ).await?;
+    let logto_meta =
+        CoreProviderMetadata::discover_async(IssuerUrl::new(logto_issuer.clone())?, client.clone())
+            .await?;
+    let zitadel_issuer = format!("https://{}/oidc", zitadel_domain);
     let zitadel_meta = CoreProviderMetadata::discover_async(
         IssuerUrl::new(zitadel_issuer.clone())?,
         client.clone(),
-    ).await?;
+    )
+    .await?;
 
     let primary = LogtoProvider {
         metadata: logto_meta,

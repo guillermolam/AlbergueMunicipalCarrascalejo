@@ -1,0 +1,182 @@
+---
+/**
+ * DoodlePattern - CSS Doodle background pattern component
+ * Creates generative, animated background patterns using css-doodle
+ */
+
+export interface Props {
+  pattern?: 'dots' | 'waves' | 'grid' | 'organic' | 'camino' | 'custom';
+  grid?: string;
+  customRule?: string;
+  class?: string;
+  animated?: boolean;
+  opacity?: number;
+}
+
+const {
+  pattern = 'dots',
+  grid = '10x10',
+  customRule = '',
+  class: className = '',
+  animated = true,
+  opacity = 0.1,
+}: Props = Astro.props;
+
+// Predefined pattern rules
+const patterns = {
+  dots: `
+    :doodle {
+      @grid: ${grid};
+      @size: 100%;
+    }
+    background: radial-gradient(
+      circle,
+      #00AB39 @r(10%, 20%),
+      transparent @r(20%, 30%)
+    );
+    transform: scale(@r(.5, 1.5)) rotate(@r(360deg));
+    opacity: ${opacity};
+  `,
+
+  waves: `
+    :doodle {
+      @grid: ${grid};
+      @size: 100%;
+    }
+    background: linear-gradient(
+      @r(360deg),
+      #00AB39,
+      transparent @r(50%, 100%)
+    );
+    clip-path: polygon(
+      0 @r(20%, 80%),
+      100% @r(20%, 80%),
+      100% 100%,
+      0 100%
+    );
+    opacity: ${opacity};
+  `,
+
+  grid: `
+    :doodle {
+      @grid: ${grid};
+      @size: 100%;
+    }
+    border: 1px solid #00AB39;
+    border-radius: @r(0%, 50%);
+    transform: rotate(@r(360deg)) scale(@r(.3, .8));
+    opacity: ${opacity};
+  `,
+
+  organic: `
+    :doodle {
+      @grid: ${grid};
+      @size: 100%;
+    }
+    background: radial-gradient(
+      ellipse at @r(100%) @r(100%),
+      #00AB39 @r(10%, 30%),
+      #EAC102 @r(40%, 60%),
+      transparent @r(70%, 90%)
+    );
+    transform: rotate(@r(360deg));
+    opacity: ${opacity};
+  `,
+
+  camino: `
+    :doodle {
+      @grid: ${grid};
+      @size: 100%;
+    }
+    @place: center;
+    @size: @r(20%, 40%);
+
+    background: @pick(
+      #00AB39,
+      #EAC102,
+      #ED1C24,
+      #0071BC
+    );
+
+    border-radius: @pick(
+      50%,
+      @r(10%, 30%)
+    );
+
+    transform:
+      translate(@r(-50%, 50%), @r(-50%, 50%))
+      rotate(@r(360deg))
+      scale(@r(.5, 1.2));
+
+    opacity: ${opacity};
+
+    ${animated ? `
+    animation: float @r(3s, 8s) ease-in-out infinite;
+    animation-delay: @r(0s, 3s);
+    ` : ''}
+  `,
+
+  custom: customRule,
+};
+
+const selectedPattern = patterns[pattern] || patterns.dots;
+---
+
+<css-doodle class={`doodle-pattern ${className}`}>
+  {selectedPattern}
+</css-doodle>
+
+<style>
+  .doodle-pattern {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  /* Float animation for camino pattern */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-20px) rotate(180deg);
+    }
+  }
+
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .doodle-pattern * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* Ensure patterns don't interfere with content */
+  .doodle-pattern::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.7) 100%
+    );
+    z-index: 1;
+  }
+</style>
+
+<script>
+/* load css-doodle dynamically from unpkg */
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  import('https://unpkg.com/css-doodle@0.48.0/css-doodle.min.js').then((module: any) => {
+    // @ts-ignore
+    window.CSSDoodle = module.default || module;
+    console.log('css-doodle loaded');
+  }).catch(err => {
+    console.warn('Failed to load css-doodle:', err);
+  });
+}
+</script>

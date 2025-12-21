@@ -1,0 +1,636 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Dashboard - Albergue Municipal Carrascalejo" description="Panel de control del peregrino">
+  <link rel="stylesheet" href="/src/styles/dashboard.css" />
+  <main class="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50">
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 opacity-90"></div>
+      <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="text-center">
+          <h1 class="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+            Bienvenido, Peregrino
+          </h1>
+          <p class="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+            Tu dashboard personal para gestionar tu viaje en el Camino de Santiago
+          </p>
+          <div class="flex flex-wrap justify-center gap-4">
+            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-6 py-2">
+              <span class="text-white font-semibold">📍 Vía de la Plata</span>
+            </div>
+            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-6 py-2">
+              <span class="text-white font-semibold">🎯 847 km hasta Santiago</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Decorative Elements -->
+      <div class="absolute top-10 left-10 w-20 h-20 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
+      <div class="absolute bottom-10 right-10 w-32 h-32 bg-white bg-opacity-10 rounded-full animate-pulse delay-1000"></div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        <!-- My Booking Section -->
+        <div class="dashboard-card group">
+          <div class="card-header bg-gradient-to-br from-green-500 to-emerald-600">
+            <div class="card-icon">📅</div>
+            <h2 class="card-title">Mi Reserva</h2>
+            <p class="card-subtitle">Gestiona tu alojamiento</p>
+          </div>
+          <div class="card-content">
+            <div class="booking-status">
+              <div class="status-indicator confirmed"></div>
+              <span class="status-text">Confirmada</span>
+            </div>
+            <div class="booking-details">
+              <div class="detail-item">
+                <span class="detail-label">Llegada:</span>
+                <span class="detail-value">15 Ene 2024</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Noches:</span>
+                <span class="detail-value">3</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Habitación:</span>
+                <span class="detail-value">Compartida</span>
+              </div>
+            </div>
+            <a href="/booking-confirmed" class="gorgeous-button green">
+              <span class="button-icon">👁️</span>
+              Ver Detalles
+            </a>
+          </div>
+        </div>
+
+        <!-- The Hostel Section -->
+        <div class="dashboard-card group">
+          <div class="card-header bg-gradient-to-br from-emerald-500 to-teal-600">
+            <div class="card-icon">🏠</div>
+            <h2 class="card-title">El Albergue</h2>
+            <p class="card-subtitle">Servicios y horarios</p>
+          </div>
+          <div class="card-content">
+            <div class="hostel-info">
+              <div class="info-item">
+                <span class="info-icon">🕐</span>
+                <span class="info-text">Check-in: 14:00 - 22:00</span>
+              </div>
+              <div class="info-item">
+                <span class="info-icon">🍳</span>
+                <span class="info-text">Desayuno: 7:00 - 9:00</span>
+              </div>
+              <div class="info-item">
+                <span class="info-icon">🧺</span>
+                <span class="info-text">Lavandería disponible</span>
+              </div>
+            </div>
+            <a href="/info" class="gorgeous-button green">
+              <span class="button-icon">ℹ️</span>
+              Más Info
+            </a>
+          </div>
+        </div>
+
+        <!-- My Camino Section -->
+        <div class="dashboard-card group lg:col-span-1">
+          <div class="card-header bg-gradient-to-br from-teal-500 to-cyan-600">
+            <div class="card-icon">🥾</div>
+            <h2 class="card-title">Mi Camino</h2>
+            <p class="card-subtitle">Tu progreso y estadísticas</p>
+          </div>
+          <div class="card-content">
+            <div class="camino-stats">
+              <div class="stat-item">
+                <div class="stat-number">127</div>
+                <div class="stat-label">km recorridos</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">15%</div>
+                <div class="stat-label">completado</div>
+              </div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 15%"></div>
+            </div>
+            <a href="/camino" class="gorgeous-button green">
+              <span class="button-icon">📊</span>
+              Ver Mi Progreso
+            </a>
+            <a href="/demo-camino" class="gorgeous-button blue mt-2">
+              <span class="button-icon">🎮</span>
+              Demo Interactiva
+            </a>
+          </div>
+        </div>
+
+        <!-- Services & Attractions Section -->
+        <div class="dashboard-card group lg:col-span-2">
+          <div class="card-header bg-gradient-to-br from-cyan-500 to-blue-600">
+            <div class="card-icon">🎯</div>
+            <h2 class="card-title">Servicios & Atracciones</h2>
+            <p class="card-subtitle">Descubre lo que te rodea</p>
+          </div>
+          <div class="card-content">
+            <div class="services-grid">
+              <div class="service-item">
+                <div class="service-icon">🏪</div>
+                <div class="service-info">
+                  <h4>Supermercado</h4>
+                  <p>2 min a pie</p>
+                </div>
+              </div>
+              <div class="service-item">
+                <div class="service-icon">⛪</div>
+                <div class="service-info">
+                  <h4>Iglesia</h4>
+                  <p>5 min a pie</p>
+                </div>
+              </div>
+              <div class="service-item">
+                <div class="service-icon">🏥</div>
+                <div class="service-info">
+                  <h4>Farmacia</h4>
+                  <p>3 min a pie</p>
+                </div>
+              </div>
+              <div class="service-item">
+                <div class="service-icon">☕</div>
+                <div class="service-info">
+                  <h4>Cafetería</h4>
+                  <p>1 min a pie</p>
+                </div>
+              </div>
+            </div>
+            <a href="/services" class="gorgeous-button green">
+              <span class="button-icon">🗺️</span>
+              Ver Mapa Completo
+            </a>
+          </div>
+        </div>
+
+        <!-- Emergency Contacts Section -->
+        <div class="dashboard-card group">
+          <div class="card-header bg-gradient-to-br from-red-500 to-orange-600">
+            <div class="card-icon">🚨</div>
+            <h2 class="card-title">Emergencias</h2>
+            <p class="card-subtitle">Contactos importantes</p>
+          </div>
+          <div class="card-content">
+            <div class="emergency-contacts">
+              <div class="contact-item">
+                <div class="contact-icon">📞</div>
+                <div class="contact-info">
+                  <h4>Emergencias</h4>
+                  <p>112</p>
+                </div>
+                <a href="tel:112" class="contact-button">Llamar</a>
+              </div>
+              <div class="contact-item">
+                <div class="contact-icon">🏥</div>
+                <div class="contact-info">
+                  <h4>Ambulancia</h4>
+                  <p>924 123 456</p>
+                </div>
+                <a href="tel:+34924123456" class="contact-button">Llamar</a>
+              </div>
+              <div class="contact-item">
+                <div class="contact-icon">👮</div>
+                <div class="contact-info">
+                  <h4>Policía</h4>
+                  <p>092</p>
+                </div>
+                <a href="tel:092" class="contact-button">Llamar</a>
+              </div>
+            </div>
+            <a href="/emergency" class="gorgeous-button red">
+              <span class="button-icon">📋</span>
+              Ver Todos
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="mt-12 bg-white rounded-2xl shadow-2xl p-8 border border-slate-200">
+        <h3 class="text-2xl font-bold text-slate-800 mb-6 text-center">Acciones Rápidas</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button class="quick-action-button">
+            <span class="quick-icon">📍</span>
+            <span class="quick-text">Compartir Ubicación</span>
+          </button>
+          <button class="quick-action-button">
+            <span class="quick-icon">📸</span>
+            <span class="quick-text">Foto del Día</span>
+          </button>
+          <button class="quick-action-button">
+            <span class="quick-icon">✍️</span>
+            <span class="quick-text">Nota de Viaje</span>
+          </button>
+          <button class="quick-action-button">
+            <span class="quick-icon">⭐</span>
+            <span class="quick-text">Valorar Albergue</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  /* Dashboard Card Styles */
+  .dashboard-card {
+    background: white;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.1),
+      0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 
+      0 30px 60px rgba(0, 0, 0, 0.15),
+      0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  }
+
+  .card-header {
+    padding: 1.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .card-subtitle {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    margin: 0;
+    margin-top: 0.25rem;
+  }
+
+  .card-content {
+    padding: 1.5rem;
+  }
+
+  /* Booking Status */
+  .booking-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .status-indicator {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .status-indicator.confirmed {
+    background: #10b981;
+  }
+
+  .status-text {
+    font-weight: 600;
+    color: #059669;
+  }
+
+  .booking-details {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+
+  .detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+  }
+
+  .detail-label {
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+
+  .detail-value {
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  /* Camino Stats */
+  .camino-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .progress-bar {
+    background: #e2e8f0;
+    border-radius: 9999px;
+    height: 0.5rem;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d9488 0%, #0891b2 100%);
+    border-radius: 9999px;
+    transition: width 0.5s ease;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+  }
+
+  /* Services Grid */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .service-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .service-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.15);
+  }
+
+  .service-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .service-info h4 {
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  .service-info p {
+    color: #64748b;
+    font-size: 0.75rem;
+    margin: 0;
+  }
+
+  /* Emergency Contacts */
+  .emergency-contacts {
+    space-y: 0.75rem;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .contact-icon {
+    font-size: 1.25rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .contact-info h4 {
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  .contact-info p {
+    color: #64748b;
+    font-size: 0.75rem;
+    margin: 0;
+  }
+
+  .contact-button {
+    margin-left: auto;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .contact-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Gorgeous Buttons */
+  .gorgeous-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.1),
+      0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  }
+
+  .gorgeous-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .gorgeous-button:hover::before {
+    left: 100%;
+  }
+
+  .gorgeous-button.green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+  }
+
+  .gorgeous-button.green:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+      0 16px 32px rgba(16, 185, 129, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  }
+
+  .gorgeous-button.red {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+  }
+
+  .gorgeous-button.red:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+      0 16px 32px rgba(239, 68, 68, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  }
+
+  .gorgeous-button.blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+  }
+
+  .gorgeous-button.blue:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+      0 16px 32px rgba(59, 130, 246, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  }
+
+  .button-icon {
+    font-size: 1.125rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  /* Quick Action Buttons */
+  .quick-action-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .quick-action-button:hover {
+    transform: translateY(-4px) scale(1.05);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 16px 32px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .quick-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+  }
+
+  .quick-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  /* Animations */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .dashboard-card:hover {
+      transform: translateY(-4px) scale(1.01);
+    }
+    
+    .gorgeous-button:hover {
+      transform: translateY(-2px) scale(1.02);
+    }
+    
+    .quick-action-button:hover {
+      transform: translateY(-2px) scale(1.02);
+    }
+  }
+</style>

@@ -1,0 +1,83 @@
+Folder PATH listing for volume Windows-SSD
+Volume serial number is 045B-5F67
+C:\USERS\GUILL\DOCUMENTS\GITHUB\ALBERGUEMUNICIPALCARRASCALEJO\GATEWAY
+�   .env.ports
+�   Caddyfile
+�   Cargo.lock
+�   Cargo.toml
+�   README.md
+�   spin.toml
+�   
++---.spin
+�   +---logs
++---api
+�   �   Cargo.toml
+�   �   
+�   +---src
+�   �   �   auth_verify.rs
+�   �   �   backend_client.rs
+�   �   �   lib.rs
+�   �   �   mod.rs
+�   �   �   
+�   �   +---auth_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---booking_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---document_validation_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---info_on_arrival_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---location_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---notification_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---rate_limiter_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---reviews_service
+�   �   �       lib.rs
+�   �   �       
+�   �   +---security_service
+�   �           lib.rs
+�   �           
+�   +---tests
+�       �   lib.rs
+�       �   
+�       +---cors
+�       �       mod.rs
+�       �       
+�       +---health
+�       �       mod.rs
+�       �       
+�       +---integration
+�       �       mod.rs
+�       �       
+�       +---routing
+�       �       mod.rs
+�       �       
+�       +---service_handlers
+�       �       mod.rs
+�       �       
+�       +---spin_config
+�       �       mod.rs
+�       �       
+�       +---unit
+�               mod.rs
+�               
++---api-gateway
+�   �   Cargo.toml
+�   �   
+�   +---src
+�       �   lib.rs
+�       �   
+�       +---jwks_client
+�               error.rs
+�               jwt.rs
+�               keyset.rs
+�               mod.rs

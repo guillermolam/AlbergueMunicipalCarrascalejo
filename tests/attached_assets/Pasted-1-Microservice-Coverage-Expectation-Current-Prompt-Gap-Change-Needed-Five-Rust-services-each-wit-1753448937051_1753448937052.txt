@@ -29,7 +29,6 @@ JWT re‑check in microservices	Mentioned conceptually	Add tiny Rust middleware 
 6 – CI/CD & Lint
 Expectation	Current Prompt	Gap / Change
 GitHub Actions with jobs: lint‑ui, lint‑rs, test‑ui, test‑api, test‑e2e, build‑wasm	Not defined	Provide .github/workflows/ci.yml skeleton
-Pre‑commit hooks (husky / lint‑staged)	Absent	Add note to configure husky for prettier + eslint + stylelint
 
 Summary for Replit AI
 Expand every Rust service directory with full DDD scaffolding and add missing build:wasm:<name> tasks.
@@ -41,5 +40,3 @@ Swap Enzyme for React Testing Library, include vite‑plugin‑inspect, and su
 Insert sqlx‑cli install into setup instructions and mention Neon serverless driver for gateway.
 
 Provide sample Express and Rust auth/rate‑limit stubs.
-
-Deliver GitHub Actions CI skeleton plus husky hooks.

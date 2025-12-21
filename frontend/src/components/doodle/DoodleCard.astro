@@ -1,0 +1,98 @@
+---
+/**
+ * DoodleCard - Hand-drawn card component
+ * Pure Astro version - no JavaScript frameworks
+ * Uses Tailwind v4 + Doodle CSS
+ */
+
+const {
+  variant = 'default',
+  padding = 'md',
+  hoverable = false,
+  clickable = false,
+  href,
+  class: className = '',
+  ...props
+} = Astro.props;
+
+// Variant styles
+const variantClasses = {
+  default: 'bg-white border-[#5D4E37]',
+  elevated: 'bg-white border-[#D4A574] shadow-lg',
+  outlined: 'bg-transparent border-[#00AB39]',
+  flat: 'bg-[#FFF9F0] border-[#5D4E37]',
+  paper: 'bg-[#FFF9F0] border-[#8B6914]',
+};
+
+// Padding styles
+const paddingClasses = {
+  none: 'p-0',
+  sm: 'p-3 md:p-4',
+  md: 'p-4 md:p-6',
+  lg: 'p-6 md:p-8',
+  xl: 'p-8 md:p-10',
+};
+
+// Interactive styles
+const interactiveClasses = (hoverable || clickable || href)
+  ? 'hover:shadow-xl hover:-translate-y-1 hover:rotate-[-0.5deg] cursor-pointer transition-all duration-300'
+  : '';
+
+const Component = href ? 'a' : 'div';
+const additionalProps = href ? { href } : {};
+---
+
+<Component
+  {...additionalProps}
+  {...props}
+  class:list={[
+    'relative',
+    'doodle-border doodle-shadow wired-border paper-texture',
+    'border-2',
+    variantClasses[variant],
+    paddingClasses[padding],
+    interactiveClasses,
+    className
+  ]}
+>
+  <slot />
+</Component>
+
+<style>
+  /* Enhanced hover animation for interactive cards */
+  a:hover,
+  div.cursor-pointer:hover {
+    animation: subtle-wiggle 0.5s ease-in-out;
+  }
+
+  @keyframes subtle-wiggle {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-2px) rotate(-0.5deg);
+    }
+    75% {
+      transform: translateY(-4px) rotate(0.5deg);
+    }
+  }
+
+  /* Focus state for accessibility */
+  a:focus-visible,
+  div:focus-visible {
+    outline: 3px solid rgba(0, 171, 57, 0.4);
+    outline-offset: 2px;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    a, div {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    a:hover, div:hover {
+      transform: none !important;
+    }
+  }
+</style>

@@ -1,0 +1,75 @@
+---
+export interface Props {
+  id: string;
+  selector?: string;
+}
+
+const { id, selector = '.btn-conversion' }: Props = Astro.props;
+const gtagUrl = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+---
+
+<script is:inline src={gtagUrl}></script>
+<script is:inline define:vars={{ id }}>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);} 
+  gtag('js', new Date());
+  gtag('config', id);
+</script>
+
+<script type="module" define:vars={{ selector }}>
+  import anime from 'animejs/lib/anime.es.js'
+  import rough from 'roughjs/bundled/rough.esm.js'
+
+  function setupConversionTargets(sel) {
+    const targets = Array.from(document.querySelectorAll(sel));
+    targets.forEach((el) => {
+      if (el.__gaBound) return; 
+      el.__gaBound = true;
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('width','0');
+      svg.setAttribute('height','0');
+      el.appendChild(svg);
+      const rc = rough.svg(svg);
+      const draw = () => {
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        const r = el.getBoundingClientRect();
+        const pad = 6;
+        const rect = rc.rectangle(pad, pad, Math.max(12, r.width - pad*2), Math.max(12, r.height - pad*2), { stroke:'#111', strokeWidth:1.8, roughness:2.4, fill:'transparent' });
+        svg.appendChild(rect);
+      };
+      draw();
+      const ro = new ResizeObserver(draw);
+      ro.observe(el);
+
+      el.addEventListener('mouseenter', () => {
+        anime({ targets: el, scale: [1, 1.03, 1], duration: 350, easing: 'easeOutQuad' });
+      });
+
+      el.addEventListener('click', (e) => {
+        const sendTo = el.getAttribute('data-conversion-id') || undefined;
+        const label = (el.textContent || '').trim() || 'Conversion';
+        const href = el.getAttribute('href') || undefined;
+        const target = el.getAttribute('target') || undefined;
+
+        anime({ targets: el, rotate: [-1, 1, 0], duration: 450, easing: 'easeOutCubic' });
+
+        if (window.gtag) {
+          e.preventDefault();
+          window.gtag('event', 'conversion', {
+            send_to: sendTo,
+            event_category: 'Button',
+            event_label: label,
+            event_callback: function() {
+              if (!href) return;
+              if (target === '_blank') window.open(href, '_blank');
+              else window.location.assign(href);
+            }
+          });
+        }
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => setupConversionTargets(selector));
+</script>
