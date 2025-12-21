@@ -1,0 +1,356 @@
+---
+import FigmaLayout from "../layouts/FigmaLayout.astro";
+import Button from "../components/core/Button.astro";
+import Card from "../components/core/Card.astro";
+import RoughIcon from "../components/core/RoughIcon.astro";
+import { Hero } from "../components/layout";
+import { Stats } from "../components/data-display";
+
+// SSR-safe data
+const heroStats = [
+  { label: 'Peregrinos Atendidos', value: '2,847', icon: 'pilgrim', color: 'primary', trend: 'up', change: '+12%' },
+  { label: 'Kilómetros Promedio', value: '23.4', unit: 'km/día', icon: 'walking', color: 'success', trend: 'up', change: '+5%' },
+  { label: 'Satisfacción', value: '4.8', unit: '/5', icon: 'star', color: 'warning', trend: 'neutral', change: '0%' },
+  { label: 'Días en Camino', value: '34', unit: 'días', icon: 'calendar', color: 'info', trend: 'up', change: '+8%' }
+];
+
+const features = [
+  {
+    icon: 'bed',
+    title: 'Alojamiento Cómodo',
+    description: 'Habitaciones compartidas y privadas con todas las comodidades para el peregrino moderno.',
+    color: 'primary'
+  },
+  {
+    icon: 'shower',
+    title: 'Servicios Completos',
+    description: 'Duchas calientes, lavandería, cocina equipada y zonas de descanso.',
+    color: 'success'
+  },
+  {
+    icon: 'food',
+    title: 'Desayuno Incluido',
+    description: 'Energético desayuno caminero para empezar tu día con fuerza.',
+    color: 'warning'
+  },
+  {
+    icon: 'wifi',
+    title: 'WiFi Gratis',
+    description: 'Conectividad de alta velocidad para compartir tu experiencia.',
+    color: 'info'
+  }
+];
+
+const testimonials = [
+  {
+    name: 'María García',
+    location: 'Madrid, España',
+    rating: 5,
+    text: 'El albergue es excelente. Las instalaciones están impecables y el personal muy amable. ¡Repetiré!',
+    avatar: '👩‍🦰'
+  },
+  {
+    name: 'Pierre Dubois',
+    location: 'París, Francia',
+    rating: 5,
+    text: 'Un lugar maravilloso para descansar después de caminar. El desayuno es espectacular.',
+    avatar: '👨‍🦱'
+  },
+  {
+    name: 'Anna Schmidt',
+    location: 'Berlín, Alemania',
+    rating: 4,
+    text: 'Muy limpio y acogedor. Perfecto para recuperar energías antes de continuar el Camino.',
+    avatar: '👩‍🦳'
+  }
+];
+
+const caminoStages = [
+  { name: 'Sevilla → Guillena', distance: 22.2, completed: true },
+  { name: 'Guillena → Castilblanco', distance: 18.5, completed: true },
+  { name: 'Castilblanco → Almadén', distance: 25.8, completed: true },
+  { name: 'Almadén → Real de la Jara', distance: 19.3, completed: false },
+  { name: 'Real de la Jara → Monesterio', distance: 21.7, completed: false }
+];
+---
+
+<FigmaLayout title="Demo: Diseño Figma - Albergue Municipal Carrascalejo" description="Demostración de componentes inspirados en Figma con SSR y Astro">
+  
+  <!-- Hero Section -->
+  <Hero 
+    title="Bienvenido al Albergue Municipal Carrascalejo"
+    subtitle="Tu refugio en la Vía de la Plata"
+    description="Descubre el albergue perfecto para tu peregrinaje por el Camino de Santiago. Instalaciones modernas, servicios completos y la mejor atención en el corazón de Extremadura."
+    background="gradient"
+    gradientColors={['#00AB39', '#EAC102', '#0071BC']}
+    primaryAction={{
+      text: 'Reservar Ahora',
+      href: '/booking',
+      icon: 'bed',
+      variant: 'primary'
+    }}
+    secondaryAction={{
+      text: 'Ver Disponibilidad',
+      href: '/availability',
+      icon: 'calendar',
+      variant: 'outline'
+    }}
+    animated={true}
+    particles={true}
+    overlay={true}
+    size="lg"
+  />
+
+  <!-- Stats Section -->
+  <section class="py-16 bg-gradient-to-br from-gray-50 to-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <RoughIcon name="star" size="xl" color="primary" animated /> Nuestras Cifras
+        </h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Estadísticas que demuestran nuestro compromiso con los peregrinos
+        </p>
+      </div>
+      
+      <Stats 
+        stats={heroStats}
+        layout="grid"
+        columns={4}
+        variant="cards"
+        animated={true}
+        gap="lg"
+      />
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <RoughIcon name="star" size="xl" color="secondary" animated /> Servicios Destacados
+        </h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Todo lo que necesitas para una estancia perfecta
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {features.map((feature, index) => (
+          <Card
+            key={index}
+            variant="gradient"
+            gradient={feature.color}
+            header={feature.title}
+            icon={feature.icon}
+            padding="lg"
+            rounded="2xl"
+            shadow="lg"
+            hover={true}
+            glow={true}
+          >
+            <p class="text-gray-700 leading-relaxed">
+              {feature.description}
+            </p>
+            <div class="mt-4">
+              <Button
+                href="/services"
+                variant="outline"
+                size="sm"
+                rounded
+                icon="arrow-right"
+              >
+                Saber más
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Camino Progress Section -->
+  <section class="py-16 bg-gradient-to-br from-green-50 to-emerald-100">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <DoodleIcon name="hiking" size="xl" color="success" animated /> Tu Progreso en el Camino
+        </h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Sigue tu avance y planifica las próximas etapas
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card
+          variant="gradient"
+          gradient="green"
+          header="Próximas Etapas"
+          icon="map"
+          padding="lg"
+          rounded="2xl"
+          shadow="xl"
+        >
+          <div class="space-y-4">
+            {caminoStages.map((stage, index) => (
+              <div key={index} class="flex items-center justify-between p-4 bg-white/50 rounded-xl">
+                <div class="flex items-center gap-3">
+                  <div class={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    stage.completed 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {stage.completed ? '✓' : index + 1}
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">{stage.name}</h4>
+                    <p class="text-sm text-gray-600">{stage.distance} km</p>
+                  </div>
+                </div>
+                {stage.completed && (
+                  <RoughIcon name="dot" color="primary" />
+                )}
+              </div>
+            ))}
+          </div>
+          <div class="mt-6">
+            <Button
+              href="/camino"
+              variant="primary"
+              size="md"
+              rounded
+              icon="hiking"
+            >
+              Ver Mi Camino
+            </Button>
+          </div>
+        </Card>
+        
+        <Card
+          variant="gradient"
+          gradient="blue"
+          header="Estadísticas del Viaje"
+          icon="chart"
+          padding="lg"
+          rounded="2xl"
+          shadow="xl"
+        >
+          <div class="space-y-6">
+            <div class="text-center">
+              <div class="text-4xl font-bold text-blue-600 mb-2">127 km</div>
+              <div class="text-sm text-gray-600">Recorridos hasta ahora</div>
+            </div>
+            
+            <div class="bg-blue-100 rounded-xl p-4">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-blue-800">Progreso total</span>
+                <span class="text-sm font-bold text-blue-600">15%</span>
+              </div>
+              <div class="w-full bg-blue-200 rounded-full h-2">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: 15%"></div>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-center p-3 bg-white/50 rounded-lg">
+                <RoughIcon name="circle" color="blue" />
+                <div class="text-lg font-bold text-gray-900">7 días</div>
+                <div class="text-xs text-gray-600">En camino</div>
+              </div>
+              <div class="text-center p-3 bg-white/50 rounded-lg">
+                <RoughIcon name="star" color="yellow" />
+                <div class="text-lg font-bold text-gray-900">18,932</div>
+                <div class="text-xs text-gray-600">Calorías quemadas</div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <DoodleIcon name="heart" size="xl" color="error" animated /> Lo que dicen nuestros peregrinos
+        </h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Experiencias reales de quienes han pasado por nuestro albergue
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {testimonials.map((testimonial, index) => (
+          <Card
+            key={index}
+            variant="subtle"
+            padding="lg"
+            rounded="2xl"
+            shadow="md"
+            hover={true}
+          >
+            <div class="flex items-center gap-4 mb-4">
+              <div class="text-4xl">{testimonial.avatar}</div>
+              <div>
+                <h4 class="font-bold text-gray-900">{testimonial.name}</h4>
+                <p class="text-sm text-gray-600">{testimonial.location}</p>
+              </div>
+            </div>
+            
+            <div class="flex mb-4">
+              {Array.from({ length: testimonial.rating }).map((_, i) => (
+                <RoughIcon key={i} name="star" color="yellow" />
+              ))}
+            </div>
+            
+            <p class="text-gray-700 italic leading-relaxed">
+              "{testimonial.text}"
+            </p>
+          </Card>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="max-w-3xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">
+          <RoughIcon name="shell" size="xl" color="white" animated />
+          ¿Listo para tu aventura?
+        </h2>
+        <p class="text-xl text-white/90 mb-8 leading-relaxed">
+          Reserva tu plaza ahora y asegura tu descanso en el corazón de la Vía de la Plata. 
+          Tu cama te está esperando después de un largo día de caminata.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            href="/booking"
+            variant="secondary"
+            size="lg"
+            rounded
+            icon="bed"
+            shadow
+            glow
+          >
+            Reservar Ahora
+          </Button>
+          <Button
+            href="/contact"
+            variant="outline"
+            size="lg"
+            rounded
+            icon="phone"
+          >
+            Contactar
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</FigmaLayout>

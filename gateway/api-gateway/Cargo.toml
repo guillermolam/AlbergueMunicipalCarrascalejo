@@ -1,0 +1,30 @@
+[package]
+name = "api-gateway"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Core
+anyhow = "1.0.100"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+uuid = { version = "1.19.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+
+# Spin SDK (no features needed - functionality is built-in)
+spin-sdk = "5.1.1"
+http = "1.0"
+bytes = "1.0"
+
+# JWT & Crypto
+base64 = "0.22"
+ring = "0.17"
+regex = "1"
+
+# HTTP handled by spin-sdk
+
+# Logging
+log = "0.4"
