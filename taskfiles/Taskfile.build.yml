@@ -1,38 +1,71 @@
 version: "3"
-
-vars:
-  TARGET: wasm32-wasip1
-  BUILD_MODE: release
-
 tasks:
-  gateway:
-    desc: Build gateway service
-    cmds:
-      - ./scripts/build-services.sh gateway $BUILD_MODE
-
-  backend:
-    desc: Build all backend services
-    cmds:
-      - ./scripts/build-services.sh backend $BUILD_MODE
-
   frontend:
-    desc: Build frontend applications
+    desc: Build frontend (if using Spin static assets)
     cmds:
-      - ./scripts/build-services.sh frontend $BUILD_MODE
+      - cd frontend && pnpm install && pnpm run build
+
+  auth-service:
+    desc: Build backend/auth-service (Spin)
+    cmds:
+      - cd backend/auth-service && spin build
+
+  booking-service:
+    desc: Build backend/booking-service (Spin)
+    cmds:
+      - cd backend/booking-service && spin build
+
+  document-validation-service:
+    desc: Build backend/document-validation-service (Spin)
+    cmds:
+      - cd backend/document-validation-service && spin build
+
+  info-on-arrival-service:
+    desc: Build backend/info-on-arrival-service (Spin)
+    cmds:
+      - cd backend/info-on-arrival-service && spin build
+
+  location-service:
+    desc: Build backend/location-service (Spin)
+    cmds:
+      - cd backend/location-service && spin build
+
+  notification-service:
+    desc: Build backend/notification-service (Spin)
+    cmds:
+      - cd backend/notification-service && spin build
+
+  rate-limiter-service:
+    desc: Build backend/rate-limiter-service (Spin)
+    cmds:
+      - cd backend/rate-limiter-service && spin build
+
+  redis-service:
+    desc: Build backend/redis-service (Spin)
+    cmds:
+      - cd backend/redis-service && spin build
+
+  reviews-service:
+    desc: Build backend/reviews-service (Spin)
+    cmds:
+      - cd backend/reviews-service && spin build
+
+  security-service:
+    desc: Build backend/security-service (Spin)
+    cmds:
+      - cd backend/security-service && spin build
 
   all:
-    desc: Build all services
-    cmds:
-      - ./scripts/build-services.sh all $BUILD_MODE
-
-  debug:
-    desc: Build all services in debug mode
-    cmds:
-      - ./scripts/build-services.sh all debug
-
-  clean:
-    desc: Clean build artifacts
-    cmds:
-      - ./scripts/clean-rust.sh .
-      - ./scripts/clean-rust.sh backend
-      - echo "✅ Build artifacts cleaned"
+    desc: Build all deployable components (frontend and backend services)
+    deps:
+      - frontend
+      - auth-service
+      - booking-service
+      - document-validation-service
+      - info-on-arrival-service
+      - location-service
+      - notification-service
+      - rate-limiter-service
+      - redis-service
+      - reviews-service
+      - security-service
