@@ -41,3 +41,10 @@ lint:
     - taplo@0.10.0
     - trufflehog@3.92.4
     - yamllint@1.37.1
+actions:
+  disabled:
+    - trunk-announce
+    - trunk-check-pre-push
+    - trunk-fmt-pre-commit
+  enabled:
+    - trunk-upgrade-available
