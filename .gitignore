@@ -136,3 +136,6 @@ spin
 spin.exe
 *.bin
 *.exe
+
+# local artifacts
+v10/
