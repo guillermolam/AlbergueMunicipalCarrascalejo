@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -eu
+max_bytes=$((95 * 1024 * 1024))
+large=$(git rev-list --objects --all \
+  | git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' \
+  | awk '$1=="blob" && $3>'"$max_bytes"' {print}' \
+  | head -n 1 || true)
+[ -z "$large" ] || { printf "%s\n" "blocked: large blob detected: $large"; exit 1; }
