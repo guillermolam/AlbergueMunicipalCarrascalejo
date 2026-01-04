@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+set -eu
+max_bytes=$((10 * 1024 * 1024))
+max_depth=12
+fail=0
+git diff --cached --name-only -z --diff-filter=AM | while IFS= read -r -d '' f; do
+  [ -f "$f" ] || continue
+  size=$(wc -c <"$f" | tr -d ' ')
+  if [ "$size" -gt "$max_bytes" ]; then
+    printf "%s\n" "blocked: $f is $size bytes (limit $max_bytes)"
+    fail=1
+  fi
+  depth=$(printf "%s" "$f" | awk -F'/' '{print NF-1}')
+  if [ "$depth" -gt "$max_depth" ]; then
+    printf "%s\n" "blocked: $f path depth $depth (limit $max_depth)"
+    fail=1
+  fi
+done
+[ "$fail" -eq 0 ] || exit 1
