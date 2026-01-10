@@ -1,0 +1,19 @@
+spin_manifest_version = 2
+
+[application]
+name = "auth"
+version = "0.1.0"
+authors = ["Guillermo Lam <guillermolam.m@gmail.com>"]
+description = "OIDC and OAuth2 Service"
+
+[[trigger.http]]
+[[trigger.http]]
+route = "/api/auth/*"
+component = "auth-service"
+
+[component.auth-service]
+source = "target/wasm32-wasip1/release/auth.wasm"
+allowed_outbound_hosts = ["https://*.logto.app", "https://*.zitadel.cloud"]
+[component.auth-service.build]
+command = "cargo build --target wasm32-wasip1 --release --bin auth"
+watch = ["src/**/*.rs", "Cargo.toml"]

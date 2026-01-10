@@ -1,0 +1,26 @@
+# NIE Training Data - Front Side Sample
+# This file contains OCR training data for Spanish NIE documents
+
+MINISTERIO DEL INTERIOR
+DIRECCIÓN GENERAL DE LA POLICÍA
+
+TARJETA DE IDENTIDAD DE EXTRANJERO
+NIE
+X1234567L
+
+NOMBRE: MARIA
+APELLIDOS: DUPONT BERNARD
+NACIONALIDAD: FRANCESA
+FECHA DE NACIMIENTO: 22/03/1985
+SEXO: F
+
+VÁLIDO HASTA: 22/03/2025
+
+# Expected extraction results:
+# document_number: X1234567L
+# name: MARIA
+# surname: DUPONT BERNARD
+# nationality: FRANCESA
+# birth_date: 22/03/1985
+# expiry_date: 22/03/2025
+# sex: F

@@ -1,0 +1,25 @@
+# DNI Training Data - Front Side Sample
+# This file contains OCR training data for Spanish DNI documents
+
+MINISTERIO DEL INTERIOR
+DIRECCIÓN GENERAL DE LA POLICÍA
+
+DNI
+12345678Z
+
+NOMBRE: JUAN CARLOS
+APELLIDOS: GARCÍA MARTÍNEZ
+NACIONALIDAD: ESPAÑOLA
+FECHA DE NACIMIENTO: 15/06/1990
+SEXO: M
+
+VÁLIDO HASTA: 15/06/2030
+
+# Expected extraction results:
+# document_number: 12345678Z
+# name: JUAN CARLOS
+# surname: GARCÍA MARTÍNEZ  
+# nationality: ESPAÑOLA
+# birth_date: 15/06/1990
+# expiry_date: 15/06/2030
+# sex: M
