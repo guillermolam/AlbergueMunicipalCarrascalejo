@@ -1,0 +1,51 @@
+
+spin_manifest_version = 2
+
+[application]
+name = "notification-service"
+version = "0.1.0"
+authors = ["Albergue Del Carrascalejo"]
+
+[variables]
+database_url = { required = true }
+neon_database_url = { required = true }
+whatsapp_app_id = { required = false }
+whatsapp_business_number = { required = false }
+whatsapp_business_account_id = { required = false }
+telegram_bot_token = { required = false }
+smtp_host = { required = false }
+smtp_port = { required = false }
+smtp_user = { required = false }
+smtp_pass = { required = false }
+log_level = { default = "info" }
+
+[[trigger.http]]
+route = "/api/*"
+component = "notification-service"
+
+
+[component.notification-service]
+source = "target/wasm32-wasip1/release/notification_service.wasm"
+allowed_outbound_hosts = [
+  "https://graph.facebook.com",
+  "https://api.telegram.org",
+  "https://*.smtp.com",
+  "https://*.neon.tech",
+]
+key_value_stores = ["default"]
+
+[component.notification-service.build]
+command = "cargo build --target wasm32-wasip1 --release"
+
+[component.notification-service.variables]
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+whatsapp_app_id = "{{ whatsapp_app_id }}"
+whatsapp_business_number = "{{ whatsapp_business_number }}"
+whatsapp_business_account_id = "{{ whatsapp_business_account_id }}"
+telegram_bot_token = "{{ telegram_bot_token }}"
+smtp_host = "{{ smtp_host }}"
+smtp_port = "{{ smtp_port }}"
+smtp_user = "{{ smtp_user }}"
+smtp_pass = "{{ smtp_pass }}"
+log_level = "{{ log_level }}"

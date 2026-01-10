@@ -1,0 +1,35 @@
+
+spin_manifest_version = 2
+
+[application]
+name = "location-service"
+version = "0.1.0"
+description = "Location service for country and geographic data"
+
+[variables]
+redis_url = { required = true }
+google_maps_api_key = { required = false }
+mapbox_access_token = { required = false }
+cache_ttl_seconds = { default = "3600" }
+
+[[trigger.http]]
+route = "/api/countries/*"
+component = "location-service"
+
+[component.location-service]
+source = "target/wasm32-wasip1/release/location_service.wasm"
+allowed_outbound_hosts = [
+  "https://maps.googleapis.com",
+  "https://api.mapbox.com",
+  "redis://*",
+]
+key_value_stores = ["default"]
+
+[component.location-service.build]
+command = "cargo build --target wasm32-wasip1 --release"
+
+[component.location-service.variables]
+redis_url = "{{ redis_url }}"
+google_maps_api_key = "{{ google_maps_api_key }}"
+mapbox_access_token = "{{ mapbox_access_token }}"
+cache_ttl_seconds = "{{ cache_ttl_seconds }}"
