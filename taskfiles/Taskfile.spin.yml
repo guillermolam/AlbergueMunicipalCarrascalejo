@@ -4,17 +4,17 @@
 version: '3'
 
 vars:
-  SPIN_APP_NAME: "{{.SPIN_APP_NAME | default "albergue-carrascalejo"}}"
-  SPIN_REGISTRY: "{{.SPIN_REGISTRY | default "ghcr.io"}}"
-  SPIN_TAG: "{{.SPIN_TAG | default "latest"}}"
-  FERMYON_CLOUD_URL: "{{.FERMYON_CLOUD_URL | default "https://cloud.fermyon.com"}}"
-  SPIN_MANIFEST: "{{.SPIN_MANIFEST | default "spin.toml"}}"
+  SPIN_APP_NAME: '{{.SPIN_APP_NAME | default "albergue-carrascalejo"}}'
+  SPIN_REGISTRY: '{{.SPIN_REGISTRY | default "ghcr.io"}}'
+  SPIN_TAG: '{{.SPIN_TAG | default "latest"}}'
+  FERMYON_CLOUD_URL: '{{.FERMYON_CLOUD_URL | default "https://cloud.fermyon.com"}}'
+  SPIN_MANIFEST: '{{.SPIN_MANIFEST | default "spin.toml"}}'
 
 env:
-  SPIN_APP_NAME: "{{.SPIN_APP_NAME}}"
-  SPIN_REGISTRY: "{{.SPIN_REGISTRY}}"
-  SPIN_TAG: "{{.SPIN_TAG}}"
-  FERMYON_CLOUD_URL: "{{.FERMYON_CLOUD_URL}}"
+  SPIN_APP_NAME: '{{.SPIN_APP_NAME}}'
+  SPIN_REGISTRY: '{{.SPIN_REGISTRY}}'
+  SPIN_TAG: '{{.SPIN_TAG}}'
+  FERMYON_CLOUD_URL: '{{.FERMYON_CLOUD_URL}}'
 
 tasks:
   # Spin development

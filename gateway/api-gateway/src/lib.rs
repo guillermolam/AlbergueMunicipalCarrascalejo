@@ -47,6 +47,9 @@ fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
     router.get("/health", handle_health);
     router.get("/api/health", handle_health);
 
+    // Frontend helper endpoints (do not require auth)
+    router.get("/api/gateway/camino-languages", handle_camino_languages);
+
     // Service discovery endpoints
     router.get("/api/services", handle_list_services);
     router.post("/api/services/register", handle_register_service);
@@ -55,6 +58,30 @@ fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
     router.any("/api/*", handle_protected_route);
 
     router.handle(req)
+}
+
+/// Public endpoint used by the frontend language selector
+fn handle_camino_languages(_req: Request, _params: Params) -> Result<impl IntoResponse> {
+    Ok(ResponseBuilder::new(200)
+        .header("content-type", "application/json")
+        .body(
+            serde_json::json!([
+                { "code": "es", "name": "Español" },
+                { "code": "en", "name": "English" },
+                { "code": "fr", "name": "Français" },
+                { "code": "de", "name": "Deutsch" },
+                { "code": "it", "name": "Italiano" },
+                { "code": "pt", "name": "Português" },
+                { "code": "nl", "name": "Nederlands" },
+                { "code": "pl", "name": "Polski" },
+                { "code": "ja", "name": "日本語" },
+                { "code": "ko", "name": "한국어" },
+                { "code": "zh", "name": "中文" },
+                { "code": "ru", "name": "Русский" }
+            ])
+            .to_string(),
+        )
+        .build())
 }
 
 /// Health check endpoint
@@ -112,7 +139,7 @@ fn handle_register_service(req: Request, _params: Params) -> Result<impl IntoRes
 }
 
 /// Handle protected routes - requires JWT authentication
-async fn handle_protected_route(req: Request, _params: Params) -> Result<impl IntoResponse> {
+async fn handle_protected_route(req: Request, _params: Params) -> Result<Response> {
     // Generate or extract correlation ID
     let correlation_id = req
         .header(CORRELATION_ID_HEADER)
@@ -224,9 +251,9 @@ async fn validate_jwt(token: &str, correlation_id: &str) -> Result<HashMap<Strin
     let req = spin_sdk::http::Request::builder()
         .method(Method::Get)
         .uri(config_url)
-        .body(())?;
+        .body(());
 
-    let res: spin_sdk::http::Response = spin_sdk::http::send(req).await?;
+    let res: spin_sdk::http::Response = spin_sdk::http::send(req.try_into()?).await?;
     let config: OpenIdConfiguration = serde_json::from_slice(res.body())?;
 
     println!("[{}] JWKS URI: {}", correlation_id, config.jwks_uri);
@@ -274,7 +301,7 @@ async fn forward_to_service(
     correlation_id: &str,
     trace_id: &str,
     claims: HashMap<String, String>,
-) -> Result<impl IntoResponse> {
+) -> Result<Response> {
     let path = req.uri().path();
 
     // Discover service from path
