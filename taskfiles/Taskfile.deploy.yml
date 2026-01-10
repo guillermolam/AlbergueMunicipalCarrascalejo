@@ -15,7 +15,7 @@ tasks:
       - |
         echo "🚀 Starting frontend locally with Spin..."
         echo "📦 Ensuring build artifacts..."
-        (cd frontend && bun run build)
+        (cd frontend && pnpm run build)
         echo "🔌 Using port: {{.FRONTEND_PORT}}"
         echo "🌐 URL: http://127.0.0.1:{{.FRONTEND_PORT}}"
         cd frontend && spin up --listen 127.0.0.1:{{.FRONTEND_PORT}}
@@ -25,12 +25,12 @@ tasks:
     cmds:
       - |
         echo "🚀 Deploying frontend to Fermyon Cloud..."
-        if ! ./spin cloud login --status 2>/dev/null; then
+        if ! spin cloud login --status 2>/dev/null; then
           echo "❌ Not logged in to Fermyon Cloud"
-          echo "Please run: ./spin cloud login"
+          echo "Please run: spin cloud login"
           exit 1
         fi
-        (cd frontend && bun run build)
+        (cd frontend && pnpm run build)
         (cd frontend && spin deploy)
         echo "✅ Frontend deployed"
 
@@ -42,10 +42,35 @@ tasks:
           echo "❌ FERMYON_CLOUD_TOKEN not set"
           exit 1
         fi
-        echo "$FERMYON_CLOUD_TOKEN" | ./spin cloud login --token
-        (cd frontend && bun run build)
+        echo "$FERMYON_CLOUD_TOKEN" | spin cloud login --token
+        (cd frontend && pnpm run build)
         (cd frontend && spin deploy --no-prompt)
         echo "✅ Frontend deployed (token)"
+
+  gateway:cloud:
+    desc: Deploy ONLY the gateway Spin app to Fermyon Cloud (interactive login)
+    cmds:
+      - |
+        echo "🚀 Deploying gateway to Fermyon Cloud..."
+        if ! spin cloud login --status 2>/dev/null; then
+          echo "❌ Not logged in to Fermyon Cloud"
+          echo "Please run: spin cloud login"
+          exit 1
+        fi
+        (cd gateway && spin deploy)
+        echo "✅ Gateway deployed"
+
+  gateway:cloud-with-token:
+    desc: Deploy ONLY the gateway Spin app to Fermyon Cloud using FERMYON_CLOUD_TOKEN
+    cmds:
+      - |
+        if [ -z "$FERMYON_CLOUD_TOKEN" ]; then
+          echo "❌ FERMYON_CLOUD_TOKEN not set"
+          exit 1
+        fi
+        echo "$FERMYON_CLOUD_TOKEN" | spin cloud login --token
+        (cd gateway && spin deploy --no-prompt)
+        echo "✅ Gateway deployed (token)"
 
   fermyon-with-token:
     desc: Deploy to Fermyon Cloud using Personal Access Token (for CI/CD)
@@ -63,9 +88,10 @@ tasks:
           exit 1
         fi
 
-        echo "📦 Building all services..."
-        task build
-        echo "✅ Build completed"
+        echo "📦 Building + validating Spin app..."
+        task spin:spin:build:prod
+        task spin:spin:validate
+        echo "✅ Build + validation completed"
         echo ""
 
         echo "🔐 Authenticating with Personal Access Token..."
@@ -92,9 +118,10 @@ tasks:
           exit 1
         fi
 
-        echo "📦 Building all services..."
-        task build
-        echo "✅ Build completed"
+        echo "📦 Building + validating Spin app..."
+        task spin:spin:build:prod
+        task spin:spin:validate
+        echo "✅ Build + validation completed"
         echo ""
 
         echo "🌐 Deploying to Fermyon Cloud..."

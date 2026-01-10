@@ -3,7 +3,12 @@ tasks:
   frontend:
     desc: Build frontend (if using Spin static assets)
     cmds:
-      - cd frontend && pnpm install && pnpm run build
+      - cd frontend && pnpm install --frozen-lockfile && pnpm run build
+
+  gateway:
+    desc: Build gateway (Spin WASM)
+    cmds:
+      - cd gateway && spin build
 
   auth-service:
     desc: Build backend/auth-service (Spin)
@@ -59,13 +64,4 @@ tasks:
     desc: Build all deployable components (frontend and backend services)
     deps:
       - frontend
-      - auth-service
-      - booking-service
-      - document-validation-service
-      - info-on-arrival-service
-      - location-service
-      - notification-service
-      - rate-limiter-service
-      - redis-service
-      - reviews-service
-      - security-service
+      - gateway

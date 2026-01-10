@@ -1,0 +1,34 @@
+spin_manifest_version = 2
+
+[application]
+name = "albergue-carrascalejo"
+version = "1.0.0"
+description = "Albergue Municipal Carrascalejo (frontend + gateway)"
+
+[[trigger.http]]
+route = "/api/..."
+component = "gateway"
+
+[[trigger.http]]
+route = "/..."
+component = "frontend"
+
+[component.frontend]
+source = "spin:fileserver"
+files = [{ source = "frontend/dist", destination = "/" }]
+
+[component.frontend.build]
+command = "cd frontend && pnpm install --frozen-lockfile && pnpm build"
+
+[component.gateway]
+source = "gateway/api-gateway/target/wasm32-wasip1/release/api_gateway.wasm"
+allowed_outbound_hosts = [
+  "https://accounts.google.com",
+  "https://www.googleapis.com",
+  "https://oauth2.googleapis.com",
+  "https://openidconnect.googleapis.com",
+]
+key_value_stores = ["default"]
+
+[component.gateway.build]
+command = "cd gateway && cargo build -p api-gateway --target wasm32-wasip1 --release"

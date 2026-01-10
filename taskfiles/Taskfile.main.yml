@@ -5,35 +5,35 @@ version: '3'
 
 includes:
   frontend:
-    taskfile: ./taskfiles/Taskfile.frontend.yml
-    dir: .
+    taskfile: ./Taskfile.frontend.yml
+    dir: ..
     optional: false
   backend:
-    taskfile: ./taskfiles/Taskfile.backend.yml
-    dir: .
-    optional: false
+    taskfile: ./Taskfile.backend.yml
+    dir: ..
+    optional: true
   gateway:
-    taskfile: ./taskfiles/Taskfile.gateway.yml
-    dir: .
-    optional: false
+    taskfile: ./Taskfile.gateway.yml
+    dir: ..
+    optional: true
   spin:
-    taskfile: ./taskfiles/Taskfile.spin.yml
-    dir: .
+    taskfile: ./Taskfile.spin.yml
+    dir: ..
     optional: false
 
 vars:
-  ENVIRONMENT: "{{.ENVIRONMENT | default "development"}}"
-  NODE_ENV: "{{.NODE_ENV | default "development"}}"
-  RUST_LOG: "{{.RUST_LOG | default "debug"}}"
-  SPIN_REGISTRY: "{{.SPIN_REGISTRY | default "ghcr.io"}}"
-  SPIN_APP_NAME: "{{.SPIN_APP_NAME | default "albergue-carrascalejo"}}"
+  ENVIRONMENT: '{{.ENVIRONMENT | default "development"}}'
+  NODE_ENV: '{{.NODE_ENV | default "development"}}'
+  RUST_LOG: '{{.RUST_LOG | default "debug"}}'
+  SPIN_REGISTRY: '{{.SPIN_REGISTRY | default "ghcr.io"}}'
+  SPIN_APP_NAME: '{{.SPIN_APP_NAME | default "albergue-carrascalejo"}}'
 
 env:
-  ENVIRONMENT: "{{.ENVIRONMENT}}"
-  NODE_ENV: "{{.NODE_ENV}}"
-  RUST_LOG: "{{.RUST_LOG}}"
-  SPIN_REGISTRY: "{{.SPIN_REGISTRY}}"
-  SPIN_APP_NAME: "{{.SPIN_APP_NAME}}"
+  ENVIRONMENT: '{{.ENVIRONMENT}}'
+  NODE_ENV: '{{.NODE_ENV}}'
+  RUST_LOG: '{{.RUST_LOG}}'
+  SPIN_REGISTRY: '{{.SPIN_REGISTRY}}'
+  SPIN_APP_NAME: '{{.SPIN_APP_NAME}}'
 
 tasks:
   # Main development workflow
@@ -52,9 +52,9 @@ tasks:
       - task: dev:backend &
       - task: dev:frontend &
       - echo "✅ All services started in development mode"
-      - echo "📝 Frontend: http://localhost:3000"
-      - echo "📝 Gateway: http://localhost:8080"
-      - echo "📝 Backend services: Various ports"
+      - echo "Frontend http://localhost 3000"
+      - echo "Gateway http://localhost 8080"
+      - echo "Backend services Various ports"
 
   dev:frontend:
     desc: Start frontend development server
@@ -177,7 +177,9 @@ tasks:
     desc: Deploy to staging environment
     cmds:
       - echo "🧪 Deploying to staging..."
-      - ENVIRONMENT=staging task: build
+      - task: main:build
+        env:
+          ENVIRONMENT: staging
       - task: spin:spin:deploy:staging
 
   deploy:local:
@@ -323,4 +325,4 @@ tasks:
       - echo "  task clean        - Clean build artifacts"
       - echo "  task health       - Check service health"
       - echo ""
-      - echo "For more details, run: task --list-all"
+      - echo "For more details, run task --list-all"

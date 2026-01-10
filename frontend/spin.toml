@@ -29,6 +29,9 @@ component = "main-app"
 [component."main-app"]
 source = "spin:fileserver"
 files = [{ source = "dist", destination = "/" }]
+
+[component."main-app".build]
+command = "pnpm install --frozen-lockfile && pnpm build"
 # Note: Spin's fileserver will serve index.html for routes that don't match files
 # This allows React Router to handle all client-side routing
 

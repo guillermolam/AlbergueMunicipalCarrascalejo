@@ -4,25 +4,19 @@ spin_manifest_version = 2
 name = "gateway"
 version = "0.1.0"
 
-[variables]
-database_url = { required = true }
-logto_domain = { required = true }
-logto_client_id = { required = true }
-logto_client_secret = { required = true }
-
 [[trigger.http]]
-route = "/api/*"
-component = "bff"
+route = "/..."
+component = "api-gateway"
 
-[component.bff]
-source = "bff/target/wasm32-wasip1/release/bff.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech", "https://api.logto.com"]
+[component.api-gateway]
+source = "api-gateway/target/wasm32-wasip1/release/api_gateway.wasm"
+allowed_outbound_hosts = [
+	"https://accounts.google.com",
+	"https://www.googleapis.com",
+	"https://oauth2.googleapis.com",
+	"https://openidconnect.googleapis.com",
+]
+key_value_stores = ["default"]
 
-[component.bff.build]
-command = "cargo build --target wasm32-wasip1 --release"
-
-[component.bff.variables]
-database_url = "{{ database_url }}"
-logto_domain = "{{ logto_domain }}"
-logto_client_id = "{{ logto_client_id }}"
-logto_client_secret = "{{ logto_client_secret }}"
+[component.api-gateway.build]
+command = "cargo build -p api-gateway --target wasm32-wasip1 --release"
