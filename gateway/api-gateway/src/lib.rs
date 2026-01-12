@@ -19,6 +19,7 @@ mod auth;
 mod cache;
 mod circuit_breaker;
 mod context;
+mod events;
 mod gateway_config;
 mod jwks_client;
 mod rate_limit;
@@ -265,6 +266,9 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
 
     response.set_header(CORRELATION_ID_HEADER, ctx.correlation_id.clone());
     response.set_header(TRACE_ID_HEADER, ctx.trace_id.clone());
+
+    // Intercept and publish domain events (fire-and-forget)
+    let response = events::intercept_and_publish_events(response);
 
     Ok(apply_security_headers(response, &ctx.policy))
 }

@@ -1,0 +1,54 @@
+﻿---
+const {
+  bookingReference,
+  pilgrimName,
+  arrivalDate,
+  departureDate,
+  nights,
+  roomType,
+  totalAmount,
+  confirmationCode,
+  status = "confirmed",
+} = Astro.props;
+
+const roomLabel = roomType === "private" ? "Habitación privada" : "Habitación compartida";
+---
+
+<section class="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8">
+  <header class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900">Reserva {status === "confirmed" ? "confirmada" : "registrada"}</h1>
+    <p class="text-slate-600 mt-1">Referencia: <span class="font-mono">{bookingReference}</span></p>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <div class="text-sm text-slate-500">Nombre</div>
+      <div class="font-semibold text-slate-900">{pilgrimName}</div>
+    </div>
+    <div>
+      <div class="text-sm text-slate-500">Código</div>
+      <div class="font-mono text-slate-900">{confirmationCode}</div>
+    </div>
+    <div>
+      <div class="text-sm text-slate-500">Llegada</div>
+      <div class="text-slate-900">{arrivalDate}</div>
+    </div>
+    <div>
+      <div class="text-sm text-slate-500">Salida</div>
+      <div class="text-slate-900">{departureDate}</div>
+    </div>
+    <div>
+      <div class="text-sm text-slate-500">Noches</div>
+      <div class="text-slate-900">{nights}</div>
+    </div>
+    <div>
+      <div class="text-sm text-slate-500">Tipo</div>
+      <div class="text-slate-900">{roomLabel}</div>
+    </div>
+  </div>
+
+  <footer class="mt-8 flex items-center justify-between">
+    <div class="text-slate-600">Total</div>
+    <div class="text-2xl font-bold text-slate-900">{totalAmount} EUR</div>
+  </footer>
+</section>

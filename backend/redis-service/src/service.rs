@@ -1,5 +1,5 @@
 use std::time::Duration;
-use spin_sdk::redis;
+use spin_sdk::redis::{self, RedisParameter, RedisResult};
 
 use crate::error::RedisServiceError;
 use crate::models::{CacheEntry, RedisConfig};

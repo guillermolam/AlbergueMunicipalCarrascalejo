@@ -1,38 +1,43 @@
-[package]
+﻿[package]
 name = "shared"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 # Core dependencies
-anyhow = "1.0"
+anyhow = "1.0.100"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-uuid = { version = "1.0", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde"] }
-thiserror = "1.0"
+serde_json = "1.0.149"
+uuid = { version = "1.19.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+thiserror = "2.0.17"
 
 # Async runtime
-futures = "0.3"
+futures = "0.3.31"
 
 # Tokio with WebAssembly compatible features
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.tokio]
-version = "1.0"
+version = "1.49.0"
 features = ["full"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.tokio]
-version = "1.0"
+version = "1.49.0"
 features = ["sync", "macros", "io-util", "rt", "time"]
 
 # Spin SDK for WebAssembly
 [target.'cfg(target_arch = "wasm32")'.dependencies.spin-sdk]
-version = "2.2.0"
+version = "5.1.1"
 features = ["http"]
+
+# Logging
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+log = "0.4.29"
 
 # HTTP and networking (native only)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-http = "1.1"
-sqlx = { version = "0.8", features = [
+http = "1.4.0"
+log = "0.4.29"
+sqlx = { version = "0.8.6", features = [
   "postgres",
   "chrono",
   "uuid",
@@ -40,7 +45,7 @@ sqlx = { version = "0.8", features = [
 ] }
 
 [dev-dependencies]
-tokio = { version = "1.0", features = [
+tokio = { version = "1.49.0", features = [
   "sync",
   "macros",
   "io-util",

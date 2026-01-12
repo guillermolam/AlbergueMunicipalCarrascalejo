@@ -2929,11 +2929,12 @@ dependencies = [
  "chrono",
  "futures",
  "http 1.3.1",
+ "log",
  "serde",
  "serde_json",
  "spin-sdk",
  "sqlx",
- "thiserror 1.0.69",
+ "thiserror 2.0.17",
  "tokio",
  "uuid",
 ]

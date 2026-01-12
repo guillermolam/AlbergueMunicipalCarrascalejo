@@ -22,7 +22,7 @@ const {
   nights = 3,
   roomType = 'shared',
   totalAmount = 45,
-  confirmationCode = 'CONF-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
+  confirmationCode = 'CONF-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
   status = 'confirmed'
 } = Astro.props
 

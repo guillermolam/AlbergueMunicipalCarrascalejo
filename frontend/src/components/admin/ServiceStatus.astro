@@ -1,0 +1,37 @@
+﻿---
+const { initialServices = [] } = Astro.props;
+---
+
+<div class="bg-base-200 rounded-box p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-xl font-semibold text-base-content">Service status</h2>
+    <div class="text-sm text-base-content/60">Static snapshot</div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="table table-zebra">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Status</th>
+          <th>Response</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {initialServices.map((s) => (
+          <tr>
+            <td class="font-medium">{s.name}</td>
+            <td>
+              <span class={`badge ${s.status === 'healthy' ? 'badge-success' : s.status === 'warning' ? 'badge-warning' : 'badge-error'}`}>
+                {s.status}
+              </span>
+            </td>
+            <td class="font-mono">{s.responseTime}</td>
+            <td class="text-base-content/70">{s.message}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>

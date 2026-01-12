@@ -94,7 +94,8 @@ export class PerformanceMonitor {
     // First Input Delay (FID)
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        this.metrics.fid = entry.processingStart - entry.startTime;
+        const eventEntry = entry as PerformanceEventTiming;
+        this.metrics.fid = eventEntry.processingStart - eventEntry.startTime;
         this.notifyObservers();
       }
     }).observe({ entryTypes: ['first-input'] });
@@ -113,8 +114,8 @@ export class PerformanceMonitor {
     
     // Time to First Byte (TTFB)
     new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        this.metrics.ttfb = entry.responseStart - entry.requestStart;
+      for (const entry of list.getEntries()) {\n        const navEntry = entry as PerformanceNavigationTiming;
+        this.metrics.ttfb = navEntry.responseStart - navEntry.requestStart;
         this.notifyObservers();
       }
     }).observe({ entryTypes: ['navigation'] });

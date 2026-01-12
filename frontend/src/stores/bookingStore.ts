@@ -107,7 +107,7 @@ export const bookingActions = {
   addPilgrim: (pilgrim: Omit<Pilgrim, 'id'>) => {
     const newPilgrim: Pilgrim = {
       ...pilgrim,
-      id: `pilgrim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `pilgrim_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
     };
     
     bookingStore.setKey('pilgrims', [...bookingStore.get().pilgrims, newPilgrim]);

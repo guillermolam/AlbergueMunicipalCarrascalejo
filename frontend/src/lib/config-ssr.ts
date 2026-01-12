@@ -79,6 +79,8 @@ const DEFAULT_CONFIG: Partial<AppConfig> = {
     apiUrl: '/api'
   },
   security: {
+    jwtSecret: 'dev-secret-key',
+    encryptionKey: 'dev-encryption-key',
     sessionTimeout: 24 * 60 * 60 * 1000, // 24 hours
     maxLoginAttempts: 5
   },
@@ -149,7 +151,7 @@ async function loadConfigFromSupabase(): Promise<Partial<AppConfig>> {
 
     // Transform database rows into config object
     const config: Partial<AppConfig> = {}
-    data?.forEach(row => {
+    data?.forEach((row: { key: string; value: any }) => {
       const keys = row.key.split('.')
       let current: any = config
       

@@ -79,6 +79,16 @@ echo ""
 echo "✅ Deployment completed!"
 echo "🌍 Your application is available at: https://albergue-carrascalejo.fermyon.app/"
 echo ""
+
+# Initialize SQLite if this is first deployment
+echo "🗄️  Initializing SQLite database..."
+if ./scripts/init-sqlite-fermyon.sh; then
+    echo "✅ SQLite initialized successfully"
+else
+    echo "⚠️  SQLite initialization skipped or already initialized"
+fi
+
+echo ""
 echo "Useful commands:"
 echo "  spin cloud logs albergue-carrascalejo    # View logs"
 echo "  spin cloud variables list                # List variables"

@@ -42,9 +42,9 @@ pub struct ErrorResponse {
 }
 
 #[http_component]
-async fn handle_request(req: Request) -> Result<impl IntoResponse> {
-    let uri = req.uri();
-    let path = uri.path();
+async fn handle_request(req: Request) -> Result<Response, anyhow::Error> {
+    let uri = req.uri().to_string();
+    let path = req.uri().path();
 
     // Enable CORS
     let mut response_builder = Response::builder()
@@ -55,24 +55,26 @@ async fn handle_request(req: Request) -> Result<impl IntoResponse> {
             "Content-Type, Authorization",
         );
 
-    if req.method().as_str() == "OPTIONS" {
+    if req.method().to_string() == "OPTIONS" {
         return Ok(response_builder.status(200).body(()).build());
     }
 
-    match path {
-        "/reviews/google" => handle_google_reviews().await,
-        "/reviews/booking" => handle_booking_reviews().await,
-        "/reviews/all" => handle_all_reviews().await,
-        "/reviews/stats" => handle_review_stats().await,
-        _ => Ok(Response::builder()
+    let response = match path {
+        "/reviews/google" => handle_google_reviews().await?,
+        "/reviews/booking" => handle_booking_reviews().await?,
+        "/reviews/all" => handle_all_reviews().await?,
+        "/reviews/stats" => handle_review_stats().await?,
+        _ => Response::builder()
             .status(404)
             .header("Content-Type", "application/json")
             .body(serde_json::to_string(&ErrorResponse {
                 error: "Not Found".to_string(),
                 message: "Reviews endpoint not found".to_string(),
             })?)
-            .build()),
-    }
+            .build(),
+    };
+
+    Ok(response)
 }
 
 async fn handle_google_reviews() -> Result<impl IntoResponse> {
