@@ -1,4 +1,4 @@
-version: "3"
+﻿version: "3"
 
 includes:
   # Main development pipeline
@@ -18,8 +18,12 @@ includes:
     taskfile: ./taskfiles/Taskfile.connectivity.yml
     dir: .
     optional: false
-  
-  # Legacy taskfiles (for compatibility)
+
+  # Turso / libSQL embedded replicas
+  turso:
+    taskfile: ./taskfiles/Taskfile.turso.yml
+    dir: .
+    optional: false\n  # Legacy taskfiles (for compatibility)
   dev:
     taskfile: ./taskfiles/Taskfile.dev.yml
     dir: .
@@ -135,11 +139,12 @@ tasks:
   generate:tree:
     desc: Generate ASCII project tree via Rust Script (respects .gitignore)
     cmds:
-      - command -v cargo >/dev/null 2>&1 || { echo "❌ Rust toolchain not found. Please install via rustup."; exit 1; }
+      - command -v cargo >/dev/null 2>&1 || { echo "âŒ Rust toolchain not found. Please install via rustup."; exit 1; }
       - |
         if ! command -v rust-script >/dev/null 2>&1; then
-          echo "⚙️ Installing rust-script..."
+          echo "âš™ï¸ Installing rust-script..."
           cargo install rust-script
         fi
       - chmod +x scripts/generate-project-structure.rs
       - scripts/generate-project-structure.rs
+

@@ -81,6 +81,9 @@
 **/*apikey*
 **/*credentials*
 
+# Spin runtime configuration (contains secrets like Redis URLs)
+runtime-config.toml
+
 # === DATABASES ===
 **/*.db
 **/*.sqlite

@@ -1,0 +1,79 @@
+﻿version: '3'
+
+vars:
+  RUST_DIR: './domain_model/rust'
+  TURSO_REPLICA_PATH: '{{.TURSO_REPLICA_PATH | default "./albergue.local.db"}}'
+  SYNC_INTERVAL_SECS: '{{.SYNC_INTERVAL_SECS | default "60"}}'
+
+tasks:
+  check:
+    desc: Verifica dependencias para Turso/libSQL
+    cmds:
+      - |
+        command -v turso >/dev/null
+      - |
+        command -v cargo >/dev/null
+
+  sync:
+    desc: Sincroniza la embedded replica (una vez) hacia TURSO_REPLICA_PATH
+    deps: [check]
+    dir: '{{.RUST_DIR}}'
+    cmds:
+      - |
+        cargo run -p albergue-turso-sync -- sync
+    env:
+      DATABASE_URL: '{{.DATABASE_URL}}'
+      TURSO_AUTH_TOKEN: '{{.TURSO_AUTH_TOKEN}}'
+      TURSO_REPLICA_PATH: '{{.TURSO_REPLICA_PATH}}'
+      TURSO_ENCRYPTION_KEY: '{{.TURSO_ENCRYPTION_KEY}}'
+      TURSO_ENCRYPTION_CIPHER: '{{.TURSO_ENCRYPTION_CIPHER}}'
+
+  sync:loop:
+    desc: Sincroniza periódicamente (mantiene proceso vivo hasta Ctrl+C)
+    deps: [check]
+    dir: '{{.RUST_DIR}}'
+    cmds:
+      - |
+        cargo run -p albergue-turso-sync -- sync --interval-secs {{.SYNC_INTERVAL_SECS}}
+    env:
+      DATABASE_URL: '{{.DATABASE_URL}}'
+      TURSO_AUTH_TOKEN: '{{.TURSO_AUTH_TOKEN}}'
+      TURSO_REPLICA_PATH: '{{.TURSO_REPLICA_PATH}}'
+      TURSO_ENCRYPTION_KEY: '{{.TURSO_ENCRYPTION_KEY}}'
+      TURSO_ENCRYPTION_CIPHER: '{{.TURSO_ENCRYPTION_CIPHER}}'
+
+  migrate:remote:
+    desc: Aplica baseline SQL directamente en Turso remoto (crea _albergue_migrations)
+    deps: [check]
+    dir: '{{.RUST_DIR}}'
+    cmds:
+      - |
+        cargo run -p albergue-turso-sync -- migrate-remote
+    env:
+      DATABASE_URL: '{{.DATABASE_URL}}'
+      TURSO_AUTH_TOKEN: '{{.TURSO_AUTH_TOKEN}}'
+
+  status:remote:
+    desc: Estado de la migración baseline en Turso remoto
+    deps: [check]
+    dir: '{{.RUST_DIR}}'
+    cmds:
+      - |
+        cargo run -p albergue-turso-sync -- status-remote
+    env:
+      DATABASE_URL: '{{.DATABASE_URL}}'
+      TURSO_AUTH_TOKEN: '{{.TURSO_AUTH_TOKEN}}'
+
+  test:local:
+    desc: Tests locales del driver libSQL (baseline + cifrado)
+    dir: '{{.RUST_DIR}}'
+    cmds:
+      - |
+        cargo test -p albergue-turso-sync
+
+  test:remote:
+    desc: Test remoto end-to-end creando DB temporal con Turso CLI
+    deps: [check]
+    cmds:
+      - |
+        bash ./scripts/turso-remote-migration-test.sh

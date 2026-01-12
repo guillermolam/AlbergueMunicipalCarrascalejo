@@ -1,0 +1,24 @@
+﻿[package]
+name = "albergue-seaography"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+albergue-persistence = { path = "../persistence" }
+async-graphql = "~7.0.17"
+async-graphql-poem = "~7.0.17"
+poem = { version = "3", features = ["test", "websocket"] }
+sea-orm.workspace = true
+seaography = "2.0.0-rc.7"
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[[bin]]
+name = "albergue-seaography"
+path = "src/main.rs"
+
+
+

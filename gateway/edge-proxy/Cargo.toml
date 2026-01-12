@@ -1,0 +1,31 @@
+[package]
+name = "edge-proxy"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "edge-proxy"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+http = { workspace = true }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread", "net", "signal", "fs", "io-util"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["fmt"] }
+
+hyper = { version = "1.6.0", features = ["http1", "http2", "server", "client"] }
+hyper-util = { version = "0.1.10", features = ["client-legacy", "server-auto", "tokio"] }
+http-body-util = "0.1.2"
+bytes = "1.11.0"
+
+rustls = "0.23.23"
+tokio-rustls = "0.26.1"
+rustls-pemfile = "2.2.0"
+hyper-rustls = { version = "0.27.5", default-features = false, features = ["http2", "rustls-native-certs", "ring"] }
+
+[dev-dependencies]
+proptest = "1.7.0"

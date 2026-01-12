@@ -1,0 +1,82 @@
+[defaults.policy.auth]
+enabled = true
+oidc_url = "https://accounts.google.com"
+required_issuer = ""
+required_audience = ""
+required_scopes = []
+required_roles = []
+
+[defaults.policy.rate_limit]
+enabled = false
+window_seconds = 60
+max_requests = 120
+key = "sub"
+
+[defaults.policy.cache]
+enabled = false
+ttl_seconds = 15
+methods = ["GET"]
+vary_headers = []
+max_body_bytes = 262144
+
+[defaults.policy.security_headers]
+enabled = true
+cors_allow_origin = "*"
+cors_allow_methods = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+cors_allow_headers = "authorization,content-type,x-correlation-id,x-trace-id"
+cors_allow_credentials = false
+hsts_seconds = 0
+
+[defaults.policy.circuit_breaker]
+enabled = false
+failure_threshold = 5
+open_seconds = 15
+half_open_max = 1
+
+[defaults.policy.observability]
+enabled = true
+log_headers = false
+
+[services.booking-service]
+url = "http://booking-service.spin.internal"
+[services.booking-service.policy.rate_limit]
+enabled = true
+max_requests = 60
+[services.booking-service.policy.cache]
+enabled = true
+ttl_seconds = 10
+
+[services.location-service]
+url = "http://location-service.spin.internal"
+[services.location-service.policy.cache]
+enabled = true
+ttl_seconds = 30
+
+[services.reviews-service]
+url = "http://reviews-service.spin.internal"
+
+[services.document-validation-service]
+url = "http://document-validation-service.spin.internal"
+[services.document-validation-service.policy.cache]
+enabled = false
+
+[services.notification-service]
+url = "http://notification-service.spin.internal"
+[services.notification-service.policy.rate_limit]
+enabled = true
+max_requests = 30
+
+[services.auth-service]
+url = "http://auth-service.spin.internal"
+
+[services.info-on-arrival-service]
+url = "http://info-on-arrival-service.spin.internal"
+
+[services.rate-limiter-service]
+url = "http://rate-limiter-service.spin.internal"
+
+[services.redis-service]
+url = "http://redis-service.spin.internal"
+
+[services.security-service]
+url = "http://security-service.spin.internal"
