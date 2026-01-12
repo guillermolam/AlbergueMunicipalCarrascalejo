@@ -5,6 +5,36 @@ name = "albergue-carrascalejo"
 version = "1.0.0"
 description = "Albergue Municipal Carrascalejo (frontend + gateway)"
 
+[variables]
+gateway_config_path = { default = "/config/gateway.toml" }
+database_url = { required = true }
+neon_database_url = { required = true }
+log_level = { default = "info" }
+redis_url = { required = true }
+redis_address = { required = true }
+cache_ttl_seconds = { default = "3600" }
+booking_timeout_hours = { default = "2" }
+tesseract_data_path = { default = "/usr/share/tessdata" }
+lambda_ocr_url = { default = "" }
+google_places_api_key = { default = "" }
+google_maps_api_key = { default = "" }
+mapbox_access_token = { default = "" }
+whatsapp_app_id = { default = "" }
+whatsapp_business_number = { default = "" }
+whatsapp_business_account_id = { default = "" }
+telegram_bot_token = { default = "" }
+smtp_host = { default = "" }
+smtp_port = { default = "" }
+smtp_user = { default = "" }
+smtp_pass = { default = "" }
+rate_limit_requests = { default = "10" }
+rate_limit_window = { default = "60" }
+redis_max_connections = { default = "10" }
+redis_connection_timeout = { default = "5" }
+redis_default_ttl = { default = "3600" }
+encryption_key = { required = true }
+security_rate_limit_requests = { default = "100" }
+
 [[trigger.http]]
 route = "/api/..."
 component = "gateway"
@@ -12,6 +42,46 @@ component = "gateway"
 [[trigger.http]]
 route = "/..."
 component = "frontend"
+
+[[trigger.http]]
+route = { private = true }
+component = "auth-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "booking-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "document-validation-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "info-on-arrival-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "location-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "notification-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "rate-limiter-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "redis-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "reviews-service"
+
+[[trigger.http]]
+route = { private = true }
+component = "security-service"
 
 [component.frontend]
 source = "spin:fileserver"
@@ -27,8 +97,143 @@ allowed_outbound_hosts = [
   "https://www.googleapis.com",
   "https://oauth2.googleapis.com",
   "https://openidconnect.googleapis.com",
+  "http://*.spin.internal",
+  "redis://redis-19061.c339.eu-west-3-1.ec2.cloud.redislabs.com:19061",
+  "redis://localhost:6379",
 ]
 key_value_stores = ["default"]
+files = [{ source = "gateway/api-gateway/config", destination = "/config" }]
 
 [component.gateway.build]
 command = "cd gateway && cargo build -p api-gateway --target wasm32-wasip1 --release"
+
+[component.gateway.variables]
+gateway_config_path = "{{ gateway_config_path }}"
+redis_address = "{{ redis_address }}"
+
+[component.auth-service]
+source = "backend/auth-service/target/wasm32-wasip1/release/auth.wasm"
+allowed_outbound_hosts = ["https://*.logto.app", "https://*.zitadel.cloud"]
+[component.auth-service.build]
+command = "cd backend/auth-service && cargo build --target wasm32-wasip1 --release --bin auth"
+
+[component.booking-service]
+source = "backend/booking-service/target/wasm32-wasip1/release/booking_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
+key_value_stores = ["default"]
+[component.booking-service.build]
+command = "cd backend/booking-service && cargo build --target wasm32-wasip1 --release"
+[component.booking-service.variables]
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+booking_timeout_hours = "{{ booking_timeout_hours }}"
+log_level = "{{ log_level }}"
+
+[component.document-validation-service]
+source = "backend/document-validation-service/target/wasm32-wasip1/release/document_validation_service.wasm"
+allowed_outbound_hosts = ["https://*.amazonaws.com", "https://*.neon.tech"]
+key_value_stores = ["default"]
+[component.document-validation-service.build]
+command = "cd backend/document-validation-service && cargo build --target wasm32-wasip1 --release"
+[component.document-validation-service.variables]
+database_url = "{{ database_url }}"
+tesseract_data_path = "{{ tesseract_data_path }}"
+lambda_ocr_url = "{{ lambda_ocr_url }}"
+log_level = "{{ log_level }}"
+
+[component.info-on-arrival-service]
+source = "backend/info-on-arrival-service/target/wasm32-wasip1/release/info_on_arrival_service.wasm"
+allowed_outbound_hosts = [
+  "https://maps.googleapis.com",
+  "https://turismomerida.org",
+  "https://radiotaximerida.es",
+  "https://*.neon.tech",
+]
+[component.info-on-arrival-service.build]
+command = "cd backend/info-on-arrival-service && cargo build --target wasm32-wasip1 --release"
+[component.info-on-arrival-service.variables]
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+google_places_api_key = "{{ google_places_api_key }}"
+log_level = "{{ log_level }}"
+
+[component.location-service]
+source = "backend/location-service/target/wasm32-wasip1/release/location_service.wasm"
+allowed_outbound_hosts = ["https://maps.googleapis.com", "https://api.mapbox.com", "redis://*"]
+key_value_stores = ["default"]
+[component.location-service.build]
+command = "cd backend/location-service && cargo build --target wasm32-wasip1 --release"
+[component.location-service.variables]
+redis_url = "{{ redis_url }}"
+google_maps_api_key = "{{ google_maps_api_key }}"
+mapbox_access_token = "{{ mapbox_access_token }}"
+cache_ttl_seconds = "{{ cache_ttl_seconds }}"
+
+[component.notification-service]
+source = "backend/notification-service/target/wasm32-wasip1/release/notification_service.wasm"
+allowed_outbound_hosts = [
+  "https://graph.facebook.com",
+  "https://api.telegram.org",
+  "https://*.smtp.com",
+  "https://*.neon.tech",
+]
+key_value_stores = ["default"]
+[component.notification-service.build]
+command = "cd backend/notification-service && cargo build --target wasm32-wasip1 --release"
+[component.notification-service.variables]
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+whatsapp_app_id = "{{ whatsapp_app_id }}"
+whatsapp_business_number = "{{ whatsapp_business_number }}"
+whatsapp_business_account_id = "{{ whatsapp_business_account_id }}"
+telegram_bot_token = "{{ telegram_bot_token }}"
+smtp_host = "{{ smtp_host }}"
+smtp_port = "{{ smtp_port }}"
+smtp_user = "{{ smtp_user }}"
+smtp_pass = "{{ smtp_pass }}"
+log_level = "{{ log_level }}"
+
+[component.rate-limiter-service]
+source = "backend/rate-limiter-service/target/wasm32-wasip1/release/rate_limiter_service.wasm"
+allowed_outbound_hosts = []
+key_value_stores = ["default"]
+[component.rate-limiter-service.build]
+command = "cd backend/rate-limiter-service && cargo build --target wasm32-wasip1 --release"
+[component.rate-limiter-service.variables]
+rate_limit_requests = "{{ rate_limit_requests }}"
+rate_limit_window = "{{ rate_limit_window }}"
+log_level = "{{ log_level }}"
+
+[component.redis-service]
+source = "backend/redis-service/target/wasm32-wasip1/release/redis_service.wasm"
+allowed_outbound_hosts = ["redis://*"]
+key_value_stores = ["default"]
+[component.redis-service.build]
+command = "cd backend/redis-service && cargo build --target wasm32-wasip1 --release"
+[component.redis-service.variables]
+redis_url = "{{ redis_url }}"
+redis_max_connections = "{{ redis_max_connections }}"
+redis_connection_timeout = "{{ redis_connection_timeout }}"
+redis_default_ttl = "{{ redis_default_ttl }}"
+
+[component.reviews-service]
+source = "backend/reviews-service/target/wasm32-wasip1/release/reviews_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
+[component.reviews-service.build]
+command = "cd backend/reviews-service && cargo build --target wasm32-wasip1 --release"
+[component.reviews-service.variables]
+database_url = "{{ database_url }}"
+neon_database_url = "{{ neon_database_url }}"
+log_level = "{{ log_level }}"
+
+[component.security-service]
+source = "backend/security-service/target/wasm32-wasip1/release/security_service.wasm"
+allowed_outbound_hosts = ["https://*.neon.tech"]
+key_value_stores = ["default"]
+[component.security-service.build]
+command = "cd backend/security-service && cargo build --target wasm32-wasip1 --release"
+[component.security-service.variables]
+database_url = "{{ database_url }}"
+rate_limit_requests = "{{ security_rate_limit_requests }}"
+encryption_key = "{{ encryption_key }}"
+log_level = "{{ log_level }}"

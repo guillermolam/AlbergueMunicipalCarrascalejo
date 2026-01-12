@@ -1,60 +1,61 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use spin_sdk::{
     http::{IntoResponse, Method, Params, Request, Response, ResponseBuilder, Router},
     http_component,
     key_value::Store,
-    redis, variables,
+    variables,
 };
-use std::collections::HashMap;
-use uuid::Uuid;
+use tracing::{event, Level};
 
+mod auth;
+mod cache;
+mod circuit_breaker;
+mod context;
+mod gateway_config;
 mod jwks_client;
-use jwks_client::keyset::KeyStore;
+mod rejection;
+mod security_headers;
+mod telemetry;
+mod util;
 
-const SERVICE_REGISTRY_STORE: &str = "default";
-const CORRELATION_ID_HEADER: &str = "x-correlation-id";
-const TRACE_ID_HEADER: &str = "x-trace-id";
-
-#[derive(Debug, Deserialize)]
-struct OpenIdConfiguration {
-    pub issuer: String,
-    pub jwks_uri: String,
-    pub authorization_endpoint: String,
-    pub token_endpoint: String,
+pub fn rewrite_upstream_path_for_test(path: &str, service: &str) -> String {
+    rewrite_upstream_path(path, service)
 }
+
+pub fn gateway_config_for_test(bytes: &[u8]) -> anyhow::Result<gateway_config::GatewayConfig> {
+    let text = std::str::from_utf8(bytes)?;
+    let cfg: gateway_config::GatewayConfig = toml::from_str(text)?;
+    Ok(cfg)
+}
+
+use context::{
+    build_request_context, get_config, resolve_service_url, AuthContext, RequestContext,
+    CORRELATION_ID_HEADER, REDIS_ADDRESS_VAR, SERVICE_REGISTRY_STORE, TRACE_ID_HEADER,
+};
+use rejection::GatewayRejection;
+use security_headers::apply_security_headers;
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ServiceRegistration {
-    name: String,
-    url: String,
-    health_check: String,
-    registered_at: String,
+pub struct ServiceRegistration {
+    pub name: String,
+    pub url: String,
+    pub health_check: String,
+    pub registered_at: String,
 }
 
-/// API Gateway - Handles authentication, service discovery, request tracing
-/// Features:
-/// - OIDC/JWT authentication with Google
-/// - Correlation ID for distributed tracing
-/// - Service discovery via KV store
-/// - Redis caching
-/// - Request/response logging
 #[http_component]
 fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
+    telemetry::init_tracing();
     let mut router = Router::new();
 
-    // Health check
     router.get("/health", handle_health);
     router.get("/api/health", handle_health);
-
-    // Frontend helper endpoints (do not require auth)
     router.get("/api/gateway/camino-languages", handle_camino_languages);
 
-    // Service discovery endpoints
     router.get("/api/services", handle_list_services);
     router.post("/api/services/register", handle_register_service);
 
-    // Protected API routes - require authentication
     router.any("/api/*", handle_protected_route);
 
     router.handle(req)
@@ -62,7 +63,8 @@ fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
 
 /// Public endpoint used by the frontend language selector
 fn handle_camino_languages(_req: Request, _params: Params) -> Result<impl IntoResponse> {
-    Ok(ResponseBuilder::new(200)
+    let ctx = build_request_context(&_req)?;
+    let mut resp = ResponseBuilder::new(200)
         .header("content-type", "application/json")
         .body(
             serde_json::json!([
@@ -81,319 +83,255 @@ fn handle_camino_languages(_req: Request, _params: Params) -> Result<impl IntoRe
             ])
             .to_string(),
         )
-        .build())
+        .build();
+    resp.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
+    resp.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
+    Ok(apply_security_headers(resp, &ctx.policy))
 }
 
 /// Health check endpoint
 fn handle_health(_req: Request, _params: Params) -> Result<impl IntoResponse> {
-    Ok(Response::new(
-        200,
-        serde_json::json!({
+    let ctx = build_request_context(&_req)?;
+    let mut resp = ResponseBuilder::new(200)
+        .header("content-type", "application/json")
+        .body(
+            serde_json::json!({
             "status": "healthy",
             "service": "api-gateway",
             "version": env!("CARGO_PKG_VERSION")
         })
-        .to_string(),
-    ))
+            .to_string(),
+        )
+        .build();
+    resp.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
+    resp.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
+    Ok(apply_security_headers(resp, &ctx.policy))
 }
 
 /// List all registered services
-fn handle_list_services(_req: Request, _params: Params) -> Result<impl IntoResponse> {
-    let store = Store::open(SERVICE_REGISTRY_STORE)?;
-
-    // Get all service keys
-    let keys = store.get_keys()?;
-    let mut services = Vec::new();
-
-    for key in keys {
-        if key.starts_with("service:") {
-            if let Ok(data) = store.get(&key) {
-                if let Ok(service) = serde_json::from_slice::<ServiceRegistration>(&data) {
-                    services.push(service);
-                }
-            }
+async fn handle_list_services(req: Request, _params: Params) -> Result<Response> {
+    let ctx = build_request_context(&req)?;
+    if ctx.policy.auth.enabled {
+        if let Err(rej) = auth::authenticate_and_authorize(&req, &ctx).await {
+            return Ok(rej.into_response(&ctx));
         }
     }
 
-    Ok(ResponseBuilder::new(200)
+    let cfg = get_config()?;
+    let mut services = Vec::new();
+    for (name, svc) in cfg.services.iter() {
+        services.push(serde_json::json!({ "name": name, "url": svc.url }));
+    }
+
+    let resp = ResponseBuilder::new(200)
         .header("content-type", "application/json")
         .body(serde_json::to_string(&services)?)
-        .build())
+        .build();
+    Ok(apply_security_headers(resp, &ctx.policy))
 }
 
 /// Register a new service
-fn handle_register_service(req: Request, _params: Params) -> Result<impl IntoResponse> {
+async fn handle_register_service(req: Request, _params: Params) -> Result<Response> {
+    let ctx = build_request_context(&req)?;
+    if ctx.policy.auth.enabled {
+        if let Err(rej) = auth::authenticate_and_authorize(&req, &ctx).await {
+            return Ok(rej.into_response(&ctx));
+        }
+    }
+
     let registration: ServiceRegistration = serde_json::from_slice(req.body())?;
 
     let store = Store::open(SERVICE_REGISTRY_STORE)?;
     let key = format!("service:{}", registration.name);
-
     store.set(&key, &serde_json::to_vec(&registration)?)?;
 
-    println!(
-        "[API Gateway] Service registered: {} at {}",
-        registration.name, registration.url
+    event!(
+        Level::INFO,
+        correlation_id = ctx.correlation_id,
+        trace_id = ctx.trace_id,
+        service = ctx.service,
+        action = "register_service",
+        registered_name = registration.name,
+        registered_url = registration.url
     );
 
-    Ok(Response::new(201, serde_json::to_string(&registration)?))
+    let resp = ResponseBuilder::new(201)
+        .header("content-type", "application/json")
+        .body(serde_json::to_string(&registration)?)
+        .build();
+    Ok(apply_security_headers(resp, &ctx.policy))
 }
 
 /// Handle protected routes - requires JWT authentication
 async fn handle_protected_route(req: Request, _params: Params) -> Result<Response> {
-    // Generate or extract correlation ID
-    let correlation_id = req
-        .header(CORRELATION_ID_HEADER)
-        .and_then(|h| h.as_str())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| Uuid::new_v4().to_string());
+    let ctx = build_request_context(&req)?;
+    let span = tracing::info_span!(
+        "gateway_request",
+        correlation_id = %ctx.correlation_id,
+        trace_id = %ctx.trace_id,
+        service = %ctx.service,
+        method = %req.method(),
+        path = %req.uri().path()
+    );
+    let _enter = span.enter();
+    if req.method() == Method::Options {
+        return Ok(apply_security_headers(ResponseBuilder::new(204).body(Vec::new()).build(), &ctx.policy));
+    }
 
-    let trace_id = Uuid::new_v4().to_string();
-
-    println!(
-        "[{}] [{}] {} {} - Authentication check",
-        correlation_id,
-        trace_id,
-        req.method(),
-        req.uri().path()
+    event!(
+        Level::INFO,
+        correlation_id = ctx.correlation_id,
+        trace_id = ctx.trace_id,
+        method = %req.method(),
+        path = %req.uri().path(),
+        service = ctx.service,
+        action = "request"
     );
 
-    // Extract JWT from Authorization header
-    let auth_header = req.header("Authorization");
-    if auth_header.is_none() {
-        println!("[{}] Missing Authorization header", correlation_id);
-        return Ok(Response::new(
-            401,
-            serde_json::json!({
-                "error": "Unauthorized",
-                "message": "Missing Authorization header",
-                "correlation_id": correlation_id
-            })
-            .to_string(),
-        ));
-    }
-
-    let jwt = auth_header
-        .unwrap()
-        .as_str()
-        .and_then(|val| {
-            let mut parts = val.split_whitespace();
-            parts.nth(1)
-        })
-        .unwrap_or("");
-
-    if jwt.is_empty() {
-        println!("[{}] Invalid Authorization format", correlation_id);
-        return Ok(Response::new(
-            401,
-            serde_json::json!({
-                "error": "Unauthorized",
-                "message": "Invalid Authorization format",
-                "correlation_id": correlation_id
-            })
-            .to_string(),
-        ));
-    }
-
-    // Validate JWT
-    match validate_jwt(jwt, &correlation_id).await {
-        Ok(claims) => {
-            println!(
-                "[{}] Authentication successful for subject: {:?}",
-                correlation_id,
-                claims.get("sub")
-            );
-
-            // Forward to backend service with added headers
-            forward_to_service(req, &correlation_id, &trace_id, claims).await
+    let auth_ctx: Option<AuthContext> = if ctx.policy.auth.enabled {
+        match auth::authenticate_and_authorize(&req, &ctx).await {
+            Ok(a) => Some(a),
+            Err(rej) => return Ok(rej.into_response(&ctx)),
         }
-        Err(e) => {
-            println!("[{}] Authentication failed: {}", correlation_id, e);
-            Ok(Response::new(
-                401,
-                serde_json::json!({
-                    "error": "Unauthorized",
-                    "message": format!("JWT validation failed: {}", e),
-                    "correlation_id": correlation_id
-                })
-                .to_string(),
-            ))
-        }
-    }
-}
-
-/// Validate JWT token using OIDC/Google
-async fn validate_jwt(token: &str, correlation_id: &str) -> Result<HashMap<String, String>> {
-    // Get OIDC URL from environment (Google or custom)
-    let oidc_url = variables::get("google_oidc_url")
-        .unwrap_or_else(|_| String::from("https://accounts.google.com"));
-
-    println!(
-        "[{}] Fetching OIDC configuration from {}",
-        correlation_id, oidc_url
-    );
-
-    // Check Redis cache first
-    let cache_key = format!("jwks:{}", oidc_url);
-    if let Ok(address) = variables::get("redis_address") {
-        match redis::get(&address, &cache_key).await {
-            Ok(cached_jwks_uri) => {
-                if !cached_jwks_uri.is_empty() {
-                    println!("[{}] Using cached JWKS URI", correlation_id);
-                    return verify_with_jwks(&cached_jwks_uri, token, correlation_id).await;
-                }
-            }
-            Err(_) => {}
-        }
-    }
-
-    // Fetch OIDC configuration
-    let config_url = format!("{}/.well-known/openid-configuration", oidc_url);
-    let req = spin_sdk::http::Request::builder()
-        .method(Method::Get)
-        .uri(config_url)
-        .body(());
-
-    let res: spin_sdk::http::Response = spin_sdk::http::send(req.try_into()?).await?;
-    let config: OpenIdConfiguration = serde_json::from_slice(res.body())?;
-
-    println!("[{}] JWKS URI: {}", correlation_id, config.jwks_uri);
-
-    // Cache JWKS URI
-    if let Ok(address) = variables::get("redis_address") {
-        let _ = redis::set(&address, &cache_key, &config.jwks_uri.as_bytes()).await;
-        let _ = redis::execute(&address, "EXPIRE", &[cache_key.as_bytes(), b"3600"]).await;
-    }
-
-    verify_with_jwks(&config.jwks_uri, token, correlation_id).await
-}
-
-/// Verify JWT with JWKS
-async fn verify_with_jwks(
-    jwks_uri: &str,
-    token: &str,
-    correlation_id: &str,
-) -> Result<HashMap<String, String>> {
-    let key_store = KeyStore::new_from(jwks_uri.to_string())
-        .await
-        .context("Failed to load JWKS")?;
-
-    let jwt = key_store
-        .verify(token)
-        .map_err(|e| anyhow::anyhow!("JWT verification failed: {:?}", e))?;
-
-    println!("[{}] JWT verification successful", correlation_id);
-
-    // Extract claims
-    let mut claims = HashMap::new();
-    if let Some(sub) = jwt.payload().sub() {
-        claims.insert("sub".to_string(), sub.to_string());
-    }
-    if let Some(iss) = jwt.payload().iss() {
-        claims.insert("iss".to_string(), iss.to_string());
-    }
-
-    Ok(claims)
-}
-
-/// Forward request to backend service
-async fn forward_to_service(
-    mut req: Request,
-    correlation_id: &str,
-    trace_id: &str,
-    claims: HashMap<String, String>,
-) -> Result<Response> {
-    let path = req.uri().path();
-
-    // Discover service from path
-    let service_name = extract_service_name(path);
-
-    println!(
-        "[{}] [{}] Routing to service: {}",
-        correlation_id, trace_id, service_name
-    );
-
-    // Look up service in registry
-    let store = Store::open(SERVICE_REGISTRY_STORE)?;
-    let service_key = format!("service:{}", service_name);
-
-    let service_url = match store.get(&service_key) {
-        Ok(data) => {
-            let registration: ServiceRegistration = serde_json::from_slice(&data)?;
-            registration.url
-        }
-        Err(_) => {
-            // Fallback to direct routing
-            format!("/api/{}/...", service_name)
-        }
+    } else {
+        None
     };
 
-    println!(
-        "[{}] [{}] Forwarding to: {}{}",
-        correlation_id, trace_id, service_url, path
-    );
+    if ctx.policy.rate_limit.enabled {
+        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
+            if let Err(rej) = rate_limit::enforce_rate_limit(&redis_address, &ctx, auth_ctx.as_ref()).await
+            {
+                return Ok(rej.into_response(&ctx));
+            }
+        }
+    }
 
-    // Add tracing headers
+    if ctx.policy.cache.enabled {
+        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
+            if let Ok(Some(hit)) = cache::try_cache_hit(&redis_address, &req, &ctx, auth_ctx.as_ref()).await
+            {
+                return Ok(apply_security_headers(hit, &ctx.policy));
+            }
+        }
+    }
+
+    if ctx.policy.circuit_breaker.enabled {
+        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
+            if let Some(resp) = circuit_breaker::precheck(&redis_address, &ctx).await? {
+                return Ok(apply_security_headers(resp, &ctx.policy));
+            }
+        }
+    }
+
+    let mut response = match forward_to_service(req, &ctx, auth_ctx.as_ref()).await {
+        Ok(r) => r,
+        Err(_) => return Ok(GatewayRejection::BadGateway { message: "Upstream request failed".to_string() }.into_response(&ctx)),
+    };
+
+    if ctx.policy.circuit_breaker.enabled {
+        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
+            let _ = circuit_breaker::record(&redis_address, &ctx, response.status().as_u16()).await;
+        }
+    }
+
+    if ctx.policy.cache.enabled {
+        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
+            let _ = cache::try_cache_store(&redis_address, &req, &response, &ctx, auth_ctx.as_ref()).await;
+        }
+    }
+
+    response.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
+    response.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
+
+    Ok(apply_security_headers(response, &ctx.policy))
+}
+
+async fn forward_to_service(
+    req: Request,
+    ctx: &RequestContext,
+    auth_ctx: Option<&AuthContext>,
+) -> Result<Response> {
+    let service_url = match resolve_service_url(&ctx.service) {
+        Ok(u) => u,
+        Err(_) => return Ok(GatewayRejection::UnknownService.into_response(ctx)),
+    };
+
+    let upstream_path = rewrite_upstream_path(req.uri().path(), &ctx.service);
+    let upstream_path_and_query = match req.uri().query() {
+        Some(q) if !q.is_empty() => format!("{}?{}", upstream_path, q),
+        _ => upstream_path,
+    };
     let mut forward_req = spin_sdk::http::Request::builder()
         .method(req.method().clone())
-        .uri(format!("{}{}", service_url, path))
+        .uri(format!("{}{}", service_url, upstream_path_and_query))
         .body(req.body().clone())?;
 
-    // Copy headers and add correlation/trace IDs
     let headers = forward_req.headers_mut();
     for (name, value) in req.headers() {
         if !name.as_str().starts_with("spin-") && name.as_str() != "host" {
             headers.insert(name, value.clone());
         }
     }
-    headers.insert(CORRELATION_ID_HEADER, correlation_id.parse()?);
-    headers.insert(TRACE_ID_HEADER, trace_id.parse()?);
-    headers.insert("x-user-claims", serde_json::to_string(&claims)?.parse()?);
+    headers.insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse()?);
+    headers.insert(TRACE_ID_HEADER, ctx.trace_id.parse()?);
+    if let Some(auth) = auth_ctx {
+        headers.insert(
+            "x-user-claims",
+            serde_json::to_string(&auth.claims_for_headers)?.parse()?,
+        );
+        if let Some(sub) = auth.subject.as_ref() {
+            headers.insert("x-user-sub", sub.parse()?);
+        }
+    }
 
-    // Send request
     match spin_sdk::http::send(forward_req).await {
         Ok(mut response) => {
-            // Add correlation ID to response
-            response
-                .headers_mut()
-                .insert(CORRELATION_ID_HEADER, correlation_id.parse()?);
-
-            println!(
-                "[{}] [{}] Response: {}",
-                correlation_id,
-                trace_id,
-                response.status()
+            event!(
+                Level::INFO,
+                correlation_id = ctx.correlation_id,
+                trace_id = ctx.trace_id,
+                service = ctx.service,
+                action = "upstream_response",
+                status = response.status().as_u16()
             );
-
-            Ok(Response::new(
-                response.status().as_u16(),
-                response.body().clone(),
-            ))
+            response.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse()?);
+            response.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse()?);
+            Ok(response)
         }
-        Err(e) => {
-            println!(
-                "[{}] [{}] Error forwarding: {:?}",
-                correlation_id, trace_id, e
-            );
-            Ok(Response::new(
-                502,
-                serde_json::json!({
-                    "error": "Bad Gateway",
-                    "message": "Service unavailable",
-                    "service": service_name,
-                    "correlation_id": correlation_id
-                })
-                .to_string(),
-            ))
+        Err(_) => Ok(GatewayRejection::BadGateway {
+            message: "Service unavailable".to_string(),
         }
+        .into_response(ctx)),
     }
 }
 
-/// Extract service name from path
-fn extract_service_name(path: &str) -> String {
-    let parts: Vec<&str> = path.trim_start_matches('/').split('/').collect();
-    if parts.len() >= 2 && parts[0] == "api" {
-        parts[1].to_string()
+fn rewrite_upstream_path(path: &str, service: &str) -> String {
+    let trimmed = path.trim_start_matches('/');
+    let mut parts = trimmed.split('/');
+    let first = parts.next().unwrap_or("");
+    let second = parts.next().unwrap_or("");
+    if first != "api" {
+        return path.to_string();
+    }
+
+    let rest: Vec<&str> = parts.collect();
+    let rest_path = if rest.is_empty() {
+        "".to_string()
     } else {
-        "unknown".to_string()
+        format!("/{}", rest.join("/"))
+    };
+
+    match (second, service) {
+        ("auth", "auth-service") => format!("/api/auth{}", rest_path),
+        ("countries", "location-service") => format!("/api/countries{}", rest_path),
+        ("redis", "redis-service") => format!("/api/redis{}", rest_path),
+        ("rate-limit", "rate-limiter-service") => format!("/api{}", rest_path),
+        ("security", "security-service") => format!("/api{}", rest_path),
+        ("reviews", "reviews-service") => format!("/api{}", rest_path),
+        ("notifications", "notification-service") => format!("/api{}", rest_path),
+        ("documents", "document-validation-service") => format!("/api{}", rest_path),
+        ("info", "info-on-arrival-service") => format!("/api{}", rest_path),
+        ("bookings", "booking-service") => format!("/api{}", rest_path),
+        _ => path.to_string(),
     }
 }

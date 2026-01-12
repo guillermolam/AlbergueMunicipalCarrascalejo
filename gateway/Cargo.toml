@@ -1,11 +1,17 @@
 [workspace]
-members = ["api-gateway"]
+members = ["api-gateway", "edge-proxy"]
 resolver = "2"
 
 [workspace.metadata.env]
 # Spin Gateway Configuration
 SPIN_LISTEN_ADDRESS = { default = "0.0.0.0:3000", description = "Gateway listen address" }
 GATEWAY_PORT = { default = "3000", description = "Gateway port" }
+
+# Gateway Policies
+gateway_config_path = { default = "/config/gateway.toml", description = "Gateway TOML policy config path" }
+
+# Redis Configuration
+redis_address = { default = "", description = "Redis connection address for caching/rate-limit/circuit-breaker" }
 
 # Database Configuration
 DATABASE_URL = { required = true, description = "PostgreSQL connection string" }
@@ -42,15 +48,15 @@ tokio = { version = "1.0", features = [
   "rt",
   "time",
 ] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-spin-sdk = "3.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+spin-sdk = "5.1.1"
 anyhow = "1.0.100"
-http = "0.2"
+http = "1.4.0"
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
-thiserror = "1.0"
+thiserror = "2.0.17"
 
 [workspace.metadata.commands]
 build-wasm = "cargo build --target wasm32-wasi --release"
