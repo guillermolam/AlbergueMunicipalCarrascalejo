@@ -1,39 +1,46 @@
 {
-  "name": "albergue-carrascalejo-frontend",
-  "type": "module",
-  "version": "1.0.0",
-  "description": "Static Astro frontend for Albergue Municipal Carrascalejo - Camino de Santiago (plain CSS, RoughJS, IBM Plex)",
-  "keywords": [
-    "astro",
-    "camino-santiago",
-    "albergue",
-    "static-site",
-    "plain-css",
-    "roughjs",
-    "ibm-plex"
-  ],
-  "author": "Albergue Municipal Carrascalejo",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
-  },
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "clean": "rimraf dist .astro node_modules/.cache",
-    "format": "prettier --write ."
-  },
-  "dependencies": {
-    "astro": "^5.16.6",
-    "redis": "^5.10.0",
-    "roughjs": "^4.6.6"
-  },
-  "devDependencies": {
-    "prettier": "^3.7.4",
-    "prettier-plugin-astro": "^0.14.1",
-    "rimraf": "^6.1.2"
-  },
-  "packageManager": "pnpm@8.15.6"
+    "name": "albergue-carrascalejo-frontend",
+    "type": "module",
+    "version": "1.0.0",
+    "description": "Static Astro frontend for Albergue Municipal Carrascalejo - Camino de Santiago (plain CSS, RoughJS, IBM Plex)",
+    "keywords": [
+        "astro",
+        "camino-santiago",
+        "albergue",
+        "static-site",
+        "plain-css",
+        "roughjs",
+        "ibm-plex"
+    ],
+    "author": "Albergue Municipal Carrascalejo",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "pnpm": ">=8.0.0"
+    },
+    "scripts": {
+        "dev": "astro dev",
+        "build": "astro build",
+        "preview": "astro preview",
+        "clean": "rimraf dist .astro node_modules/.cache",
+        "format": "prettier --write ."
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.49.1",
+        "alpinejs": "^3.14.0",
+        "astro": "^5.16.6",
+        "clsx": "^2.1.1",
+        "nanostores": "^0.11.3",
+        "redis": "^5.10.0",
+        "roughjs": "^4.6.6",
+        "tailwind-merge": "^3.3.1"
+    },
+    "devDependencies": {
+        "@astrojs/check": "^0.9.6",
+        "prettier": "^3.7.4",
+        "prettier-plugin-astro": "^0.14.1",
+        "rimraf": "^6.1.2",
+        "typescript": "^5.9.3"
+    },
+    "packageManager": "pnpm@8.15.6"
 }

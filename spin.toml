@@ -5,6 +5,10 @@ name = "albergue-carrascalejo"
 version = "1.0.0"
 description = "Albergue Municipal Carrascalejo (frontend + gateway)"
 
+# SQLite database for local replica (syncs with Neon/Turso)
+[[sqlite_database]]
+name = "default"
+
 [variables]
 gateway_config_path = { default = "/config/gateway.toml" }
 database_url = { required = true }
@@ -83,6 +87,10 @@ component = "reviews-service"
 route = { private = true }
 component = "security-service"
 
+[[trigger.http]]
+route = { private = true }
+component = "mqtt-broker-service"
+
 [component.frontend]
 source = "spin:fileserver"
 files = [{ source = "frontend/dist", destination = "/" }]
@@ -121,6 +129,7 @@ command = "cd backend/auth-service && cargo build --target wasm32-wasip1 --relea
 source = "backend/booking-service/target/wasm32-wasip1/release/booking_service.wasm"
 allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
 key_value_stores = ["default"]
+sqlite_databases = ["default"]
 [component.booking-service.build]
 command = "cd backend/booking-service && cargo build --target wasm32-wasip1 --release"
 [component.booking-service.variables]
@@ -133,6 +142,7 @@ log_level = "{{ log_level }}"
 source = "backend/document-validation-service/target/wasm32-wasip1/release/document_validation_service.wasm"
 allowed_outbound_hosts = ["https://*.amazonaws.com", "https://*.neon.tech"]
 key_value_stores = ["default"]
+sqlite_databases = ["default"]
 [component.document-validation-service.build]
 command = "cd backend/document-validation-service && cargo build --target wasm32-wasip1 --release"
 [component.document-validation-service.variables]
@@ -148,7 +158,9 @@ allowed_outbound_hosts = [
   "https://turismomerida.org",
   "https://radiotaximerida.es",
   "https://*.neon.tech",
+  "http://mqtt-broker-service.spin.internal",
 ]
+sqlite_databases = ["default"]
 [component.info-on-arrival-service.build]
 command = "cd backend/info-on-arrival-service && cargo build --target wasm32-wasip1 --release"
 [component.info-on-arrival-service.variables]
@@ -178,6 +190,7 @@ allowed_outbound_hosts = [
   "https://*.neon.tech",
 ]
 key_value_stores = ["default"]
+sqlite_databases = ["default"]
 [component.notification-service.build]
 command = "cd backend/notification-service && cargo build --target wasm32-wasip1 --release"
 [component.notification-service.variables]
@@ -219,6 +232,7 @@ redis_default_ttl = "{{ redis_default_ttl }}"
 [component.reviews-service]
 source = "backend/reviews-service/target/wasm32-wasip1/release/reviews_service.wasm"
 allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
+sqlite_databases = ["default"]
 [component.reviews-service.build]
 command = "cd backend/reviews-service && cargo build --target wasm32-wasip1 --release"
 [component.reviews-service.variables]
@@ -230,11 +244,22 @@ log_level = "{{ log_level }}"
 source = "backend/security-service/target/wasm32-wasip1/release/security_service.wasm"
 allowed_outbound_hosts = ["https://*.neon.tech"]
 key_value_stores = ["default"]
+sqlite_databases = ["default"]
 [component.security-service.build]
 command = "cd backend/security-service && cargo build --target wasm32-wasip1 --release"
 [component.security-service.variables]
 database_url = "{{ database_url }}"
 rate_limit_requests = "{{ security_rate_limit_requests }}"
 encryption_key = "{{ encryption_key }}"
+log_level = "{{ log_level }}"
+
+[component.mqtt-broker-service]
+source = "backend/mqtt-broker-service/target/wasm32-wasip1/release/mqtt_broker_service.wasm"
+allowed_outbound_hosts = ["redis://*", "http://*.spin.internal"]
+key_value_stores = ["default"]
+[component.mqtt-broker-service.build]
+command = "cd backend/mqtt-broker-service && cargo build --target wasm32-wasip1 --release"
+[component.mqtt-broker-service.variables]
+redis_url = "{{ redis_url }}"
 log_level = "{{ log_level }}"
 

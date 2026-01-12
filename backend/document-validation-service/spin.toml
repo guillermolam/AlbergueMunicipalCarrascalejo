@@ -18,8 +18,9 @@ component = "document-validation-service"
 
 [component.document-validation-service]
 source = "target/wasm32-wasip1/release/document_validation_service.wasm"
-allowed_outbound_hosts = ["https://*.amazonaws.com", "https://*.neon.tech"]
+allowed_outbound_hosts = ["https://*.amazonaws.com", "https://*.neon.tech", "http://mqtt-broker-service.spin.internal"]
 key_value_stores = ["default"]
+sqlite_databases = ["default"]
 
 [component.document-validation-service.build]
 command = "cargo build --target wasm32-wasip1 --release"

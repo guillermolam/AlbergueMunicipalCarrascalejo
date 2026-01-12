@@ -212,8 +212,8 @@ const fakeResponses = {
         ...mockData.booking,
         ...data,
         id: 'booking-' + Date.now(),
-        reference: 'BK' + Math.random().toString(36).substr(2, 8).toUpperCase(),
-        confirmationCode: 'CONF-' + Math.random().toString(36).substr(2, 6).toUpperCase()
+        reference: 'BK' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+        confirmationCode: 'CONF-' + Math.random().toString(36).substring(2, 8).toUpperCase()
       },
       message: 'Reserva creada correctamente'
     }

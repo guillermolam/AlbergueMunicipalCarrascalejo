@@ -66,7 +66,7 @@ const currentLocale = i18nStore.get().locale;
 const currentLanguage = languages.find(lang => lang.code === currentLocale) || languages[0];
 
 // Generate unique ID for Alpine.js component
-const componentId = `language-selector-${Math.random().toString(36).substr(2, 9)}`;
+const componentId = `language-selector-${Math.random().toString(36).substring(2, 11)}`;
 
 const { class: className = '', showFlags = true, compact = false } = Astro.props;
 ---

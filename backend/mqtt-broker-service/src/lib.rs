@@ -39,12 +39,31 @@ struct PublishRequest {
     retain: Option<bool>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct WebhookRegistration {
+    /// Service name or identifier
+    service_id: String,
+    /// Webhook URL to POST events to
+    webhook_url: String,
+    /// Topic filter patterns (e.g., "albergue.v1.booking.*")
+    topic_filters: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct WebhookSubscription {
+    service_id: String,
+    webhook_url: String,
+    topic_filters: Vec<String>,
+    registered_at: String,
+}
+
 #[http_component]
 fn handle_mqtt(req: Request) -> Result<impl IntoResponse> {
     let mut router = Router::default();
 
     router.post("/api/mqtt/publish", handle_publish);
     router.post("/api/mqtt/subscribe", handle_subscribe);
+    router.post("/api/mqtt/register-webhook", handle_register_webhook);
     router.get("/api/mqtt/messages/:topic", handle_get_messages);
     router.get("/api/mqtt/health", handle_health);
 
@@ -99,6 +118,9 @@ async fn handle_publish(req: Request, _params: Params) -> Result<impl IntoRespon
     )
     .await?;
 
+    // Deliver to registered webhooks (fire-and-forget)
+    deliver_to_webhooks(&redis_address, &message.topic, &message_json).await;
+
     println!(
         "[MQTT Broker] Published message to topic: {} (QoS: {})",
         message.topic, message.qos
@@ -115,6 +137,124 @@ async fn handle_publish(req: Request, _params: Params) -> Result<impl IntoRespon
             .to_string(),
         )
         .build())
+}
+
+/// Register webhook for event delivery
+async fn handle_register_webhook(req: Request, _params: Params) -> Result<impl IntoResponse> {
+    let registration: WebhookRegistration = serde_json::from_slice(req.body())?;
+    
+    let redis_address = variables::get("redis_address")?;
+    
+    let subscription = WebhookSubscription {
+        service_id: registration.service_id.clone(),
+        webhook_url: registration.webhook_url.clone(),
+        topic_filters: registration.topic_filters.clone(),
+        registered_at: chrono::Utc::now().to_rfc3339(),
+    };
+    
+    // Store webhook subscription in Redis
+    let webhook_key = format!("mqtt:webhooks:{}", registration.service_id);
+    let subscription_json = serde_json::to_vec(&subscription)?;
+    
+    redis::set(&redis_address, &webhook_key, &subscription_json).await?;
+    
+    // Add to webhooks index
+    redis::execute(
+        &redis_address,
+        "SADD",
+        &[b"mqtt:webhooks:index", webhook_key.as_bytes()],
+    )
+    .await?;
+    
+    println!(
+        "[MQTT Broker] Registered webhook for service {} with filters: {:?}",
+        registration.service_id, registration.topic_filters
+    );
+    
+    Ok(ResponseBuilder::new(200)
+        .header("content-type", "application/json")
+        .body(
+            serde_json::json!({
+                "status": "registered",
+                "service_id": registration.service_id,
+                "topic_filters": registration.topic_filters
+            })
+            .to_string(),
+        )
+        .build())
+}
+
+/// Deliver message to registered webhooks (fire-and-forget)
+async fn deliver_to_webhooks(redis_address: &str, topic: &str, message_json: &[u8]) {
+    // Get all webhook subscriptions
+    let webhooks_index = match redis::execute(
+        redis_address,
+        "SMEMBERS",
+        &[b"mqtt:webhooks:index"],
+    )
+    .await {
+        Ok(keys) => keys,
+        Err(_) => return, // No webhooks registered
+    };
+    
+    for webhook_key in webhooks_index {
+        // Get webhook subscription
+        let subscription_data = match redis::get(redis_address, &String::from_utf8_lossy(&webhook_key)).await {
+            Ok(data) => data,
+            Err(_) => continue,
+        };
+        
+        let subscription: WebhookSubscription = match serde_json::from_slice(&subscription_data) {
+            Ok(sub) => sub,
+            Err(_) => continue,
+        };
+        
+        // Check if topic matches any filter
+        if !topic_matches_filters(topic, &subscription.topic_filters) {
+            continue;
+        }
+        
+        // Fire-and-forget POST to webhook URL
+        let webhook_request = match spin_sdk::http::Request::builder()
+            .method(Method::Post)
+            .uri(&subscription.webhook_url)
+            .header("Content-Type", "application/json")
+            .header("X-MQTT-Topic", topic)
+            .body(message_json)
+            .build() {
+                Ok(req) => req,
+                Err(_) => continue,
+            };
+        
+        // Fire and forget - ignore result
+        let _ = spin_sdk::http::send(webhook_request);
+        
+        println!(
+            "[MQTT Broker] Delivered event to webhook: {} (service: {})",
+            subscription.webhook_url, subscription.service_id
+        );
+    }
+}
+
+/// Check if topic matches any of the filter patterns
+/// Supports wildcard matching: albergue.v1.booking.* matches albergue.v1.booking.reserved
+fn topic_matches_filters(topic: &str, filters: &[String]) -> bool {
+    for filter in filters {
+        if filter.ends_with(".*") {
+            // Prefix wildcard match
+            let prefix = &filter[..filter.len() - 2];
+            if topic.starts_with(prefix) {
+                return true;
+            }
+        } else if filter == "*" {
+            // Match all
+            return true;
+        } else if filter == topic {
+            // Exact match
+            return true;
+        }
+    }
+    false
 }
 
 /// Subscribe to topic

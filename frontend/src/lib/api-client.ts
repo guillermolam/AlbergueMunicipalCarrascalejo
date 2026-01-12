@@ -141,7 +141,7 @@ export class ApiClient {
 
     // Add authentication header if token exists
     if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`
     }
 
     try {
@@ -307,13 +307,4 @@ export async function initializeApiClient(): Promise<ApiClient> {
 }
 
 // Export types
-export type {
-  LoginRequest,
-  LoginResponse,
-  UserProfile,
-  BookingRequest,
-  BookingResponse,
-  CaminoStats,
-  CaminoRecommendation,
-  ApiResponse
-}
+// Types are already exported inline above

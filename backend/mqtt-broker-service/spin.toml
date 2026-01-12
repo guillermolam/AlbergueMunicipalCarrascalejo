@@ -1,0 +1,27 @@
+
+spin_manifest_version = 2
+
+[application]
+name = "mqtt-broker-service"
+version = "0.1.0"
+authors = ["Albergue Del Carrascalejo"]
+
+[variables]
+redis_url = { required = true }
+log_level = { default = "info" }
+
+[[trigger.http]]
+route = "/api/mqtt/*"
+component = "mqtt-broker-service"
+
+[component.mqtt-broker-service]
+source = "target/wasm32-wasip1/release/mqtt_broker_service.wasm"
+allowed_outbound_hosts = ["redis://*", "http://*.spin.internal"]
+key_value_stores = ["default"]
+
+[component.mqtt-broker-service.build]
+command = "cargo build --target wasm32-wasip1 --release"
+
+[component.mqtt-broker-service.variables]
+redis_url = "{{ redis_url }}"
+log_level = "{{ log_level }}"

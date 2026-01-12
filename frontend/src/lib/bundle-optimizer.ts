@@ -335,7 +335,7 @@ export function generateOptimizationRecommendations(analysis: BundleAnalysis, co
   // Check for duplicate modules
   const moduleCounts = new Map<string, number>();
   analysis.chunks.forEach(chunk => {
-    chunk.modules.forEach((module: any) => {
+    (chunk.modules as any[]).forEach((module: any) => {
       moduleCounts.set(module, (moduleCounts.get(module) || 0) + 1);
     });
   });

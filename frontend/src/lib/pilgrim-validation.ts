@@ -637,11 +637,11 @@ export function normalizePilgrimData(data: any): any {
 
   // Normalize strings
   if (normalized.personalInfo?.firstName) {
-    normalized.personalInfo.firstName = normalized.personalInfo.firstName.trim().toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    normalized.personalInfo.firstName = normalized.personalInfo.firstName.trim().toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
   }
 
   if (normalized.personalInfo?.lastName) {
-    normalized.personalInfo.lastName = normalized.personalInfo.lastName.trim().toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    normalized.personalInfo.lastName = normalized.personalInfo.lastName.trim().toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
   }
 
   if (normalized.personalInfo?.email) {
@@ -649,7 +649,7 @@ export function normalizePilgrimData(data: any): any {
   }
 
   if (normalized.personalInfo?.nationality) {
-    normalized.personalInfo.nationality = normalized.personalInfo.nationality.trim().toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    normalized.personalInfo.nationality = normalized.personalInfo.nationality.trim().toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
   }
 
   // Normalize dates

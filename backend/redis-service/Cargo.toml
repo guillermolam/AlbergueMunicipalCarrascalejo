@@ -25,7 +25,7 @@ futures = "0.3"
 
 
 # Spin SDK
-spin-sdk = { version = "2.2.0", features = ["redis", "http"] }
+spin-sdk = { version = "2.2.0" }
 wit-bindgen = "0.25"
 
 # HTTP

@@ -1,110 +1,44 @@
-# Testing Structure
+﻿# Tests
 
-This directory contains all the testing infrastructure for the Albergue Del Carrascalejo pilgrim registration system.
+This directory contains test assets and test runners for the system.
 
-## Directory Structure
+## Directory structure
 
 ```
 tests/
-├── api/                    # API integration tests
-│   ├── test-dni-api.js     # Core API endpoint validation
-│   ├── test-*.mjs         # Local testing modules
-│   └── test-lambda.js     # AWS Lambda OCR testing
-├── enzyme-components/      # React component unit tests
-│   ├── App.test.tsx
-│   ├── CountryPhoneInput.test.tsx
-│   ├── LanguageSelector.test.tsx
-│   ├── MultiDocumentCapture.test.tsx
-│   └── Booking.test.tsx
-├── e2e/                    # End-to-End testing
-│   ├── testcafe/          # TestCafe E2E test files
-│   │   ├── testcafe-document-formats.js
-│   │   ├── testcafe-full-registration-flow.js
-│   │   ├── testcafe-international-passports.js
-│   │   ├── testcafe-nie-documents.js
-│   │   ├── testcafe-residence-permits.js
-│   │   └── test-dni-simple.js
-│   └── outputs/           # TestCafe output directories
-│       ├── reports/       # Test reports
-│       ├── screenshots/   # Screenshot captures
-│       └── videos/        # Video recordings
-├── runners/               # Test execution scripts
-│   ├── run-comprehensive-testcafe.js
-│   ├── run-dni-tests.js
-├── __mocks__/             # Jest mocks
-├── performance/           # Performance testing
-├── integration/           # Integration testing
-└── appsec/               # Security testing
+ api/              # API-level scripts (DNI/NIE/OCR helpers)
+ e2e/              # End-to-end tests (TestCafe)
+ spin-integration/ # Spin component integration tests
+ integration/      # Cross-service integration tests
+ infrastructure/   # Infrastructure/connectivity checks
+ performance/      # Performance experiments
+ runners/          # Node-based test runners
+ documentation/    # Test documentation and notes
+ attached_assets/  # Fixtures used by tests
+ __mocks__/        # Mocks used by test runners
 ```
 
-## Test Types
+## Running tests
 
-### API Tests (`./api/`)
-
-- Integration tests for all backend endpoints
-- 100% pass rate validation
-- Response time monitoring
-- Error handling verification
-
-### Component Tests (`./enzyme-components/`)
-
-- React component unit tests using Enzyme + Jest
-- 92% average test coverage
-- Provider setup and context integration testing
-
-### End-to-End Tests (`./e2e/testcafe/`)
-
-- Full registration workflow testing
-- Document processing validation (DNI, NIE, TIE, Passports)
-- Multi-browser compatibility testing
-- Critical user journey validation
-
-### Test Runners (`./runners/`)
-
-- Automated test execution scripts
-- Comprehensive reporting
-- Performance monitoring
-
-## Running Tests
-
-### All Tests
+Prefer the root task runner so the same commands work in CI:
 
 ```bash
-npm run test
+task test
 ```
 
-### Individual Test Suites
+You can also run Rust unit tests directly:
 
 ```bash
-# Unit tests
-npm run test:unit
+cd backend
+cargo test --workspace
 
-# Integration tests
-npm run test:integration
-
-# End-to-end tests
-npm run test:e2e
+cd gateway
+cargo test --workspace
 ```
 
-### Manual Test Execution
+API and E2E scripts can be executed from `tests/`:
 
 ```bash
-# API tests
 node tests/runners/run-dni-tests.js
-
-# Component tests
-node tests/runners/run-enzyme-tests.js
-
-# E2E tests
 node tests/runners/run-comprehensive-testcafe.js
 ```
-
-## TestCafe Configuration
-
-TestCafe outputs are automatically saved to:
-
-- **Reports**: `tests/e2e/outputs/reports/`
-- **Screenshots**: `tests/e2e/outputs/screenshots/`
-- **Videos**: `tests/e2e/outputs/videos/`
-
-These directories are automatically created when running E2E tests.

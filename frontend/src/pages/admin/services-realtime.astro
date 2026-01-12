@@ -1,6 +1,6 @@
----
+﻿---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import ServiceStatus from '../../components/admin/ServiceStatus';
+import ServiceStatus from '../../components/admin/ServiceStatus.astro';
 import { mockHealthChecks } from '../../lib/healthchecks';
 ---
 
@@ -67,7 +67,7 @@ import { mockHealthChecks } from '../../lib/healthchecks';
     </div>
 
     <!-- Real-time Service Status Component -->
-    <ServiceStatus client:load initialServices={mockHealthChecks} />
+    <ServiceStatus initialServices={mockHealthChecks} />
 
     <!-- Quick Actions -->
     <div class="space-y-4">

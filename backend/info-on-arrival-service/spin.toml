@@ -24,7 +24,9 @@ allowed_outbound_hosts = [
   "https://turismomerida.org",
   "https://radiotaximerida.es",
   "https://*.neon.tech",
+  "http://mqtt-broker-service.spin.internal",
 ]
+sqlite_databases = ["default"]
 
 [component.info-on-arrival-service.build]
 command = "cargo build --target wasm32-wasip1 --release"
