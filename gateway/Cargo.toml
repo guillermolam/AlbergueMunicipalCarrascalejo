@@ -1,5 +1,5 @@
 ﻿[workspace]
-members = ["api-gateway", "edge-proxy"]
+members = ["api-gateway", "api-gateway-core", "edge-proxy"]
 resolver = "2"
 
 [workspace.metadata.rust-analyzer]
