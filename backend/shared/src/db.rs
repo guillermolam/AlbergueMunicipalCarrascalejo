@@ -9,13 +9,13 @@ pub struct DatabaseConfig {
     pub channel_binding: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DatabaseType {
     PostgreSQL, // NeonDB with connection pooling
     SQLite,     // For Spin/Fermyon deployment
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SslMode {
     Require,
     Prefer,
@@ -26,6 +26,7 @@ pub enum SslMode {
 use crate::config::get_database_url;
 
 impl DatabaseConfig {
+    #[must_use]
     pub fn from_env() -> Self {
         let database_type = if std::env::var("SPIN_COMPONENT_ROUTE").is_ok() {
             DatabaseType::SQLite
@@ -91,14 +92,17 @@ impl DatabaseConfig {
         }
     }
 
+    #[must_use]
     pub fn is_production(&self) -> bool {
         self.connection_string.contains("pooler") && !cfg!(debug_assertions)
     }
 
+    #[must_use]
     pub fn is_development(&self) -> bool {
         self.connection_string.contains("pooler") && cfg!(debug_assertions)
     }
 
+    #[must_use]
     pub fn get_pool_config(&self) -> PoolConfig {
         PoolConfig {
             max_connections: self.max_connections,
@@ -119,10 +123,12 @@ pub struct PoolConfig {
 
 // Connection string utilities
 impl DatabaseConfig {
+    #[must_use]
     pub fn get_connection_string(&self) -> String {
         self.connection_string.clone()
     }
 
+    #[must_use]
     pub fn get_pool_size(&self) -> u32 {
         if self.is_production() {
             // Use smaller pool size for production with connection pooling
@@ -136,6 +142,7 @@ impl DatabaseConfig {
         }
     }
 
+    #[must_use]
     pub fn get_connection_timeout(&self) -> std::time::Duration {
         if self.is_production() {
             // Shorter timeout for production with pooling
@@ -145,6 +152,7 @@ impl DatabaseConfig {
         }
     }
 
+    #[must_use]
     pub fn get_ssl_config(&self) -> SslConfig {
         SslConfig {
             ssl_mode: self.ssl_mode.clone(),
@@ -163,6 +171,7 @@ pub struct SslConfig {
 
 // Environment detection helpers
 impl DatabaseConfig {
+    #[must_use]
     pub fn get_environment(&self) -> Environment {
         if self.is_production() {
             Environment::Production
@@ -173,19 +182,21 @@ impl DatabaseConfig {
         }
     }
 
+    #[must_use]
     pub fn get_database_name(&self) -> String {
         match self.database_type {
             DatabaseType::PostgreSQL => {
                 // Extract database name from connection string
-                if let Some(db_name) = self.connection_string.rsplit('/').next() {
-                    db_name
-                        .split('?')
-                        .next()
-                        .unwrap_or("albergue-carrascalejo")
-                        .to_string()
-                } else {
-                    "albergue-carrascalejo".to_string()
-                }
+                self.connection_string.rsplit('/').next().map_or_else(
+                    || "albergue-carrascalejo".to_string(),
+                    |db_name| {
+                        db_name
+                            .split('?')
+                            .next()
+                            .unwrap_or("albergue-carrascalejo")
+                            .to_string()
+                    },
+                )
             }
             DatabaseType::SQLite => std::path::Path::new(&self.connection_string)
                 .file_stem()
@@ -196,7 +207,7 @@ impl DatabaseConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Environment {
     Production,
     Development,
@@ -206,9 +217,9 @@ pub enum Environment {
 impl std::fmt::Display for Environment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Environment::Production => write!(f, "production"),
-            Environment::Development => write!(f, "development"),
-            Environment::Local => write!(f, "local"),
+            Self::Production => write!(f, "production"),
+            Self::Development => write!(f, "development"),
+            Self::Local => write!(f, "local"),
         }
     }
 }
@@ -225,8 +236,8 @@ impl DatabaseConfig {
 
         let pool_config = self.get_pool_config();
 
-        let options = sqlx::postgres::PgPoolOptions::new()
-            .max_connections(pool_config.max_connections);
+        let options =
+            sqlx::postgres::PgPoolOptions::new().max_connections(pool_config.max_connections);
 
         // Configure SSL for NeonDB (handled via connection string in newer sqlx versions)
 
@@ -259,7 +270,9 @@ impl DatabaseConfig {
                 }
             }
             DatabaseType::SQLite => {
-                if !self.connection_string.ends_with(".db")
+                if !std::path::Path::new(&self.connection_string)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("db"))
                     && !self.connection_string.contains(":memory:")
                 {
                     return Err("SQLite connection should end with .db or be :memory:".to_string());
@@ -273,14 +286,15 @@ impl DatabaseConfig {
 
 // Health check configuration
 impl DatabaseConfig {
-    pub fn health_check_query(&self) -> &'static str {
+    #[must_use]
+    pub const fn health_check_query(&self) -> &'static str {
         match self.database_type {
-            DatabaseType::PostgreSQL => "SELECT 1",
-            DatabaseType::SQLite => "SELECT 1",
+            DatabaseType::SQLite | DatabaseType::PostgreSQL => "SELECT 1",
         }
     }
 
-    pub fn get_health_check_timeout(&self) -> std::time::Duration {
+    #[must_use]
+    pub const fn get_health_check_timeout(&self) -> std::time::Duration {
         std::time::Duration::from_secs(5)
     }
 }

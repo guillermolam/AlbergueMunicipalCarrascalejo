@@ -3,7 +3,8 @@
 #![allow(
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    clippy::missing_const_for_fn
 )]
 
 // Shared types and utilities for WASM microservices
@@ -31,19 +32,22 @@ pub struct ServiceError {
 }
 
 impl ServiceError {
-    pub fn new(message: String, code: u16) -> ServiceError {
-        ServiceError {
+    #[must_use]
+    pub fn new(message: String, code: u16) -> Self {
+        Self {
             message,
             code,
             details: None,
         }
     }
 
+    #[must_use]
     pub fn message(&self) -> String {
         self.message.clone()
     }
 
-    pub fn code(&self) -> u16 {
+    #[must_use]
+    pub const fn code(&self) -> u16 {
         self.code
     }
 }
