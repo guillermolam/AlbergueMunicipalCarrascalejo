@@ -12,8 +12,8 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 
-# Async runtime
-tokio = { version = "1.0", features = ["rt", "macros", "sync", "time"] }
+# Async runtime (wasm-compatible features only)
+tokio = { version = "1.0", features = ["sync", "macros", "time"] }
 futures = "0.3"
 
 # Spin SDK
@@ -23,13 +23,7 @@ wit-bindgen = "0.25"
 # HTTP
 http = "1.1"
 
-# Database
-sqlx = { version = "0.8", features = [
-  "postgres",
-  "chrono",
-  "uuid",
-  "runtime-tokio",
-] }
+
 
 # Redis
 redis-service = { path = "../redis-service" }
@@ -39,11 +33,9 @@ shared = { path = "../shared" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = [
-  "rt",
   "macros",
   "sync",
   "time",
-  "test-util",
 ] }
 wiremock = "0.5"
 mockall = "0.11"

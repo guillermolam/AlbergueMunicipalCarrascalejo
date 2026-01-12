@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum RedisServiceError {
     #[error("Redis connection error: {0}")]
-    Connection(#[from] redis::RedisError),
+    Connection(String),
 
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),

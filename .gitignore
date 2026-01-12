@@ -164,5 +164,7 @@ runtime-config.toml
 # **/package-lock.json
 # **/yarn.lock
 # **/pnpm-lock.yaml
-.trae
+# **/bun.lockb
+
+# === CUSTOM ===
 .copilot-patches/api-gateway-rfc7807.patch
