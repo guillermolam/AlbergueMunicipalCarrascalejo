@@ -7,7 +7,7 @@ set -e
 SERVICE="${1:-all}"
 TIMEOUT=5
 
-echo "🏥 Running health checks: $SERVICE"
+echo " Running health checks: $SERVICE"
 
 check_service_health() {
     local service_name="$1"
@@ -17,10 +17,10 @@ check_service_health() {
     echo "Checking $service_name at $url..."
     
     if curl -s -f --max-time $TIMEOUT "$url" > /dev/null 2>&1; then
-        echo "✅ $service_name is healthy"
+        echo " $service_name is healthy"
         return 0
     else
-        echo "❌ $service_name is not responding"
+        echo " $service_name is not responding"
         return 1
     fi
 }
@@ -30,15 +30,15 @@ check_port_health() {
     local port="$2"
     
     if [[ -z "$port" ]]; then
-        echo "⚠️  No port configured for $service_name"
+        echo "  No port configured for $service_name"
         return 1
     fi
     
     if nc -z localhost "$port" 2>/dev/null; then
-        echo "✅ $service_name port $port is open"
+        echo " $service_name port $port is open"
         return 0
     else
-        echo "❌ $service_name port $port is not accessible"
+        echo " $service_name port $port is not accessible"
         return 1
     fi
 }
@@ -92,7 +92,7 @@ case $SERVICE in
         check_port_health "Security Service" "$SECURITY_PORT"
         ;;
     "all")
-        echo "📊 Running comprehensive health checks..."
+        echo " Running comprehensive health checks..."
         
         failed_checks=0
         
@@ -109,15 +109,15 @@ case $SERVICE in
         check_port_health "Security Service" "$SECURITY_PORT" || ((failed_checks++))
         
         if [[ $failed_checks -eq 0 ]]; then
-            echo "🎉 All services are healthy!"
+            echo " All services are healthy!"
             exit 0
         else
-            echo "❌ $failed_checks service(s) failed health checks"
+            echo " $failed_checks service(s) failed health checks"
             exit 1
         fi
         ;;
     *)
-        echo "❌ Unknown service: $SERVICE"
+        echo " Unknown service: $SERVICE"
         echo "Available services: frontend, gateway, auth, booking, notification, info-arrival, location, rate-limiter, reviews, security, all"
         exit 1
         ;;

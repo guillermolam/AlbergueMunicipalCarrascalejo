@@ -10,10 +10,10 @@ NODE_VERSION="20.x"
 BUN_VERSION="1.2.x"
 SPIN_VERSION="3.3.x"
 
-echo "🔧 Setting up environment: $COMPONENT"
+echo " Setting up environment: $COMPONENT"
 
 check_tools() {
-    echo "📋 Checking development tools..."
+    echo " Checking development tools..."
     
     local missing_tools=()
     
@@ -24,20 +24,20 @@ check_tools() {
     command -v spin &> /dev/null || missing_tools+=("spin")
     
     if [[ ${#missing_tools[@]} -eq 0 ]]; then
-        echo "✅ All tools are available"
+        echo " All tools are available"
         rustc --version
         cargo --version
         node --version
         bun --version 2>/dev/null || echo "Bun not available, using npm"
         spin --version
     else
-        echo "⚠️  Missing tools: ${missing_tools[*]}"
+        echo "  Missing tools: ${missing_tools[*]}"
         return 1
     fi
 }
 
 install_rust() {
-    echo "🦀 Installing Rust toolchain..."
+    echo " Installing Rust toolchain..."
     
     if ! command -v rustup &> /dev/null; then
         echo "Installing rustup..."
@@ -52,11 +52,11 @@ install_rust() {
     cargo install cargo-watch 2>/dev/null || echo "cargo-watch already installed"
     cargo install cargo-audit 2>/dev/null || echo "cargo-audit already installed"
     
-    echo "✅ Rust toolchain installed"
+    echo " Rust toolchain installed"
 }
 
 install_node() {
-    echo "📦 Installing Node.js dependencies..."
+    echo " Installing Node.js dependencies..."
     
     # Install Bun if not available
     if ! command -v bun &> /dev/null; then
@@ -81,11 +81,11 @@ install_node() {
         cd - > /dev/null
     fi
     
-    echo "✅ Node.js dependencies installed"
+    echo " Node.js dependencies installed"
 }
 
 install_spin() {
-    echo "🔧 Installing Spin CLI..."
+    echo " Installing Spin CLI..."
     
     if ! command -v spin &> /dev/null; then
         curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
@@ -95,11 +95,11 @@ install_spin() {
     fi
     
     spin --version
-    echo "✅ Spin CLI installed"
+    echo " Spin CLI installed"
 }
 
 install_all_dependencies() {
-    echo "🚀 Installing all dependencies..."
+    echo " Installing all dependencies..."
     
     # Install Rust dependencies
     if [[ -f "Cargo.toml" ]]; then
@@ -117,16 +117,16 @@ install_all_dependencies() {
     
     install_node
     
-    echo "🎉 All dependencies installed successfully"
+    echo " All dependencies installed successfully"
 }
 
 setup_database() {
-    echo "🗄️  Setting up database..."
+    echo "  Setting up database..."
     
     if [[ -f "database/scripts/setup-db.sh" ]]; then
         ./database/scripts/setup-db.sh
     else
-        echo "⚠️  Database setup script not found, skipping..."
+        echo "  Database setup script not found, skipping..."
     fi
 }
 
@@ -150,16 +150,16 @@ case $COMPONENT in
         setup_database
         ;;
     "all")
-        echo "🚀 Setting up complete development environment..."
+        echo " Setting up complete development environment..."
         install_rust
         install_spin
         install_all_dependencies
         setup_database
         check_tools
-        echo "🎉 Development environment setup complete!"
+        echo " Development environment setup complete!"
         ;;
     *)
-        echo "❌ Unknown component: $COMPONENT"
+        echo " Unknown component: $COMPONENT"
         echo "Available components: check, rust, node, spin, deps, database, all"
         exit 1
         ;;

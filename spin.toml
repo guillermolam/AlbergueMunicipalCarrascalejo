@@ -5,10 +5,6 @@ name = "albergue-carrascalejo"
 version = "1.0.0"
 description = "Albergue Municipal Carrascalejo (frontend + gateway)"
 
-# SQLite database for local replica (syncs with Neon/Turso)
-[[sqlite_database]]
-name = "default"
-
 [variables]
 gateway_config_path = { default = "/config/gateway.toml" }
 database_url = { required = true }

@@ -8,10 +8,10 @@ This directory contains the gateway layer that fronts backend services.
 gateway/
  spin.toml
  Caddyfile
- api-gateway/          # Spin component (HTTP)
- api-gateway-core/     # Shared core library
- edge-proxy/           # Spin component (edge/policy)
- Cargo.toml            # Cargo workspace
+ api-gateway/
+ api-gateway-core/
+ edge-proxy/
+ Cargo.toml
 ```
 
 ## Build and run
@@ -19,7 +19,6 @@ gateway/
 ```bash
 cd gateway
 rustup target add wasm32-wasip1
-cargo build --workspace --target wasm32-wasip1 --release
 spin build
 spin up
 ```

@@ -25,17 +25,17 @@ LOG_LEVEL = { default = "info", description = "Application log level" }
 
 [dependencies]
 # Spin SDK for WASM components
-spin-sdk = "2.1"
-wit-bindgen = "0.25"
+spin-sdk = "3.0.1"
+wit-bindgen = "0.39.0"
 
 # HTTP and web
-http = "1.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+http = "1.2.0"
+serde = { version = "1.0.216", features = ["derive"] }
+serde_json = "1.0.134"
 
 # Database - Only for native targets (sqlx doesn't work on wasm32)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sqlx = { version = "0.8", features = [
+sqlx = { version = "0.8.2", features = [
   "postgres",
   "chrono",
   "uuid",
@@ -46,8 +46,8 @@ sqlx = { version = "0.8", features = [
 shared = { path = "../shared" }
 
 # Error handling
-anyhow = "1.0"
-thiserror = "1.0"
+anyhow = "1.0.95"
+thiserror = "2.0.9"
 
 # UUID and time
 uuid = { version = "1.0", features = ["v4", "serde"] }

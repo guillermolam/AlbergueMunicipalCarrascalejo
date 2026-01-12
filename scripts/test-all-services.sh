@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🧪 Running tests for all services..."
+echo " Running tests for all services..."
 
 cd backend
 
@@ -24,14 +24,14 @@ services=(
 )
 
 for service in "${services[@]}"; do
-	echo "🧪 Testing $service..."
+	echo " Testing $service..."
 	cd "$service"
 
 	# Run all tests including Spin tests
 	cargo test
 
-	echo "✅ $service tests passed"
+	echo " $service tests passed"
 	cd ..
 done
 
-echo "🎉 All service tests passed!"
+echo " All service tests passed!"

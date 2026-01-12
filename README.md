@@ -7,20 +7,6 @@ Repository for the Albergue Municipal Carrascalejo system (Camino de Santiago / 
 - **gateway/**: API gateway/BFF layer (Rust + Spin)
 - **domain_model/**: Schema baseline + migrations/tooling (SQLite/Turso)
 
-## Repository layout
-
-```
-.
- frontend/
- backend/
- gateway/
- domain_model/
- taskfiles/
- scripts/
- tests/
- docs/
-```
-
 ## Tooling
 
 - Node.js >= 18
@@ -73,35 +59,11 @@ pnpm preview
 
 ## Backend
 
-The backend is a Cargo workspace under `backend/`.
+Backend components are designed to run under Spin (Wasm). For day-to-day work:
 
-```bash
-cd backend
-cargo test --workspace
-```
-
-Example: build and run `auth-service` with Spin:
-
-```bash
-cd backend/auth-service
-rustup target add wasm32-wasip1
-cargo build --target wasm32-wasip1 --release --bin auth
-spin build
-spin up
-```
+- Build/run a service with Spin from its directory (`spin build`, `spin up`)
+- Run focused Rust tests per crate (some binaries are Spin/Wasm-specific)
 
 ## Gateway
 
-The gateway is a separate Cargo workspace under `gateway/`.
-
-```bash
-cd gateway
-cargo test --workspace
-spin build
-spin up
-```
-
-## Documentation
-
-- Architecture and operational docs live under `docs/`
-- UX docs live under `docs/ux/`
+The gateway is a separate Cargo workspace under `gateway/` and runs under Spin.

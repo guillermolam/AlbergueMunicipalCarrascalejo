@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Starting all backend services..."
+echo " Starting all backend services..."
 
 # Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,12 +15,12 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT_DIR"
 
 # Ensure build is up to date
-echo "🔨 Building services..."
+echo " Building services..."
 ./scripts/build-services.sh all debug
 
 # Generate or validate ports
 if [[ ! -f ".ports.json" ]]; then
-	echo "⚠️  Port configuration not found, generating..."
+	echo "  Port configuration not found, generating..."
 	./scripts/port-management.sh generate
 fi
 
@@ -33,7 +33,7 @@ fi
 ./scripts/port-management.sh show
 
 # Start services in order of dependencies
-echo "📦 Starting services..."
+echo " Starting services..."
 
 # Start each service with its specific configuration
 services=(
@@ -51,7 +51,7 @@ mkdir -p logs
 
 for service in "${services[@]}"; do
 	if [[ -d "backend/$service" ]]; then
-		echo "  🔧 Starting $service..."
+		echo "   Starting $service..."
 		cd "backend/$service"
 
 		# Get the port from environment variable (e.g., RATE_LIMITER_SERVICE_PORT)
@@ -66,9 +66,9 @@ for service in "${services[@]}"; do
 
 		cd "$ROOT_DIR"
 	else
-		echo "  ⚠️  $service directory not found, skipping..."
+		echo "    $service directory not found, skipping..."
 	fi
 done
 
-echo "✅ All backend services started"
+echo " All backend services started"
 wait

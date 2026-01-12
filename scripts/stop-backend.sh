@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🛑 Stopping all backend services..."
+echo " Stopping all backend services..."
 
 # Kill processes related to backend services
 services=(
@@ -21,4 +21,4 @@ for service_pattern in "${services[@]}"; do
 	pkill -f "$service_pattern" || true
 done
 
-echo "✅ All backend services stopped"
+echo " All backend services stopped"

@@ -2,7 +2,8 @@
 // Provides utilities for services to receive and process CloudEvents via webhooks
 
 use crate::events::{CloudEvent, topics};
-use anyhow::Result;\nuse serde_json::Value;
+use anyhow::Result;
+use serde_json::Value;
 
 /// Webhook event handler trait
 pub trait EventHandler: Send + Sync {

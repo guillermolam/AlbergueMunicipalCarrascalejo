@@ -5,10 +5,10 @@
 
 set -e
 
-echo "🔍 Validating Taskfile Architecture..."
+echo " Validating Taskfile Architecture..."
 
 # Check directory structure
-echo "📁 Checking directory structure..."
+echo " Checking directory structure..."
 
 required_dirs=(
 	"taskfiles"
@@ -22,15 +22,15 @@ required_dirs=(
 
 for dir in "${required_dirs[@]}"; do
 	if [[ -d $dir ]]; then
-		echo "  ✅ $dir exists"
+		echo "   $dir exists"
 	else
-		echo "  ❌ $dir missing - creating..."
+		echo "   $dir missing - creating..."
 		mkdir -p "$dir"
 	fi
 done
 
 # Check key files
-echo "📄 Checking key files..."
+echo " Checking key files..."
 
 required_files=(
 	"Taskfile.yml"
@@ -45,14 +45,14 @@ required_files=(
 
 for file in "${required_files[@]}"; do
 	if [[ -f $file ]]; then
-		echo "  ✅ $file exists"
+		echo "   $file exists"
 	else
-		echo "  ❌ $file missing"
+		echo "   $file missing"
 	fi
 done
 
 # Check script permissions
-echo "🔐 Checking script permissions..."
+echo " Checking script permissions..."
 
 scripts_to_check=(
 	"scripts/*.sh"
@@ -65,12 +65,12 @@ scripts_to_check=(
 for pattern in "${scripts_to_check[@]}"; do
 	for script in $pattern; do
 		if [[ -f $script ]] && [[ ! -x $script ]]; then
-			echo "  ⚠️  $script not executable - fixing..."
+			echo "    $script not executable - fixing..."
 			chmod +x "$script"
 		elif [[ -f $script ]]; then
-			echo "  ✅ $script is executable"
+			echo "   $script is executable"
 		fi
 	done
 done
 
-echo "🎉 Architecture validation complete!"
+echo " Architecture validation complete!"

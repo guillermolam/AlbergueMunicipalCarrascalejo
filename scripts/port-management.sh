@@ -8,10 +8,10 @@ ACTION="${1:-show}"
 PORT_FILE=".ports.json"
 ENV_FILE=".env.ports"
 
-echo "🔗 Port management: $ACTION"
+echo " Port management: $ACTION"
 
 generate_ports() {
-    echo "🔄 Generating unique port assignments..."
+    echo " Generating unique port assignments..."
     
     # Use Python script if available
     if [[ -f "scripts/port-manager.py" ]]; then
@@ -35,31 +35,31 @@ generate_ports() {
         cat "$PORT_FILE" | jq -r 'to_entries | .[] | "export \(.key)=\(.value)"' > "$ENV_FILE"
     fi
     
-    echo "✅ Port assignments generated"
+    echo " Port assignments generated"
     show_ports
 }
 
 show_ports() {
-    echo "📊 Current port assignments:"
+    echo " Current port assignments:"
     
     if [[ -f "$PORT_FILE" ]]; then
         cat "$PORT_FILE" | jq -r '. | to_entries | .[] | "  \(.key): \(.value)"'
     else
-        echo "⚠️  No port configuration found. Run 'generate' first."
+        echo "  No port configuration found. Run 'generate' first."
     fi
 }
 
 clean_ports() {
-    echo "🧹 Cleaning port configurations..."
+    echo " Cleaning port configurations..."
     rm -f "$PORT_FILE" "$ENV_FILE"
-    echo "✅ Port configurations cleaned"
+    echo " Port configurations cleaned"
 }
 
 validate_ports() {
-    echo "✅ Validating port assignments..."
+    echo " Validating port assignments..."
     
     if [[ ! -f "$PORT_FILE" ]]; then
-        echo "❌ No port configuration found"
+        echo " No port configuration found"
         exit 1
     fi
     
@@ -69,7 +69,7 @@ validate_ports() {
     local total_ports=$(echo "$ports" | wc -l)
     
     if [[ $unique_ports -ne $total_ports ]]; then
-        echo "❌ Port conflicts detected!"
+        echo " Port conflicts detected!"
         echo "Unique ports: $unique_ports, Total ports: $total_ports"
         exit 1
     fi
@@ -77,11 +77,11 @@ validate_ports() {
     # Check if ports are in use
     for port in $ports; do
         if netstat -tuln 2>/dev/null | grep -q ":$port "; then
-            echo "⚠️  Port $port is currently in use"
+            echo "  Port $port is currently in use"
         fi
     done
     
-    echo "✅ All ports validated successfully"
+    echo " All ports validated successfully"
 }
 
 case $ACTION in
@@ -98,7 +98,7 @@ case $ACTION in
         validate_ports
         ;;
     *)
-        echo "❌ Unknown action: $ACTION"
+        echo " Unknown action: $ACTION"
         echo "Available actions: generate|gen, show|list, clean|clear, validate|check"
         exit 1
         ;;

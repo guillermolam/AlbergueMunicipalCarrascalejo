@@ -18,15 +18,6 @@ The workspace members are defined in `backend/Cargo.toml`.
 - `reviews-service`
 - `security-service`
 
-## Build, lint, test
-
-```bash
-cd backend
-cargo fmt
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace
-```
-
 ## Build and run a service with Spin
 
 Each service has its own `spin.toml`. The common pattern is:

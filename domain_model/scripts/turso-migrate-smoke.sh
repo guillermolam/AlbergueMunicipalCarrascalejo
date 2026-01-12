@@ -1,4 +1,5 @@
-﻿#!/usr/bin/env bash
+#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 TURSO_BIN="${TURSO_BIN:-$HOME/.turso/turso}"

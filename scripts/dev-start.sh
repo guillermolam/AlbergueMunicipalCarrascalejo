@@ -33,9 +33,9 @@ npm run dev &
 FRONTEND_PID=$!
 cd ..
 
-echo "✅ Development environment started!"
-echo "📱 Frontend: http://localhost:5173"
-echo "🚀 Gateway: http://localhost:8000"
+echo " Development environment started!"
+echo " Frontend: http://localhost:5173"
+echo " Gateway: http://localhost:8000"
 echo ""
 echo "To stop services:"
 echo "kill $GATEWAY_PID $FRONTEND_PID"
