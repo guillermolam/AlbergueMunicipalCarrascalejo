@@ -1,0 +1,11 @@
+﻿[package]
+name = "api-gateway-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.100"
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "0.9.8"
+[dev-dependencies]
+proptest = "1.9.0"

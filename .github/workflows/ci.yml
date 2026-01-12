@@ -73,6 +73,10 @@ jobs:
         with:
           components: rustfmt, clippy
 
+
+      - name: Add wasm32-wasip1 target
+        run: rustup target add wasm32-wasip1
+
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -95,14 +99,13 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Clippy
-        run: cargo clippy --all-targets --all-features
-
+run: cargo clippy -p edge-proxy -p api-gateway-core --all-targets --all-features
       - name: Test
-        run: cargo test --all
-
+run: cargo test -p edge-proxy -p api-gateway-core
       - name: Build
-        run: cargo build --release
-
+run: |
+          cargo build --release -p edge-proxy
+          cargo build --release -p api-gateway --target wasm32-wasip1
   # Database CI
   database:
     name: Database Tests
@@ -384,6 +387,7 @@ jobs:
           ls -la dist/
           test -f dist/index.html
           echo "âœ… Build artifacts ready for deployment"
+
 
 
 
