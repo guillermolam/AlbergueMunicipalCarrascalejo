@@ -1,24 +1,35 @@
-use crate::context::RequestContext;
-use anyhow::Result;
-use spin_sdk::{http::Response, http::ResponseBuilder, redis};
+﻿use crate::context::RequestContext;
+use anyhow::{Context, Result};
+use spin_sdk::{http::Response, http::ResponseBuilder};
 
 pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Option<Response>> {
+    let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
+
     let state_key = format!("cb:{}:state", ctx.service);
     let opened_at_key = format!("cb:{}:opened_at", ctx.service);
     let probe_key = format!("cb:{}:probe", ctx.service);
-    let state = redis::get(redis_address, &state_key).await.ok().unwrap_or_default();
+
+    let state = conn
+        .get(&state_key)
+        .context("cb_state_get_failed")?
+        .unwrap_or_default();
+
     if state == b"open" {
-        let opened_at = redis::get(redis_address, &opened_at_key)
-            .await
-            .ok()
+        let opened_at = conn
+            .get(&opened_at_key)
+            .context("cb_opened_at_get_failed")?
             .and_then(|v| String::from_utf8(v).ok())
             .and_then(|s| s.parse::<u64>().ok())
             .unwrap_or(0);
+
         let now = chrono::Utc::now().timestamp() as u64;
         if now < opened_at.saturating_add(ctx.policy.circuit_breaker.open_seconds) {
             let resp = ResponseBuilder::new(503)
                 .header("content-type", "application/json")
-                .header("retry-after", ctx.policy.circuit_breaker.open_seconds.to_string())
+                .header(
+                    "retry-after",
+                    ctx.policy.circuit_breaker.open_seconds.to_string(),
+                )
                 .body(
                     serde_json::json!({
                         "error": "Service Unavailable",
@@ -31,24 +42,29 @@ pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Optio
                 .build();
             return Ok(Some(resp));
         }
-        let _ = redis::set(redis_address, &state_key, b"half_open").await;
-        let _ = redis::execute(redis_address, "DEL", &[probe_key.as_bytes()]).await;
+
+        let _ = conn.set(&state_key, b"half_open");
+        let _ = conn.del(&[probe_key.clone()]);
     }
 
-    let state = redis::get(redis_address, &state_key).await.ok().unwrap_or_default();
+    let state = conn
+        .get(&state_key)
+        .context("cb_state_get_failed")?
+        .unwrap_or_default();
+
     if state == b"half_open" {
         let script = r#"local ok=redis.call('SET', KEYS[1], '1', 'NX', 'EX', ARGV[1]); if ok then return 1 else return 0 end"#;
-        let res = redis::execute(
-            redis_address,
-            "EVAL",
-            &[
-                script.as_bytes(),
-                b"1",
-                probe_key.as_bytes(),
-                b"5",
-            ],
-        )
-        .await?;
+        let res = conn
+            .execute(
+                "EVAL",
+                &[
+                    spin_sdk::redis::RedisParameter::Binary(script.as_bytes().to_vec()),
+                    spin_sdk::redis::RedisParameter::Binary(b"1".to_vec()),
+                    spin_sdk::redis::RedisParameter::Binary(probe_key.as_bytes().to_vec()),
+                    spin_sdk::redis::RedisParameter::Binary(b"5".to_vec()),
+                ],
+            )
+            .context("cb_probe_eval_failed")?;
 
         let acquired = crate::util::parse_redis_int(&res).unwrap_or(0);
         if acquired == 0 {
@@ -68,40 +84,43 @@ pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Optio
             return Ok(Some(resp));
         }
     }
+
     Ok(None)
 }
 
 pub async fn record(redis_address: &str, ctx: &RequestContext, status: u16) -> Result<()> {
+    let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
+
     let failures_key = format!("cb:{}:failures", ctx.service);
     let state_key = format!("cb:{}:state", ctx.service);
     let opened_at_key = format!("cb:{}:opened_at", ctx.service);
     let probe_key = format!("cb:{}:probe", ctx.service);
-    let state = redis::get(redis_address, &state_key).await.ok().unwrap_or_default();
+
+    let state = conn
+        .get(&state_key)
+        .context("cb_state_get_failed")?
+        .unwrap_or_default();
 
     if status >= 500 {
         if state == b"half_open" {
             let now = chrono::Utc::now().timestamp() as u64;
-            let _ = redis::set(redis_address, &state_key, b"open").await;
-            let _ = redis::set(redis_address, &opened_at_key, now.to_string().as_bytes()).await;
-            let _ = redis::execute(redis_address, "DEL", &[failures_key.as_bytes(), probe_key.as_bytes()]).await;
+            let _ = conn.set(&state_key, b"open");
+            let _ = conn.set(&opened_at_key, now.to_string().as_bytes());
+            let _ = conn.del(&[failures_key, probe_key]);
             return Ok(());
         }
-        let res = redis::execute(redis_address, "INCR", &[failures_key.as_bytes()]).await?;
-        let failures = crate::util::parse_redis_int(&res).unwrap_or(0) as u64;
+
+        let failures = conn.incr(&failures_key).context("cb_incr_failed")? as u64;
         if failures >= ctx.policy.circuit_breaker.failure_threshold {
             let now = chrono::Utc::now().timestamp() as u64;
-            let _ = redis::set(redis_address, &state_key, b"open").await;
-            let _ = redis::set(redis_address, &opened_at_key, now.to_string().as_bytes()).await;
-            let _ = redis::execute(redis_address, "DEL", &[probe_key.as_bytes()]).await;
+            let _ = conn.set(&state_key, b"open");
+            let _ = conn.set(&opened_at_key, now.to_string().as_bytes());
+            let _ = conn.del(&[probe_key]);
         }
     } else {
-        let _ = redis::execute(
-            redis_address,
-            "DEL",
-            &[failures_key.as_bytes(), opened_at_key.as_bytes(), probe_key.as_bytes()],
-        )
-        .await;
-        let _ = redis::set(redis_address, &state_key, b"closed").await;
+        let _ = conn.del(&[failures_key, opened_at_key, probe_key]);
+        let _ = conn.set(&state_key, b"closed");
     }
+
     Ok(())
 }

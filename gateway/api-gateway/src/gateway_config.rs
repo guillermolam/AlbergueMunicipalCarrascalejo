@@ -39,8 +39,10 @@ pub struct ServiceConfig {
 }
 
 pub fn load_from_file(path: &str) -> Result<GatewayConfig> {
-    let bytes = fs::read(path).with_context(|| format!("Failed to read gateway config at {path}"))?;
+    let bytes =
+        fs::read(path).with_context(|| format!("Failed to read gateway config at {path}"))?;
     let text = String::from_utf8(bytes).context("Gateway config must be UTF-8")?;
-    let cfg: GatewayConfig = toml::from_str(&text).context("Failed to parse gateway TOML config")?;
+    let cfg: GatewayConfig =
+        toml::from_str(&text).context("Failed to parse gateway TOML config")?;
     Ok(cfg)
 }

@@ -61,9 +61,10 @@ impl SecurityHeadersPolicy {
                 .cors_allow_headers
                 .clone()
                 .unwrap_or_else(|| self.cors_allow_headers.clone()),
-            cors_allow_credentials: o.cors_allow_credentials.unwrap_or(self.cors_allow_credentials),
+            cors_allow_credentials: o
+                .cors_allow_credentials
+                .unwrap_or(self.cors_allow_credentials),
             hsts_seconds: o.hsts_seconds.unwrap_or(self.hsts_seconds),
         }
     }
 }
-

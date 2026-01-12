@@ -5,4 +5,3 @@ pub fn rewrite_uri(upstream_base: &http::Uri, original: &http::Uri) -> http::Uri
     parts.authority = up.authority;
     http::Uri::from_parts(parts).unwrap_or_else(|_| upstream_base.clone())
 }
-

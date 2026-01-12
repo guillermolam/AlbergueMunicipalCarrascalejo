@@ -39,4 +39,3 @@ pub fn apply_security_headers(mut response: Response, policy: &Policy) -> Respon
     }
     response
 }
-

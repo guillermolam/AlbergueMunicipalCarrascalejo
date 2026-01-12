@@ -3,7 +3,7 @@ use ring::signature::{RsaPublicKeyComponents, RSA_PKCS1_2048_8192_SHA256};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 use spin_sdk::http;
-use std::time::{SystemTime};
+use std::time::SystemTime;
 
 use crate::jwks_client::error::*;
 use crate::jwks_client::jwt::*;

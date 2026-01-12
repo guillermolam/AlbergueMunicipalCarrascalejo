@@ -1,9 +1,7 @@
-use crate::{
-    context::{AuthContext, RequestContext, CORRELATION_ID_HEADER, TRACE_ID_HEADER},
-};
+﻿use crate::context::{AuthContext, RequestContext, CORRELATION_ID_HEADER, TRACE_ID_HEADER};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use spin_sdk::{http::Response, http::ResponseBuilder, redis};
+use spin_sdk::{http::Response, http::ResponseBuilder};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct CachedResponse {
@@ -14,11 +12,11 @@ struct CachedResponse {
 
 pub async fn try_cache_hit(
     redis_address: &str,
-    req: &spin_sdk::http::Request<Vec<u8>>,
+    req: &spin_sdk::http::Request,
     ctx: &RequestContext,
     auth: Option<&AuthContext>,
 ) -> Result<Option<Response>> {
-    let method = req.method().as_str().to_string();
+    let method = req.method().to_string();
     if !ctx
         .policy
         .cache
@@ -28,38 +26,39 @@ pub async fn try_cache_hit(
     {
         return Ok(None);
     }
+
+    let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
     let key = cache_key(req, ctx, auth);
-    let Ok(bytes) = redis::get(redis_address, &key).await else {
+    let Some(bytes) = conn.get(&key).context("cache_get_failed")? else {
         return Ok(None);
     };
     if bytes.is_empty() {
         return Ok(None);
     }
-    let cached: CachedResponse = serde_json::from_slice(&bytes).context("cache_deserialize_failed")?;
+
+    let cached: CachedResponse =
+        serde_json::from_slice(&bytes).context("cache_deserialize_failed")?;
+
     let mut response = ResponseBuilder::new(cached.status)
         .header("content-type", cached.content_type)
         .header("x-cache", "HIT")
         .body(cached.body)
         .build();
-    response.headers_mut().insert(
-        CORRELATION_ID_HEADER,
-        ctx.correlation_id.parse().context("invalid correlation id")?,
-    );
-    response.headers_mut().insert(
-        TRACE_ID_HEADER,
-        ctx.trace_id.parse().context("invalid trace id")?,
-    );
+
+    response.set_header(CORRELATION_ID_HEADER, ctx.correlation_id.clone());
+    response.set_header(TRACE_ID_HEADER, ctx.trace_id.clone());
+
     Ok(Some(response))
 }
 
 pub async fn try_cache_store(
     redis_address: &str,
-    req: &spin_sdk::http::Request<Vec<u8>>,
+    req: &spin_sdk::http::Request,
     response: &Response,
     ctx: &RequestContext,
     auth: Option<&AuthContext>,
 ) -> Result<()> {
-    let method = req.method().as_str().to_string();
+    let method = req.method().to_string();
     if !ctx
         .policy
         .cache
@@ -70,19 +69,19 @@ pub async fn try_cache_store(
         return Ok(());
     }
 
-    let status = response.status().as_u16();
-    if status < 200 || status >= 300 {
+    let status = *response.status();
+    if !(200..300).contains(&status) {
         return Ok(());
     }
-    let body = response.body().clone();
+
+    let body = response.body().to_vec();
     if body.len() > ctx.policy.cache.max_body_bytes {
         return Ok(());
     }
 
     let content_type = response
-        .headers()
-        .get("content-type")
-        .and_then(|h| h.to_str().ok())
+        .header("content-type")
+        .and_then(|h| h.as_str())
         .unwrap_or("application/octet-stream")
         .to_string();
 
@@ -91,32 +90,40 @@ pub async fn try_cache_store(
         content_type,
         body,
     };
+
+    let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
     let key = cache_key(req, ctx, auth);
     let bytes = serde_json::to_vec(&cached)?;
-    redis::set(redis_address, &key, &bytes).await?;
-    let _ = redis::execute(
-        redis_address,
+    conn.set(&key, &bytes).context("cache_set_failed")?;
+
+    let _ = conn.execute(
         "EXPIRE",
-        &[key.as_bytes(), ctx.policy.cache.ttl_seconds.to_string().as_bytes()],
-    )
-    .await;
+        &[
+            spin_sdk::redis::RedisParameter::Binary(key.as_bytes().to_vec()),
+            spin_sdk::redis::RedisParameter::Int64(ctx.policy.cache.ttl_seconds as i64),
+        ],
+    );
+
     Ok(())
 }
 
-fn cache_key(req: &spin_sdk::http::Request<Vec<u8>>, ctx: &RequestContext, auth: Option<&AuthContext>) -> String {
-    let query = req
-        .uri()
-        .query()
-        .map(|q| format!("?{q}"))
-        .unwrap_or_default();
+fn cache_key(req: &spin_sdk::http::Request, ctx: &RequestContext, auth: Option<&AuthContext>) -> String {
+    let query = req.query();
+    let query = if query.is_empty() {
+        "".to_string()
+    } else {
+        format!("?{query}")
+    };
+
     let sub = auth
         .and_then(|a| a.subject.clone())
         .unwrap_or_else(|| "anon".to_string());
+
     format!(
         "cache:{}:{}:{}{}:{}",
         ctx.service,
-        req.method().as_str(),
-        req.uri().path(),
+        req.method(),
+        req.path(),
         query,
         sub
     )

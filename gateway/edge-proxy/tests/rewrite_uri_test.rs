@@ -17,4 +17,3 @@ proptest! {
         assert_eq!(rewritten.query(), original.query());
     }
 }
-

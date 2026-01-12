@@ -49,4 +49,3 @@ pub fn default_cb_open_seconds() -> u64 {
 pub fn default_cb_half_open_max() -> u64 {
     1
 }
-
