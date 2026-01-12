@@ -1,7 +1,8 @@
-﻿use crate::context::RequestContext;
+use crate::context::RequestContext;
 use anyhow::{Context, Result};
 use spin_sdk::{http::Response, http::ResponseBuilder};
 
+#[allow(clippy::unused_async)]
 pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Option<Response>> {
     let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
 
@@ -88,6 +89,7 @@ pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Optio
     Ok(None)
 }
 
+#[allow(clippy::unused_async)]
 pub async fn record(redis_address: &str, ctx: &RequestContext, status: u16) -> Result<()> {
     let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
 
@@ -124,4 +126,3 @@ pub async fn record(redis_address: &str, ctx: &RequestContext, status: u16) -> R
 
     Ok(())
 }
-

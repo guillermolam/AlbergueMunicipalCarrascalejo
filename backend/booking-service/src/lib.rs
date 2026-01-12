@@ -6,7 +6,9 @@
     clippy::module_name_repetitions,
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
-    clippy::cast_precision_loss
+    clippy::cast_precision_loss,
+    // Spin's http component executor is not Send; allow this lint for WASM components.
+    clippy::future_not_send
 )]
 
 use serde::{Deserialize, Serialize};
@@ -76,13 +78,9 @@ fn handle_request(req: Request) -> Response {
 use serde_json::Value;
 use std::env;
 
-fn register_whatsapp_client(client_phone: &str, business_phone: &str) -> Result<(), String> {
+fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
     // Placeholder: Implement WhatsApp API call to register client
-    println!(
-        "Registering WhatsApp client {} with business phone {}",
-        client_phone, business_phone
-    );
-    Ok(())
+    println!("Registering WhatsApp client {client_phone} with business phone {business_phone}");
 }
 
 fn create_booking(req: Request) -> Response {
@@ -102,9 +100,7 @@ fn create_booking(req: Request) -> Response {
     let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
 
     if !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
-        if let Err(err) = register_whatsapp_client(guest_phone, &whatsapp_business_phone) {
-            return error_response(502, &format!("WhatsApp registration failed: {err}"));
-        }
+        register_whatsapp_client(guest_phone, &whatsapp_business_phone);
     }
 
     // Create booking as before
@@ -142,11 +138,11 @@ fn create_booking(req: Request) -> Response {
             .to_string(),
         num_guests: body_json
             .get("num_guests")
-            .and_then(|v| v.as_i64())
+            .and_then(serde_json::Value::as_i64)
             .unwrap_or(1) as i32,
         total_price: body_json
             .get("total_price")
-            .and_then(|v| v.as_i64())
+            .and_then(serde_json::Value::as_i64)
             .unwrap_or(1500) as i32,
         status: "confirmed".to_string(),
         payment_status: "pending".to_string(),

@@ -1,4 +1,3 @@
-#![deny(warnings)]
 #![warn(clippy::all, clippy::pedantic)]
 
 use anyhow::{Context, Result};

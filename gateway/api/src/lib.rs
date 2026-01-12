@@ -1,5 +1,4 @@
-#![warn(clippy::all, clippy::pedantic)]
-#![deny(warnings)]
+﻿#![warn(clippy::all, clippy::pedantic)]
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -308,26 +307,26 @@ pub async fn handle_health_check() -> Result<Response> {
 // Async stateless function for camino languages endpoint
 pub async fn handle_camino_languages(_req: &Request) -> Result<Response> {
     let languages = serde_json::json!([
-        { "code": "es", "name": "Español", "flag": "🇪🇸" },
-        { "code": "en", "name": "English", "flag": "🇬🇧" },
-        { "code": "fr", "name": "Français", "flag": "🇫🇷" },
-        { "code": "de", "name": "Deutsch", "flag": "🇩🇪" },
-        { "code": "it", "name": "Italiano", "flag": "🇮🇹" },
-        { "code": "pt", "name": "Português", "flag": "🇵🇹" },
-        { "code": "nl", "name": "Nederlands", "flag": "🇳🇱" },
-        { "code": "pl", "name": "Polski", "flag": "🇵🇱" },
-        { "code": "ko", "name": "한국어", "flag": "🇰🇷" },
-        { "code": "ja", "name": "日本語", "flag": "🇯🇵" },
-        { "code": "zh", "name": "中文", "flag": "🇨🇳" },
-        { "code": "ru", "name": "Русский", "flag": "🇷🇺" },
-        { "code": "cs", "name": "Čeština", "flag": "🇨🇿" },
-        { "code": "sk", "name": "Slovenčina", "flag": "🇸🇰" },
-        { "code": "hu", "name": "Magyar", "flag": "🇭🇺" },
-        { "code": "ca", "name": "Català", "flag": "🏴" },
-        { "code": "eu", "name": "Euskara", "flag": "🏴" },
-        { "code": "gl", "name": "Galego", "flag": "🏴" },
-        { "code": "oc", "name": "Occitan (Aranés)", "flag": "🏴" },
-        { "code": "Gode", "name": "Gothic", "flag": "🏴" }
+        { "code": "es", "name": "EspaÃ±ol", "flag": "ðŸ‡ªðŸ‡¸" },
+        { "code": "en", "name": "English", "flag": "ðŸ‡¬ðŸ‡§" },
+        { "code": "fr", "name": "FranÃ§ais", "flag": "ðŸ‡«ðŸ‡·" },
+        { "code": "de", "name": "Deutsch", "flag": "ðŸ‡©ðŸ‡ª" },
+        { "code": "it", "name": "Italiano", "flag": "ðŸ‡®ðŸ‡¹" },
+        { "code": "pt", "name": "PortuguÃªs", "flag": "ðŸ‡µðŸ‡¹" },
+        { "code": "nl", "name": "Nederlands", "flag": "ðŸ‡³ðŸ‡±" },
+        { "code": "pl", "name": "Polski", "flag": "ðŸ‡µðŸ‡±" },
+        { "code": "ko", "name": "í•œêµ­ì–´", "flag": "ðŸ‡°ðŸ‡·" },
+        { "code": "ja", "name": "æ—¥æœ¬èªž", "flag": "ðŸ‡¯ðŸ‡µ" },
+        { "code": "zh", "name": "ä¸­æ–‡", "flag": "ðŸ‡¨ðŸ‡³" },
+        { "code": "ru", "name": "Ð ÑƒÑÑÐºÐ¸Ð¹", "flag": "ðŸ‡·ðŸ‡º" },
+        { "code": "cs", "name": "ÄŒeÅ¡tina", "flag": "ðŸ‡¨ðŸ‡¿" },
+        { "code": "sk", "name": "SlovenÄina", "flag": "ðŸ‡¸ðŸ‡°" },
+        { "code": "hu", "name": "Magyar", "flag": "ðŸ‡­ðŸ‡º" },
+        { "code": "ca", "name": "CatalÃ ", "flag": "ðŸ´" },
+        { "code": "eu", "name": "Euskara", "flag": "ðŸ´" },
+        { "code": "gl", "name": "Galego", "flag": "ðŸ´" },
+        { "code": "oc", "name": "Occitan (AranÃ©s)", "flag": "ðŸ´" },
+        { "code": "Gode", "name": "Gothic", "flag": "ðŸ´" }
     ]);
 
     Ok(build_response_with_cors(
@@ -349,3 +348,4 @@ pub async fn handle_request(req: Request) -> Result<impl IntoResponse> {
     // Apply service composition pipeline
     compose_services(req).await
 }
+

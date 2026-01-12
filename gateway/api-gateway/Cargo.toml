@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
 # Core
@@ -35,4 +35,5 @@ tracing-subscriber = { version = "0.3.22", default-features = false, features = 
 
 [dev-dependencies]
 proptest = "1.9.0"
+
 

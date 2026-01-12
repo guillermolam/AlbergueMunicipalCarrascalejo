@@ -1,4 +1,4 @@
-﻿use crate::{
+use crate::{
     context::{AuthContext, RequestContext, REDIS_ADDRESS_VAR},
     rejection::GatewayRejection,
 };
@@ -211,4 +211,3 @@ async fn verify_with_jwks(
         roles,
     })
 }
-
