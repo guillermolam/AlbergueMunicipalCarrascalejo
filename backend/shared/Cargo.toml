@@ -32,7 +32,7 @@ features = ["http"]
 # HTTP and networking (native only)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 http = "1.1"
-sqlx = { version = "0.7", features = [
+sqlx = { version = "0.8", features = [
   "postgres",
   "chrono",
   "uuid",
