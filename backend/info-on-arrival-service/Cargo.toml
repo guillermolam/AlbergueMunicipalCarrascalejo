@@ -30,7 +30,7 @@ wit-bindgen = "0.25"
 http = "1.1"
 
 # Database
-sqlx = { version = "0.7", features = [
+sqlx = { version = "0.8", features = [
   "postgres",
   "chrono",
   "uuid",

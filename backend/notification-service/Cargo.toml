@@ -37,7 +37,7 @@ lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls"] }
 async-trait = "0.1"
 
 # Database - Use runtime-async-std for WASM compatibility
-sqlx = { version = "0.7", features = [
+sqlx = { version = "0.8", features = [
   "postgres",
   "chrono",
   "uuid",
