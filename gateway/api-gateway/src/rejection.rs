@@ -36,15 +36,11 @@ impl GatewayRejection {
             )
             .build();
 
-        let headers = resp.headers_mut();
-        let _ = headers.insert(
+        resp.set_header(
             crate::context::CORRELATION_ID_HEADER,
-            ctx.correlation_id.parse().unwrap(),
+            ctx.correlation_id.clone(),
         );
-        let _ = headers.insert(
-            crate::context::TRACE_ID_HEADER,
-            ctx.trace_id.parse().unwrap(),
-        );
+        resp.set_header(crate::context::TRACE_ID_HEADER, ctx.trace_id.clone());
 
         apply_security_headers(resp, &ctx.policy)
     }

@@ -1,3 +1,9 @@
+#![deny(warnings)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![warn(clippy::cargo)]
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use spin_sdk::{

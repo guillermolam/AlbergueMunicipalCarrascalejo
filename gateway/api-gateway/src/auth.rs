@@ -107,8 +107,8 @@ async fn validate_jwt(token: &str, ctx: &RequestContext, oidc_url: &str) -> Resu
 
     let config_url = format!("{}/.well-known/openid-configuration", oidc_url);
     let req = spin_sdk::http::Request::new(Method::Get, config_url);
-    let res: spin_sdk::http::Response = spin_sdk::http::send(req).await?;
-    let config: OpenIdConfiguration = serde_json::from_slice(res.body())?;
+    let response: spin_sdk::http::Response = spin_sdk::http::send(req).await?;
+    let config: OpenIdConfiguration = serde_json::from_slice(response.body())?;
 
     event!(
         Level::INFO,
@@ -135,7 +135,11 @@ async fn validate_jwt(token: &str, ctx: &RequestContext, oidc_url: &str) -> Resu
     verify_with_jwks(&config.jwks_uri, token, ctx).await
 }
 
-async fn verify_with_jwks(jwks_uri: &str, token: &str, ctx: &RequestContext) -> Result<AuthContext> {
+async fn verify_with_jwks(
+    jwks_uri: &str,
+    token: &str,
+    ctx: &RequestContext,
+) -> Result<AuthContext> {
     let key_store = KeyStore::new_from(jwks_uri.to_string())
         .await
         .with_context(|| format!("Failed to load JWKS from {jwks_uri}"))?;
@@ -207,3 +211,4 @@ async fn verify_with_jwks(jwks_uri: &str, token: &str, ctx: &RequestContext) -> 
         roles,
     })
 }
+

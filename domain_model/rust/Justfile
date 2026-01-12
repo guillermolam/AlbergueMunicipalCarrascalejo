@@ -1,0 +1,43 @@
+# Justfile for the Rust domain model workspace
+# Location: domain_model/rust
+#
+# Requirements:
+# - `cargo` (Rust toolchain)
+# - optional: `cargo nextest` if you prefer, but this file uses plain `cargo test`
+
+set shell := ["sh", "-eu", "-c"]
+
+# Default recipe
+default: fmt clippy test build
+
+# Format (check + fix)
+fmt:
+	cargo fmt --all
+
+fmt-check:
+	cargo fmt --all -- --check
+
+# Linting
+clippy:
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+clippy-fix:
+	cargo clippy --workspace --all-targets --all-features --fix --allow-dirty --allow-staged -- -D warnings
+
+# Tests
+test:
+	cargo test --workspace --all-targets --all-features
+
+test-release:
+	cargo test --workspace --all-targets --all-features --release
+
+# Build
+build:
+	cargo build --workspace --all-targets --all-features
+
+build-release:
+	cargo build --workspace --all-targets --all-features --release
+
+# Clean
+clean:
+	cargo clean

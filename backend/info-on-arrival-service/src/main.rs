@@ -1,3 +1,6 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic)]
+
 use shared::{AlbergueError, AlbergueResult};
 use wasm_bindgen::prelude::*;
 

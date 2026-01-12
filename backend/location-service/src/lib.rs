@@ -1,3 +1,11 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(
+    clippy::module_name_repetitions,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc
+)]
+
 mod models;
 mod service;
 mod handlers;
@@ -19,7 +27,7 @@ async fn handle_request(req: Request<Vec<u8>>) -> Result<Response> {
         log::info!("Initializing location service request handler");
         RequestHandler::new()
     });
-    
+
     let response = handler.handle_request(req).await?;
     Ok(response.into_response())
 }
@@ -87,7 +95,7 @@ mod tests {
 
         let response = handler.handle_request(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);
-        
+
         // Test 404
         let request = Request::builder()
             .method(Method::GET)

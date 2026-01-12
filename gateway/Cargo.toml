@@ -2,6 +2,11 @@
 members = ["api-gateway", "edge-proxy"]
 resolver = "2"
 
+[workspace.metadata.rust-analyzer]
+# Make rust-analyzer analyze all workspace members and run checks via Clippy
+cargo = { allFeatures = true, loadOutDirsFromCheck = true }
+check = { command = "clippy" }
+
 [workspace.metadata.env]
 # Spin Gateway Configuration
 SPIN_LISTEN_ADDRESS = { default = "0.0.0.0:3000", description = "Gateway listen address" }
@@ -28,7 +33,7 @@ build = "cargo build --workspace --release --target wasm32-wasi"
 build-spin = "spin build"
 build-all = "cargo build --workspace --release --target wasm32-wasi && spin build"
 
-# Development commands  
+# Development commands
 dev = "spin up --listen ${SPIN_LISTEN_ADDRESS:-0.0.0.0:3000}"
 dev-with-caddy = "spin up --listen 127.0.0.1:3000 & cd gateway && caddy run --config Caddyfile"
 

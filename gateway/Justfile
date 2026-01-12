@@ -1,0 +1,50 @@
+# Gateway workspace Justfile
+# Usage:
+#   just          -> list recipes
+#   just fmt
+#   just clippy
+#   just test
+#   just build
+#   just ci
+
+set dotenv-load := true
+set shell := ["sh", "-euxc"]
+
+# Default target
+default:
+  @just --list
+
+# Format the workspace
+fmt:
+  cargo fmt --all
+
+# Check formatting (CI-friendly)
+fmt-check:
+  cargo fmt --all -- --check
+
+# Run clippy for the workspace and fail on warnings
+clippy:
+  cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+# Run tests for the workspace
+test:
+  cargo test --workspace --all-targets --all-features
+
+# Build the workspace (native)
+build:
+  cargo build --workspace --all-targets --all-features
+
+# Build release (native)
+build-release:
+  cargo build --workspace --all-targets --all-features --release
+
+# Build wasm target commonly used by Spin
+build-wasm:
+  cargo build --workspace --release --target wasm32-wasi
+
+# Run the typical CI checks
+ci: fmt-check clippy test
+
+# Clean build artifacts
+clean:
+  cargo clean

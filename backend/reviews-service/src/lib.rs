@@ -1,3 +1,12 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(
+    clippy::module_name_repetitions,
+    clippy::must_use_candidate,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc
+)]
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use spin_sdk::{

@@ -1,6 +1,11 @@
-use axum::{extract::{Query, State}, http::StatusCode, response::{IntoResponse, Redirect, Json}, Json as AxumJson};
-use chrono::{Utc};
-use jsonwebtoken::{encode, Header, EncodingKey, Algorithm};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    response::{IntoResponse, Redirect},
+    Json as AxumJson,
+};
+use chrono::Utc;
+use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc};
 
@@ -19,22 +24,21 @@ pub async fn login_handler(State(cfg): State<SharedConfig>) -> impl IntoResponse
 pub async fn callback_handler(
     State(cfg): State<SharedConfig>,
     Query(params): Query<HashMap<String, String>>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     let code = match params.get("code") {
         Some(c) => c,
         None => return (StatusCode::BAD_REQUEST, "Missing code").into_response(),
     };
 
-    // Try primary
+    // Try primary, fallback to secondary
     let token = match cfg.primary.exchange_code(code, &cfg.redirect_uri).await {
         Ok(t) => t,
-        Err(_) => {
-            // fallback
-            cfg.secondary
-                .exchange_code(code, &cfg.redirect_uri)
-                .await
-                .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Auth failed: {}", e))).unwrap()
-        }
+        Err(_) => match cfg.secondary.exchange_code(code, &cfg.redirect_uri).await {
+            Ok(t) => t,
+            Err(e) => {
+                return (StatusCode::UNAUTHORIZED, format!("Auth failed: {e}")).into_response();
+            }
+        },
     };
 
     // Issue our own JWT
@@ -50,11 +54,11 @@ pub async fn callback_handler(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 
-    // Return JSON with tokens
     AxumJson(json!({
         "jwt": jwt,
         "refresh_token": token.refresh_token,
     }))
+    .into_response()
 }
 
 /// Clear session (client should drop JWT)
@@ -67,19 +71,20 @@ pub async fn logout_handler() -> impl IntoResponse {
 pub async fn refresh_handler(
     State(cfg): State<SharedConfig>,
     AxumJson(payload): AxumJson<HashMap<String, String>>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     let refresh = match payload.get("refresh_token") {
         Some(r) => r,
         None => return (StatusCode::BAD_REQUEST, "Missing refresh_token").into_response(),
     };
 
-    // Try primary then secondary
-    let token = cfg
-        .primary
-        .refresh_token(refresh)
-        .await
-        .or_else(|_| cfg.secondary.refresh_token(refresh).await)
-        .map_err(|e| (StatusCode::UNAUTHORIZED, e.to_string())).unwrap();
+    // Try primary then secondary (cannot `await` inside `or_else`)
+    let token = match cfg.primary.refresh_token(refresh).await {
+        Ok(t) => t,
+        Err(_) => match cfg.secondary.refresh_token(refresh).await {
+            Ok(t) => t,
+            Err(e) => return (StatusCode::UNAUTHORIZED, e.to_string()).into_response(),
+        },
+    };
 
     // Issue new JWT
     let claims = Claims {
@@ -88,16 +93,20 @@ pub async fn refresh_handler(
         aud: cfg.client_id.clone(),
         iss: "spin-auth-service".into(),
     };
-    let jwt = match encode(&Header::new(Algorithm::HS256), &claims, &EncodingKey::from_secret(&cfg.jwt_secret)) {
+    let jwt = match encode(
+        &Header::new(Algorithm::HS256),
+        &claims,
+        &EncodingKey::from_secret(&cfg.jwt_secret),
+    ) {
         Ok(t) => t,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 
-    AxumJson(json!({ "jwt": jwt }))
+    AxumJson(json!({ "jwt": jwt })).into_response()
 }
 
 /// OIDC discovery endpoint
-pub async fn well_known_handler(State(_cfg): State<SharedConfig>) -> impl IntoResponse {
+pub async fn well_known_handler(State(_cfg): State<SharedConfig>) -> axum::response::Response {
     let issuer = "https://your-spin-host";
     let config = json!({
         "issuer": issuer,
@@ -108,5 +117,5 @@ pub async fn well_known_handler(State(_cfg): State<SharedConfig>) -> impl IntoRe
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": ["RS256", "HS256"],
     });
-    AxumJson(config)
+    AxumJson(config).into_response()
 }

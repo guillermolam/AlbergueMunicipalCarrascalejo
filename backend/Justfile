@@ -1,0 +1,44 @@
+# Justfile for the backend Rust workspace
+#
+# Usage examples:
+#   just clippy
+#   just fmt
+#   just test
+#   just build
+#   just build-wasm
+#
+# Notes:
+# - `clippy` runs with `-D warnings` to enforce zero warnings in CI-style runs.
+# - Some crates in this workspace target WASM; use `build-wasm` if you want to
+#   explicitly compile with the wasm32-wasi target.
+
+set shell := ["sh", "-eu", "-c"]
+
+# Default recipe
+default: fmt clippy test
+
+fmt:
+	cargo fmt --all -- --check
+
+fmt-fix:
+	cargo fmt --all
+
+clippy:
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+test:
+	cargo test --workspace --all-features
+
+build:
+	cargo build --workspace --all-features
+
+build-release:
+	cargo build --workspace --all-features --release
+
+# WASM builds (Spin/WASI)
+build-wasm:
+	cargo build --workspace --release --target wasm32-wasi
+
+# Convenience cleanup
+clean:
+	cargo clean

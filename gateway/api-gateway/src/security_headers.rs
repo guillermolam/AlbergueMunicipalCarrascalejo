@@ -1,4 +1,4 @@
-use crate::gateway_config::Policy;
+﻿use crate::gateway_config::Policy;
 use spin_sdk::http::Response;
 
 pub fn apply_security_headers(mut response: Response, policy: &Policy) -> Response {
@@ -6,36 +6,31 @@ pub fn apply_security_headers(mut response: Response, policy: &Policy) -> Respon
         return response;
     }
 
-    let headers = response.headers_mut();
-    headers.insert("x-content-type-options", "nosniff".parse().unwrap());
-    headers.insert("x-frame-options", "DENY".parse().unwrap());
-    headers.insert(
-        "referrer-policy",
-        "strict-origin-when-cross-origin".parse().unwrap(),
-    );
+    response.set_header("x-content-type-options", "nosniff");
+    response.set_header("x-frame-options", "DENY");
+    response.set_header("referrer-policy", "strict-origin-when-cross-origin");
 
-    headers.insert(
+    response.set_header(
         "access-control-allow-origin",
-        policy.security_headers.cors_allow_origin.parse().unwrap(),
+        policy.security_headers.cors_allow_origin.clone(),
     );
-    headers.insert(
+    response.set_header(
         "access-control-allow-methods",
-        policy.security_headers.cors_allow_methods.parse().unwrap(),
+        policy.security_headers.cors_allow_methods.clone(),
     );
-    headers.insert(
+    response.set_header(
         "access-control-allow-headers",
-        policy.security_headers.cors_allow_headers.parse().unwrap(),
+        policy.security_headers.cors_allow_headers.clone(),
     );
     if policy.security_headers.cors_allow_credentials {
-        headers.insert("access-control-allow-credentials", "true".parse().unwrap());
+        response.set_header("access-control-allow-credentials", "true");
     }
     if policy.security_headers.hsts_seconds > 0 {
-        headers.insert(
+        response.set_header(
             "strict-transport-security",
-            format!("max-age={}", policy.security_headers.hsts_seconds)
-                .parse()
-                .unwrap(),
+            format!("max-age={}", policy.security_headers.hsts_seconds),
         );
     }
+
     response
 }
