@@ -29,7 +29,7 @@ pub async fn enforce_rate_limit(
             message: format!("Rate limit backend unavailable: {e}"),
         })?;
 
-    let script = r#"local current=redis.call('INCR', KEYS[1]); if current==1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return current"#;
+    let script = r"local current=redis.call('INCR', KEYS[1]); if current==1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return current";
 
     let res = conn
         .execute(
@@ -64,3 +64,4 @@ pub async fn enforce_rate_limit(
 
     Ok(())
 }
+

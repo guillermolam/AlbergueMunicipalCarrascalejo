@@ -1,3 +1,7 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
+
 use std::sync::Arc;
 
 use axum::{
@@ -5,17 +9,19 @@ use axum::{
     Router,
 };
 use spin_sdk::{
-    http::{Request, Response, IntoResponse as _},
+    http::{IntoResponse as _, Request, Response},
     http_component,
 };
-use tower::ServiceExt;
+use tower::util::ServiceExt;
 
 mod config;
 mod handlers;
 mod providers;
 
 use config::load_config;
-use handlers::{callback_handler, login_handler, logout_handler, refresh_handler, well_known_handler};
+use handlers::{
+    callback_handler, login_handler, logout_handler, refresh_handler, well_known_handler,
+};
 
 #[http_component]
 async fn handle_auth_service(req: Request) -> anyhow::Result<Response> {
@@ -27,10 +33,7 @@ async fn handle_auth_service(req: Request) -> anyhow::Result<Response> {
         .route("/callback", get(callback_handler))
         .route("/logout", get(logout_handler))
         .route("/refresh", post(refresh_handler))
-        .route(
-            "/.well-known/openid-configuration",
-            get(well_known_handler),
-        )
+        .route("/.well-known/openid-configuration", get(well_known_handler))
         .with_state(shared_config);
 
     Ok(app.oneshot(req).await.into_response())

@@ -3,7 +3,7 @@ use chrono::Duration;
 use openidconnect::{core::CoreProviderMetadata, ClientId, ClientSecret, IssuerUrl, RedirectUrl};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::{env, sync::Arc};
 
 use crate::providers::logto::LogtoProvider;
 use crate::providers::zitadel::ZitadelProvider;
@@ -19,10 +19,12 @@ pub trait IdentityProvider: Send + Sync + 'static {
 }
 
 /// Configuration loaded from environment or file
+///
+/// Note: we store providers behind `Arc<dyn ...>` so the config can be cloned and used as Axum state.
 #[derive(Clone)]
 pub struct AppConfig {
-    pub primary: Box<dyn IdentityProvider>,
-    pub secondary: Box<dyn IdentityProvider>,
+    pub primary: Arc<dyn IdentityProvider>,
+    pub secondary: Arc<dyn IdentityProvider>,
     pub client_id: String,
     pub client_secret: String,
     pub redirect_uri: String,
@@ -61,35 +63,87 @@ pub async fn load_config() -> anyhow::Result<AppConfig> {
         .parse()?;
 
     // Discover OIDC metadata
-    let client = Client::new();
+    //
+    // `discover_async` expects an HTTP client closure `Fn(HttpRequest) -> Future<Output = Result<HttpResponse, _>>`.
+    // We bridge reqwest by creating a closure that uses a captured `reqwest::Client`.
+    let http_client = Client::new();
+    let http = move |req: openidconnect::HttpRequest| {
+        let client = http_client.clone();
+        async move {
+            let mut request = client
+                .request(req.method, req.url)
+                .body(req.body)
+                .headers(req.headers);
+
+            if let Some(timeout) = req.timeout {
+                request = request.timeout(timeout);
+            }
+
+            let response = request.send().await?;
+            let status_code = response.status();
+            let headers = response.headers().clone();
+            let body = response.bytes().await?.to_vec();
+
+            Ok(openidconnect::HttpResponse {
+                status_code,
+                headers,
+                body,
+            })
+        }
+    };
+
     let logto_meta =
-        CoreProviderMetadata::discover_async(IssuerUrl::new(logto_issuer.clone())?, client.clone())
-            .await?;
+        CoreProviderMetadata::discover_async(IssuerUrl::new(logto_issuer.clone())?, http).await?;
+
     let zitadel_issuer = format!("https://{}/oidc", zitadel_domain);
-    let zitadel_meta = CoreProviderMetadata::discover_async(
-        IssuerUrl::new(zitadel_issuer.clone())?,
-        client.clone(),
-    )
-    .await?;
+    let http_client_2 = Client::new();
+    let http2 = move |req: openidconnect::HttpRequest| {
+        let client = http_client_2.clone();
+        async move {
+            let mut request = client
+                .request(req.method, req.url)
+                .body(req.body)
+                .headers(req.headers);
+
+            if let Some(timeout) = req.timeout {
+                request = request.timeout(timeout);
+            }
+
+            let response = request.send().await?;
+            let status_code = response.status();
+            let headers = response.headers().clone();
+            let body = response.bytes().await?.to_vec();
+
+            Ok(openidconnect::HttpResponse {
+                status_code,
+                headers,
+                body,
+            })
+        }
+    };
+
+    let zitadel_meta =
+        CoreProviderMetadata::discover_async(IssuerUrl::new(zitadel_issuer.clone())?, http2)
+            .await?;
 
     let primary = LogtoProvider {
         metadata: logto_meta,
-        client: client.clone(),
+        client: Client::new(),
         client_id: ClientId::new(client_id.clone()),
         client_secret: ClientSecret::new(client_secret.clone()),
         redirect: RedirectUrl::new(redirect_uri.clone())?,
     };
     let secondary = ZitadelProvider {
         metadata: zitadel_meta,
-        client,
+        client: Client::new(),
         client_id: ClientId::new(client_id.clone()),
         client_secret: ClientSecret::new(client_secret.clone()),
         redirect: RedirectUrl::new(redirect_uri.clone())?,
     };
 
     Ok(AppConfig {
-        primary: Box::new(primary),
-        secondary: Box::new(secondary),
+        primary: Arc::new(primary),
+        secondary: Arc::new(secondary),
         client_id,
         client_secret,
         redirect_uri,

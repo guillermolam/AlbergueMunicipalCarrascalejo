@@ -1,4 +1,4 @@
-﻿use crate::context::{AuthContext, RequestContext, CORRELATION_ID_HEADER, TRACE_ID_HEADER};
+use crate::context::{AuthContext, RequestContext, CORRELATION_ID_HEADER, TRACE_ID_HEADER};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use spin_sdk::{http::Response, http::ResponseBuilder};
@@ -107,7 +107,11 @@ pub async fn try_cache_store(
     Ok(())
 }
 
-fn cache_key(req: &spin_sdk::http::Request, ctx: &RequestContext, auth: Option<&AuthContext>) -> String {
+fn cache_key(
+    req: &spin_sdk::http::Request,
+    ctx: &RequestContext,
+    auth: Option<&AuthContext>,
+) -> String {
     let query = req.query();
     let query = if query.is_empty() {
         "".to_string()

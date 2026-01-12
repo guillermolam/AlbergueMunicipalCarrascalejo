@@ -1,3 +1,6 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic)]
+
 use anyhow::{Context, Result};
 use http::{HeaderValue, Uri};
 use hyper::{body::Incoming, service::service_fn, Request, Response};
@@ -85,7 +88,7 @@ async fn main() -> Result<()> {
 
             let svc = service_fn(move |req| proxy(req, state.clone()));
             let io = TokioIo::new(tls);
-            let mut builder = AutoBuilder::new(TokioExecutor::new());
+            let builder = AutoBuilder::new(TokioExecutor::new());
 
             if let Err(e) = builder.serve_connection(io, svc).await {
                 event!(Level::WARN, error = %e, peer = %peer, "connection error");
@@ -97,7 +100,7 @@ async fn main() -> Result<()> {
 async fn proxy(
     req: Request<Incoming>,
     state: AppState,
-) -> Result<Response<Incoming>, hyper::Error> {
+) -> Result<Response<Incoming>, hyper_util::client::legacy::Error> {
     let (mut parts, body) = req.into_parts();
     let new_uri = edge_proxy::rewrite_uri(&state.upstream_base, &parts.uri);
     parts.uri = new_uri;
@@ -130,7 +133,7 @@ async fn load_tls_config(cert_path: &str, key_path: &str) -> Result<ServerConfig
     let key = rustls_pemfile::private_key(&mut key_reader)
         .context("Failed to parse key PEM")?
         .context("No private key found in PEM")?;
-    let key: PrivateKeyDer<'static> = key.into();
+    let key: PrivateKeyDer<'static> = key;
 
     let config = rustls::ServerConfig::builder()
         .with_no_client_auth()

@@ -1,3 +1,11 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic)]
+#![allow(
+    clippy::module_name_repetitions,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc
+)]
+
 //! Gateway Integration Tests
 //! Tests the entire service composition pipeline through HTTP requests
 
@@ -116,7 +124,7 @@ async fn test_service_composition_pipeline_success() -> Result<()> {
     });
 
     let response = client.post_with_auth(
-        "/api/booking/create", 
+        "/api/booking/create",
         booking_data,
         "valid_access_token_123"
     ).await?;
@@ -189,7 +197,7 @@ async fn test_authentication_required_endpoints() -> Result<()> {
 
     let protected_endpoints = vec![
         "/api/booking/create",
-        "/api/admin/dashboard", 
+        "/api/admin/dashboard",
         "/api/notifications/create",
         "/api/validation/upload",
     ];

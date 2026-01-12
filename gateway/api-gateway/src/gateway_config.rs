@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+﻿use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::{collections::BTreeMap, fs};
 
@@ -11,12 +11,19 @@ pub mod policy;
 pub mod rate_limit;
 pub mod security_headers;
 
+#[allow(unused_imports)]
 pub use auth::*;
+#[allow(unused_imports)]
 pub use cache::*;
+#[allow(unused_imports)]
 pub use circuit_breaker::*;
+#[allow(unused_imports)]
 pub use observability::*;
+#[allow(unused_imports)]
 pub use policy::*;
+#[allow(unused_imports)]
 pub use rate_limit::*;
+#[allow(unused_imports)]
 pub use security_headers::*;
 
 #[derive(Clone, Debug, Deserialize)]

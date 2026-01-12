@@ -12,6 +12,18 @@ members = [
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
+[workspace.metadata.rust-analyzer]
+# Ensure rust-analyzer loads the entire workspace and can use Cargo features.
+cargo = { allFeatures = true }
+# common for projects that use proc macros (sea-orm derives, etc.)
+procMacro = { enable = true }
+
+[workspace.metadata.clippy]
+# Workspace-wide defaults for clippy runs (e.g., `cargo clippy --workspace`).
+# Note: actual clippy lint levels are usually controlled via crate attributes
+# (e.g., #![warn(clippy::all)]) or CI flags, not Cargo.toml.
+args = ["--workspace", "--all-targets", "--all-features", "--", "-Dwarnings"]
+
 [workspace.dependencies]
 async-trait = "0.1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
@@ -25,4 +37,3 @@ thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-

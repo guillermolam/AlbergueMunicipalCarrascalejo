@@ -53,7 +53,7 @@ pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Optio
         .unwrap_or_default();
 
     if state == b"half_open" {
-        let script = r#"local ok=redis.call('SET', KEYS[1], '1', 'NX', 'EX', ARGV[1]); if ok then return 1 else return 0 end"#;
+        let script = r"local ok=redis.call('SET', KEYS[1], '1', 'NX', 'EX', ARGV[1]); if ok then return 1 else return 0 end";
         let res = conn
             .execute(
                 "EVAL",
@@ -124,3 +124,4 @@ pub async fn record(redis_address: &str, ctx: &RequestContext, status: u16) -> R
 
     Ok(())
 }
+

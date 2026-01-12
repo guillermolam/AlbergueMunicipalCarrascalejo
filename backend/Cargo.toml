@@ -17,6 +17,17 @@ members = [
 [workspace.package]
 edition = "2021"
 
+[workspace.metadata.rust-analyzer]
+checkOnSave = { command = "clippy" }
+cargo = { allFeatures = true }
+
+[workspace.metadata.clippy]
+# Intended default policy for editor/CI usage; run as:
+# cargo clippy --workspace --all-targets --all-features -- -D warnings
+deny = ["warnings"]
+all_targets = true
+all_features = true
+
 [workspace.dependencies]
 # Common dependencies for all services
 spin-sdk = "2.1"

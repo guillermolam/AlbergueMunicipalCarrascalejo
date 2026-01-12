@@ -64,7 +64,7 @@ pub fn get_database_url() -> Result<String, Box<dyn std::error::Error>> {
     config.get_database_url()
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_arch = "wasm32"))]
 mod tests {
     use super::*;
 

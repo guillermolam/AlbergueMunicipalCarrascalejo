@@ -1,3 +1,8 @@
+#![deny(warnings)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
+
 pub mod adapters;
 pub mod application;
 pub mod domain;

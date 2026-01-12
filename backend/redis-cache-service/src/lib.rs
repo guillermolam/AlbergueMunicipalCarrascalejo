@@ -1,3 +1,6 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use spin_sdk::{

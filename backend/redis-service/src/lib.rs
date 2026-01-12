@@ -1,3 +1,6 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 mod error;
 mod models;
 mod service;

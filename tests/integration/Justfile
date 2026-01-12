@@ -1,0 +1,40 @@
+# Justfile for: tests/integration (integration-tests crate)
+#
+# Requires:
+# - just (https://github.com/casey/just)
+# - Rust toolchain with components: rustfmt, clippy
+#
+# Usage:
+#   just fmt
+#   just clippy
+#   just test
+#   just check
+
+set dotenv-load := true
+
+# Default recipe
+default:
+  @just --list
+
+# Format (check) - fails if formatting differs
+fmt:
+  cargo fmt --all -- --check
+
+# Format (write) - applies formatting
+fmt-fix:
+  cargo fmt --all
+
+# Clippy with warnings denied
+clippy:
+  cargo clippy --all-targets --all-features -- -D warnings
+
+# Run tests
+test:
+  cargo test --all-targets --all-features
+
+# Convenience: fmt check + clippy + tests
+check: fmt clippy test
+
+# Clean build artifacts
+clean:
+  cargo clean

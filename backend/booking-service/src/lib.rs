@@ -1,3 +1,14 @@
+#![deny(warnings)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::module_name_repetitions,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
+
 use serde::{Deserialize, Serialize};
 use spin_sdk::http::{Method, Request, Response, ResponseBuilder};
 use spin_sdk::http_component;
@@ -65,10 +76,7 @@ fn handle_request(req: Request) -> Response {
 use serde_json::Value;
 use std::env;
 
-fn register_whatsapp_client(
-    client_phone: &str,
-    business_phone: &str,
-) -> Result<(), String> {
+fn register_whatsapp_client(client_phone: &str, business_phone: &str) -> Result<(), String> {
     // Placeholder: Implement WhatsApp API call to register client
     println!(
         "Registering WhatsApp client {} with business phone {}",
@@ -250,10 +258,7 @@ fn json_response<T: Serialize>(status: u16, body: &T) -> Response {
             .header("content-type", "application/json")
             .body(json)
             .build(),
-        Err(err) => error_response(
-            500,
-            &format!("Failed to serialize response body: {err}"),
-        ),
+        Err(err) => error_response(500, &format!("Failed to serialize response body: {err}")),
     }
 }
 

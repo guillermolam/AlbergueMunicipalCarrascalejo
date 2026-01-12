@@ -1,4 +1,11 @@
-﻿use albergue_persistence::db;
+﻿#![deny(warnings)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::missing_panics_doc)]
+
+use albergue_persistence::db;
 use async_graphql::EmptySubscription;
 use async_graphql_poem::GraphQL;
 use poem::{listener::TcpListener, Route, Server};

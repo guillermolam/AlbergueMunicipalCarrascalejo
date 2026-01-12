@@ -1,4 +1,4 @@
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+﻿use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use ring::signature::{RsaPublicKeyComponents, RSA_PKCS1_2048_8192_SHA256};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
@@ -63,7 +63,7 @@ impl KeyStore {
             .map_err(|_| err_con("Failed to fetch keys"))?;
 
         let jwt_keys: JwtKeys =
-            serde_json::from_slice(res.body()).map_err(|_| err_con("Failed to parse keys"))?;
+            serde_json::from_slice(response.body()).map_err(|_| err_con("Failed to parse keys"))?;
 
         self.keys = jwt_keys.keys;
         Ok(())
@@ -160,3 +160,4 @@ fn decode_segment<T: DeserializeOwned>(segment: &str) -> Result<T, Error> {
 
     serde_json::from_slice(&decoded).map_err(|_| err_inv("Failed to parse segment"))
 }
+

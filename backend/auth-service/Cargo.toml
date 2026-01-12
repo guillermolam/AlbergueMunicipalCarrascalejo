@@ -19,6 +19,12 @@ openidconnect = "3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 spin-sdk = { version = "2.2.0", features = ["http"] }
+
+# Needed by handlers/main across targets
+tower = "0.4"
+uuid = { version = "1", features = ["v4"] }
+url = "2"
+
 # Tokio with WebAssembly compatible features
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.tokio]
 version = "1.0"
@@ -40,6 +46,3 @@ jsonwebtoken = { version = "8", features = ["use_pem"] }
 jsonwebtoken = { version = "8", default-features = false, features = [
   "use_pem",
 ] }
-tower = "0.4"
-url = "2"
-uuid = { version = "1", features = ["v4"] }
