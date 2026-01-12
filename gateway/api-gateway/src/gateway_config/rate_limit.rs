@@ -56,4 +56,3 @@ pub enum RateLimitKey {
 fn default_rate_key() -> RateLimitKey {
     RateLimitKey::Sub
 }
-

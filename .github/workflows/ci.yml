@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+﻿name: CI/CD Pipeline
 
 on:
   push:
@@ -29,8 +29,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -144,7 +142,7 @@ jobs:
 
       - name: Apply migrations
         run: |
-          for migration in database/migrations/*.sql; do
+          for migration in domain_model/migrations/*.sql; do
             echo "Applying $migration"
             psql -h localhost -U postgres -d albergue_test -f "$migration"
           done
@@ -153,13 +151,13 @@ jobs:
 
       - name: Apply test seed
         run: |
-          psql -h localhost -U postgres -d albergue_test -f database/seed/test_seed.sql
+          psql -h localhost -U postgres -d albergue_test -f domain_model/seed/test_seed.sql
         env:
           PGPASSWORD: postgres
 
       - name: Run SQL tests
         run: |
-          for test in database/test/*.sql; do
+          for test in domain_model/test/*.sql; do
             echo "Running $test"
             psql -h localhost -U postgres -d albergue_test -f "$test"
           done
@@ -194,8 +192,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -214,10 +210,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-          for migration in database/migrations/*.sql; do
+          for migration in domain_model/migrations/*.sql; do
             PGPASSWORD=postgres psql -h localhost -U postgres -d albergue_test -f "$migration"
           done
-          PGPASSWORD=postgres psql -h localhost -U postgres -d albergue_test -f database/seed/test_seed.sql
+          PGPASSWORD=postgres psql -h localhost -U postgres -d albergue_test -f domain_model/seed/test_seed.sql
 
       - name: Run frontend integration tests
         run: |
@@ -243,8 +239,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -332,8 +326,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -391,4 +383,6 @@ jobs:
           cd frontend
           ls -la dist/
           test -f dist/index.html
-          echo "✅ Build artifacts ready for deployment"
+          echo "âœ… Build artifacts ready for deployment"
+
+

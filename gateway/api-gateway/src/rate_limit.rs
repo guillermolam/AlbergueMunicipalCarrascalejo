@@ -1,10 +1,9 @@
-use crate::{
+﻿use crate::{
     context::{AuthContext, RequestContext},
     rejection::GatewayRejection,
     util::parse_redis_int,
 };
 use anyhow::Context;
-use spin_sdk::redis;
 use tracing::{event, Level};
 
 pub async fn enforce_rate_limit(
@@ -24,22 +23,28 @@ pub async fn enforce_rate_limit(
     let window_start = now - (now % window);
     let key = format!("rl:{}:{}:{}", ctx.service, identity, window_start);
 
+    let conn = spin_sdk::redis::Connection::open(redis_address)
+        .context("rate_limit_redis_open_failed")
+        .map_err(|e| GatewayRejection::ServiceUnavailable {
+            message: format!("Rate limit backend unavailable: {e}"),
+        })?;
+
     let script = r#"local current=redis.call('INCR', KEYS[1]); if current==1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return current"#;
-    let res = redis::execute(
-        redis_address,
-        "EVAL",
-        &[
-            script.as_bytes(),
-            b"1",
-            key.as_bytes(),
-            window.to_string().as_bytes(),
-        ],
-    )
-    .await
-    .context("rate_limit_redis_eval_failed")
-    .map_err(|e| GatewayRejection::ServiceUnavailable {
-        message: format!("Rate limit backend unavailable: {e}"),
-    })?;
+
+    let res = conn
+        .execute(
+            "EVAL",
+            &[
+                spin_sdk::redis::RedisParameter::Binary(script.as_bytes().to_vec()),
+                spin_sdk::redis::RedisParameter::Binary(b"1".to_vec()),
+                spin_sdk::redis::RedisParameter::Binary(key.as_bytes().to_vec()),
+                spin_sdk::redis::RedisParameter::Int64(window as i64),
+            ],
+        )
+        .context("rate_limit_redis_eval_failed")
+        .map_err(|e| GatewayRejection::ServiceUnavailable {
+            message: format!("Rate limit backend unavailable: {e}"),
+        })?;
 
     let current = parse_redis_int(&res).unwrap_or(0);
     if current > ctx.policy.rate_limit.max_requests as i64 {
@@ -59,4 +64,3 @@ pub async fn enforce_rate_limit(
 
     Ok(())
 }
-

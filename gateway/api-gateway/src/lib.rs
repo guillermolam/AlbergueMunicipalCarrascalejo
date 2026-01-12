@@ -84,8 +84,10 @@ fn handle_camino_languages(_req: Request, _params: Params) -> Result<impl IntoRe
             .to_string(),
         )
         .build();
-    resp.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
-    resp.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
+    resp.headers_mut()
+        .insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
+    resp.headers_mut()
+        .insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
     Ok(apply_security_headers(resp, &ctx.policy))
 }
 
@@ -96,15 +98,17 @@ fn handle_health(_req: Request, _params: Params) -> Result<impl IntoResponse> {
         .header("content-type", "application/json")
         .body(
             serde_json::json!({
-            "status": "healthy",
-            "service": "api-gateway",
-            "version": env!("CARGO_PKG_VERSION")
-        })
+                "status": "healthy",
+                "service": "api-gateway",
+                "version": env!("CARGO_PKG_VERSION")
+            })
             .to_string(),
         )
         .build();
-    resp.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
-    resp.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
+    resp.headers_mut()
+        .insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
+    resp.headers_mut()
+        .insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
     Ok(apply_security_headers(resp, &ctx.policy))
 }
 
@@ -175,7 +179,10 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
     );
     let _enter = span.enter();
     if req.method() == Method::Options {
-        return Ok(apply_security_headers(ResponseBuilder::new(204).body(Vec::new()).build(), &ctx.policy));
+        return Ok(apply_security_headers(
+            ResponseBuilder::new(204).body(Vec::new()).build(),
+            &ctx.policy,
+        ));
     }
 
     event!(
@@ -199,7 +206,8 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
 
     if ctx.policy.rate_limit.enabled {
         if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            if let Err(rej) = rate_limit::enforce_rate_limit(&redis_address, &ctx, auth_ctx.as_ref()).await
+            if let Err(rej) =
+                rate_limit::enforce_rate_limit(&redis_address, &ctx, auth_ctx.as_ref()).await
             {
                 return Ok(rej.into_response(&ctx));
             }
@@ -208,7 +216,8 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
 
     if ctx.policy.cache.enabled {
         if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            if let Ok(Some(hit)) = cache::try_cache_hit(&redis_address, &req, &ctx, auth_ctx.as_ref()).await
+            if let Ok(Some(hit)) =
+                cache::try_cache_hit(&redis_address, &req, &ctx, auth_ctx.as_ref()).await
             {
                 return Ok(apply_security_headers(hit, &ctx.policy));
             }
@@ -225,7 +234,12 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
 
     let mut response = match forward_to_service(req, &ctx, auth_ctx.as_ref()).await {
         Ok(r) => r,
-        Err(_) => return Ok(GatewayRejection::BadGateway { message: "Upstream request failed".to_string() }.into_response(&ctx)),
+        Err(_) => {
+            return Ok(GatewayRejection::BadGateway {
+                message: "Upstream request failed".to_string(),
+            }
+            .into_response(&ctx))
+        }
     };
 
     if ctx.policy.circuit_breaker.enabled {
@@ -236,12 +250,18 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
 
     if ctx.policy.cache.enabled {
         if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            let _ = cache::try_cache_store(&redis_address, &req, &response, &ctx, auth_ctx.as_ref()).await;
+            let _ =
+                cache::try_cache_store(&redis_address, &req, &response, &ctx, auth_ctx.as_ref())
+                    .await;
         }
     }
 
-    response.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
-    response.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
+    response
+        .headers_mut()
+        .insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
+    response
+        .headers_mut()
+        .insert(TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
 
     Ok(apply_security_headers(response, &ctx.policy))
 }
@@ -294,8 +314,12 @@ async fn forward_to_service(
                 action = "upstream_response",
                 status = response.status().as_u16()
             );
-            response.headers_mut().insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse()?);
-            response.headers_mut().insert(TRACE_ID_HEADER, ctx.trace_id.parse()?);
+            response
+                .headers_mut()
+                .insert(CORRELATION_ID_HEADER, ctx.correlation_id.parse()?);
+            response
+                .headers_mut()
+                .insert(TRACE_ID_HEADER, ctx.trace_id.parse()?);
             Ok(response)
         }
         Err(_) => Ok(GatewayRejection::BadGateway {

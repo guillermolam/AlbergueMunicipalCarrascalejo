@@ -16,12 +16,18 @@ use tracing::{event, Level};
 #[derive(Clone)]
 struct AppState {
     upstream_base: Uri,
-    client: Client<hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>, Incoming>,
+    client: Client<
+        hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>,
+        Incoming,
+    >,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().with_target(false).compact().init();
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .compact()
+        .init();
 
     let listen_addr: SocketAddr = env::var("EDGE_LISTEN_ADDR")
         .unwrap_or_else(|_| "0.0.0.0:8443".to_string())
@@ -33,8 +39,7 @@ async fn main() -> Result<()> {
         .parse()
         .context("EDGE_UPSTREAM_BASE must be a valid URI")?;
 
-    let tls_cert_path =
-        env::var("EDGE_TLS_CERT_PATH").context("EDGE_TLS_CERT_PATH is required")?;
+    let tls_cert_path = env::var("EDGE_TLS_CERT_PATH").context("EDGE_TLS_CERT_PATH is required")?;
     let tls_key_path = env::var("EDGE_TLS_KEY_PATH").context("EDGE_TLS_KEY_PATH is required")?;
 
     let tls_config = load_tls_config(&tls_cert_path, &tls_key_path).await?;
@@ -48,7 +53,10 @@ async fn main() -> Result<()> {
         .build();
     let client: Client<_, Incoming> = Client::builder(TokioExecutor::new()).build(https);
 
-    let state = AppState { upstream_base, client };
+    let state = AppState {
+        upstream_base,
+        client,
+    };
 
     let listener = TcpListener::bind(listen_addr)
         .await
@@ -86,7 +94,10 @@ async fn main() -> Result<()> {
     }
 }
 
-async fn proxy(req: Request<Incoming>, state: AppState) -> Result<Response<Incoming>, hyper::Error> {
+async fn proxy(
+    req: Request<Incoming>,
+    state: AppState,
+) -> Result<Response<Incoming>, hyper::Error> {
     let (mut parts, body) = req.into_parts();
     let new_uri = edge_proxy::rewrite_uri(&state.upstream_base, &parts.uri);
     parts.uri = new_uri;

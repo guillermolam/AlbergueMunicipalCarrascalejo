@@ -1,4 +1,4 @@
-use crate::gateway_config::{load_from_file, GatewayConfig, Policy, ServiceConfig};
+﻿use crate::gateway_config::{load_from_file, GatewayConfig, Policy, ServiceConfig};
 use anyhow::Result;
 use once_cell::sync::OnceCell;
 use spin_sdk::{key_value::Store, variables};
@@ -32,8 +32,8 @@ static CONFIG: OnceCell<GatewayConfig> = OnceCell::new();
 
 pub fn get_config() -> Result<&'static GatewayConfig> {
     CONFIG.get_or_try_init(|| {
-        let path =
-            variables::get("gateway_config_path").unwrap_or_else(|_| DEFAULT_CONFIG_PATH.to_string());
+        let path = variables::get("gateway_config_path")
+            .unwrap_or_else(|_| DEFAULT_CONFIG_PATH.to_string());
         load_from_file(&path)
     })
 }
@@ -64,19 +64,20 @@ pub fn extract_service_name(path: &str) -> String {
     }
 }
 
-pub fn build_request_context(req: &spin_sdk::http::Request<Vec<u8>>) -> Result<RequestContext> {
+pub fn build_request_context(req: &spin_sdk::http::Request) -> Result<RequestContext> {
     let correlation_id = req
         .header(CORRELATION_ID_HEADER)
         .and_then(|h| h.as_str())
         .map(|s| s.to_string())
         .unwrap_or_else(|| Uuid::new_v4().to_string());
+
     let trace_id = req
         .header(TRACE_ID_HEADER)
         .and_then(|h| h.as_str())
         .map(|s| s.to_string())
         .unwrap_or_else(|| Uuid::new_v4().to_string());
 
-    let service = extract_service_name(req.uri().path());
+    let service = extract_service_name(req.path());
     let cfg = get_config()?;
     let service_cfg = cfg.services.get(&service);
     let policy = match service_cfg {
@@ -97,11 +98,13 @@ pub fn resolve_service_url(service: &str) -> Result<String> {
     if let Some(ServiceConfig { url, .. }) = cfg.services.get(service) {
         return Ok(url.clone());
     }
+
     let store = Store::open(SERVICE_REGISTRY_STORE)?;
     let service_key = format!("service:{service}");
-    if let Ok(data) = store.get(&service_key) {
+    if let Ok(Some(data)) = store.get(&service_key) {
         let registration: crate::ServiceRegistration = serde_json::from_slice(&data)?;
         return Ok(registration.url);
     }
+
     Err(anyhow::anyhow!("unknown_service"))
 }

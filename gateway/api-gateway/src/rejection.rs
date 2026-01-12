@@ -17,7 +17,9 @@ impl GatewayRejection {
             GatewayRejection::Forbidden { message } => (403, "Forbidden", message),
             GatewayRejection::TooManyRequests { message } => (429, "Too Many Requests", message),
             GatewayRejection::BadGateway { message } => (502, "Bad Gateway", message),
-            GatewayRejection::ServiceUnavailable { message } => (503, "Service Unavailable", message),
+            GatewayRejection::ServiceUnavailable { message } => {
+                (503, "Service Unavailable", message)
+            }
             GatewayRejection::UnknownService => (404, "Not Found", "Unknown service".to_string()),
         };
 
@@ -35,10 +37,15 @@ impl GatewayRejection {
             .build();
 
         let headers = resp.headers_mut();
-        let _ = headers.insert(crate::context::CORRELATION_ID_HEADER, ctx.correlation_id.parse().unwrap());
-        let _ = headers.insert(crate::context::TRACE_ID_HEADER, ctx.trace_id.parse().unwrap());
+        let _ = headers.insert(
+            crate::context::CORRELATION_ID_HEADER,
+            ctx.correlation_id.parse().unwrap(),
+        );
+        let _ = headers.insert(
+            crate::context::TRACE_ID_HEADER,
+            ctx.trace_id.parse().unwrap(),
+        );
 
         apply_security_headers(resp, &ctx.policy)
     }
 }
-
