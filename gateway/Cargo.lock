@@ -50,6 +50,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "api-gateway-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "proptest",
+ "serde",
+ "toml",
+]
+
+[[package]]
 name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

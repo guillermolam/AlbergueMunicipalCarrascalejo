@@ -1,4 +1,4 @@
-spin_manifest_version = 2
+﻿spin_manifest_version = 2
 
 [application]
 name = "gateway"
@@ -9,7 +9,7 @@ route = "/..."
 component = "api-gateway"
 
 [component.api-gateway]
-source = "api-gateway/target/wasm32-wasip1/release/api_gateway.wasm"
+source = "target/wasm32-wasip1/release/api_gateway.wasm"
 allowed_outbound_hosts = [
 	"https://accounts.google.com",
 	"https://www.googleapis.com",
@@ -20,3 +20,4 @@ key_value_stores = ["default"]
 
 [component.api-gateway.build]
 command = "cargo build -p api-gateway --target wasm32-wasip1 --release"
+

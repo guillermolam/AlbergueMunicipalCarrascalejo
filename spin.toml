@@ -1,4 +1,4 @@
-spin_manifest_version = 2
+﻿spin_manifest_version = 2
 
 [application]
 name = "albergue-carrascalejo"
@@ -91,7 +91,7 @@ files = [{ source = "frontend/dist", destination = "/" }]
 command = "cd frontend && pnpm install --frozen-lockfile && pnpm build"
 
 [component.gateway]
-source = "gateway/api-gateway/target/wasm32-wasip1/release/api_gateway.wasm"
+source = "gateway/target/wasm32-wasip1/release/api_gateway.wasm"
 allowed_outbound_hosts = [
   "https://accounts.google.com",
   "https://www.googleapis.com",
@@ -237,3 +237,4 @@ database_url = "{{ database_url }}"
 rate_limit_requests = "{{ security_rate_limit_requests }}"
 encryption_key = "{{ encryption_key }}"
 log_level = "{{ log_level }}"
+
