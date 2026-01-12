@@ -1,4 +1,4 @@
-[workspace]
+﻿[workspace]
 members = ["api-gateway", "edge-proxy"]
 resolver = "2"
 
@@ -66,3 +66,4 @@ thiserror = "2.0.17"
 [workspace.metadata.commands]
 build-wasm = "cargo build --target wasm32-wasi --release"
 test-all = "cargo test --workspace"
+

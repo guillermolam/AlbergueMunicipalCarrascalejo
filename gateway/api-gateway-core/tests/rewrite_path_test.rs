@@ -1,4 +1,4 @@
-use api_gateway::rewrite_upstream_path_for_test;
+﻿use api_gateway_core::rewrite_upstream_path_for_test;
 use proptest::prelude::*;
 
 proptest! {
