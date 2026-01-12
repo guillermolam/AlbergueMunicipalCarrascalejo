@@ -9,17 +9,17 @@ pub use error::RedisServiceError;
 pub use models::{CacheEntry, RedisConfig, RedisResponse};
 pub use service::RedisService;
 
-use spin_sdk::http::{Request, Response};
+use spin_sdk::http::{IntoResponse, Request, Response};
 use spin_sdk::http_component;
 
 #[http_component]
-async fn handle_redis_request(req: Request<Vec<u8>>) -> Result<Response, RedisServiceError> {
+async fn handle_redis_request(_req: Request) -> anyhow::Result<impl IntoResponse> {
     // This is a placeholder for actual HTTP handling
     // In a real implementation, this would handle Redis operations via HTTP
     Ok(Response::builder()
         .status(200)
         .header("content-type", "application/json")
-        .body(b"{\"message\":\"Redis service ready\"}")
+        .body("{\"message\":\"Redis service ready\"}")
         .build())
 }
 

@@ -22,11 +22,10 @@ tokio = { version = "1.0", features = [
 ] }
 futures = "0.3"
 
-# Redis
-redis = { version = "0.23", features = ["tokio-comp", "connection-manager"] }
+
 
 # Spin SDK
-spin-sdk = "2.1"
+spin-sdk = { version = "2.2.0", features = ["redis", "http"] }
 wit-bindgen = "0.25"
 
 # HTTP

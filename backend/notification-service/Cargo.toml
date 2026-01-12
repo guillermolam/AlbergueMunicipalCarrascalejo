@@ -36,14 +36,6 @@ lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls"] }
 # Async trait
 async-trait = "0.1"
 
-# Database - Use runtime-async-std for WASM compatibility
-sqlx = { version = "0.8", features = [
-  "postgres",
-  "chrono",
-  "uuid",
-  "runtime-tokio-rustls",
-] }
-
 # Shared
 shared = { path = "../shared" }
 

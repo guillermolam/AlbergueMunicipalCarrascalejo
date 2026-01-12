@@ -33,21 +33,13 @@ http = "1.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-# Database - Using different features for native and WASM targets
+# Database - Only for native targets (sqlx doesn't work on wasm32)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 sqlx = { version = "0.8", features = [
   "postgres",
   "chrono",
   "uuid",
   "runtime-tokio-rustls",
-] }
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-sqlx = { version = "0.7", default-features = false, features = [
-  "postgres",
-  "chrono",
-  "uuid",
-  "runtime-tokio",
 ] }
 
 # Shared dependencies

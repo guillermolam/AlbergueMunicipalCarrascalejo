@@ -1,150 +1,149 @@
 ﻿version: "3"
 
 includes:
-  # Main development pipeline
-  main:
-    taskfile: ./taskfiles/Taskfile.main.yml
-    dir: .
-    optional: false
-  
-  # Service-specific taskfiles
-  frontend:
-    taskfile: ./taskfiles/Taskfile.frontend.yml
-    dir: .
-    optional: false
-  
-  # Connectivity testing pipeline
-  connectivity:
-    taskfile: ./taskfiles/Taskfile.connectivity.yml
-    dir: .
-    optional: false
+    # Main development pipeline
+    main:
+        taskfile: ./taskfiles/Taskfile.main.yml
+        dir: .
+        optional: false
 
-  # Turso / libSQL embedded replicas
-  turso:
-    taskfile: ./taskfiles/Taskfile.turso.yml
-    dir: .
-    optional: false\n  # Legacy taskfiles (for compatibility)
-  dev:
-    taskfile: ./taskfiles/Taskfile.dev.yml
-    dir: .
-    optional: false
-  ports:
-    taskfile: ./taskfiles/Taskfile.ports.yml
-    dir: .
-    optional: false
-  test:
-    taskfile: ./taskfiles/Taskfile.test.yml
-    dir: .
-    optional: false
-  build:
-    taskfile: ./taskfiles/Taskfile.build.yml
-    dir: .
-    optional: false
-  quality:
-    taskfile: ./taskfiles/Taskfile.quality.yml
-    dir: .
-    optional: false
-  clean:
-    taskfile: ./taskfiles/Taskfile.clean.yml
-    dir: .
-    optional: false
-  setup:
-    taskfile: ./taskfiles/Taskfile.setup.yml
-    dir: .
-    optional: false
-  act:
-    taskfile: ./taskfiles/Taskfile.act.yml
-    dir: .
-    optional: false
-  deploy:
-    taskfile: ./taskfiles/Taskfile.deploy.yml
-    dir: .
-    optional: false
-  arch:
-    taskfile: ./taskfiles/Taskfile.arch.yml
-    dir: .
-    optional: false
+    # Service-specific taskfiles
+    frontend:
+        taskfile: ./taskfiles/Taskfile.frontend.yml
+        dir: .
+        optional: false
+
+    # Connectivity testing pipeline
+    connectivity:
+        taskfile: ./taskfiles/Taskfile.connectivity.yml
+        dir: .
+        optional: false
+
+    # Turso / libSQL embedded replicas
+    turso:
+        taskfile: ./taskfiles/Taskfile.turso.yml
+        dir: .
+        optional: false
+    dev:
+        taskfile: ./taskfiles/Taskfile.dev.yml
+        dir: .
+        optional: false
+    ports:
+        taskfile: ./taskfiles/Taskfile.ports.yml
+        dir: .
+        optional: false
+    test:
+        taskfile: ./taskfiles/Taskfile.test.yml
+        dir: .
+        optional: false
+    build:
+        taskfile: ./taskfiles/Taskfile.build.yml
+        dir: .
+        optional: false
+    quality:
+        taskfile: ./taskfiles/Taskfile.quality.yml
+        dir: .
+        optional: false
+    clean:
+        taskfile: ./taskfiles/Taskfile.clean.yml
+        dir: .
+        optional: false
+    setup:
+        taskfile: ./taskfiles/Taskfile.setup.yml
+        dir: .
+        optional: false
+    act:
+        taskfile: ./taskfiles/Taskfile.act.yml
+        dir: .
+        optional: false
+    deploy:
+        taskfile: ./taskfiles/Taskfile.deploy.yml
+        dir: .
+        optional: false
+    arch:
+        taskfile: ./taskfiles/Taskfile.arch.yml
+        dir: .
+        optional: false
 
 env:
-  RUST_BACKTRACE: "1"
-  RUST_LOG: debug
-  NODE_ENV: development
-  # Database URL should be set via environment variables or KV store
-  # DATABASE_URL: postgresql://localhost:5432/albergue_dev
+    RUST_BACKTRACE: "1"
+    RUST_LOG: debug
+    NODE_ENV: development
+    # Database URL should be set via environment variables or KV store
+    # DATABASE_URL: postgresql://localhost:5432/albergue_dev
 
 tasks:
-  # Root-level convenience tasks that delegate to included taskfiles
-  default:
-    desc: Start development mode (default task)
-    cmds:
-      - task: dev:run-all
+    # Root-level convenience tasks that delegate to included taskfiles
+    default:
+        desc: Start development mode (default task)
+        cmds:
+            - task: dev:run-all
 
-  # Setup shortcuts
-  setup:
-    desc: Complete development environment setup
-    cmds:
-      - task: setup:install:all
+    # Setup shortcuts
+    setup:
+        desc: Complete development environment setup
+        cmds:
+            - task: setup:install:all
 
-  # Development shortcuts
-  dev:
-    desc: Start development mode
-    deps: [ports:show]
-    cmds:
-      - task: dev:run-all
+    # Development shortcuts
+    dev:
+        desc: Start development mode
+        deps: [ports:show]
+        cmds:
+            - task: dev:run-all
 
-  start:
-    desc: Start development services
-    cmds:
-      - task: dev:start
+    start:
+        desc: Start development services
+        cmds:
+            - task: dev:start
 
-  stop:
-    desc: Stop development services
-    cmds:
-      - task: dev:stop
+    stop:
+        desc: Stop development services
+        cmds:
+            - task: dev:stop
 
-  restart:
-    desc: Restart development services
-    cmds:
-      - task: dev:restart
+    restart:
+        desc: Restart development services
+        cmds:
+            - task: dev:restart
 
-  # Build shortcuts
-  build:
-    desc: Build all services
-    cmds:
-      - task: build:all
+    # Build shortcuts
+    build:
+        desc: Build all services
+        cmds:
+            - task: build:all
 
-  # Test shortcuts
-  test:
-    desc: Run all tests
-    cmds:
-      - task: test:unit:all
+    # Test shortcuts
+    test:
+        desc: Run all tests
+        cmds:
+            - task: test:unit:all
 
-  # Quality shortcuts
-  fmt:
-    desc: Format all code
-    cmds:
-      - task: quality:format:all
+    # Quality shortcuts
+    fmt:
+        desc: Format all code
+        cmds:
+            - task: quality:format:all
 
-  lint:
-    desc: Lint all code
-    cmds:
-      - task: quality:lint:all
+    lint:
+        desc: Lint all code
+        cmds:
+            - task: quality:lint:all
 
-  # Clean shortcut
-  clean:
-    desc: Clean development environment
-    cmds:
-      - task: clean:default
+    # Clean shortcut
+    clean:
+        desc: Clean development environment
+        cmds:
+            - task: clean:default
 
-  generate:tree:
-    desc: Generate ASCII project tree via Rust Script (respects .gitignore)
-    cmds:
-      - command -v cargo >/dev/null 2>&1 || { echo "âŒ Rust toolchain not found. Please install via rustup."; exit 1; }
-      - |
-        if ! command -v rust-script >/dev/null 2>&1; then
-          echo "âš™ï¸ Installing rust-script..."
-          cargo install rust-script
-        fi
-      - chmod +x scripts/generate-project-structure.rs
-      - scripts/generate-project-structure.rs
-
+    generate:tree:
+        desc: Generate ASCII project tree via Rust Script (respects .gitignore)
+        cmds:
+            - command -v cargo >/dev/null 2>&1 || { echo "âŒ Rust toolchain not found. Please install via rustup."; exit 1; }
+            - |
+                if ! command -v rust-script >/dev/null 2>&1; then
+                  echo "âš™ï¸ Installing rust-script..."
+                  cargo install rust-script
+                fi
+            - chmod +x scripts/generate-project-structure.rs
+            - scripts/generate-project-structure.rs

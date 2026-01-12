@@ -18,10 +18,11 @@ impl ConfigService {
     /// Get a configuration value by key
     pub fn get(&self, key: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match self.store.get(key) {
-            Ok(data) => {
+            Ok(Some(data)) => {
                 let value = String::from_utf8(data)?;
                 Ok(Some(value))
             }
+            Ok(None) => Ok(None),
             Err(_) => Ok(None),
         }
     }

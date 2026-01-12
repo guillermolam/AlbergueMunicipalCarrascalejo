@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "astro": "^5.16.6",
+    "redis": "^5.10.0",
     "roughjs": "^4.6.6"
   },
   "devDependencies": {
