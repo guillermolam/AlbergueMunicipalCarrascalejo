@@ -1,11 +1,8 @@
 use async_trait::async_trait;
-use openidconnect::{
-    core::CoreProviderMetadata,
-    ClientId, ClientSecret, RedirectUrl,
-};
+use openidconnect::{core::CoreProviderMetadata, ClientId, ClientSecret, RedirectUrl};
 use reqwest::Client;
 
-use crate::config::{TokenResponse, IdentityProvider};
+use crate::config::{IdentityProvider, TokenResponse};
 
 /// ZITADEL provider implementation
 pub struct ZitadelProvider {
@@ -18,10 +15,14 @@ pub struct ZitadelProvider {
 
 #[async_trait]
 impl IdentityProvider for ZitadelProvider {
-    fn name(&self) -> &'static str { "zitadel" }
+    fn name(&self) -> &'static str {
+        "zitadel"
+    }
+
     fn authorization_url(&self, state: &str) -> String {
         let mut auth_url = self.metadata.authorization_endpoint().url().clone();
-        auth_url.query_pairs_mut()
+        auth_url
+            .query_pairs_mut()
             .append_pair("response_type", "code")
             .append_pair("client_id", self.client_id.as_str())
             .append_pair("redirect_uri", self.redirect.as_str())
@@ -29,35 +30,58 @@ impl IdentityProvider for ZitadelProvider {
             .append_pair("state", state);
         auth_url.to_string()
     }
+
     async fn exchange_code(&self, code: &str, redirect_uri: &str) -> anyhow::Result<TokenResponse> {
-        let token_url = self.metadata.token_endpoint().url().clone();
-        let resp = self.client.post(token_url)
+        let token_url = self
+            .metadata
+            .token_endpoint()
+            .expect("OIDC provider metadata is missing token_endpoint")
+            .url()
+            .clone();
+
+        let resp = self
+            .client
+            .post(token_url)
             .form(&[
                 ("grant_type", "authorization_code"),
                 ("code", code),
                 ("redirect_uri", redirect_uri),
                 ("client_id", self.client_id.as_str()),
-                ("client_secret", self.client_secret.as_str()),
+                ("client_secret", self.client_secret.secret()),
             ])
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?
-            .json::<TokenResponse>().await?;
+            .json::<TokenResponse>()
+            .await?;
         Ok(resp)
     }
+
     async fn refresh_token(&self, refresh_token: &str) -> anyhow::Result<TokenResponse> {
-        let token_url = self.metadata.token_endpoint().url().clone();
-        let resp = self.client.post(token_url)
+        let token_url = self
+            .metadata
+            .token_endpoint()
+            .expect("OIDC provider metadata is missing token_endpoint")
+            .url()
+            .clone();
+
+        let resp = self
+            .client
+            .post(token_url)
             .form(&[
                 ("grant_type", "refresh_token"),
                 ("refresh_token", refresh_token),
                 ("client_id", self.client_id.as_str()),
-                ("client_secret", self.client_secret.as_str()),
+                ("client_secret", self.client_secret.secret()),
             ])
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?
-            .json::<TokenResponse>().await?;
+            .json::<TokenResponse>()
+            .await?;
         Ok(resp)
     }
+
     fn jwks_uri(&self) -> String {
         self.metadata.jwks_uri().url().to_string()
     }

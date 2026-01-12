@@ -10,6 +10,7 @@ struct CachedResponse {
     body: Vec<u8>,
 }
 
+#[allow(clippy::unused_async)]
 pub async fn try_cache_hit(
     redis_address: &str,
     req: &spin_sdk::http::Request,
@@ -51,6 +52,7 @@ pub async fn try_cache_hit(
     Ok(Some(response))
 }
 
+#[allow(clippy::unused_async)]
 pub async fn try_cache_store(
     redis_address: &str,
     req: &spin_sdk::http::Request,

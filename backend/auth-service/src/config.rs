@@ -65,19 +65,17 @@ pub async fn load_config() -> anyhow::Result<AppConfig> {
     // Discover OIDC metadata
     //
     // `discover_async` expects an HTTP client closure `Fn(HttpRequest) -> Future<Output = Result<HttpResponse, _>>`.
+    // `openidconnect::HttpRequest` in this version does NOT include a `timeout` field, so we must not access it.
+    //
     // We bridge reqwest by creating a closure that uses a captured `reqwest::Client`.
     let http_client = Client::new();
     let http = move |req: openidconnect::HttpRequest| {
         let client = http_client.clone();
         async move {
-            let mut request = client
+            let request = client
                 .request(req.method, req.url)
-                .body(req.body)
-                .headers(req.headers);
-
-            if let Some(timeout) = req.timeout {
-                request = request.timeout(timeout);
-            }
+                .headers(req.headers)
+                .body(req.body);
 
             let response = request.send().await?;
             let status_code = response.status();
@@ -100,14 +98,10 @@ pub async fn load_config() -> anyhow::Result<AppConfig> {
     let http2 = move |req: openidconnect::HttpRequest| {
         let client = http_client_2.clone();
         async move {
-            let mut request = client
+            let request = client
                 .request(req.method, req.url)
-                .body(req.body)
-                .headers(req.headers);
-
-            if let Some(timeout) = req.timeout {
-                request = request.timeout(timeout);
-            }
+                .headers(req.headers)
+                .body(req.body);
 
             let response = request.send().await?;
             let status_code = response.status();

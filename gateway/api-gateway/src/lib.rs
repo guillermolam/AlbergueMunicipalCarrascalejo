@@ -1,4 +1,3 @@
-﻿#![deny(warnings)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(
     clippy::module_name_repetitions,
@@ -65,7 +64,10 @@ fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
     router.get_async("/api/services", handle_list_services);
     router.post_async("/api/services/register", handle_register_service);
 
+    router.any_async("/api/*", handle_protected_route);
 
+    Ok(router.handle(req))
+}
 
 fn handle_camino_languages(req: Request, _params: Params) -> Result<impl IntoResponse> {
     let ctx = build_request_context(&req)?;
@@ -73,18 +75,18 @@ fn handle_camino_languages(req: Request, _params: Params) -> Result<impl IntoRes
         .header("content-type", "application/json")
         .body(
             serde_json::json!([
-                { "code": "es", "name": "EspaÃƒÆ’Ã‚Â±ol" },
+                { "code": "es", "name": "EspaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±ol" },
                 { "code": "en", "name": "English" },
-                { "code": "fr", "name": "FranÃƒÆ’Ã‚Â§ais" },
+                { "code": "fr", "name": "FranÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ais" },
                 { "code": "de", "name": "Deutsch" },
                 { "code": "it", "name": "Italiano" },
-                { "code": "pt", "name": "PortuguÃƒÆ’Ã‚Âªs" },
+                { "code": "pt", "name": "PortuguÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs" },
                 { "code": "nl", "name": "Nederlands" },
                 { "code": "pl", "name": "Polski" },
-                { "code": "ja", "name": "ÃƒÂ¦Ã¢â‚¬â€Ã‚Â¥ÃƒÂ¦Ã…â€œÃ‚Â¬ÃƒÂ¨Ã‚ÂªÃ…Â¾" },
-                { "code": "ko", "name": "ÃƒÂ­Ã¢â‚¬Â¢Ã…â€œÃƒÂªÃ‚ÂµÃ‚Â­ÃƒÂ¬Ã¢â‚¬â€œÃ‚Â´" },
-                { "code": "zh", "name": "ÃƒÂ¤Ã‚Â¸Ã‚Â­ÃƒÂ¦Ã¢â‚¬â€œÃ¢â‚¬Â¡" },
-                { "code": "ru", "name": "ÃƒÂÃ‚Â Ãƒâ€˜Ã†â€™Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã‚ÂÃƒÂÃ‚ÂºÃƒÂÃ‚Â¸ÃƒÂÃ‚Â¹" }
+                { "code": "ja", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂªÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾" },
+                { "code": "ko", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂªÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂµÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´" },
+                { "code": "zh", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡" },
+                { "code": "ru", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹" }
             ])
             .to_string(),
         )
@@ -345,26 +347,22 @@ fn rewrite_upstream_path(path: &str, service: &str) -> String {
 
     let rest: Vec<&str> = parts.collect();
     let rest_path = if rest.is_empty() {
-        "".to_string()
+        String::new()
     } else {
         format!("/{}", rest.join("/"))
     };
 
-    match (second, service) {
-        ("auth", "auth-service") => format!("/api/auth{}", rest_path),
-        ("countries", "location-service") => format!("/api/countries{}", rest_path),
-        ("redis", "redis-service") => format!("/api/redis{}", rest_path),
-        ("rate-limit", "rate-limiter-service") => format!("/api{}", rest_path),
-        ("security", "security-service") => format!("/api{}", rest_path),
-        ("reviews", "reviews-service") => format!("/api{}", rest_path),
-        ("notifications", "notification-service") => format!("/api{}", rest_path),
-        ("documents", "document-validation-service") => format!("/api{}", rest_path),
-        ("info", "info-on-arrival-service") => format!("/api{}", rest_path),
-        ("bookings", "booking-service") => format!("/api{}", rest_path),
+    match service {
+        "auth-service" if second == "auth" => format!("/api/auth{rest_path}"),
+        "location-service" if second == "countries" => format!("/api/countries{rest_path}"),
+        "redis-service" if second == "redis" => format!("/api/redis{rest_path}"),
+        "rate-limiter-service"
+        | "security-service"
+        | "reviews-service"
+        | "notification-service"
+        | "document-validation-service"
+        | "info-on-arrival-service"
+        | "booking-service" => format!("/api{rest_path}"),
         _ => path.to_string(),
     }
 }
-
-
-
-

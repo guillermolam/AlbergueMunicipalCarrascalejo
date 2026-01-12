@@ -1,4 +1,4 @@
-﻿use crate::{
+use crate::{
     context::{AuthContext, RequestContext},
     rejection::GatewayRejection,
     util::parse_redis_int,
@@ -6,6 +6,7 @@
 use anyhow::Context;
 use tracing::{event, Level};
 
+#[allow(clippy::unused_async)]
 pub async fn enforce_rate_limit(
     redis_address: &str,
     ctx: &RequestContext,
@@ -64,4 +65,3 @@ pub async fn enforce_rate_limit(
 
     Ok(())
 }
-

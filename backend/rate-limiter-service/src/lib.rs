@@ -16,11 +16,20 @@ use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::task;
 
+// --- Test-facing exports ----------------------------------------------------
+// The integration/unit tests in `tests/` import `rate_limiter_service::*`.
+// Export the relevant internals so those tests can compile without duplicating logic.
+pub use crate::calculate_rate_limit as calculate_rate_limit_for_test;
+pub use crate::extract_client_id as extract_client_id_for_test;
+pub use crate::perform_rate_limit_check as perform_rate_limit_check_for_test;
+
+pub type RateLimitConfig = HashMap<String, (u32, u32)>;
+
 #[derive(Serialize, Deserialize, Clone)]
-struct RateLimitEntry {
-    requests: u32,
-    window_start: u64,
-    last_request: u64,
+pub struct RateLimitEntry {
+    pub requests: u32,
+    pub window_start: u64,
+    pub last_request: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -31,15 +40,15 @@ struct RateLimitRequest {
 }
 
 #[derive(Serialize, Deserialize)]
-struct RateLimitResponse {
-    allowed: bool,
-    remaining: u32,
-    reset_time: u64,
-    retry_after: Option<u32>,
+pub struct RateLimitResponse {
+    pub allowed: bool,
+    pub remaining: u32,
+    pub reset_time: u64,
+    pub retry_after: Option<u32>,
 }
 
 // Stateless pure function for calculating current timestamp
-fn get_current_timestamp() -> u64 {
+pub fn get_current_timestamp() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or(Duration::from_secs(0))
@@ -47,7 +56,7 @@ fn get_current_timestamp() -> u64 {
 }
 
 // Stateless pure function for token bucket algorithm
-fn calculate_rate_limit(
+pub fn calculate_rate_limit(
     entry: Option<RateLimitEntry>,
     current_time: u64,
     window_seconds: u32,
@@ -83,7 +92,7 @@ fn calculate_rate_limit(
 }
 
 // Stateless pure function for generating client ID from request
-fn extract_client_id(req: &Request<Vec<u8>>) -> String {
+pub fn extract_client_id(req: &Request<Vec<u8>>) -> String {
     // Use IP address or API key as client identifier
     req.headers()
         .get("x-forwarded-for")
@@ -122,7 +131,7 @@ async fn check_multiple_limits(
 }
 
 // Async stateless function for comprehensive rate limiting
-async fn perform_rate_limit_check(
+pub async fn perform_rate_limit_check(
     req: &Request<Vec<u8>>,
     config: HashMap<String, (u32, u32)>, // endpoint -> (window_seconds, max_requests)
 ) -> Result<RateLimitResponse> {
