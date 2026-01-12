@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🔧 NeonDB Setup for Albergue del Carrascalejo"
+echo " NeonDB Setup for Albergue del Carrascalejo"
 
 # Configuration
 PROD_URL="postgresql://neondb_owner:npg_X1gcn3aYhPAB@ep-frosty-paper-a2rbivma-pooler.eu-central-1.aws.neon.tech/albergue-carrascalejo?sslmode=require&channel_binding=require"
@@ -14,10 +14,10 @@ test_connection() {
     
     echo "Testing $env_name connection..."
     if psql "$url" -c "SELECT version();" &>/dev/null; then
-        echo "✅ $env_name connection successful"
+        echo " $env_name connection successful"
         return 0
     else
-        echo "❌ $env_name connection failed"
+        echo " $env_name connection failed"
         return 1
     fi
 }
@@ -35,23 +35,23 @@ setup_database() {
     fi
     
     # Apply migrations
-    echo "📋 Applying migrations..."
+    echo " Applying migrations..."
     for migration in ../migrations/*.sql; do
         if [ -f "$migration" ]; then
-            echo "  📄 Running $(basename $migration)..."
+            echo "   Running $(basename $migration)..."
             psql "$url" -f "$migration"
         fi
     done
     
     # Apply NeonDB configuration
-    echo "⚙️  Applying NeonDB configuration..."
+    echo "  Applying NeonDB configuration..."
     psql "$url" -f ../neon-config.sql
     
     # Apply seed data
-    echo "🌱 Applying seed data..."
+    echo " Applying seed data..."
     psql "$url" -f ../seed/dev_seed.sql
     
-    echo "✅ $env_name setup complete"
+    echo " $env_name setup complete"
 }
 
 # Main setup
@@ -75,7 +75,7 @@ else
 fi
 
 echo ""
-echo "🎉 Database setup complete!"
+echo " Database setup complete!"
 echo ""
 echo "Connection details:"
 echo "  Production: $PROD_URL"

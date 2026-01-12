@@ -12,6 +12,7 @@ members = [
   "rate-limiter-service",
   "auth-service",
   "redis-service",
+  "mqtt-broker-service",
 ]
 
 [workspace.package]

@@ -8,15 +8,15 @@ SERVICE="${1:-all}"
 MODE="${2:-release}"
 TARGET="wasm32-wasip1"
 
-echo "🔨 Building services: $SERVICE (mode: $MODE)"
+echo " Building services: $SERVICE (mode: $MODE)"
 
 # Stop any running instances
-echo "🛑 Stopping any running services..."
+echo " Stopping any running services..."
 pkill -f "spin up" || true
 pkill -f "cargo run" || true
 
 # Generate or validate ports
-echo "🔧 Setting up port assignments..."
+echo " Setting up port assignments..."
 ./scripts/port-management.sh generate
 ./scripts/port-management.sh show
 
@@ -25,7 +25,7 @@ build_rust_service() {
 	local service_name="$2"
 
 	if [[ -f "$service_dir/Cargo.toml" ]]; then
-		echo "📦 Building $service_name..."
+		echo " Building $service_name..."
 		cd "$service_dir"
 
 		# Determine build flags based on mode
@@ -43,10 +43,10 @@ build_rust_service() {
 			cargo build $build_flags
 		fi
 
-		echo "✅ $service_name built successfully"
+		echo " $service_name built successfully"
 		cd - >/dev/null
 	else
-		echo "⚠️  $service_name directory not found or no Cargo.toml"
+		echo "  $service_name directory not found or no Cargo.toml"
 	fi
 }
 
@@ -55,7 +55,7 @@ build_frontend() {
 	local service_name="$2"
 
 	if [[ -f "$frontend_dir/package.json" ]]; then
-		echo "🎨 Building $service_name frontend..."
+		echo " Building $service_name frontend..."
 		cd "$frontend_dir"
 
 		if command -v bun &>/dev/null; then
@@ -64,10 +64,10 @@ build_frontend() {
 			npm run build
 		fi
 
-		echo "✅ $service_name frontend built successfully"
+		echo " $service_name frontend built successfully"
 		cd - >/dev/null
 	else
-		echo "⚠️  $service_name frontend not found"
+		echo "  $service_name frontend not found"
 	fi
 }
 
@@ -76,9 +76,9 @@ case $SERVICE in
 	build_rust_service "gateway" "Gateway"
 	;;
 "backend")
-	echo "📢 Building all backend services..."
+	echo " Building all backend services..."
 	cargo build --workspace --target "$TARGET" --$MODE --exclude shared
-	echo "✅ All backend services built successfully"
+	echo " All backend services built successfully"
 	;;
 "frontend")
 	build_frontend "frontend" "Main Frontend"
@@ -87,18 +87,18 @@ case $SERVICE in
 	fi
 	;;
 "all")
-	echo "🚀 Building all services..."
+	echo " Building all services..."
 	build_rust_service "gateway" "Gateway"
-	echo "📢 Building backend services..."
+	echo " Building backend services..."
 	cargo build --workspace --target "$TARGET" --$MODE --exclude shared
 	build_frontend "frontend" "Main Frontend"
 	if [[ -d "backend/auth-service/app" ]]; then
 		build_frontend "backend/auth-service/app" "Auth Frontend"
 	fi
-	echo "🎉 All services built successfully"
+	echo " All services built successfully"
 	;;
 *)
-	echo "❌ Unknown service: $SERVICE"
+	echo " Unknown service: $SERVICE"
 	echo "Available services: gateway, backend, frontend, all"
 	exit 1
 	;;

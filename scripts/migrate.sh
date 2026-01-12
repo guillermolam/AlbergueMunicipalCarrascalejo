@@ -41,4 +41,4 @@ else
 	sqlx migrate run --source migrations/$MIGRATION_NAME
 fi
 
-echo -e "${GREEN}✅ Database migrations completed successfully!${NC}"
+echo -e "${GREEN} Database migrations completed successfully!${NC}"

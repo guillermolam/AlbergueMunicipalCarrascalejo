@@ -1,3 +1,5 @@
+#!/bin/bash
+set -e
 #!/usr/bin/env bash
 # scripts/random_ports.sh
 

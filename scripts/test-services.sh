@@ -8,7 +8,7 @@ TEST_TYPE="${1:-unit}"
 SERVICE="${2:-all}"
 COVERAGE_DIR="coverage"
 
-echo "🧪 Running tests: $TEST_TYPE (service: $SERVICE)"
+echo " Running tests: $TEST_TYPE (service: $SERVICE)"
 
 run_rust_tests() {
     local service_dir="$1"
@@ -16,7 +16,7 @@ run_rust_tests() {
     local test_type="$3"
     
     if [[ -f "$service_dir/Cargo.toml" ]]; then
-        echo "🧪 Testing $service_name..."
+        echo " Testing $service_name..."
         cd "$service_dir"
         
         case $test_type in
@@ -30,7 +30,7 @@ run_rust_tests() {
                 if command -v cargo-tarpaulin &> /dev/null; then
                     cargo tarpaulin --out html --output-dir "../$COVERAGE_DIR/$service_name"
                 else
-                    echo "⚠️  cargo-tarpaulin not found, installing..."
+                    echo "  cargo-tarpaulin not found, installing..."
                     cargo install cargo-tarpaulin
                     cargo tarpaulin --out html --output-dir "../$COVERAGE_DIR/$service_name"
                 fi
@@ -38,7 +38,7 @@ run_rust_tests() {
         esac
         
         cd - > /dev/null
-        echo "✅ $service_name tests completed"
+        echo " $service_name tests completed"
     fi
 }
 
@@ -48,7 +48,7 @@ run_frontend_tests() {
     local test_type="$3"
     
     if [[ -f "$frontend_dir/package.json" ]]; then
-        echo "🎮 Testing $service_name frontend..."
+        echo " Testing $service_name frontend..."
         cd "$frontend_dir"
         
         case $test_type in
@@ -58,7 +58,7 @@ run_frontend_tests() {
                 elif npm run test --silent 2>/dev/null; then
                     npm run test
                 else
-                    echo "⚠️  No test script found for $service_name"
+                    echo "  No test script found for $service_name"
                 fi
                 ;;
             "coverage")
@@ -73,18 +73,18 @@ run_frontend_tests() {
         esac
         
         cd - > /dev/null
-        echo "✅ $service_name frontend tests completed"
+        echo " $service_name frontend tests completed"
     fi
 }
 
 clean_coverage() {
-    echo "🧹 Cleaning coverage reports..."
+    echo " Cleaning coverage reports..."
     rm -rf "$COVERAGE_DIR"
-    echo "✅ Coverage reports cleaned"
+    echo " Coverage reports cleaned"
 }
 
 generate_coverage_summary() {
-    echo "📊 Generating coverage summary..."
+    echo " Generating coverage summary..."
     
     if [[ -d "$COVERAGE_DIR" ]]; then
         echo "Coverage reports generated in:"
@@ -92,7 +92,7 @@ generate_coverage_summary() {
             echo "  - $(dirname "$file")"
         done
     else
-        echo "⚠️  No coverage reports found"
+        echo "  No coverage reports found"
     fi
 }
 
@@ -117,11 +117,11 @@ case $TEST_TYPE in
         esac
         ;;
     "integration")
-        echo "🔧 Running integration tests..."
+        echo " Running integration tests..."
         if [[ -f "tests/integration" ]]; then
             cargo test --test integration
         else
-            echo "⚠️  No integration tests found"
+            echo "  No integration tests found"
         fi
         ;;
     "coverage")
@@ -149,7 +149,7 @@ case $TEST_TYPE in
         clean_coverage
         ;;
     *)
-        echo "❌ Unknown test type: $TEST_TYPE"
+        echo " Unknown test type: $TEST_TYPE"
         echo "Available types: unit, integration, coverage, clean"
         echo "Available services: rust, frontend, all, or specific service name"
         exit 1

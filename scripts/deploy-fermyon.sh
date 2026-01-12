@@ -5,41 +5,41 @@
 
 set -e
 
-echo "🚀 Deploying to Fermyon Cloud..."
+echo " Deploying to Fermyon Cloud..."
 echo "Target: https://albergue-carrascalejo.fermyon.app/"
 echo ""
 
 # Check if .env file exists
 if [ ! -f .env ]; then
-    echo "❌ .env file not found"
+    echo " .env file not found"
     exit 1
 fi
 
 # Load environment variables from .env
-echo "📦 Loading environment variables from .env..."
+echo " Loading environment variables from .env..."
 set -a
 source .env
 set +a
 
 # Check if logged in to Fermyon Cloud
 if ! spin cloud login --status &>/dev/null; then
-    echo "❌ Not logged in to Fermyon Cloud"
+    echo " Not logged in to Fermyon Cloud"
     echo "Please run: spin cloud login --auth-method token"
     echo "Or set SPIN_AUTH_TOKEN environment variable"
     exit 1
 fi
 
-echo "✅ Authenticated to Fermyon Cloud"
+echo " Authenticated to Fermyon Cloud"
 echo ""
 
 # Build the Spin app
-echo "📦 Building Spin app..."
+echo " Building Spin app..."
 spin build || {
-    echo "❌ Build failed"
+    echo " Build failed"
     exit 1
 }
 
-echo "✅ Build completed"
+echo " Build completed"
 echo ""
 
 # Prepare deployment variables from .env
@@ -62,30 +62,30 @@ while IFS='=' read -r key value; do
 
         # Add to deployment variables
         DEPLOY_VARS="$DEPLOY_VARS --variable ${var_name}=${value}"
-        echo "  ✓ Setting variable: ${var_name}"
+        echo "   Setting variable: ${var_name}"
     fi
 done < .env
 
 echo ""
-echo "🌐 Deploying to Fermyon Cloud..."
+echo " Deploying to Fermyon Cloud..."
 
 # Deploy to Fermyon Cloud with variables
 spin cloud deploy --from spin.toml $DEPLOY_VARS || {
-    echo "❌ Deployment failed"
+    echo " Deployment failed"
     exit 1
 }
 
 echo ""
-echo "✅ Deployment completed!"
-echo "🌍 Your application is available at: https://albergue-carrascalejo.fermyon.app/"
+echo " Deployment completed!"
+echo " Your application is available at: https://albergue-carrascalejo.fermyon.app/"
 echo ""
 
 # Initialize SQLite if this is first deployment
-echo "🗄️  Initializing SQLite database..."
+echo "  Initializing SQLite database..."
 if ./scripts/init-sqlite-fermyon.sh; then
-    echo "✅ SQLite initialized successfully"
+    echo " SQLite initialized successfully"
 else
-    echo "⚠️  SQLite initialization skipped or already initialized"
+    echo "  SQLite initialization skipped or already initialized"
 fi
 
 echo ""

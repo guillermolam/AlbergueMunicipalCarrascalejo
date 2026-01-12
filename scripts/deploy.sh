@@ -51,10 +51,10 @@ if [[ $ENVIRONMENT != "staging" && $ENVIRONMENT != "production" ]]; then
 	exit 1
 fi
 
-echo -e "${YELLOW}🚀 Starting deployment to ${ENVIRONMENT}...${NC}"
+echo -e "${YELLOW} Starting deployment to ${ENVIRONMENT}...${NC}"
 
 # Build the application
-echo -e "${YELLOW}🔨 Building application...${NC}"
+echo -e "${YELLOW} Building application...${NC}"
 if [ -n "$BUILD_FLAG" ]; then
 	spin build $BUILD_FLAG
 else
@@ -63,38 +63,38 @@ fi
 
 # Login to Fermyon Cloud if not already logged in
 if ! spin cloud login --check &>/dev/null; then
-	echo -e "${YELLOW}🔑 Logging in to Fermyon Cloud...${NC}"
+	echo -e "${YELLOW} Logging in to Fermyon Cloud...${NC}"
 	spin cloud login
 fi
 
 # Deploy to the appropriate environment
 if [ "$ENVIRONMENT" = "production" ]; then
-	echo -e "${YELLOW}🚀 Deploying to Fermyon Cloud Production...${NC}"
+	echo -e "${YELLOW} Deploying to Fermyon Cloud Production...${NC}"
 	spin deploy --environment production --profile "$SPIN_PROFILE"
 
 	# Run database migrations for production
 	if [ -f "migrate.sh" ]; then
-		echo -e "${YELLOW}🔄 Running database migrations...${NC}"
+		echo -e "${YELLOW} Running database migrations...${NC}"
 		./migrate.sh production
 	fi
 else
-	echo -e "${YELLOW}🚀 Deploying to Fermyon Cloud Staging...${NC}"
+	echo -e "${YELLOW} Deploying to Fermyon Cloud Staging...${NC}"
 	spin deploy --environment staging --profile "$SPIN_PROFILE"
 
 	# Run database migrations for staging
 	if [ -f "migrate.sh" ]; then
-		echo -e "${YELLOW}🔄 Running database migrations...${NC}"
+		echo -e "${YELLOW} Running database migrations...${NC}"
 		./migrate.sh staging
 	fi
 fi
 
-echo -e "${GREEN}✅ Deployment to ${ENVIRONMENT} completed successfully!${NC}"
+echo -e "${GREEN} Deployment to ${ENVIRONMENT} completed successfully!${NC}"
 
-echo -e "\n${YELLOW}🔍 Verifying deployment...${NC}"
+echo -e "\n${YELLOW} Verifying deployment...${NC}"
 if [ "$ENVIRONMENT" = "production" ]; then
 	spin cloud status --environment production
 else
 	spin cloud status --environment staging
 fi
 
-echo -e "\n${GREEN}🚀 Your application is live!${NC}"
+echo -e "\n${GREEN} Your application is live!${NC}"

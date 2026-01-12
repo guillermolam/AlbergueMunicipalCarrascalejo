@@ -7,15 +7,15 @@ set -e
 CHECK="${1:-all}"
 TARGET="${2:-all}"
 
-echo "📊 Running quality checks: $CHECK (target: $TARGET)"
+echo " Running quality checks: $CHECK (target: $TARGET)"
 
 format_rust() {
-    echo "📝 Formatting Rust code..."
+    echo " Formatting Rust code..."
     if command -v cargo &> /dev/null; then
         cargo fmt --all
-        echo "✅ Rust code formatted"
+        echo " Rust code formatted"
     else
-        echo "⚠️  Cargo not found, skipping Rust formatting"
+        echo "  Cargo not found, skipping Rust formatting"
     fi
 }
 
@@ -24,7 +24,7 @@ format_frontend() {
     local service_name="$2"
     
     if [[ -f "$target_dir/package.json" ]]; then
-        echo "🎨 Formatting $service_name frontend..."
+        echo " Formatting $service_name frontend..."
         cd "$target_dir"
         
         if command -v bun &> /dev/null && npm run format --silent 2>/dev/null; then
@@ -34,21 +34,21 @@ format_frontend() {
         elif command -v prettier &> /dev/null; then
             prettier --write .
         else
-            echo "⚠️  No format script found for $service_name"
+            echo "  No format script found for $service_name"
         fi
         
         cd - > /dev/null
-        echo "✅ $service_name frontend formatted"
+        echo " $service_name frontend formatted"
     fi
 }
 
 lint_rust() {
-    echo "🚨 Linting Rust code..."
+    echo " Linting Rust code..."
     if command -v cargo &> /dev/null; then
         cargo clippy --all-targets --all-features -- -D warnings
-        echo "✅ Rust code linted"
+        echo " Rust code linted"
     else
-        echo "⚠️  Cargo not found, skipping Rust linting"
+        echo "  Cargo not found, skipping Rust linting"
     fi
 }
 
@@ -57,7 +57,7 @@ lint_frontend() {
     local service_name="$2"
     
     if [[ -f "$target_dir/package.json" ]]; then
-        echo "🔍 Linting $service_name frontend..."
+        echo " Linting $service_name frontend..."
         cd "$target_dir"
         
         if command -v bun &> /dev/null && npm run lint --silent 2>/dev/null; then
@@ -65,23 +65,23 @@ lint_frontend() {
         elif npm run lint --silent 2>/dev/null; then
             npm run lint
         else
-            echo "⚠️  No lint script found for $service_name"
+            echo "  No lint script found for $service_name"
         fi
         
         cd - > /dev/null
-        echo "✅ $service_name frontend linted"
+        echo " $service_name frontend linted"
     fi
 }
 
 security_audit() {
-    echo "🔒 Running security audit..."
+    echo " Running security audit..."
     
     # Rust security audit
     if command -v cargo &> /dev/null; then
         if command -v cargo-audit &> /dev/null; then
             cargo audit
         else
-            echo "⚠️  cargo-audit not found, installing..."
+            echo "  cargo-audit not found, installing..."
             cargo install cargo-audit
             cargo audit
         fi
@@ -91,14 +91,14 @@ security_audit() {
     if [[ -f "frontend/package.json" ]]; then
         cd frontend
         if command -v bun &> /dev/null; then
-            bun audit || echo "⚠️  Bun audit not available"
+            bun audit || echo "  Bun audit not available"
         elif command -v npm &> /dev/null; then
-            npm audit || echo "⚠️  NPM audit issues found"
+            npm audit || echo "  NPM audit issues found"
         fi
         cd - > /dev/null
     fi
     
-    echo "✅ Security audit completed"
+    echo " Security audit completed"
 }
 
 case $CHECK in
@@ -138,7 +138,7 @@ case $CHECK in
         security_audit
         ;;
     "all")
-        echo "🏆 Running all quality checks..."
+        echo " Running all quality checks..."
         format_rust
         format_frontend "frontend" "Main"
         format_frontend "backend/auth-service" "Auth"
@@ -146,10 +146,10 @@ case $CHECK in
         lint_frontend "frontend" "Main"
         lint_frontend "backend/auth-service" "Auth"
         security_audit
-        echo "🏆 All quality checks completed"
+        echo " All quality checks completed"
         ;;
     *)
-        echo "❌ Unknown check: $CHECK"
+        echo " Unknown check: $CHECK"
         echo "Available checks: format, lint, security, all"
         echo "Available targets: rust, frontend, all"
         exit 1

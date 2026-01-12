@@ -6,11 +6,11 @@ set -e
 # Modes: frontend, rust, all (default)
 
 MODE="${1:-all}"
-echo "🧹 Starting comprehensive cleanup (mode: $MODE)..."
+echo " Starting comprehensive cleanup (mode: $MODE)..."
 
 # Frontend cleanup
 if [[ "$MODE" == "frontend" || "$MODE" == "all" ]]; then
-    echo "🧽 Cleaning frontend projects..."
+    echo " Cleaning frontend projects..."
     
     # Main frontend
     if [[ -d "frontend" ]]; then
@@ -25,7 +25,7 @@ fi
 
 # Rust cleanup
 if [[ "$MODE" == "rust" || "$MODE" == "all" ]]; then
-    echo "🦀 Cleaning Rust projects..."
+    echo " Cleaning Rust projects..."
     
     # Main workspace
     ./scripts/clean-rust.sh .
@@ -43,18 +43,18 @@ fi
 
 # Additional cleanup
 if [[ "$MODE" == "all" ]]; then
-    echo "🧹 Cleaning additional artifacts..."
+    echo " Cleaning additional artifacts..."
     
     # Remove port configurations
     rm -rf .ports.json 2>/dev/null || true
     rm -rf .env.ports 2>/dev/null || true
     
     # Stop running services
-    echo "🛑 Stopping running services..."
+    echo " Stopping running services..."
     pkill -f "spin up" || true
     pkill -f "bun run dev" || true
     pkill -f "vite" || true
     pkill -f "concurrently" || true
     
-    echo "✅ All cleanup completed"
+    echo " All cleanup completed"
 fi

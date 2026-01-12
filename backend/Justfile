@@ -37,7 +37,15 @@ build-release:
 
 # WASM builds (Spin/WASI)
 build-wasm:
-	cargo build --workspace --release --target wasm32-wasi
+	cargo build --workspace --release --target wasm32-wasip1
+
+# Update dependencies
+update-deps:
+	@echo "Checking for cargo-edit..."
+	@command -v cargo-upgrade >/dev/null 2>&1 || cargo install cargo-edit
+	@echo "Updating dependencies..."
+	cargo upgrade --workspace --incompatible
+	@echo "Dependencies updated. Run 'just build' to rebuild."
 
 # Convenience cleanup
 clean:

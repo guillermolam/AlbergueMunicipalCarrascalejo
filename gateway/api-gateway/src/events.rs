@@ -1,9 +1,8 @@
 // Event interception middleware for API Gateway
 // Extracts CloudEvents from service responses and publishes to mqtt-broker-service
 
-use anyhow::Result;
-use serde::{Deserialize, Serialize};
-use spin_sdk::http::{Request, Response, Method};
+use serde::Deserialize;
+use spin_sdk::http::{Request, Response};
 
 /// Response envelope that may contain events
 #[derive(Debug, Deserialize)]
@@ -21,8 +20,8 @@ pub fn extract_events_from_response(response: &Response) -> Vec<serde_json::Valu
     let mut events = Vec::new();
     
     // Pattern 1: Check X-CloudEvents header
-    if let Some(header_value) = response.headers().get("X-CloudEvents") {
-        if let Ok(header_str) = std::str::from_utf8(header_value.as_bytes()) {
+    if let Some((_, header_value)) = response.headers().iter().find(|(k, _)| k.as_str() == "x-cloudevents") {
+        if let Ok(header_str) = std::str::from_utf8(header_value) {
             if let Ok(header_events) = serde_json::from_str::<Vec<serde_json::Value>>(header_str) {
                 events.extend(header_events);
             }
@@ -68,17 +67,13 @@ pub fn publish_events_async(events: Vec<serde_json::Value>) {
         
         let publish_url = format!("{}/api/mqtt/publish", broker_url);
         
-        // Build request
-        if let Ok(request) = Request::builder()
-            .method(Method::Post)
-            .uri(&publish_url)
+        // Build request and fire-and-forget
+        let request = Request::post(&publish_url)
             .header("Content-Type", "application/json")
             .body(serde_json::to_vec(&publish_body).unwrap_or_default())
-            .build()
-        {
-            // Fire and forget
-            let _ = spin_sdk::http::send(request);
-        }
+            .build();
+            
+        let _ = spin_sdk::http::send(request);
     }
 }
 

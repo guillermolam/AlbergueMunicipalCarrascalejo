@@ -26,7 +26,7 @@ features = ["sync", "macros", "io-util", "rt", "time"]
 
 # Spin SDK for WebAssembly
 [target.'cfg(target_arch = "wasm32")'.dependencies.spin-sdk]
-version = "5.1.1"
+version = "2.2.0"
 features = ["http"]
 
 # Logging

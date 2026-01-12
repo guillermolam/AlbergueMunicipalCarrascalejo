@@ -1,4 +1,4 @@
-﻿version: "3"
+version: "3"
 
 includes:
     # Main development pipeline
@@ -113,6 +113,11 @@ tasks:
         cmds:
             - task: build:all
 
+    update-deps:
+        desc: Update all Cargo.toml dependencies to latest versions
+        cmds:
+            - task: build:update-deps
+
     # Test shortcuts
     test:
         desc: Run all tests
@@ -139,10 +144,10 @@ tasks:
     generate:tree:
         desc: Generate ASCII project tree via Rust Script (respects .gitignore)
         cmds:
-            - command -v cargo >/dev/null 2>&1 || { echo "âŒ Rust toolchain not found. Please install via rustup."; exit 1; }
+            - command -v cargo >/dev/null 2>&1 || { echo "ERROR: Rust toolchain not found. Please install via rustup."; exit 1; }
             - |
                 if ! command -v rust-script >/dev/null 2>&1; then
-                  echo "âš™ï¸ Installing rust-script..."
+                  echo "Installing rust-script..."
                   cargo install rust-script
                 fi
             - chmod +x scripts/generate-project-structure.rs
