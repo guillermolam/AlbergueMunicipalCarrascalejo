@@ -84,14 +84,14 @@ export interface CaminoExperience {
 /**
  * Camino route types
  */
-export type CaminoRoute = 
-  | 'frances' 
-  | 'portugues' 
-  | 'del-norte' 
-  | 'primitivo' 
-  | 'ingles' 
-  | 'via-plata' 
-  | 'finisterre' 
+export type CaminoRoute =
+  | 'frances'
+  | 'portugues'
+  | 'del-norte'
+  | 'primitivo'
+  | 'ingles'
+  | 'via-plata'
+  | 'finisterre'
   | 'muxia';
 
 /**
@@ -166,14 +166,14 @@ export interface BudgetRange {
 /**
  * Travel style preferences
  */
-export type TravelStyle = 
-  | 'backpacker' 
-  | 'budget' 
-  | 'comfort' 
-  | 'luxury' 
-  | 'minimalist' 
-  | 'photographer' 
-  | 'spiritual' 
+export type TravelStyle =
+  | 'backpacker'
+  | 'budget'
+  | 'comfort'
+  | 'luxury'
+  | 'minimalist'
+  | 'photographer'
+  | 'spiritual'
   | 'social';
 
 /**
@@ -246,23 +246,18 @@ export interface Booking extends BaseEntity {
 /**
  * Booking status
  */
-export type BookingStatus = 
-  | 'pending' 
-  | 'confirmed' 
-  | 'checked-in' 
-  | 'checked-out' 
-  | 'cancelled' 
+export type BookingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'checked-in'
+  | 'checked-out'
+  | 'cancelled'
   | 'no-show';
 
 /**
  * Payment status
  */
-export type PaymentStatus = 
-  | 'pending' 
-  | 'partial' 
-  | 'paid' 
-  | 'refunded' 
-  | 'failed';
+export type PaymentStatus = 'pending' | 'partial' | 'paid' | 'refunded' | 'failed';
 
 /**
  * Cancellation policy
@@ -654,10 +649,13 @@ export interface AuditLog extends BaseEntity {
   action: string;
   resource: string;
   resourceId: string;
-  changes: Record<string, {
-    before: unknown;
-    after: unknown;
-  }>;
+  changes: Record<
+    string,
+    {
+      before: unknown;
+      after: unknown;
+    }
+  >;
   ipAddress?: string;
   userAgent?: string;
   success: boolean;

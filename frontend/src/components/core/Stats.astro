@@ -1,18 +1,17 @@
 ---
 import type { Props } from './statsUtils';
 import {
-getColorClasses,
-getLayoutClasses,
-getProgressBarColors,
-getSizeClasses,
-getTrendColor,
-getTrendIcon,
-getValueColorClass,
-getVariantClasses,
+  getColorClasses,
+  getLayoutClasses,
+  getProgressBarColors,
+  getSizeClasses,
+  getTrendColor,
+  getTrendIcon,
+  getValueColorClass,
+  getVariantClasses,
 } from './statsUtils';
 
 import RoughIcon from '../core/RoughIcon.astro';
-
 
 const {
   stats,
@@ -28,11 +27,12 @@ const layoutClasses = getLayoutClasses(layout, columns, gap);
 ---
 
 <div class={`${layoutClasses} ${className}`}>
-  {stats.map((stat, index) => {
-    const iconColor = stat.color === 'default' ? 'current' : stat.color || 'primary';
-    return (
-      <div
-        class={`
+  {
+    stats.map((stat, index) => {
+      const iconColor = stat.color === 'default' ? 'current' : stat.color || 'primary';
+      return (
+        <div
+          class={`
           ${getVariantClasses(variant)}
           ${getColorClasses(stat.color || 'default')}
           ${getSizeClasses(stat.size || 'md')}
@@ -42,141 +42,161 @@ const layoutClasses = getLayoutClasses(layout, columns, gap);
           relative
           overflow-hidden
         `}
-        data-stat-card
-        style={animated ? { animationDelay: `${index * 100}ms` } : {}}
-        aria-label={`Stat for ${stat.label}: ${stat.value}${stat.unit ? ` ${stat.unit}` : ''}`}
-      >
-        {/* Decorative background elements */}
-        <div class="absolute top-2 right-2 opacity-20 group-hover:opacity-40 transition-opacity">
-          {stat.icon && (
-            <RoughIcon name={stat.icon} size="xl" color={iconColor} animated />
-          )}
-        </div>
+          data-stat-card
+          style={animated ? { animationDelay: `${index * 100}ms` } : {}}
+          aria-label={`Stat for ${stat.label}: ${stat.value}${stat.unit ? ` ${stat.unit}` : ''}`}
+        >
+          {/* Decorative background elements */}
+          <div class="absolute top-2 right-2 opacity-20 group-hover:opacity-40 transition-opacity">
+            {stat.icon && <RoughIcon name={stat.icon} size="xl" color={iconColor} animated />}
+          </div>
 
-        <div class="absolute inset-0 pointer-events-none">
-          <div class="stat-overlay h-full w-full bg-linear-to-r from-transparent via-white/30 to-transparent"></div>
-          <svg class="stat-hatch absolute inset-0 w-full h-full"></svg>
-        </div>
+          <div class="absolute inset-0 pointer-events-none">
+            <div class="stat-overlay h-full w-full bg-linear-to-r from-transparent via-white/30 to-transparent" />
+            <svg class="stat-hatch absolute inset-0 w-full h-full" />
+          </div>
 
-        <div class="relative z-10">
-          {/* Icon */}
-          {stat.icon && (
+          <div class="relative z-10">
+            {/* Icon */}
+            {stat.icon && (
+              <div class="mb-3">
+                <RoughIcon name={stat.icon} size="lg" color={iconColor} animated />
+              </div>
+            )}
+
+            {/* Label */}
+            <div class="mb-2">
+              <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                {stat.label}
+              </h3>
+            </div>
+
+            {/* Value */}
             <div class="mb-3">
-              <RoughIcon name={stat.icon} size="lg" color={iconColor} animated />
+              <div class="flex items-baseline gap-2">
+                <span class={`text-3xl font-bold ${getValueColorClass(stat.color || 'default')}`}>
+                  {stat.value}
+                </span>
+                {stat.unit && <span class="text-lg text-gray-500 font-medium">{stat.unit}</span>}
+              </div>
             </div>
-          )}
 
-          {/* Label */}
-          <div class="mb-2">
-            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">
-              {stat.label}
-            </h3>
+            {/* Trend and Change */}
+            {(stat.trend || stat.change) && (
+              <div class="flex items-center gap-2">
+                {stat.trend && (
+                  <span
+                    class={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getTrendColor(stat.trend)}`}
+                  >
+                    <span>{getTrendIcon(stat.trend)}</span>
+                    <span>
+                      {stat.trend === 'up'
+                        ? 'Subiendo'
+                        : stat.trend === 'down'
+                          ? 'Bajando'
+                          : 'Estable'}
+                    </span>
+                  </span>
+                )}
+                {stat.change && <span class="text-sm text-gray-600">{stat.change}</span>}
+              </div>
+            )}
           </div>
 
-          {/* Value */}
-          <div class="mb-3">
-            <div class="flex items-baseline gap-2">
-              <span class={`text-3xl font-bold ${getValueColorClass(stat.color || 'default')}`}>
-                {stat.value}
-              </span>
-              {stat.unit && (
-                <span class="text-lg text-gray-500 font-medium">
-                  {stat.unit}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Trend and Change */}
-          {(stat.trend || stat.change) && (
-            <div class="flex items-center gap-2">
-              {stat.trend && (
-                <span class={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getTrendColor(stat.trend)}`}>
-                  <span>{getTrendIcon(stat.trend)}</span>
-                  <span>{stat.trend === 'up' ? 'Subiendo' : stat.trend === 'down' ? 'Bajando' : 'Estable'}</span>
-                </span>
-              )}
-              {stat.change && (
-                <span class="text-sm text-gray-600">
-                  {stat.change}
-                </span>
-              )}
+          {/* Progress indicator for animated stats */}
+          {animated && (
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                class={`h-full bg-linear-to-r ${getProgressBarColors(stat.color || 'default')} transition-all duration-1000 ease-out`}
+                style={{
+                  width: '0%',
+                  animation: 'fillProgress 2s ease-out forwards',
+                  animationDelay: `${index * 200}ms`,
+                }}
+              />
             </div>
           )}
         </div>
-
-        {/* Progress indicator for animated stats */}
-        {animated && (
-          <div class="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              class={`h-full bg-linear-to-r ${getProgressBarColors(stat.color || 'default')} transition-all duration-1000 ease-out`}
-              style={{
-                width: '0%',
-                animation: 'fillProgress 2s ease-out forwards',
-                animationDelay: `${index * 200}ms`
-              }}
-            ></div>
-          </div>
-        )}
-      </div>
-    );
-  })}
+      );
+    })
+  }
 </div>
 
 <script type="module">
-  import anime from 'animejs'
-import rough from 'roughjs/bundled/rough.esm.js'
+  import anime from 'animejs';
+  import rough from 'roughjs/bundled/rough.esm.js';
 
-  const overlays = document.querySelectorAll('.stat-overlay')
+  const overlays = document.querySelectorAll('.stat-overlay');
   overlays.forEach((overlay) => {
-    overlay.style.transform = 'translateX(-100%)'
-    const card = overlay.closest('[data-stat-card]')
-    if (!card) return
+    overlay.style.transform = 'translateX(-100%)';
+    const card = overlay.closest('[data-stat-card]');
+    if (!card) return;
     card.addEventListener('mouseenter', () => {
-      anime({ targets: overlay, translateX: ['-100%', '100%'], duration: 1000, easing: 'easeOutCubic' })
-    })
-  })
+      anime({
+        targets: overlay,
+        translateX: ['-100%', '100%'],
+        duration: 1000,
+        easing: 'easeOutCubic',
+      });
+    });
+  });
 
-  const svgs = document.querySelectorAll('.stat-hatch')
+  const svgs = document.querySelectorAll('.stat-hatch');
   svgs.forEach((svg) => {
-    const w = svg.clientWidth || svg.parentElement?.clientWidth || 0
-    const h = svg.clientHeight || svg.parentElement?.clientHeight || 0
-    if (!w || !h) return
-    const rc = rough.svg(svg)
-    const gap = Math.max(12, Math.floor(h / 6))
+    const w = svg.clientWidth || svg.parentElement?.clientWidth || 0;
+    const h = svg.clientHeight || svg.parentElement?.clientHeight || 0;
+    if (!w || !h) return;
+    const rc = rough.svg(svg);
+    const gap = Math.max(12, Math.floor(h / 6));
     for (let y = gap; y < h; y += gap) {
-      svg.appendChild(rc.line(0, y, w, y + 6, { stroke: 'rgba(255,255,255,0.25)', strokeWidth: 1.5, roughness: 2.2 }))
+      svg.appendChild(
+        rc.line(0, y, w, y + 6, {
+          stroke: 'rgba(255,255,255,0.25)',
+          strokeWidth: 1.5,
+          roughness: 2.2,
+        })
+      );
     }
-  })
+  });
 </script>
 
 <style>
   /* Custom animations */
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  
+
   @keyframes fillProgress {
-    from { width: 0%; }
-    to { width: 85%; }
+    from {
+      width: 0%;
+    }
+    to {
+      width: 85%;
+    }
   }
-  
+
   .animate-fade-in {
     animation: fadeIn 0.6s ease-out forwards;
   }
-  
+
   /* Enhanced hover effects */
   .group:hover {
     transform: translateY(-2px) scale(1.02);
   }
-  
+
   /* Glow effect on hover */
   .group:hover::before {
     content: '';
     position: absolute;
     inset: -2px;
-    background: linear-gradient(45deg, #00AB39, #EAC102, #0071BC);
+    background: linear-gradient(45deg, #00ab39, #eac102, #0071bc);
     border-radius: inherit;
     z-index: -1;
     opacity: 0.1;

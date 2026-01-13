@@ -1,4 +1,5 @@
 ## Current State Audit
+
 - Migrations exist and implement `up`/`down` and use SeaQuery DDL (`Table::create`, `ColumnDef`, `ForeignKey`, `Index`).
 - They currently deviate from the guide mainly in structure and naming conventions:
   - Each file manually implements `MigrationName` instead of using `#[derive(DeriveMigrationName)]`.
@@ -6,6 +7,7 @@
   - README guidance should match the guide’s recommendation to generate migrations via `sea-orm-cli migrate generate` (or use the template), and to register each migration in `MigratorTrait::migrations`.
 
 ## Refactor Goals (match the guide)
+
 - Use the official migration file template style:
   - `#[derive(DeriveMigrationName)] pub struct Migration;`
   - `#[async_trait::async_trait] impl MigrationTrait for Migration { ... }`
@@ -15,6 +17,7 @@
 - Keep SeaQuery-based DDL (still fully compliant with the guide).
 
 ## Implementation Steps
+
 1. **Restructure the migration crate layout**
    - Move `Migrator` definition from `src/migration/mod.rs` into `crates/migration/src/lib.rs`, following the guide’s `migration/src/lib.rs` pattern.
    - Flatten module structure by moving files from `src/migration/m20260111_*.rs` into `crates/migration/src/` (same folder as `lib.rs`).
@@ -35,6 +38,7 @@
    - Explicitly document: naming convention, registration in `MigratorTrait::migrations`, and the schema-first workflow (write migrations first → generate entities from the live DB).
 
 ## Verification
+
 - Run `cargo test --manifest-path domain_model/rust/Cargo.toml`.
 - Run a local migration cycle on SQLite:
   - `cargo run -p albergue-migration --manifest-path domain_model/rust/Cargo.toml -- up`
@@ -42,6 +46,7 @@
 - If you want, also test against Turso via the embedded-replica flow you already have.
 
 ## Deliverables
+
 - Migration crate reorganized to match SeaORM docs layout.
 - All migrations updated to `DeriveMigrationName` + canonical template.
 - README migration section updated to follow the official guide end-to-end.

@@ -34,19 +34,16 @@ Build and maintain the frontend using **Astro + Solid** (NOT React) with **Vite 
 ## Implementation plan (execute in order)
 
 1. **Repo bootstrapping**
-
    - Ensure pnpm workspace config is correct (pnpm-lock committed).
    - Install Astro + Solid integration, Tailwind, daisyUI.
    - Verify `pnpm dev`, `pnpm build`, `pnpm preview` work.
 
 2. **Design tokens**
-
    - Translate Figma tokens → `tailwind.config.*` theme extensions.
    - Define daisyUI theme(s) aligned with Figma palettes.
    - Create `src/styles/global.css` for base layers and any non-Tailwind utilities.
 
 3. **Architecture**
-
    - Pages: `src/pages/**`
    - Layouts: `src/layouts/**`
    - Components:
@@ -55,12 +52,10 @@ Build and maintain the frontend using **Astro + Solid** (NOT React) with **Vite 
    - Assets: `src/assets/**` (optimize images; prefer svg for icons)
 
 4. **Figma parity**
-
    - Recreate key screens/flows exactly: spacing, type, grid, breakpoints.
    - Responsive behavior: define explicit breakpoints and confirm with Figma specs.
 
 5. **wired + doodles (tasteful, controlled)**
-
    - wired look: implement via CSS (hand-drawn border, jitter, sketch underline) or wired-inspired components, but do not break accessibility.
    - css-doodle: mount only where needed; keep CPU/GPU cost low; respect `prefers-reduced-motion`.
 

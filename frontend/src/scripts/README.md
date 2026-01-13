@@ -11,7 +11,7 @@ The runtime is loaded from layouts:
 - `src/layouts/Layout.astro`
 - `src/layouts/BaseLayout.astro`
 
-## Data-* contracts
+## Data-\* contracts
 
 ### RoughJS islands (`runtime_rough.ts`)
 
@@ -58,6 +58,7 @@ Example:
 
 ## Runtime behavior
 
-- Non-blocking initialization (`queueMicrotask`, `requestAnimationFrame`, `requestIdleCallback` when available)
+- Non-blocking initialization (`queueMicrotask`, `requestAnimationFrame`, `requestIdleCallback` when
+  available)
 - RoughJS initializes when elements are visible (IntersectionObserver)
 - Idempotent init functions

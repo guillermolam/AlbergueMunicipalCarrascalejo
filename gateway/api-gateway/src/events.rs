@@ -18,23 +18,29 @@ pub struct EventCarryingResponse<T> {
 /// 2. Response body with {"data": {...}, "events": [...]}
 pub fn extract_events_from_response(response: &Response) -> Vec<serde_json::Value> {
     let mut events = Vec::new();
-    
+
     // Pattern 1: Check X-CloudEvents header
-    if let Some((_, header_value)) = response.headers().iter().find(|(k, _)| k.as_str() == "x-cloudevents") {
+    if let Some((_, header_value)) = response
+        .headers()
+        .iter()
+        .find(|(k, _)| k.as_str() == "x-cloudevents")
+    {
         if let Ok(header_str) = std::str::from_utf8(header_value) {
             if let Ok(header_events) = serde_json::from_str::<Vec<serde_json::Value>>(header_str) {
                 events.extend(header_events);
             }
         }
     }
-    
+
     // Pattern 2: Check response body for event envelope
     if let Ok(body_str) = std::str::from_utf8(response.body()) {
-        if let Ok(envelope) = serde_json::from_str::<EventCarryingResponse<serde_json::Value>>(body_str) {
+        if let Ok(envelope) =
+            serde_json::from_str::<EventCarryingResponse<serde_json::Value>>(body_str)
+        {
             events.extend(envelope.events);
         }
     }
-    
+
     events
 }
 
@@ -43,36 +49,37 @@ pub fn publish_events_async(events: Vec<serde_json::Value>) {
     if events.is_empty() {
         return;
     }
-    
+
     let broker_url = "http://mqtt-broker-service.spin.internal";
-    
+
     for event in events {
         // Extract topic from event type
-        let topic = event.get("type")
+        let topic = event
+            .get("type")
             .and_then(|t| t.as_str())
             .unwrap_or("albergue.v1.unknown");
-        
+
         // Serialize full CloudEvent
         let payload = match serde_json::to_string(&event) {
             Ok(p) => p,
             Err(_) => continue,
         };
-        
+
         let publish_body = serde_json::json!({
             "topic": topic,
             "payload": payload,
             "qos": 0,
             "retain": false
         });
-        
+
         let publish_url = format!("{}/api/mqtt/publish", broker_url);
-        
+
         // Build request and fire-and-forget
         let request = Request::post(&publish_url)
             .header("Content-Type", "application/json")
             .body(serde_json::to_vec(&publish_body).unwrap_or_default())
             .build();
-            
+
         let _ = spin_sdk::http::send(request);
     }
 }
@@ -81,12 +88,12 @@ pub fn publish_events_async(events: Vec<serde_json::Value>) {
 pub fn intercept_and_publish_events(response: Response) -> Response {
     // Extract events from response
     let events = extract_events_from_response(&response);
-    
+
     // Publish events asynchronously (fire-and-forget)
     if !events.is_empty() {
         publish_events_async(events);
     }
-    
+
     // Return original response unchanged
     response
 }
@@ -94,7 +101,7 @@ pub fn intercept_and_publish_events(response: Response) -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_extract_events_from_header() {
         let events_json = r#"[{"type":"albergue.v1.booking.reserved","id":"123"}]"#;
@@ -103,11 +110,11 @@ mod tests {
             .header("X-CloudEvents", events_json)
             .body(b"{\"status\":\"ok\"}")
             .build();
-        
+
         let extracted = extract_events_from_response(&response);
         assert_eq!(extracted.len(), 1);
     }
-    
+
     #[test]
     fn test_extract_events_from_body() {
         let body = r#"{"data":{"id":"123"},"events":[{"type":"albergue.v1.booking.reserved"}]}"#;
@@ -115,18 +122,18 @@ mod tests {
             .status(200)
             .body(body.as_bytes())
             .build();
-        
+
         let extracted = extract_events_from_response(&response);
         assert_eq!(extracted.len(), 1);
     }
-    
+
     #[test]
     fn test_no_events() {
         let response = Response::builder()
             .status(200)
             .body(b"{\"status\":\"ok\"}")
             .build();
-        
+
         let extracted = extract_events_from_response(&response);
         assert_eq!(extracted.len(), 0);
     }

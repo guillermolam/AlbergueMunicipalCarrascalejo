@@ -13,12 +13,7 @@ chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 
 # Async runtime (wasm-compatible features only)
-tokio = { version = "1.0", features = [
-  "sync",
-  "macros",
-  "io-util",
-  "time",
-] }
+tokio = { version = "1.0", features = ["sync", "macros", "io-util", "time"] }
 futures = "0.3"
 
 # Spin SDK
@@ -32,9 +27,4 @@ http = "1.1"
 shared = { path = "../shared" }
 
 [dev-dependencies]
-tokio = { version = "1.0", features = [
-  "sync",
-  "macros",
-  "io-util",
-  "time",
-] }
+tokio = { version = "1.0", features = ["sync", "macros", "io-util", "time"] }

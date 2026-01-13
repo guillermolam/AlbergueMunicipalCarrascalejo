@@ -259,10 +259,5 @@ fn json_response<T: Serialize>(status: u16, body: &T) -> Response {
 }
 
 fn error_response(status: u16, message: &str) -> Response {
-    json_response(
-        status,
-        &serde_json::json!({
-            "error": message
-        }),
-    )
+    json_response(status, &serde_json::json!({ "error": message }))
 }

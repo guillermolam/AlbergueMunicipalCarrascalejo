@@ -46,7 +46,7 @@ const {
   animated = true,
   align = 'center',
   size = 'lg',
-  class: className = ''
+  class: className = '',
 } = Astro.props;
 
 // Get translated content if keys are provided, otherwise use fallback
@@ -55,46 +55,46 @@ const subtitle = subtitleKey ? t(subtitleKey as any, subtitleKey) : '';
 const description = descriptionKey ? t(descriptionKey as any, descriptionKey) : '';
 
 // Update action texts with translations
-const primaryActionText = primaryAction?.textKey 
+const primaryActionText = primaryAction?.textKey
   ? t(primaryAction.textKey as any, primaryAction.text || primaryAction.textKey)
   : primaryAction?.text || '';
 
-const secondaryActionText = secondaryAction?.textKey 
+const secondaryActionText = secondaryAction?.textKey
   ? t(secondaryAction.textKey as any, secondaryAction.text || secondaryAction.textKey)
   : secondaryAction?.text || '';
 
 const alignClasses = {
   left: 'text-left',
   center: 'text-center mx-auto',
-  right: 'text-right ml-auto'
+  right: 'text-right ml-auto',
 };
 
 const sizeClasses = {
   sm: 'py-12 md:py-16',
   md: 'py-16 md:py-24',
   lg: 'py-20 md:py-32',
-  xl: 'py-24 md:py-40'
+  xl: 'py-24 md:py-40',
 };
 
 const titleSizes = {
   sm: 'text-3xl md:text-4xl lg:text-5xl',
   md: 'text-4xl md:text-5xl lg:text-6xl',
   lg: 'text-5xl md:text-6xl lg:text-7xl',
-  xl: 'text-6xl md:text-7xl lg:text-8xl'
+  xl: 'text-6xl md:text-7xl lg:text-8xl',
 };
 
 const subtitleSizes = {
   sm: 'text-lg md:text-xl',
   md: 'text-xl md:text-2xl',
   lg: 'text-2xl md:text-3xl',
-  xl: 'text-3xl md:text-4xl'
+  xl: 'text-3xl md:text-4xl',
 };
 
 const descriptionSizes = {
   sm: 'text-sm md:text-base',
   md: 'text-base md:text-lg',
   lg: 'text-lg md:text-xl',
-  xl: 'text-xl md:text-2xl'
+  xl: 'text-xl md:text-2xl',
 };
 
 // Generate unique gradient ID for this component
@@ -105,112 +105,153 @@ const backgroundStyles = {
   gradient: `bg-gradient-to-br from-[${gradientColors[0]}] via-[${gradientColors[1]}] to-[${gradientColors[2]}]`,
   image: `bg-cover bg-center bg-no-repeat`,
   solid: 'bg-gradient-to-br from-green-500 to-emerald-600',
-  doodle: 'bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500'
+  doodle: 'bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500',
 };
 ---
 
 <section class={`relative overflow-hidden ${sizeClasses[size]} ${className}`}>
   <!-- Background -->
-  <div class={`absolute inset-0 ${backgroundStyles[background]} ${background === 'image' && imageSrc ? `bg-[url(${imageSrc})]` : ''}`}>
-    {background === 'image' && overlay && (
-      <div class="absolute inset-0 bg-linear-to-br from-black/40 via-black/20 to-transparent"></div>
-    )}
+  <div
+    class={`absolute inset-0 ${backgroundStyles[background]} ${background === 'image' && imageSrc ? `bg-[url(${imageSrc})]` : ''}`}
+  >
+    {
+      background === 'image' && overlay && (
+        <div class="absolute inset-0 bg-linear-to-br from-black/40 via-black/20 to-transparent" />
+      )
+    }
   </div>
-  
+
   <!-- Animated particles -->
-  {particles && (
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="particles-container">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div 
-            class={`particle particle-${i % 4} ${animated ? 'animate-float' : ''}`}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${3 + Math.random() * 2}s`
-            }}
-          >
-            <span class="inline-block w-2 h-2 bg-white/60 rounded-full"></span>
-          </div>
-        ))}
+  {
+    particles && (
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="particles-container">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div
+              class={`particle particle-${i % 4} ${animated ? 'animate-float' : ''}`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${3 + Math.random() * 2}s`,
+              }}
+            >
+              <span class="inline-block w-2 h-2 bg-white/60 rounded-full" />
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  )}
-  
+    )
+  }
+
   <!-- Decorative doodle elements -->
   <div class="absolute inset-0 pointer-events-none">
     <div class={`absolute top-10 left-10 w-20 h-20 ${animated ? 'animate-float' : ''}`}>
       <svg class="w-20 h-20" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M32 4C18 4 6 16 6 30c0 12 8 22 18 26l8 4 8-4c10-4 18-14 18-26C68 16 46 4 32 4z" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="text-primary" />
-        <path d="M32 14c-8 0-14 6-14 14s6 14 14 14 14-6 14-14-6-14-14-14z" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="text-primary" />
+        <path
+          d="M32 4C18 4 6 16 6 30c0 12 8 22 18 26l8 4 8-4c10-4 18-14 18-26C68 16 46 4 32 4z"
+          stroke="currentColor"
+          stroke-width="2.5"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="text-primary"></path>
+        <path
+          d="M32 14c-8 0-14 6-14 14s6 14 14 14 14-6 14-14-6-14-14-14z"
+          stroke="currentColor"
+          stroke-width="2.5"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="text-primary"></path>
       </svg>
     </div>
-    <div class={`absolute bottom-10 right-10 w-16 h-16 ${animated ? 'animate-float' : ''}`} style="animation-delay: 1s;">
+    <div
+      class={`absolute bottom-10 right-10 w-16 h-16 ${animated ? 'animate-float' : ''}`}
+      style="animation-delay: 1s;"
+    >
       <span class="text-yellow-400 text-2xl">★</span>
     </div>
     <div class={`absolute top-1/2 left-10 w-12 h-12 ${animated ? 'animate-pulse' : ''}`}>
       <span class="text-red-500 text-3xl">♥</span>
     </div>
   </div>
-  
+
   <!-- Content -->
   <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8" id="heroFrame">
     <div class={`max-w-4xl ${alignClasses[align]}`}>
       <!-- Subtitle -->
-      {subtitle && (
-        <div class={`${animated ? 'animate-slide-in-up' : ''} mb-4`} style="animation-delay: 0.1s;">
-          <p class={`${subtitleSizes[size]} font-semibold text-white/90 mb-2`}>
-            {subtitle}
-          </p>
-        </div>
-      )}
-      
+      {
+        subtitle && (
+          <div
+            class={`${animated ? 'animate-slide-in-up' : ''} mb-4`}
+            style="animation-delay: 0.1s;"
+          >
+            <p class={`${subtitleSizes[size]} font-semibold text-white/90 mb-2`}>{subtitle}</p>
+          </div>
+        )
+      }
+
       <!-- Title -->
-      <h1 class={`${titleSizes[size]} font-extrabold text-white mb-6 leading-tight ${animated ? 'animate-slide-in-up' : ''}`} style="animation-delay: 0.2s;">
+      <h1
+        class={`${titleSizes[size]} font-extrabold text-white mb-6 leading-tight ${animated ? 'animate-slide-in-up' : ''}`}
+        style="animation-delay: 0.2s;"
+      >
         <span class="bg-linear-to-r from-white to-white/80 bg-clip-text text-transparent">
           {title}
         </span>
       </h1>
-      
+
       <!-- Description -->
-      {description && (
-        <p class={`${descriptionSizes[size]} text-white/80 mb-8 leading-relaxed max-w-2xl ${align === 'center' ? 'mx-auto' : ''} ${animated ? 'animate-slide-in-up' : ''}`} style="animation-delay: 0.3s;">
-          {description}
-        </p>
-      )}
-      
+      {
+        description && (
+          <p
+            class={`${descriptionSizes[size]} text-white/80 mb-8 leading-relaxed max-w-2xl ${align === 'center' ? 'mx-auto' : ''} ${animated ? 'animate-slide-in-up' : ''}`}
+            style="animation-delay: 0.3s;"
+          >
+            {description}
+          </p>
+        )
+      }
+
       <!-- Actions -->
-      {(primaryAction || secondaryAction) && (
-        <div class={`flex flex-col sm:flex-row gap-4 ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'} ${animated ? 'animate-slide-in-up' : ''}`} style="animation-delay: 0.4s;">
-          {primaryAction && (
-            <a
-              href={primaryAction.href}
-              class="inline-flex items-center px-8 py-4 bg-brand-green text-white font-semibold rounded-lg border-2 border-brand-green hover:bg-brand-green/90 transition-all duration-200 hover:-translate-y-1"
-            >
-              {primaryActionText}
-            </a>
-          )}
-          
-          {secondaryAction && (
-            <a
-              href={secondaryAction.href}
-              class="inline-flex items-center px-8 py-4 bg-transparent text-white font-semibold rounded-lg border-2 border-white hover:bg-white/10 transition-all duration-200"
-            >
-              {secondaryActionText}
-            </a>
-          )}
-        </div>
-      )}
+      {
+        (primaryAction || secondaryAction) && (
+          <div
+            class={`flex flex-col sm:flex-row gap-4 ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'} ${animated ? 'animate-slide-in-up' : ''}`}
+            style="animation-delay: 0.4s;"
+          >
+            {primaryAction && (
+              <a
+                href={primaryAction.href}
+                class="inline-flex items-center px-8 py-4 bg-brand-green text-white font-semibold rounded-lg border-2 border-brand-green hover:bg-brand-green/90 transition-all duration-200 hover:-translate-y-1"
+              >
+                {primaryActionText}
+              </a>
+            )}
+
+            {secondaryAction && (
+              <a
+                href={secondaryAction.href}
+                class="inline-flex items-center px-8 py-4 bg-transparent text-white font-semibold rounded-lg border-2 border-white hover:bg-white/10 transition-all duration-200"
+              >
+                {secondaryActionText}
+              </a>
+            )}
+          </div>
+        )
+      }
     </div>
   </div>
-  
+
   <!-- Scroll indicator -->
-  {animated && (
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-      <div class="text-white text-2xl">↓</div>
-    </div>
-  )}
+  {
+    animated && (
+      <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div class="text-white text-2xl">↓</div>
+      </div>
+    )
+  }
 </section>
 
 <style>
@@ -220,68 +261,95 @@ const backgroundStyles = {
     width: 100%;
     height: 100%;
   }
-  
+
   .particle {
     position: absolute;
     animation: float 3s ease-in-out infinite;
     pointer-events: none;
   }
-  
-  .particle-0 { animation-duration: 4s; }
-  .particle-1 { animation-duration: 5s; animation-delay: 1s; }
-  .particle-2 { animation-duration: 3.5s; animation-delay: 0.5s; }
-  .particle-3 { animation-duration: 4.5s; animation-delay: 1.5s; }
-  
-  @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
-    50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+
+  .particle-0 {
+    animation-duration: 4s;
   }
-  
+  .particle-1 {
+    animation-duration: 5s;
+    animation-delay: 1s;
+  }
+  .particle-2 {
+    animation-duration: 3.5s;
+    animation-delay: 0.5s;
+  }
+  .particle-3 {
+    animation-duration: 4.5s;
+    animation-delay: 1.5s;
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translateY(-20px) rotate(180deg);
+      opacity: 1;
+    }
+  }
+
   /* Enhanced animations */
   @keyframes slideInUp {
-    from { 
-      transform: translateY(30px); 
-      opacity: 0; 
+    from {
+      transform: translateY(30px);
+      opacity: 0;
     }
-    to { 
-      transform: translateY(0); 
-      opacity: 1; 
+    to {
+      transform: translateY(0);
+      opacity: 1;
     }
   }
-  
+
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
-  
+
   @keyframes bounceIn {
-    0% { 
-      transform: scale(0.3); 
-      opacity: 0; 
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
     }
-    50% { 
-      transform: scale(1.05); 
+    50% {
+      transform: scale(1.05);
     }
-    70% { 
-      transform: scale(0.9); 
+    70% {
+      transform: scale(0.9);
     }
-    100% { 
-      transform: scale(1); 
-      opacity: 1; 
+    100% {
+      transform: scale(1);
+      opacity: 1;
     }
   }
-  
+
   /* Shimmer effect for gradient text */
   .bg-gradient-to-r {
     background-size: 200% 200%;
     animation: shimmer 3s ease-in-out infinite;
   }
-  
+
   @keyframes shimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
   }
-  
+
   /* Responsive adjustments */
   @media (max-width: 768px) {
     .particle {

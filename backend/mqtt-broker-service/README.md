@@ -25,11 +25,13 @@ All events follow the hierarchical pattern: `albergue.v1.{aggregate}.{event}`
 ### Event Topics
 
 **Pilgrim Aggregate** (`albergue.v1.pilgrim.*`):
+
 - `albergue.v1.pilgrim.registered`
 - `albergue.v1.pilgrim.updated`
 - `albergue.v1.pilgrim.gdpr_consent_recorded`
 
 **Booking Aggregate** (`albergue.v1.booking.*`):
+
 - `albergue.v1.booking.reserved`
 - `albergue.v1.booking.bed_assigned`
 - `albergue.v1.booking.confirmed`
@@ -37,15 +39,18 @@ All events follow the hierarchical pattern: `albergue.v1.{aggregate}.{event}`
 - `albergue.v1.booking.expired`
 
 **Payment Aggregate** (`albergue.v1.payment.*`):
+
 - `albergue.v1.payment.recorded`
 - `albergue.v1.payment.completed`
 
 **Government Submission** (`albergue.v1.government.*`):
+
 - `albergue.v1.government.submission_queued`
 - `albergue.v1.government.submission_succeeded`
 - `albergue.v1.government.submission_failed`
 
 **Bed Aggregate** (`albergue.v1.bed.*`):
+
 - `albergue.v1.bed.status_changed`
 
 ## CloudEvents Format
@@ -79,6 +84,7 @@ All events use CloudEvents 1.0 specification with lenient parsing:
 Services can publish events using two patterns:
 
 **Pattern 1: X-CloudEvents Header**
+
 ```rust
 use shared::events::{CloudEvent, BookingReserved, topics};
 
@@ -98,6 +104,7 @@ Response::builder()
 ```
 
 **Pattern 2: Response Envelope**
+
 ```rust
 #[derive(Serialize)]
 struct EventCarryingResponse<T> {
@@ -141,7 +148,7 @@ router.post("/webhooks/events", handle_webhook);
 
 async fn handle_webhook(req: Request, _params: Params) -> Result<impl IntoResponse> {
     let event = parse_cloud_event(req.body())?;
-    
+
     match event.event_type.as_str() {
         topics::BOOKING_RESERVED => {
             let data: BookingReserved = serde_json::from_value(event.data)?;
@@ -157,7 +164,7 @@ async fn handle_webhook(req: Request, _params: Params) -> Result<impl IntoRespon
             log::debug!("Unhandled event: {}", event.event_type);
         }
     }
-    
+
     Ok(Response::new(200, "OK"))
 }
 ```
@@ -177,21 +184,21 @@ async fn handle_webhook(req: Request, _params: Params) -> Result<impl IntoRespon
 
 ### Publishers
 
-| Service | Events Published |
-|---------|-----------------|
-| **booking-service** | BookingReserved, BookingBedAssigned, BookingConfirmed, BookingCancelled, BookingExpired, PaymentRecorded, PaymentCompleted, GovernmentSubmissionQueued, BedStatusChanged |
-| **info-on-arrival-service** | PilgrimRegistered, PilgrimUpdated, GDPRConsentRecorded |
-| **document-validation-service** | GovernmentSubmissionSucceeded, GovernmentSubmissionFailed |
+| Service                         | Events Published                                                                                                                                                         |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **booking-service**             | BookingReserved, BookingBedAssigned, BookingConfirmed, BookingCancelled, BookingExpired, PaymentRecorded, PaymentCompleted, GovernmentSubmissionQueued, BedStatusChanged |
+| **info-on-arrival-service**     | PilgrimRegistered, PilgrimUpdated, GDPRConsentRecorded                                                                                                                   |
+| **document-validation-service** | GovernmentSubmissionSucceeded, GovernmentSubmissionFailed                                                                                                                |
 
 ### Subscribers
 
-| Service | Subscribed Topics |
-|---------|-------------------|
-| **notification-service** | `albergue.v1.booking.*`, `albergue.v1.payment.*`, `albergue.v1.pilgrim.registered` |
-| **document-validation-service** | `albergue.v1.booking.confirmed` |
-| **info-on-arrival-service** | `albergue.v1.booking.confirmed` |
-| **security-service** | `*` (all events for audit logging) |
-| **reviews-service** | `albergue.v1.booking.expired` |
+| Service                         | Subscribed Topics                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| **notification-service**        | `albergue.v1.booking.*`, `albergue.v1.payment.*`, `albergue.v1.pilgrim.registered` |
+| **document-validation-service** | `albergue.v1.booking.confirmed`                                                    |
+| **info-on-arrival-service**     | `albergue.v1.booking.confirmed`                                                    |
+| **security-service**            | `*` (all events for audit logging)                                                 |
+| **reviews-service**             | `albergue.v1.booking.expired`                                                      |
 
 ## Configuration
 
@@ -236,10 +243,7 @@ log_level = "{{ log_level }}"
 {
   "service_id": "notification-service",
   "webhook_url": "http://notification-service.spin.internal/webhooks/events",
-  "topic_filters": [
-    "albergue.v1.booking.*",
-    "albergue.v1.payment.*"
-  ]
+  "topic_filters": ["albergue.v1.booking.*", "albergue.v1.payment.*"]
 }
 ```
 

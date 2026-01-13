@@ -6,7 +6,7 @@
   padding: 1.5rem;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   border-radius: 1rem;
-  box-shadow: 
+  box-shadow:
     0 10px 25px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.5) inset;
   backdrop-filter: blur(10px);
@@ -55,7 +55,7 @@
   border-radius: 0.75rem;
   text-decoration: none;
   font-weight: 600;
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(16, 185, 129, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -64,7 +64,7 @@
 
 .login-link:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(16, 185, 129, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.3) inset;
 }
@@ -74,7 +74,7 @@
   background: rgba(255, 255, 255, 0.8);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.05),
     0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   backdrop-filter: blur(5px);
@@ -166,7 +166,7 @@
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(239, 68, 68, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -175,7 +175,7 @@
 
 .logout-button:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(239, 68, 68, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.3) inset;
 }
@@ -200,8 +200,12 @@
 
 /* Animations */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
@@ -210,11 +214,11 @@
     padding: 1rem;
     margin: 0.5rem;
   }
-  
+
   .profile-card {
     padding: 1rem;
   }
-  
+
   .user-detail {
     flex-direction: column;
     align-items: flex-start;
@@ -228,17 +232,17 @@
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .profile-card {
     background: rgba(30, 41, 59, 0.8);
     color: #e2e8f0;
   }
-  
+
   .profile-header h3,
   .value {
     color: #f1f5f9;
   }
-  
+
   .user-email,
   .label {
     color: #94a3b8;

@@ -17,7 +17,6 @@ This document is a ruleset plus **fitness functions** (commands) that measure pr
 - Runtime: **Spin** (static assets via Spin Fileserver or equivalent)
 - Package manager: **pnpm (latest)**
 - JavaScript: **as close to zero as possible**
-
   - HTMX for interactions
   - Small, scoped JS only when unavoidable (e.g., tiny controllers, WebSocket glue)
 
@@ -32,7 +31,6 @@ Spin Fileserver can be added via Spin template and used to serve static director
 “Full connection to all databases” means:
 
 - The **Gateway** is the single ingress/egress point to:
-
   - databases (SQL/NoSQL/vector/etc.)
   - event streams
   - third-party SaaS integrations
@@ -51,7 +49,6 @@ If you split into multiple Astro apps:
 
 - Each app builds its own `dist/`.
 - Each app is mounted under a base path:
-
   - `/auth`, `/dashboard`, `/booking`, …
 
 - No cross-app deep imports of pages/routes.
@@ -63,11 +60,9 @@ If you split into multiple Astro apps:
 ### Output format
 
 - Prefer static build output:
-
   - `output: "static"`
 
 - Ensure assets work under subpaths:
-
   - configure `base` per microfrontend (or ensure relative paths)
 
 - Never assume a root-only deployment.
@@ -75,11 +70,9 @@ If you split into multiple Astro apps:
 ### Headers and caching
 
 - Use aggressive caching for hashed assets:
-
   - `Cache-Control: public, max-age=31536000, immutable`
 
 - Use short caching for HTML:
-
   - `Cache-Control: no-cache` (or short TTL) so deploys update fast
 
 - If the platform injects headers (gateway/proxy), document them and test them.
@@ -121,7 +114,6 @@ All HTMX endpoints must define:
 ### Error handling
 
 - Any HTMX request must have a defined error UI path:
-
   - `hx-on::response-error` (or a global handler)
 
 - Surface Gateway correlation IDs if present.
@@ -144,7 +136,6 @@ Goal: animated and delightful without heavy JS.
 - CSS transitions/animations (Tailwind utilities + custom keyframes)
 - daisyUI component motion patterns
 - HTMX swap animations using:
-
   - `hx-swap` + CSS classes
   - `htmx:beforeSwap` / `htmx:afterSwap` to toggle classes (tiny JS only)
 
@@ -169,7 +160,6 @@ pnpm run e2e -- --grep "reduced-motion"
 - Mobile-first layout
 - Explicit breakpoints mapped to design tokens
 - No layout shifts:
-
   - reserve image space
   - avoid injecting large DOM chunks without placeholders
 
@@ -186,12 +176,10 @@ pnpm run lighthouse
 
 - No secrets in frontend code, ever.
 - All secrets live in:
-
   - Spin variables/config
   - Gateway secret stores
 
 - PII:
-
   - never logged in the browser console
   - never included in URLs
   - avoid localStorage for sessions/PII
@@ -347,7 +335,6 @@ spin build
 Fitness function:
 
 - a cluster deployment is considered valid only if:
-
   - the app is reachable
   - `/readyz` is green
   - e2e suite passes against the deployed base URL

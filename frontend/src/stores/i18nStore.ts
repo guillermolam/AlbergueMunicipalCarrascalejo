@@ -1,9 +1,27 @@
 import { map } from 'nanostores';
 
 // Supported languages with flags
-export type Locale = 
-  | 'es' | 'en' | 'fr' | 'de' | 'it' | 'pt' | 'nl' | 'pl' | 'ko' | 'ja' 
-  | 'zh' | 'ru' | 'cs' | 'sk' | 'hu' | 'ca' | 'eu' | 'gl' | 'oc' | 'Gode';
+export type Locale =
+  | 'es'
+  | 'en'
+  | 'fr'
+  | 'de'
+  | 'it'
+  | 'pt'
+  | 'nl'
+  | 'pl'
+  | 'ko'
+  | 'ja'
+  | 'zh'
+  | 'ru'
+  | 'cs'
+  | 'sk'
+  | 'hu'
+  | 'ca'
+  | 'eu'
+  | 'gl'
+  | 'oc'
+  | 'Gode';
 
 export interface Language {
   code: Locale;
@@ -51,7 +69,7 @@ export type TranslationKeys = {
   'common.next': string;
   'common.previous': string;
   'common.finish': string;
-  
+
   // Navigation
   'nav.home': string;
   'nav.booking': string;
@@ -59,7 +77,7 @@ export type TranslationKeys = {
   'nav.admin': string;
   'nav.contact': string;
   'nav.legal': string;
-  
+
   // Booking
   'booking.title': string;
   'booking.step1': string;
@@ -81,7 +99,7 @@ export type TranslationKeys = {
   'booking.paymentMethod': string;
   'booking.totalPrice': string;
   'booking.currency': string;
-  
+
   // Dashboard
   'dashboard.title': string;
   'dashboard.welcome': string;
@@ -90,7 +108,7 @@ export type TranslationKeys = {
   'dashboard.bookingHistory': string;
   'dashboard.profile': string;
   'dashboard.settings': string;
-  
+
   // Admin
   'admin.title': string;
   'admin.dashboard': string;
@@ -99,7 +117,7 @@ export type TranslationKeys = {
   'admin.beds': string;
   'admin.analytics': string;
   'admin.settings': string;
-  
+
   // Messages
   'message.bookingSuccess': string;
   'message.bookingError': string;
@@ -132,13 +150,25 @@ export const i18nActions = {
   loadTranslations: async (locale: Locale): Promise<TranslationKeys> => {
     try {
       // Try to load from locale files first
-      const common = await import(`../components/LanguageSelector/locales/${locale}/common.json`).catch(() => ({}));
-      const navigation = await import(`../components/LanguageSelector/locales/${locale}/navigation.json`).catch(() => ({}));
-      const booking = await import(`../components/LanguageSelector/locales/${locale}/booking.json`).catch(() => ({}));
-      const dashboard = await import(`../components/LanguageSelector/locales/${locale}/dashboard.json`).catch(() => ({}));
-      const admin = await import(`../components/LanguageSelector/locales/${locale}/admin.json`).catch(() => ({}));
-      const messages = await import(`../components/LanguageSelector/locales/${locale}/messages.json`).catch(() => ({}));
-      
+      const common = await import(
+        `../components/LanguageSelector/locales/${locale}/common.json`
+      ).catch(() => ({}));
+      const navigation = await import(
+        `../components/LanguageSelector/locales/${locale}/navigation.json`
+      ).catch(() => ({}));
+      const booking = await import(
+        `../components/LanguageSelector/locales/${locale}/booking.json`
+      ).catch(() => ({}));
+      const dashboard = await import(
+        `../components/LanguageSelector/locales/${locale}/dashboard.json`
+      ).catch(() => ({}));
+      const admin = await import(
+        `../components/LanguageSelector/locales/${locale}/admin.json`
+      ).catch(() => ({}));
+      const messages = await import(
+        `../components/LanguageSelector/locales/${locale}/messages.json`
+      ).catch(() => ({}));
+
       // Merge all categories
       const translations = {
         ...common,
@@ -148,16 +178,16 @@ export const i18nActions = {
         ...admin,
         ...messages,
       };
-      
+
       // If no translations found, use fallback
       if (Object.keys(translations).length === 0) {
         throw new Error('No translations found');
       }
-      
+
       return translations as TranslationKeys;
     } catch (error) {
       console.warn(`Failed to load translations for ${locale}:`, error);
-      
+
       // Return empty translations - will use fallback
       return {} as TranslationKeys;
     }
@@ -175,7 +205,7 @@ export const i18nActions = {
 
     try {
       const translations = await i18nActions.loadTranslations(locale);
-      
+
       // If no translations loaded, use fallback
       if (Object.keys(translations).length === 0) {
         throw new Error('No translations available');
@@ -183,12 +213,12 @@ export const i18nActions = {
 
       i18nStore.setKey('locale', locale);
       i18nStore.setKey('messages', translations);
-      
+
       // Update HTML lang attribute
       if (typeof document !== 'undefined') {
         document.documentElement.lang = locale;
       }
-      
+
       // Store preference
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('preferred-language', locale);
@@ -196,7 +226,7 @@ export const i18nActions = {
     } catch (error) {
       console.error('Failed to set locale:', error);
       i18nStore.setKey('error', error instanceof Error ? error.message : 'Unknown error');
-      
+
       // Fallback to Spanish
       if (locale !== 'es') {
         await i18nActions.setLocale('es');
@@ -205,30 +235,30 @@ export const i18nActions = {
       i18nStore.setKey('isLoading', false);
     }
   },
-  
+
   getMessage: (key: keyof TranslationKeys, fallback?: string): string => {
     const state = i18nStore.get();
     const messages = state.messages;
-    
+
     // Return the translated message if available
     if (messages && messages[key]) {
       return messages[key];
     }
-    
+
     // Return fallback or the key itself
     return fallback || key;
   },
-  
+
   formatDate: (date: Date, options?: Intl.DateTimeFormatOptions): string => {
     const locale = i18nStore.get().locale;
     return date.toLocaleDateString(locale, options);
   },
-  
+
   formatNumber: (number: number, options?: Intl.NumberFormatOptions): string => {
     const locale = i18nStore.get().locale;
     return new Intl.NumberFormat(locale, options).format(number);
   },
-  
+
   formatCurrency: (amount: number, currency: string = 'EUR'): string => {
     const locale = i18nStore.get().locale;
     return new Intl.NumberFormat(locale, {

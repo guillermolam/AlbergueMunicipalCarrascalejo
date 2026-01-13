@@ -4,7 +4,7 @@
 /// <reference types="astro/client" />
 
 // Module declarations for Astro components
-declare module "*.astro" {
+declare module '*.astro' {
   const Component: any;
   export default Component;
 }
@@ -31,17 +31,20 @@ declare global {
     // Analytics and tracking
     gtag?: (...args: any[]) => void;
     dataLayer?: any[];
-    
+
     // PWA support
     deferredPrompt?: any;
-    
+
     // Custom properties
     __INITIAL_STATE__?: Record<string, any>;
     __ENVIRONMENT__?: 'development' | 'production' | 'test';
-    
+
     // Service worker
     serviceWorker?: {
-      register: (scriptURL: string, options?: RegistrationOptions) => Promise<ServiceWorkerRegistration>;
+      register: (
+        scriptURL: string,
+        options?: RegistrationOptions
+      ) => Promise<ServiceWorkerRegistration>;
       ready: Promise<ServiceWorkerRegistration>;
     };
   }
@@ -53,28 +56,28 @@ declare global {
       document?: Document;
       navigator?: Navigator;
     }
-    
+
     interface ProcessEnv {
       NODE_ENV: 'development' | 'production' | 'test';
       ASTRO_SITE?: string;
       ASTRO_BASE?: string;
-      
+
       // Database configuration
       DATABASE_URL?: string;
       REDIS_URL?: string;
-      
+
       // Authentication
       JWT_SECRET?: string;
       BETTER_AUTH_SECRET?: string;
-      
+
       // API keys
       GOOGLE_API_KEY?: string;
       MAPS_API_KEY?: string;
-      
+
       // External services
       SUPABASE_URL?: string;
       SUPABASE_ANON_KEY?: string;
-      
+
       // Environment-specific
       VERCEL?: string;
       NETLIFY?: string;
@@ -93,14 +96,14 @@ declare namespace astroHTML.JSX {
     '--color-secondary'?: string;
     '--color-accent'?: string;
     '--color-blue'?: string;
-    
+
     // Gradients
     '--gradient-primary'?: string;
     '--gradient-secondary'?: string;
     '--gradient-accent'?: string;
     '--gradient-blue'?: string;
     '--gradient-rainbow'?: string;
-    
+
     // Shadows
     '--shadow-soft'?: string;
     '--shadow-medium'?: string;
@@ -108,20 +111,20 @@ declare namespace astroHTML.JSX {
     '--shadow-glow'?: string;
     '--shadow-button'?: string;
     '--shadow-card'?: string;
-    
+
     // Animations
     '--animation-duration-fast'?: string;
     '--animation-duration-normal'?: string;
     '--animation-duration-slow'?: string;
     '--animation-easing'?: string;
-    
+
     // Spacing
     '--spacing-xs'?: string;
     '--spacing-sm'?: string;
     '--spacing-md'?: string;
     '--spacing-lg'?: string;
     '--spacing-xl'?: string;
-    
+
     // Typography
     '--font-family-sans'?: string;
     '--font-family-mono'?: string;
@@ -130,7 +133,7 @@ declare namespace astroHTML.JSX {
     '--font-size-base'?: string;
     '--font-size-lg'?: string;
     '--font-size-xl'?: string;
-    
+
     // Border radius
     '--radius-sm'?: string;
     '--radius-md'?: string;
@@ -140,7 +143,7 @@ declare namespace astroHTML.JSX {
     '--radius-3xl'?: string;
     '--radius-full'?: string;
   }
-  
+
   interface HTMLAttributes {
     // Custom data attributes for Figma components
     'data-variant'?: string;
@@ -150,11 +153,17 @@ declare namespace astroHTML.JSX {
     'data-animate'?: boolean | string;
     'data-ssr'?: boolean;
     'data-hydrated'?: boolean;
-    
+
     // Accessibility attributes
     'aria-live'?: 'off' | 'assertive' | 'polite';
     'aria-atomic'?: boolean | 'true' | 'false';
-    'aria-relevant'?: 'additions' | 'additions removals' | 'additions text' | 'all' | 'removals' | 'text';
+    'aria-relevant'?:
+      | 'additions'
+      | 'additions removals'
+      | 'additions text'
+      | 'all'
+      | 'removals'
+      | 'text';
     'aria-busy'?: boolean | 'true' | 'false';
     'aria-expanded'?: boolean | 'true' | 'false';
     'aria-selected'?: boolean | 'true' | 'false';
@@ -184,31 +193,39 @@ declare namespace astroHTML.JSX {
     'aria-details'?: string;
     'aria-keyshortcuts'?: string;
     'aria-roledescription'?: string;
-    
+
     // Performance attributes
-    'loading'?: 'lazy' | 'eager';
-    'decoding'?: 'async' | 'sync' | 'auto';
-    'fetchpriority'?: 'high' | 'low' | 'auto';
-    'imagesrcset'?: string;
-    'imagesizes'?: string;
-    
+    loading?: 'lazy' | 'eager';
+    decoding?: 'async' | 'sync' | 'auto';
+    fetchpriority?: 'high' | 'low' | 'auto';
+    imagesrcset?: string;
+    imagesizes?: string;
+
     // Security attributes
-    'nonce'?: string;
-    'integrity'?: string;
-    'crossorigin'?: 'anonymous' | 'use-credentials';
-    'referrerpolicy'?: 'no-referrer' | 'no-referrer-when-downgrade' | 'origin' | 'origin-when-cross-origin' | 'same-origin' | 'strict-origin' | 'strict-origin-when-cross-origin' | 'unsafe-url';
-    
+    nonce?: string;
+    integrity?: string;
+    crossorigin?: 'anonymous' | 'use-credentials';
+    referrerpolicy?:
+      | 'no-referrer'
+      | 'no-referrer-when-downgrade'
+      | 'origin'
+      | 'origin-when-cross-origin'
+      | 'same-origin'
+      | 'strict-origin'
+      | 'strict-origin-when-cross-origin'
+      | 'unsafe-url';
+
     // SEO attributes
-    'itemscope'?: boolean;
-    'itemtype'?: string;
-    'itemprop'?: string;
-    'itemid'?: string;
-    'itemref'?: string;
-    
+    itemscope?: boolean;
+    itemtype?: string;
+    itemprop?: string;
+    itemid?: string;
+    itemref?: string;
+
     // Microdata
-    'property'?: string;
-    'content'?: string;
-    
+    property?: string;
+    content?: string;
+
     // Custom attributes for Figma components
     'data-figma-variant'?: string;
     'data-figma-size'?: string;
@@ -244,4 +261,4 @@ export type KeysOfType<T, U> = {
 }[keyof T];
 
 // Export for module augmentation
-export { };
+export {};

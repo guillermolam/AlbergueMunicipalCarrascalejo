@@ -24,7 +24,6 @@ wit-bindgen = "0.25"
 http = "1.1"
 
 
-
 # Redis
 redis-service = { path = "../redis-service" }
 
@@ -32,10 +31,6 @@ redis-service = { path = "../redis-service" }
 shared = { path = "../shared" }
 
 [dev-dependencies]
-tokio = { version = "1.0", features = [
-  "macros",
-  "sync",
-  "time",
-] }
+tokio = { version = "1.0", features = ["macros", "sync", "time"] }
 wiremock = "0.5"
 mockall = "0.11"

@@ -1,14 +1,14 @@
-import { vi } from 'vitest'
+import { vi } from 'vitest';
 
 // Mock window.requestIdleCallback
 global.requestIdleCallback = vi.fn((cb) => {
-  const id = setTimeout(cb, 1)
-  return id as unknown as number
-})
+  const id = setTimeout(cb, 1);
+  return id as unknown as number;
+});
 
 global.cancelIdleCallback = vi.fn((id) => {
-  clearTimeout(id as unknown as number)
-})
+  clearTimeout(id as unknown as number);
+});
 
 // Mock IntersectionObserver
 global.IntersectionObserver = vi.fn(() => ({
@@ -18,18 +18,18 @@ global.IntersectionObserver = vi.fn(() => ({
   takeRecords: vi.fn(),
   root: null,
   rootMargin: '',
-  thresholds: []
-}))
+  thresholds: [],
+}));
 
 // Mock ResizeObserver
 global.ResizeObserver = vi.fn(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
-  disconnect: vi.fn()
-}))
+  disconnect: vi.fn(),
+}));
 
 // Mock fetch
-global.fetch = vi.fn()
+global.fetch = vi.fn();
 
 // Mock localStorage
 const localStorageMock = {
@@ -38,12 +38,12 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn()
-}
-global.localStorage = localStorageMock as any
+  key: vi.fn(),
+};
+global.localStorage = localStorageMock as any;
 
 // Reset mocks before each test
 beforeEach(() => {
-  vi.clearAllMocks()
-  localStorageMock.getItem.mockReturnValue(null)
-})
+  vi.clearAllMocks();
+  localStorageMock.getItem.mockReturnValue(null);
+});

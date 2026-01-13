@@ -1,4 +1,14 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, date, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  decimal,
+  date,
+  jsonb,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -105,7 +115,10 @@ export const pricing = pgTable("pricing", {
   id: serial("id").primaryKey(),
   roomType: text("room_type").notNull(),
   bedType: text("bed_type").notNull(),
-  pricePerNight: decimal("price_per_night", { precision: 10, scale: 2 }).notNull(),
+  pricePerNight: decimal("price_per_night", {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
   currency: text("currency").default("EUR"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),

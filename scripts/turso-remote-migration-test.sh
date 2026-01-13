@@ -9,9 +9,9 @@ DB_PREFIX="${TURSO_TEST_DB_PREFIX:-albergue-ci-}"
 DB_NAME="${TURSO_TEST_DB_NAME:-${DB_PREFIX}$(date +%s)}"
 
 cleanup() {
-  if command -v turso >/dev/null 2>&1; then
-    turso db destroy "$DB_NAME" --yes >/dev/null 2>&1 || true
-  fi
+	if command -v turso >/dev/null 2>&1; then
+		turso db destroy "$DB_NAME" --yes >/dev/null 2>&1 || true
+	fi
 }
 trap cleanup EXIT
 

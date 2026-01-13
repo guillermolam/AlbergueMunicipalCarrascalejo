@@ -1,17 +1,17 @@
 ---
-import type { Pilgrim } from "../stores/user";
-import "./UserProfile.css";
+import type { Pilgrim } from '../stores/user';
+import './UserProfile.css';
 
-const getStatusText = (status: Pilgrim["status"]) => {
-  if (status === "pending") return t("pending", "Pendiente");
-  if (status === "confirmed") return t("confirmed", "Confirmado");
-  if (status === "cancelled") return t("cancelled", "Cancelado");
-  return t("unknownStatus", "Estado desconocido");  
+const getStatusText = (status: Pilgrim['status']) => {
+  if (status === 'pending') return t('pending', 'Pendiente');
+  if (status === 'confirmed') return t('confirmed', 'Confirmado');
+  if (status === 'cancelled') return t('cancelled', 'Cancelado');
+  return t('unknownStatus', 'Estado desconocido');
 };
 
 const formatDate = (dateString: string) => {
   try {
-    return new Date(dateString).toLocaleDateString("es-ES");
+    return new Date(dateString).toLocaleDateString('es-ES');
   } catch {
     return dateString;
   }
@@ -20,60 +20,72 @@ const formatDate = (dateString: string) => {
 let pilgrim: Pilgrim | null = null;
 
 try {
-  const cookie = Astro.request.headers.get("cookie") ?? "";
-  const res = await fetch("/api/user/current", { headers: { cookie }, cache: "no-store" });
+  const cookie = Astro.request.headers.get('cookie') ?? '';
+  const res = await fetch('/api/user/current', { headers: { cookie }, cache: 'no-store' });
   if (res.ok) pilgrim = (await res.json()) as Pilgrim;
 } catch {}
 ---
+
 <div class="user-profile">
-  {pilgrim ? (
-    <div class="relative">
-      <canvas id="profileSketch" class="absolute inset-0 pointer-events-none"></canvas>
-      <div class="profile-card">
-        <div class="profile-header mb-4">
-          <h3>Hola, {pilgrim.name}</h3>
-          <span class="user-email">{pilgrim.email}</span>
-        </div>
-
-        {pilgrim.country && (
-          <div class="user-detail flex gap-2 py-1">
-            <span class="detail-label font-semibold text-slate-700">País:</span>
-            <span class="detail-value text-slate-600">{pilgrim.country}</span>
+  {
+    pilgrim ? (
+      <div class="relative">
+        <canvas id="profileSketch" class="absolute inset-0 pointer-events-none" />
+        <div class="profile-card">
+          <div class="profile-header mb-4">
+            <h3>Hola, {pilgrim.name}</h3>
+            <span class="user-email">{pilgrim.email}</span>
           </div>
-        )}
 
-        {pilgrim.phone && (
-          <div class="user-detail flex gap-2 py-1">
-            <span class="detail-label font-semibold text-slate-700">Teléfono:</span>
-            <span class="detail-value text-slate-600">{pilgrim.phone}</span>
+          {pilgrim.country && (
+            <div class="user-detail flex gap-2 py-1">
+              <span class="detail-label font-semibold text-slate-700">País:</span>
+              <span class="detail-value text-slate-600">{pilgrim.country}</span>
+            </div>
+          )}
+
+          {pilgrim.phone && (
+            <div class="user-detail flex gap-2 py-1">
+              <span class="detail-label font-semibold text-slate-700">Teléfono:</span>
+              <span class="detail-value text-slate-600">{pilgrim.phone}</span>
+            </div>
+          )}
+
+          {pilgrim.arrivalDate && (
+            <div class="user-detail flex gap-2 py-1">
+              <span class="detail-label font-semibold text-slate-700">Llegada:</span>
+              <span class="detail-value text-slate-600">{formatDate(pilgrim.arrivalDate)}</span>
+            </div>
+          )}
+
+          {pilgrim.status && (
+            <div class="user-status">
+              <span class="status-badge {pilgrim.status}">{getStatusText(pilgrim.status)}</span>
+            </div>
+          )}
+
+          <div>
+            <button id="logoutBtn" class="logout-button">
+              Cerrar sesión
+            </button>
+            <div
+              id="logoutError"
+              class="error-message hidden text-red-600"
+              role="alert"
+              aria-live="polite"
+            />
           </div>
-        )}
-
-        {pilgrim.arrivalDate && (
-          <div class="user-detail flex gap-2 py-1">
-            <span class="detail-label font-semibold text-slate-700">Llegada:</span>
-            <span class="detail-value text-slate-600">{formatDate(pilgrim.arrivalDate)}</span>
-          </div>
-        )}
-
-        {pilgrim.status && (
-          <div class="user-status">
-            <span class="status-badge {pilgrim.status}">{getStatusText(pilgrim.status)}</span>
-          </div>
-        )}
-
-        <div>
-          <button id="logoutBtn" class="logout-button">Cerrar sesión</button>
-          <div id="logoutError" class="error-message hidden text-red-600" role="alert" aria-live="polite"></div>
         </div>
       </div>
-    </div>
-  ) : (
-    <div class="guest-message">
-      <p class="mb-4 text-slate-700">Bienvenido peregrino</p>
-      <a href="/auth" class="login-link">Iniciar sesión</a>
-    </div>
-  )}
+    ) : (
+      <div class="guest-message">
+        <p class="mb-4 text-slate-700">Bienvenido peregrino</p>
+        <a href="/auth" class="login-link">
+          Iniciar sesión
+        </a>
+      </div>
+    )
+  }
 </div>
 
 <script type="module">
@@ -89,7 +101,14 @@ try {
     canvas.height = Math.ceil(rect.height);
     const { default: rough } = await import('https://unpkg.com/roughjs@5.2.0/bundled/rough.esm.js');
     const rc = rough.canvas(canvas);
-    rc.rectangle(6, 6, canvas.width - 12, canvas.height - 12, { roughness: 2.2, bowing: 2.4, stroke: '#334155', fill: '#ffffff', fillStyle: 'zigzag', hachureGap: 10 });
+    rc.rectangle(6, 6, canvas.width - 12, canvas.height - 12, {
+      roughness: 2.2,
+      bowing: 2.4,
+      stroke: '#334155',
+      fill: '#ffffff',
+      fillStyle: 'zigzag',
+      hachureGap: 10,
+    });
   }
 
   const ro = new ResizeObserver(() => draw());

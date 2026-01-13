@@ -11,31 +11,39 @@ const gtagUrl = `https://www.googletagmanager.com/gtag/js?id=${id}`;
 <script is:inline src={gtagUrl}></script>
 <script is:inline define:vars={{ id }}>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);} 
+  function gtag() {
+    dataLayer.push(arguments);
+  }
   gtag('js', new Date());
   gtag('config', id);
 </script>
 
 <script type="module" define:vars={{ selector }}>
-  import anime from 'animejs/lib/anime.es.js'
-  import rough from 'roughjs/bundled/rough.esm.js'
+  import anime from 'animejs/lib/anime.es.js';
+  import rough from 'roughjs/bundled/rough.esm.js';
 
   function setupConversionTargets(sel) {
     const targets = Array.from(document.querySelectorAll(sel));
     targets.forEach((el) => {
-      if (el.__gaBound) return; 
+      if (el.__gaBound) return;
       el.__gaBound = true;
 
-      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      svg.setAttribute('width','0');
-      svg.setAttribute('height','0');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '0');
+      svg.setAttribute('height', '0');
       el.appendChild(svg);
       const rc = rough.svg(svg);
       const draw = () => {
         while (svg.firstChild) svg.removeChild(svg.firstChild);
         const r = el.getBoundingClientRect();
         const pad = 6;
-        const rect = rc.rectangle(pad, pad, Math.max(12, r.width - pad*2), Math.max(12, r.height - pad*2), { stroke:'#111', strokeWidth:1.8, roughness:2.4, fill:'transparent' });
+        const rect = rc.rectangle(
+          pad,
+          pad,
+          Math.max(12, r.width - pad * 2),
+          Math.max(12, r.height - pad * 2),
+          { stroke: '#111', strokeWidth: 1.8, roughness: 2.4, fill: 'transparent' }
+        );
         svg.appendChild(rect);
       };
       draw();
@@ -60,11 +68,11 @@ const gtagUrl = `https://www.googletagmanager.com/gtag/js?id=${id}`;
             send_to: sendTo,
             event_category: 'Button',
             event_label: label,
-            event_callback: function() {
+            event_callback: function () {
               if (!href) return;
               if (target === '_blank') window.open(href, '_blank');
               else window.location.assign(href);
-            }
+            },
           });
         }
       });

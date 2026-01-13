@@ -1,5 +1,5 @@
-﻿use crate::events::CloudEvent;
 use crate::error::{AlbergueError, AlbergueResult};
+use crate::events::CloudEvent;
 use serde::Serialize;
 
 pub struct EventPublisher {
@@ -14,8 +14,9 @@ impl EventPublisher {
     pub fn publish<T: Serialize>(&self, event: &CloudEvent<T>) -> AlbergueResult<()> {
         let topic = &event.event_type;
 
-        let payload = serde_json::to_string(event)
-            .map_err(|e| AlbergueError::Internal { message: e.to_string() })?;
+        let payload = serde_json::to_string(event).map_err(|e| AlbergueError::Internal {
+            message: e.to_string(),
+        })?;
 
         let publish_url = format!("{}/api/mqtt/publish", self.broker_url);
 
@@ -72,6 +73,9 @@ mod tests {
     #[test]
     fn test_create_publisher() {
         let publisher = create_publisher();
-        assert_eq!(publisher.broker_url, "http://mqtt-broker-service.spin.internal");
+        assert_eq!(
+            publisher.broker_url,
+            "http://mqtt-broker-service.spin.internal"
+        );
     }
 }

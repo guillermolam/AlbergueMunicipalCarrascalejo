@@ -2,13 +2,21 @@ import { render, screen } from '@testing-library/react';
 import Navigation from '../../src/components/Navigation';
 
 // Mock wouter router for testing
-const MockRouter = ({ children, initialEntries = ['/'] }: { children: React.ReactNode; initialEntries?: string[] }) => {
+const MockRouter = ({
+  children,
+  initialEntries = ['/'],
+}: {
+  children: React.ReactNode;
+  initialEntries?: string[];
+}) => {
   return <div data-testid="mock-router">{children}</div>;
 };
 
 // Mock useLocation hook
 jest.mock('wouter', () => ({
-  Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>,
+  Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
   useLocation: () => ['/'],
 }));
 

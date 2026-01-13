@@ -1,7 +1,7 @@
 # Frontend Development Taskfile
 # SSR-safe configuration with Supabase integration
 
-version: '3'
+version: "3"
 
 vars:
   FRONTEND_DIR: "./frontend"
@@ -12,13 +12,13 @@ vars:
   ENCRYPTION_KEY: '{{.ENCRYPTION_KEY | default ""}}'
 
 env:
-  NODE_ENV: '{{.NODE_ENV}}'
-  SUPABASE_URL: '{{.SUPABASE_URL}}'
-  SUPABASE_ANON_KEY: '{{.SUPABASE_ANON_KEY}}'
-  JWT_SECRET: '{{.JWT_SECRET}}'
-  ENCRYPTION_KEY: '{{.ENCRYPTION_KEY}}'
-  PUBLIC_SUPABASE_URL: '{{.SUPABASE_URL}}'
-  PUBLIC_SUPABASE_ANON_KEY: '{{.SUPABASE_ANON_KEY}}'
+  NODE_ENV: "{{.NODE_ENV}}"
+  SUPABASE_URL: "{{.SUPABASE_URL}}"
+  SUPABASE_ANON_KEY: "{{.SUPABASE_ANON_KEY}}"
+  JWT_SECRET: "{{.JWT_SECRET}}"
+  ENCRYPTION_KEY: "{{.ENCRYPTION_KEY}}"
+  PUBLIC_SUPABASE_URL: "{{.SUPABASE_URL}}"
+  PUBLIC_SUPABASE_ANON_KEY: "{{.SUPABASE_ANON_KEY}}"
   PUBLIC_API_URL: '{{.PUBLIC_API_URL | default "/api"}}'
   PUBLIC_APP_URL: '{{.PUBLIC_APP_URL | default "https://alberguecarrascalejo.fermyon.app"}}'
 
@@ -254,7 +254,13 @@ tasks:
 
   frontend:setup:
     desc: Complete frontend setup
-    deps: [frontend:install, frontend:db:migrate, frontend:generate-types, frontend:i18n:generate]
+    deps:
+      [
+        frontend:install,
+        frontend:db:migrate,
+        frontend:generate-types,
+        frontend:i18n:generate,
+      ]
     cmds:
       - echo "✅ Frontend setup completed"
 

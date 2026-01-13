@@ -53,46 +53,52 @@ const labelSizeClasses = {
     'transition-transform duration-300',
     'hover:scale-105 hover:-rotate-1',
     animated && 'animate-float',
-      colorClasses[color as keyof typeof colorClasses],
+    colorClasses[color as keyof typeof colorClasses],
     sizeClasses[size as keyof typeof sizeClasses],
-    className
+    className,
   ]}
 >
   <!-- Icon (if provided) -->
-  {icon && (
-    <div class="text-center mb-1 wobble">
-      <span class="text-2xl md:text-3xl">{icon}</span>
-    </div>
-  )}
+  {
+    icon && (
+      <div class="text-center mb-1 wobble">
+        <span class="text-2xl md:text-3xl">{icon}</span>
+      </div>
+    )
+  }
 
   <!-- Label -->
-  {label && (
-    <p class:list={[
-      'text-center uppercase tracking-wide font-medium opacity-75',
-      labelSizeClasses[size as keyof typeof labelSizeClasses]
-    ]}>
-      {label}
-    </p>
-  )}
+  {
+    label && (
+      <p
+        class:list={[
+          'text-center uppercase tracking-wide font-medium opacity-75',
+          labelSizeClasses[size as keyof typeof labelSizeClasses],
+        ]}
+      >
+        {label}
+      </p>
+    )
+  }
 
   <!-- Value -->
-  <p class:list={[
-    'text-center font-bold leading-none',
-    'sketch-title',
-    valueSizeClasses[size]
-  ]}>
+  <p class:list={['text-center font-bold leading-none', 'sketch-title', valueSizeClasses[size]]}>
     {value}
   </p>
 
   <!-- Sublabel -->
-  {sublabel && (
-    <p class:list={[
-      'text-center opacity-60 mt-0.5',
-      labelSizeClasses[size as keyof typeof labelSizeClasses]
-    ]}>
-      {sublabel}
-    </p>
-  )}
+  {
+    sublabel && (
+      <p
+        class:list={[
+          'text-center opacity-60 mt-0.5',
+          labelSizeClasses[size as keyof typeof labelSizeClasses],
+        ]}
+      >
+        {sublabel}
+      </p>
+    )
+  }
 
   <!-- Slot for additional content -->
   <slot />
@@ -114,7 +120,8 @@ const labelSizeClasses = {
   }
 
   @keyframes subtle-pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }

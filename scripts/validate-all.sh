@@ -9,7 +9,7 @@ echo "Master Validation Suite"
 echo "======================================"
 echo ""
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_ROOT"
@@ -24,19 +24,19 @@ FAILURES=0
 
 # Test function
 run_test() {
-    local test_name="$1"
-    local test_command="$2"
-    
-    echo -n "Testing: $test_name... "
-    
-    if eval "$test_command" > /dev/null 2>&1; then
-        echo -e "${GREEN}PASS${NC}"
-        return 0
-    else
-        echo -e "${RED}FAIL${NC}"
-        FAILURES=$((FAILURES + 1))
-        return 1
-    fi
+	local test_name="$1"
+	local test_command="$2"
+
+	echo -n "Testing: $test_name... "
+
+	if eval "$test_command" >/dev/null 2>&1; then
+		echo -e "${GREEN}PASS${NC}"
+		return 0
+	else
+		echo -e "${RED}FAIL${NC}"
+		FAILURES=$((FAILURES + 1))
+		return 1
+	fi
 }
 
 echo "=== Phase 1: Syntax Validation ==="
@@ -63,12 +63,12 @@ echo "Testing script idempotency (running twice)..."
 
 # Test update-deps script is idempotent
 if [ -x "scripts/update-deps.sh" ]; then
-    echo -n "  update-deps.sh (1st run)... "
-    if timeout 5 bash scripts/update-deps.sh --help > /dev/null 2>&1 || true; then
-        echo -e "${GREEN}OK${NC}"
-    else
-        echo -e "${YELLOW}SKIP${NC}"
-    fi
+	echo -n "  update-deps.sh (1st run)... "
+	if timeout 5 bash scripts/update-deps.sh --help >/dev/null 2>&1 || true; then
+		echo -e "${GREEN}OK${NC}"
+	else
+		echo -e "${YELLOW}SKIP${NC}"
+	fi
 fi
 
 echo ""
@@ -85,16 +85,16 @@ echo "Validation Summary"
 echo "======================================"
 
 if [ $FAILURES -eq 0 ]; then
-    echo -e "${GREEN}All tests passed!${NC}"
-    echo ""
-    echo "Next steps:"
-    echo "  - Run 'task build' to build all services"
-    echo "  - Run 'task dev' to start development"
-    echo "  - Run 'just -d backend' to see available Rust commands"
-    exit 0
+	echo -e "${GREEN}All tests passed!${NC}"
+	echo ""
+	echo "Next steps:"
+	echo "  - Run 'task build' to build all services"
+	echo "  - Run 'task dev' to start development"
+	echo "  - Run 'just -d backend' to see available Rust commands"
+	exit 0
 else
-    echo -e "${RED}$FAILURES test(s) failed${NC}"
-    echo ""
-    echo "Please fix the failures above before proceeding."
-    exit 1
+	echo -e "${RED}$FAILURES test(s) failed${NC}"
+	echo ""
+	echo "Please fix the failures above before proceeding."
+	exit 1
 fi

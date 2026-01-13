@@ -6,20 +6,20 @@ graph TD
     B --> C[Bun HTTP API Server]
     C --> D[In-Memory Data Store]
     C --> E[File Storage]
-    
+
     subgraph "Frontend Layer"
         B
     end
-    
+
     subgraph "Backend Layer"
         C
     end
-    
+
     subgraph "Data Layer"
         D
         E
     end
-    
+
     F[Admin Browser] --> B
 ```
 
@@ -27,39 +27,39 @@ graph TD
 
 **Core Stack:**
 
-* **Runtime/Package Manager**: Bun (latest stable version)
+- **Runtime/Package Manager**: Bun (latest stable version)
 
-* **Frontend Framework**: React 19.2.3+ with TypeScript
+- **Frontend Framework**: React 19.2.3+ with TypeScript
 
-* **Build Tool**: Vite 7+ configured for Bun compatibility
+- **Build Tool**: Vite 7+ configured for Bun compatibility
 
-* **Routing**: TanStack Router (latest) with type-safe routing and nested routes
+- **Routing**: TanStack Router (latest) with type-safe routing and nested routes
 
-* **UI Components**: shadcn/ui with Tailwind CSS integration
+- **UI Components**: shadcn/ui with Tailwind CSS integration
 
-* **Styling**: Tailwind CSS 4 + with custom theme for Extremadura color palette
+- **Styling**: Tailwind CSS 4 + with custom theme for Extremadura color palette
 
-* **State Management**: React Context + TanStack Query for server state
+- **State Management**: React Context + TanStack Query for server state
 
-* **Animations**: Framer Motion for page transitions and micro-interactions
+- **Animations**: Framer Motion for page transitions and micro-interactions
 
-* **Internationalization**: intlayer + react-i18next for EN/ES support
+- **Internationalization**: intlayer + react-i18next for EN/ES support
 
-* **Linting**: ESLint 9+ with TypeScript configuration
+- **Linting**: ESLint 9+ with TypeScript configuration
 
 **Initialization Tool**: vite-init (Bun-compatible)
 
 **Backend Architecture:**
 
-* **Server**: Bun HTTP APIs with native TypeScript support
+- **Server**: Bun HTTP APIs with native TypeScript support
 
-* **Storage**: In-memory data structures with file-based persistence for demo
+- **Storage**: In-memory data structures with file-based persistence for demo
 
-* **File Upload**: Multer-compatible middleware for ID document uploads
+- **File Upload**: Multer-compatible middleware for ID document uploads
 
-* **OCR**: Client-side OCR helper library (Tesseract.js or similar)
+- **OCR**: Client-side OCR helper library (Tesseract.js or similar)
 
-* **Authentication**: JWT-based with HTTP-only cookies
+- **Authentication**: JWT-based with HTTP-only cookies
 
 ## 3. Route Definitions
 
@@ -125,13 +125,13 @@ interface Booking {
   guestInfo: GuestInfo;
   paymentInfo: PaymentInfo;
   idVerification: IDVerification;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: "pending" | "confirmed" | "cancelled";
   createdAt: string;
   updatedAt: string;
 }
 
 interface BedSelection {
-  dormId: 'D1' | 'D2';
+  dormId: "D1" | "D2";
   bedId: string; // D1-B1, D1-B2, etc.
   bedNumber: number;
 }
@@ -146,15 +146,15 @@ interface GuestInfo {
 }
 
 interface PaymentInfo {
-  method: 'card' | 'bizum' | 'cash' | 'apple_pay' | 'paypal';
+  method: "card" | "bizum" | "cash" | "apple_pay" | "paypal";
   amount: number;
-  currency: 'EUR';
-  status: 'pending' | 'paid' | 'refunded';
+  currency: "EUR";
+  status: "pending" | "paid" | "refunded";
   transactionId?: string;
 }
 
 interface IDVerification {
-  documentType: 'id_card' | 'passport';
+  documentType: "id_card" | "passport";
   documentNumber: string;
   fullName: string;
   nationality: string;
@@ -175,7 +175,7 @@ interface AvailabilityResponse {
 interface BedStatus {
   bedId: string;
   bedNumber: number;
-  status: 'available' | 'reserved' | 'occupied';
+  status: "available" | "reserved" | "occupied";
   bookingId?: string;
 }
 
@@ -185,7 +185,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
   createdAt: string;
 }
 
@@ -283,7 +283,7 @@ Request:
   },
   "paymentInfo": {
     "method": "card",
-    "amount": 15.00,
+    "amount": 15.0,
     "currency": "EUR"
   }
 }
@@ -300,17 +300,17 @@ graph TD
     E --> F[Data Access Layer]
     F --> G[In-Memory Store]
     F --> H[File System]
-    
+
     subgraph "Request Processing"
         B
         C
     end
-    
+
     subgraph "Business Logic"
         D
         E
     end
-    
+
     subgraph "Data Layer"
         F
         G
@@ -328,7 +328,7 @@ erDiagram
     BOOKING ||--o{ BED_SELECTION : contains
     BOOKING ||--|| PAYMENT : has
     BOOKING ||--|| ID_VERIFICATION : requires
-    
+
     USER {
         string id PK
         string email UK
@@ -339,7 +339,7 @@ erDiagram
         string created_at
         string updated_at
     }
-    
+
     BOOKING {
         string id PK
         string user_id FK
@@ -348,7 +348,7 @@ erDiagram
         string created_at
         string updated_at
     }
-    
+
     BED_SELECTION {
         string id PK
         string booking_id FK
@@ -356,7 +356,7 @@ erDiagram
         string bed_id
         number bed_number
     }
-    
+
     PAYMENT {
         string id PK
         string booking_id FK
@@ -367,7 +367,7 @@ erDiagram
         string transaction_id
         string created_at
     }
-    
+
     ID_VERIFICATION {
         string id PK
         string booking_id FK
@@ -504,33 +504,33 @@ server/                  # Bun HTTP API server
 
 ### 8.1 Lio.js Usage Guidelines
 
-* **Scope**: Limited to Astro islands for reactive data streams and async operations
+- **Scope**: Limited to Astro islands for reactive data streams and async operations
 
-* **Boundaries**: No global state management - use only for component-level observables
+- **Boundaries**: No global state management - use only for component-level observables
 
-* **Integration**: Compatible with TanStack Query for server state synchronization
+- **Integration**: Compatible with TanStack Query for server state synchronization
 
-* **Performance**: Lightweight alternative to heavy reactive libraries, < 2KB gzipped
+- **Performance**: Lightweight alternative to heavy reactive libraries, < 2KB gzipped
 
 ### 8.2 Anime.js Implementation
 
-* **Micro-animations**: Hover effects, button interactions, form field transitions
+- **Micro-animations**: Hover effects, button interactions, form field transitions
 
-* **Performance**: GPU-accelerated transforms, will-change optimization
+- **Performance**: GPU-accelerated transforms, will-change optimization
 
-* **Accessibility**: Respect prefers-reduced-motion, provide reduced motion alternatives
+- **Accessibility**: Respect prefers-reduced-motion, provide reduced motion alternatives
 
-* **Boundaries**: Used exclusively within Astro islands, no page-level animations
+- **Boundaries**: Used exclusively within Astro islands, no page-level animations
 
 ### 8.3 Usage Constraints
 
-* **Astro Islands Only**: Both libraries restricted to interactive island components
+- **Astro Islands Only**: Both libraries restricted to interactive island components
 
-* **No Global Effects**: Avoid site-wide animation systems or global reactive states
+- **No Global Effects**: Avoid site-wide animation systems or global reactive states
 
-* **UnoCSS Compatible**: All animations must work with UnoCSS utility classes
+- **UnoCSS Compatible**: All animations must work with UnoCSS utility classes
 
-* **Bundle Size**: Monitor impact on island chunk sizes, lazy-load when necessary
+- **Bundle Size**: Monitor impact on island chunk sizes, lazy-load when necessary
 
 ## 9. Configuration Files
 
@@ -542,102 +542,100 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#00AB39',
-          light: '#33C266',
-          dark: '#00882C'
+          DEFAULT: "#00AB39",
+          light: "#33C266",
+          dark: "#00882C",
         },
         secondary: {
-          DEFAULT: '#0071BC',
-          light: '#338DC9',
-          dark: '#005A96'
+          DEFAULT: "#0071BC",
+          light: "#338DC9",
+          dark: "#005A96",
         },
         accent: {
-          DEFAULT: '#EAC102',
-          light: '#EED435',
-          dark: '#BB9A02'
+          DEFAULT: "#EAC102",
+          light: "#EED435",
+          dark: "#BB9A02",
         },
         status: {
-          red: '#ED1C24',
-          available: '#E6F7EB',
-          reserved: '#FDF5E6',
-          occupied: '#FFE6E6'
-        }
-      }
-    }
-  }
-}
+          red: "#ED1C24",
+          available: "#E6F7EB",
+          reserved: "#FDF5E6",
+          occupied: "#FFE6E6",
+        },
+      },
+    },
+  },
+};
 ```
 
 **uno.config.ts** (UnoCSS Configuration):
 
 ```typescript
-import { defineConfig } from 'unocss'
-import { presetUno, presetAttributify, presetIcons } from 'unocss'
+import { defineConfig } from "unocss";
+import { presetUno, presetAttributify, presetIcons } from "unocss";
 
 export default defineConfig({
-  presets: [
-    presetUno(),
-    presetAttributify(),
-    presetIcons()
-  ],
+  presets: [presetUno(), presetAttributify(), presetIcons()],
   theme: {
     colors: {
       primary: {
-        DEFAULT: '#00AB39',
-        light: '#33C266',
-        dark: '#00882C'
+        DEFAULT: "#00AB39",
+        light: "#33C266",
+        dark: "#00882C",
       },
       secondary: {
-        DEFAULT: '#0071BC',
-        light: '#338DC9',
-        dark: '#005A96'
+        DEFAULT: "#0071BC",
+        light: "#338DC9",
+        dark: "#005A96",
       },
       accent: {
-        DEFAULT: '#EAC102',
-        light: '#EED435',
-        dark: '#BB9A02'
-      }
+        DEFAULT: "#EAC102",
+        light: "#EED435",
+        dark: "#BB9A02",
+      },
     },
     animation: {
       keyframes: {
-        'fade-in': {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' }
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
-        'slide-up': {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' }
-        }
-      }
-    }
+        "slide-up": {
+          "0%": { transform: "translateY(10px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+      },
+    },
   },
   shortcuts: [
-    ['btn-primary', 'bg-primary hover:bg-primary-dark text-white transition-colors duration-200'],
-    ['card-hover', 'hover:shadow-lg hover:-translate-y-1 transition-all duration-300']
-  ]
-})
+    [
+      "btn-primary",
+      "bg-primary hover:bg-primary-dark text-white transition-colors duration-200",
+    ],
+    [
+      "card-hover",
+      "hover:shadow-lg hover:-translate-y-1 transition-all duration-300",
+    ],
+  ],
+});
 ```
 
 **vite.config.ts** (Bun + TanStack Router):
 
 ```typescript
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 export default defineConfig({
-  plugins: [
-    TanStackRouterVite(),
-    react()
-  ],
+  plugins: [TanStackRouterVite(), react()],
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
-      }
-    }
-  }
-})
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
+  },
+});
 ```
-

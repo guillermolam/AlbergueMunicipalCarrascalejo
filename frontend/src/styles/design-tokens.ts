@@ -17,14 +17,14 @@ export const colors = {
     main: '#00AB39', // Extremadura Green
     contrast: '#FFFFFF',
   },
-  
+
   // Secondary Colors
   secondary: {
     yellow: '#EAC102',
     red: '#ED1C24',
     blue: '#0071BC',
   },
-  
+
   // Neutral Colors
   neutral: {
     50: '#f8fafc',
@@ -38,7 +38,7 @@ export const colors = {
     800: '#1e293b',
     900: '#0f172a',
   },
-  
+
   // Semantic Colors
   success: '#10b981',
   warning: '#f59e0b',
@@ -48,8 +48,30 @@ export const colors = {
 
 export const typography = {
   fontFamily: {
-    sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],
-    mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
+    sans: [
+      'Inter',
+      'ui-sans-serif',
+      'system-ui',
+      '-apple-system',
+      'BlinkMacSystemFont',
+      'Segoe UI',
+      'Roboto',
+      'Helvetica Neue',
+      'Arial',
+      'Noto Sans',
+      'sans-serif',
+    ],
+    mono: [
+      'JetBrains Mono',
+      'ui-monospace',
+      'SFMono-Regular',
+      'Menlo',
+      'Monaco',
+      'Consolas',
+      'Liberation Mono',
+      'Courier New',
+      'monospace',
+    ],
   },
   fontSize: {
     xs: '0.75rem',
@@ -192,7 +214,7 @@ export const breakpoints = {
 // SSR-safe CSS custom properties generator
 export const generateCSSCustomProperties = () => {
   const cssVars: Record<string, string> = {};
-  
+
   // Colors
   Object.entries(colors).forEach(([colorName, colorValues]) => {
     if (typeof colorValues === 'object') {
@@ -203,21 +225,21 @@ export const generateCSSCustomProperties = () => {
       cssVars[`--color-${colorName}`] = colorValues;
     }
   });
-  
+
   // Typography
   Object.entries(typography.fontSize).forEach(([size, value]) => {
     cssVars[`--font-size-${size}`] = value;
   });
-  
+
   // Spacing
   Object.entries(spacing).forEach(([space, value]) => {
     cssVars[`--spacing-${space}`] = value;
   });
-  
+
   // Border radius
   Object.entries(borderRadius).forEach(([radius, value]) => {
     cssVars[`--radius-${radius}`] = value;
   });
-  
+
   return cssVars;
 };

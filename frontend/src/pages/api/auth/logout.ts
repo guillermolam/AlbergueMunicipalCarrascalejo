@@ -1,7 +1,7 @@
 // Astro API route for user logout
 // Clears authentication and session data
 
-import type { APIRoute } from 'astro'
+import type { APIRoute } from 'astro';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -12,35 +12,35 @@ export const POST: APIRoute = async ({ request }) => {
       'Secure',
       'SameSite=Strict',
       'Path=/',
-      'Max-Age=0' // Expire immediately
-    ].join('; ')
+      'Max-Age=0', // Expire immediately
+    ].join('; ');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Logged out successfully'
+        message: 'Logged out successfully',
       }),
       {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Set-Cookie': clearCookie
-        }
+          'Set-Cookie': clearCookie,
+        },
       }
-    )
+    );
   } catch (error) {
-    console.error('Logout error:', error)
+    console.error('Logout error:', error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       }),
       {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
-    )
+    );
   }
-}
+};

@@ -5,6 +5,6 @@ pub struct CurrencyCode(pub String);
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Money {
-  pub amount: rust_decimal::Decimal,
-  pub currency: CurrencyCode,
+    pub amount: rust_decimal::Decimal,
+    pub currency: CurrencyCode,
 }

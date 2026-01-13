@@ -7,7 +7,7 @@ import solid from 'eslint-plugin-solid';
 export default [
   // Base JavaScript rules
   js.configs.recommended,
-  
+
   // TypeScript configuration
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -24,7 +24,7 @@ export default [
     },
     rules: {
       ...ts.configs.recommended.rules,
-      
+
       // Strict TypeScript rules for SSR compatibility
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/explicit-function-return-type': 'error',
@@ -33,19 +33,19 @@ export default [
       '@typescript-eslint/prefer-const': 'error',
       '@typescript-eslint/no-var-requires': 'error',
       '@typescript-eslint/explicit-module-boundary-types': 'error',
-      
+
       // SSR-specific rules
       '@typescript-eslint/no-implicit-any-catch': 'error',
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
-      
+
       // Performance rules
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
     },
   },
-  
+
   // Astro configuration
   {
     files: ['**/*.astro'],
@@ -61,20 +61,20 @@ export default [
     },
     rules: {
       ...astro.configs.recommended.rules,
-      
+
       // Astro-specific rules
       'astro/no-set-html-directive': 'error',
       'astro/no-set-text-directive': 'error',
       'astro/prefer-class-list-directive': 'error',
       'astro/prefer-object-class-list': 'error',
       'astro/prefer-split-class-list': 'error',
-      
+
       // SSR compatibility
       'astro/no-conflict-set-directives': 'error',
       'astro/no-unused-define-vars-in-style': 'error',
     },
   },
-  
+
   // Solid.js configuration
   {
     files: ['**/*.solid.tsx', '**/solid/**/*.tsx', '**/solid/**/*.ts'],
@@ -83,7 +83,7 @@ export default [
     },
     rules: {
       ...solid.configs.typescript.rules,
-      
+
       // Solid-specific SSR rules
       'solid/reactivity': 'error',
       'solid/no-destructure': 'error',
@@ -99,7 +99,7 @@ export default [
       'solid/no-unknown-namespaces': 'error',
     },
   },
-  
+
   // Global configuration
   {
     languageOptions: {
@@ -125,25 +125,25 @@ export default [
       'template-curly-spacing': 'error',
       'arrow-spacing': 'error',
       'comma-dangle': ['error', 'always-multiline'],
-      'semi': ['error', 'always'],
-      'quotes': ['error', 'single'],
-      'indent': ['error', 2],
+      semi: ['error', 'always'],
+      quotes: ['error', 'single'],
+      indent: ['error', 2],
       'max-len': ['error', { code: 100 }],
       'no-trailing-spaces': 'error',
       'eol-last': 'error',
-      
+
       // Security rules
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
       'no-script-url': 'error',
-      
+
       // Performance rules
       'no-duplicate-imports': 'error',
       'no-useless-concat': 'error',
       'prefer-rest-params': 'error',
       'prefer-spread': 'error',
-      
+
       // Accessibility rules
       'jsx-a11y/alt-text': 'error',
       'jsx-a11y/anchor-has-content': 'error',

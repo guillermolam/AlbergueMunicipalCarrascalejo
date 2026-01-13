@@ -1,25 +1,25 @@
 export interface InfoOnArrival {
-  pilgrimId: string
-  arrivalTime: string
-  eta: string // Estimated Time of Arrival
-  transportation: 'walking' | 'cycling' | 'bus' | 'train' | 'car' | 'other'
-  startingPoint?: string
-  routeNotes?: string
-  specialNeeds?: string
-  contactPerson?: string
-  emergencyContact?: string
-  groupSize?: number
+  pilgrimId: string;
+  arrivalTime: string;
+  eta: string; // Estimated Time of Arrival
+  transportation: 'walking' | 'cycling' | 'bus' | 'train' | 'car' | 'other';
+  startingPoint?: string;
+  routeNotes?: string;
+  specialNeeds?: string;
+  contactPerson?: string;
+  emergencyContact?: string;
+  groupSize?: number;
 }
 
 export interface ArrivalUpdateRequest {
-  pilgrimId: string
-  arrivalTime?: string
-  status: 'on_my_way' | 'delayed' | 'arrived' | 'cancelled'
-  notes?: string
+  pilgrimId: string;
+  arrivalTime?: string;
+  status: 'on_my_way' | 'delayed' | 'arrived' | 'cancelled';
+  notes?: string;
   location?: {
-    latitude: number
-    longitude: number
-  }
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export async function submitArrivalInfo(info: InfoOnArrival): Promise<void> {
@@ -29,10 +29,10 @@ export async function submitArrivalInfo(info: InfoOnArrival): Promise<void> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(info),
-  })
+  });
 
   if (!response.ok) {
-    throw new Error('Failed to submit arrival information')
+    throw new Error('Failed to submit arrival information');
   }
 }
 
@@ -43,32 +43,32 @@ export async function updateArrivalStatus(request: ArrivalUpdateRequest): Promis
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(request),
-  })
+  });
 
   if (!response.ok) {
-    throw new Error('Failed to update arrival status')
+    throw new Error('Failed to update arrival status');
   }
 }
 
 export async function getArrivalInfo(pilgrimId: string): Promise<InfoOnArrival | null> {
-  const response = await fetch(`/api/arrival/info/${pilgrimId}`)
+  const response = await fetch(`/api/arrival/info/${pilgrimId}`);
 
   if (!response.ok) {
     if (response.status === 404) {
-      return null
+      return null;
     }
-    throw new Error('Failed to get arrival information')
+    throw new Error('Failed to get arrival information');
   }
 
-  return response.json()
+  return response.json();
 }
 
 export async function getETAUpdates(pilgrimId: string): Promise<ArrivalUpdateRequest[]> {
-  const response = await fetch(`/api/arrival/updates/${pilgrimId}`)
+  const response = await fetch(`/api/arrival/updates/${pilgrimId}`);
 
   if (!response.ok) {
-    throw new Error('Failed to get ETA updates')
+    throw new Error('Failed to get ETA updates');
   }
 
-  return response.json()
+  return response.json();
 }

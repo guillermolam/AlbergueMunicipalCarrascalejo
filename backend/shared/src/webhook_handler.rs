@@ -1,7 +1,7 @@
-﻿// Webhook event handlers for domain events
+// Webhook event handlers for domain events
 // Provides utilities for services to receive and process CloudEvents via webhooks
 
-use crate::events::{CloudEvent, topics};
+use crate::events::{topics, CloudEvent};
 use anyhow::Result;
 use serde_json::Value;
 
@@ -9,15 +9,14 @@ use serde_json::Value;
 pub trait EventHandler: Send + Sync {
     /// Handle an incoming event
     fn handle_event(&self, event: &CloudEvent<Value>) -> Result<()>;
-    
+
     /// Get the topic filters this handler subscribes to
     fn topic_filters(&self) -> Vec<String>;
 }
 
 /// Parse CloudEvent from webhook request body
 pub fn parse_cloud_event(body: &[u8]) -> Result<CloudEvent<Value>> {
-    serde_json::from_slice(body)
-        .map_err(|e| anyhow::anyhow!("Failed to parse CloudEvent: {}", e))
+    serde_json::from_slice(body).map_err(|e| anyhow::anyhow!("Failed to parse CloudEvent: {}", e))
 }
 
 /// Check if event matches topic filter
@@ -40,26 +39,26 @@ pub fn register_webhook(
 ) -> Result<()> {
     #[cfg(target_arch = "wasm32")]
     {
-        use spin_sdk::http::{Request, Method};
-        
+        use spin_sdk::http::{Method, Request};
+
         let registration = serde_json::json!({
             "service_id": service_id,
             "webhook_url": webhook_url,
             "topic_filters": topic_filters
         });
-        
+
         let broker_url = "http://mqtt-broker-service.spin.internal/api/mqtt/register-webhook";
-        
+
         let request = Request::builder()
             .method(Method::Post)
             .uri(broker_url)
             .header("Content-Type", "application/json")
             .body(serde_json::to_vec(&registration)?)
             .build();
-        
+
         // Send registration request
         let response = spin_sdk::http::send(request)?;
-        
+
         if response.status() == 200 {
             log::info!(
                 "Registered webhook for {} with filters: {:?}",
@@ -74,7 +73,7 @@ pub fn register_webhook(
             ))
         }
     }
-    
+
     #[cfg(not(target_arch = "wasm32"))]
     {
         log::debug!(
@@ -118,7 +117,7 @@ impl EventHandler for NotificationEventHandler {
             }
         }
     }
-    
+
     fn topic_filters(&self) -> Vec<String> {
         vec![
             "albergue.v1.booking.*".to_string(),
@@ -133,11 +132,15 @@ pub struct SecurityEventHandler;
 
 impl EventHandler for SecurityEventHandler {
     fn handle_event(&self, event: &CloudEvent<Value>) -> Result<()> {
-        log::info!("Audit logging event: {} from {}", event.event_type, event.source);
+        log::info!(
+            "Audit logging event: {} from {}",
+            event.event_type,
+            event.source
+        );
         // Log all events to audit log
         Ok(())
     }
-    
+
     fn topic_filters(&self) -> Vec<String> {
         vec!["*".to_string()] // Subscribe to all events
     }
@@ -146,13 +149,25 @@ impl EventHandler for SecurityEventHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_matches_topic() {
-        assert!(matches_topic("albergue.v1.booking.reserved", "albergue.v1.booking.*"));
-        assert!(matches_topic("albergue.v1.booking.confirmed", "albergue.v1.booking.*"));
-        assert!(!matches_topic("albergue.v1.payment.recorded", "albergue.v1.booking.*"));
+        assert!(matches_topic(
+            "albergue.v1.booking.reserved",
+            "albergue.v1.booking.*"
+        ));
+        assert!(matches_topic(
+            "albergue.v1.booking.confirmed",
+            "albergue.v1.booking.*"
+        ));
+        assert!(!matches_topic(
+            "albergue.v1.payment.recorded",
+            "albergue.v1.booking.*"
+        ));
         assert!(matches_topic("albergue.v1.anything", "*"));
-        assert!(matches_topic("albergue.v1.booking.reserved", "albergue.v1.booking.reserved"));
+        assert!(matches_topic(
+            "albergue.v1.booking.reserved",
+            "albergue.v1.booking.reserved"
+        ));
     }
 }

@@ -110,10 +110,14 @@ const patterns = {
 
     opacity: ${opacity};
 
-    ${animated ? `
+    ${
+      animated
+        ? `
     animation: float @r(3s, 8s) ease-in-out infinite;
     animation-delay: @r(0s, 3s);
-    ` : ''}
+    `
+        : ''
+    }
   `,
 
   custom: customRule,
@@ -137,7 +141,8 @@ const selectedPattern = patterns[pattern] || patterns.dots;
 
   /* Float animation for camino pattern */
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0) rotate(0deg);
     }
     50% {
@@ -168,15 +173,17 @@ const selectedPattern = patterns[pattern] || patterns.dots;
 </style>
 
 <script>
-/* load css-doodle dynamically from unpkg */
-if (typeof window !== 'undefined') {
-  // @ts-ignore
-  import('https://unpkg.com/css-doodle@0.48.0/css-doodle.min.js').then((module: any) => {
+  /* load css-doodle dynamically from unpkg */
+  if (typeof window !== 'undefined') {
     // @ts-ignore
-    window.CSSDoodle = module.default || module;
-    console.log('css-doodle loaded');
-  }).catch(err => {
-    console.warn('Failed to load css-doodle:', err);
-  });
-}
+    import('https://unpkg.com/css-doodle@0.48.0/css-doodle.min.js')
+      .then((module: any) => {
+        // @ts-ignore
+        window.CSSDoodle = module.default || module;
+        console.log('css-doodle loaded');
+      })
+      .catch((err) => {
+        console.warn('Failed to load css-doodle:', err);
+      });
+  }
 </script>

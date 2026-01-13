@@ -33,7 +33,7 @@ const {
   backgroundColor = '#ffffff',
   noIndex = false,
   canonical = Astro.url.href,
-  structuredData = null
+  structuredData = null,
 } = Astro.props;
 
 // SSR-safe navigation items
@@ -43,7 +43,7 @@ const navigationItems = [
   { href: '/booking', label: 'Reservas', icon: 'bed' },
   { href: '/camino', label: 'Mi Camino', icon: 'hiking' },
   { href: '/info', label: 'Información', icon: 'info' },
-  { href: '/emergency', label: 'Emergencias', icon: 'emergency' }
+  { href: '/emergency', label: 'Emergencias', icon: 'emergency' },
 ];
 
 // Footer links
@@ -52,201 +52,252 @@ const footerLinks = {
     { href: '/booking', label: 'Reservas Online' },
     { href: '/camino', label: 'Seguimiento del Camino' },
     { href: '/services', label: 'Servicios del Albergue' },
-    { href: '/emergency', label: 'Contactos de Emergencia' }
+    { href: '/emergency', label: 'Contactos de Emergencia' },
   ],
   information: [
     { href: '/info', label: 'Sobre el Albergue' },
     { href: '/camino', label: 'La Vía de la Plata' },
     { href: '/rules', label: 'Normas del Albergue' },
-    { href: '/faq', label: 'Preguntas Frecuentes' }
+    { href: '/faq', label: 'Preguntas Frecuentes' },
   ],
   contact: [
     { href: 'tel:+34924123456', label: '+34 924 123 456' },
     { href: 'mailto:info@carrascalejo.es', label: 'info@carrascalejo.es' },
     { href: '/contact', label: 'Formulario de Contacto' },
-    { href: '/location', label: 'Cómo Llegar' }
-  ]
+    { href: '/location', label: 'Cómo Llegar' },
+  ],
 };
 
 // Social links
 const socialLinks = [
   { href: 'https://facebook.com/alberguecarrascalejo', label: 'Facebook', icon: 'facebook' },
   { href: 'https://instagram.com/alberguecarrascalejo', label: 'Instagram', icon: 'instagram' },
-  { href: 'https://twitter.com/alberguecarrascalejo', label: 'Twitter', icon: 'twitter' }
+  { href: 'https://twitter.com/alberguecarrascalejo', label: 'Twitter', icon: 'twitter' },
 ];
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es" class="scroll-smooth">
   <head>
-      <meta property="og:title" content={title} />
-      <meta name="description" content={description} />
-      <meta name="keywords" content={keywords} />
-      <meta name="author" content={author} />
-      <meta property="og:image" content={image} />
-      <meta property="og:url" content={url} />
-      <meta property="og:type" content={type} />
-      <meta property="og:locale" content={locale} />
-      <meta property="og:site_name" content={siteName} />
-      <meta name="theme-color" content={themeColor} />
-      <meta name="background-color" content={backgroundColor} />
-      <meta name="robots" content={noIndex ? 'noindex' : 'index'} />
-      <link rel="canonical" href={canonical} />
-      {structuredData && (
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
-      )}
-    
+    <meta property="og:title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content={author} />
+    <meta property="og:image" content={image} />
+    <meta property="og:url" content={url} />
+    <meta property="og:type" content={type} />
+    <meta property="og:locale" content={locale} />
+    <meta property="og:site_name" content={siteName} />
+    <meta name="theme-color" content={themeColor} />
+    <meta name="background-color" content={backgroundColor} />
+    <meta name="robots" content={noIndex ? 'noindex' : 'index'} />
+    <link rel="canonical" href={canonical} />
+    {
+      structuredData && (
+        <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+      )
+    }
+
     <!-- Preload critical fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <!-- Load anime.js for animations -->
     <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
-    
+
     <!-- Custom CSS for Figma-inspired design -->
     <style>
       /* Figma-inspired custom properties */
       :root {
-        --color-primary: #00AB39;
-        --color-primary-dark: #008A2E;
-        --color-primary-light: #33C161;
-        --color-secondary: #EAC102;
-        --color-accent: #ED1C24;
-        --color-blue: #0071BC;
-        --color-white: #FFFFFF;
+        --color-primary: #00ab39;
+        --color-primary-dark: #008a2e;
+        --color-primary-light: #33c161;
+        --color-secondary: #eac102;
+        --color-accent: #ed1c24;
+        --color-blue: #0071bc;
+        --color-white: #ffffff;
         --color-black: #000000;
-        
+
         /* Gradients */
-        --gradient-primary: linear-gradient(135deg, #00AB39 0%, #33C161 100%);
-        --gradient-secondary: linear-gradient(135deg, #EAC102 0%, #FFD700 100%);
-        --gradient-accent: linear-gradient(135deg, #ED1C24 0%, #FF4757 100%);
-        --gradient-blue: linear-gradient(135deg, #0071BC 0%, #4A90E2 100%);
-        
+        --gradient-primary: linear-gradient(135deg, #00ab39 0%, #33c161 100%);
+        --gradient-secondary: linear-gradient(135deg, #eac102 0%, #ffd700 100%);
+        --gradient-accent: linear-gradient(135deg, #ed1c24 0%, #ff4757 100%);
+        --gradient-blue: linear-gradient(135deg, #0071bc 0%, #4a90e2 100%);
+
         /* Shadows */
         --shadow-soft: 0 4px 12px rgba(0, 171, 57, 0.15);
         --shadow-medium: 0 8px 24px rgba(0, 171, 57, 0.25);
         --shadow-strong: 0 16px 48px rgba(0, 171, 57, 0.35);
         --shadow-glow: 0 0 32px rgba(0, 171, 57, 0.4);
-        
+
         /* Typography */
-        --font-family-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-        --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --font-family-sans:
+          'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+        --font-family-mono:
+          'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          'Liberation Mono', 'Courier New', monospace;
       }
-      
+
       /* Custom animations */
       @keyframes slideInUp {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
       }
-      
+
       @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
-      
+
       @keyframes bounceIn {
-        0% { transform: scale(0.3); opacity: 0; }
-        50% { transform: scale(1.05); }
-        70% { transform: scale(0.9); }
-        100% { transform: scale(1); opacity: 1; }
+        0% {
+          transform: scale(0.3);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        70% {
+          transform: scale(0.9);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
-      
+
       @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
+        0% {
+          background-position: -1000px 0;
+        }
+        100% {
+          background-position: 1000px 0;
+        }
       }
-      
+
       @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
       }
-      
+
       /* Utility classes */
       .animate-slide-in-up {
         animation: slideInUp 0.6s ease-out;
       }
-      
+
       .animate-fade-in {
         animation: fadeIn 0.8s ease-out;
       }
-      
+
       .animate-bounce-in {
         animation: bounceIn 0.8s ease-out;
       }
-      
+
       .animate-shimmer {
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
         background-size: 1000px 100%;
         animation: shimmer 2s infinite;
       }
-      
+
       .animate-float {
         animation: float 3s ease-in-out infinite;
       }
-      
+
       /* Custom scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
       }
-      
+
       ::-webkit-scrollbar-track {
         background: #f1f1f1;
       }
-      
+
       ::-webkit-scrollbar-thumb {
         background: var(--color-primary);
         border-radius: 4px;
       }
-      
+
       ::-webkit-scrollbar-thumb:hover {
         background: var(--color-primary-dark);
       }
-      
+
       /* Smooth transitions */
       * {
-        transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        transition:
+          color 0.2s ease,
+          background-color 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
       }
     </style>
   </head>
-  
+
   <body class="font-sans bg-gray-50 text-gray-900 antialiased">
     <!-- Skip to main content for accessibility -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-lg z-50"
+    >
       Saltar al contenido principal
     </a>
-    
+
     <!-- Header -->
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+    <header
+      class="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm"
+    >
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-linear-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div
+              class="w-10 h-10 bg-linear-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
+            >
               <DoodleIcons name="shell" size="lg" />
             </div>
             <div>
-              <h1 class="text-xl font-bold bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <h1
+                class="text-xl font-bold bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
+              >
                 Albergue Carrascalejo
               </h1>
               <p class="text-xs text-gray-500">Tu refugio en el Camino</p>
             </div>
           </div>
-          
+
           <!-- Navigation -->
           <nav class="hidden md:flex items-center gap-2">
-            {navigationItems.map((item) => (
-              <DoodleButton
-                href={item.href}
-                variant={Astro.url.pathname === item.href ? 'primary' : 'ghost'}
-                size="sm"
-              >
-                {item.label}
-              </DoodleButton>
-            ))}
+            {
+              navigationItems.map((item) => (
+                <DoodleButton
+                  href={item.href}
+                  variant={Astro.url.pathname === item.href ? 'primary' : 'ghost'}
+                  size="sm"
+                >
+                  {item.label}
+                </DoodleButton>
+              ))
+            }
           </nav>
-          
+
           <!-- Mobile menu button -->
           <div class="md:hidden">
             <DoodleButton variant="ghost" size="sm">
@@ -256,12 +307,12 @@ const socialLinks = [
         </div>
       </div>
     </header>
-    
+
     <!-- Main content -->
     <main id="main-content" class="min-h-screen">
       <slot />
     </main>
-    
+
     <!-- Footer -->
     <footer class="bg-gray-900 text-white">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -269,69 +320,96 @@ const socialLinks = [
           <!-- About -->
           <div class="space-y-4">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-linear-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-<!-- Replaced DoodleIcon with a simple inline SVG shell icon -->
-<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-  <path d="M12 2C8 2 5 5 5 9c0 2.5 1.5 4.5 3 6l-2 5h12l-2-5c1.5-1.5 3-3.5 3-6 0-4-3-7-7-7zm0 2c2.8 0 5 2.2 5 5 0 1.8-1 3.5-2.5 4.5L12 18l-2.5-4.5C8 12.5 7 10.8 7 9c0-2.8 2.2-5 5-5z"/>
-</svg>
+              <div
+                class="w-8 h-8 bg-linear-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center"
+              >
+                <!-- Replaced DoodleIcon with a simple inline SVG shell icon -->
+                <svg
+                  class="w-4 h-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 2C8 2 5 5 5 9c0 2.5 1.5 4.5 3 6l-2 5h12l-2-5c1.5-1.5 3-3.5 3-6 0-4-3-7-7-7zm0 2c2.8 0 5 2.2 5 5 0 1.8-1 3.5-2.5 4.5L12 18l-2.5-4.5C8 12.5 7 10.8 7 9c0-2.8 2.2-5 5-5z"
+                  ></path>
+                </svg>
               </div>
               <h3 class="text-lg font-bold">Albergue Carrascalejo</h3>
             </div>
             <p class="text-gray-300 text-sm leading-relaxed">
-              Tu refugio acogedor en la Vía de la Plata. Ofrecemos alojamiento de calidad para peregrinos del Camino de Santiago.
+              Tu refugio acogedor en la Vía de la Plata. Ofrecemos alojamiento de calidad para
+              peregrinos del Camino de Santiago.
             </p>
             <div class="flex gap-3">
-              {socialLinks.map((social) => (
-                <a
-                  href={social.href}
-                  class="text-gray-300 hover:text-green-400 transition-colors text-lg"
-                  aria-label={social.label}
-                >
-                  {social.icon}
-                </a>
-              ))}
+              {
+                socialLinks.map((social) => (
+                  <a
+                    href={social.href}
+                    class="text-gray-300 hover:text-green-400 transition-colors text-lg"
+                    aria-label={social.label}
+                  >
+                    {social.icon}
+                  </a>
+                ))
+              }
             </div>
           </div>
-          
+
           <!-- Services -->
           <div class="space-y-4">
             <h3 class="text-lg font-bold text-green-400">Servicios</h3>
             <ul class="space-y-2">
-              {footerLinks.services.map((link) => (
-                <li>
-                  <a href={link.href} class="text-gray-300 hover:text-green-400 transition-colors text-sm">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+              {
+                footerLinks.services.map((link) => (
+                  <li>
+                    <a
+                      href={link.href}
+                      class="text-gray-300 hover:text-green-400 transition-colors text-sm"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))
+              }
             </ul>
           </div>
-          
+
           <!-- Information -->
           <div class="space-y-4">
             <h3 class="text-lg font-bold text-green-400">Información</h3>
             <ul class="space-y-2">
-              {footerLinks.information.map((link) => (
-                <li>
-                  <a href={link.href} class="text-gray-300 hover:text-green-400 transition-colors text-sm">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+              {
+                footerLinks.information.map((link) => (
+                  <li>
+                    <a
+                      href={link.href}
+                      class="text-gray-300 hover:text-green-400 transition-colors text-sm"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))
+              }
             </ul>
           </div>
-          
+
           <!-- Contact -->
           <div class="space-y-4">
             <h3 class="text-lg font-bold text-green-400">Contacto</h3>
             <ul class="space-y-2">
-              {footerLinks.contact.map((link) => (
-                <li>
-                  <a href={link.href} class="text-gray-300 hover:text-green-400 transition-colors text-sm">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+              {
+                footerLinks.contact.map((link) => (
+                  <li>
+                    <a
+                      href={link.href}
+                      class="text-gray-300 hover:text-green-400 transition-colors text-sm"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))
+              }
             </ul>
             <div class="pt-4 border-t border-gray-700">
               <p class="text-xs text-gray-400">
@@ -342,22 +420,32 @@ const socialLinks = [
         </div>
       </div>
     </footer>
-    
+
     <!-- Back to top button -->
     <button
       id="back-to-top"
       class="fixed bottom-6 right-6 bg-linear-to-r from-green-500 to-emerald-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 opacity-0 pointer-events-none hover:scale-110"
       aria-label="Volver arriba"
     >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+      <svg
+        class="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
       </svg>
     </button>
-    
+
     <script>
       // Back to top functionality
       const backToTopbutton = document.getElementById('back-to-top');
-      
+
       window.addEventListener('scroll', () => {
         if (window.pageYOffset > 300) {
           backToTopbutton?.classList.remove('opacity-0', 'pointer-events-none');
@@ -367,13 +455,13 @@ const socialLinks = [
           backToTopbutton?.classList.remove('opacity-100');
         }
       });
-      
+
       backToTopbutton?.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
-      
+
       // Add smooth scrolling for navigation links
-      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
         anchor.addEventListener('click', function (e) {
           e.preventDefault();
           const target = document.querySelector(this.getAttribute('href'));

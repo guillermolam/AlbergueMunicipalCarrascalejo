@@ -5,9 +5,8 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="Información - Albergue Municipal Carrascalejo">
   <main class="container mx-auto px-4 py-8 max-w-4xl">
-    
     <h1 class="text-3xl font-900 text-center mb-8 text-stone-800">Información del Albergue</h1>
-    
+
     <!-- How to Arrive -->
     <section class="mb-12">
       <DoodleCard variant="elevated" padding="lg">
@@ -23,7 +22,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </DoodleCard>
     </section>
-    
+
     <!-- Services Accordion -->
     <section class="mb-12">
       <DoodleCard variant="elevated" padding="lg">
@@ -31,60 +30,62 @@ import Layout from '../layouts/Layout.astro';
           <span class="text-2xl">🏠</span>
           Servicios
         </h2>
-        
+
         <div class="space-y-3">
-          {[
-            {
-              title: "Alojamiento",
-              content: "24 camas en dormitorios mixtos con taquillas individuales. Ropa de cama incluida."
-            },
-            {
-              title: "Cocina",
-              content: "Cocina equipada con nevera, microondas, utensilios y especias básicas. Zona de comedor."
-            },
-            {
-              title: "Baños",
-              content: "Duchas calientes 24h, secadores de pelo, jabón y champú ecológicos."
-            },
-            {
-              title: "Lavandería",
-              content: "Lavadora y secadora (€3 ciclo), tendedero exterior. Detergente incluido."
-            },
-            {
-              title: "WiFi y carga",
-              content: "WiFi gratuito en todas las instalaciones. Puntos de carga USB y enchufes."
-            },
-            {
-              title: "Bicicletas",
-              content: "Alquiler de bicicletas €10/día. Incluye casco y candado. Reserva anticipada."
-            }
-          ].map((item, index) => (
-            <div x-data="{ open: false }" class="border border-stone-200 rounded-lg">
-              <button
-                x-on:click="open = !open"
-                class="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-stone-50 transition-colors"
-              >
-                <span class="font-600 text-stone-800">{item.title}</span>
-                <span 
-                  x-bind:class="{ 'rotate-180': open }" 
-                  class="transform transition-transform"
+          {
+            [
+              {
+                title: 'Alojamiento',
+                content:
+                  '24 camas en dormitorios mixtos con taquillas individuales. Ropa de cama incluida.',
+              },
+              {
+                title: 'Cocina',
+                content:
+                  'Cocina equipada con nevera, microondas, utensilios y especias básicas. Zona de comedor.',
+              },
+              {
+                title: 'Baños',
+                content: 'Duchas calientes 24h, secadores de pelo, jabón y champú ecológicos.',
+              },
+              {
+                title: 'Lavandería',
+                content: 'Lavadora y secadora (€3 ciclo), tendedero exterior. Detergente incluido.',
+              },
+              {
+                title: 'WiFi y carga',
+                content:
+                  'WiFi gratuito en todas las instalaciones. Puntos de carga USB y enchufes.',
+              },
+              {
+                title: 'Bicicletas',
+                content:
+                  'Alquiler de bicicletas €10/día. Incluye casco y candado. Reserva anticipada.',
+              },
+            ].map((item, index) => (
+              <div x-data="{ open: false }" class="border border-stone-200 rounded-lg">
+                <button
+                  x-on:click="open = !open"
+                  class="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-stone-50 transition-colors"
                 >
-                  ▼
-                </span>
-              </button>
-              <div 
-                x-show="open" 
-                x-transition
-                class="px-4 pb-3 text-stone-700"
-              >
-                {item.content}
+                  <span class="font-600 text-stone-800">{item.title}</span>
+                  <span
+                    x-bind:class="{ 'rotate-180': open }"
+                    class="transform transition-transform"
+                  >
+                    ▼
+                  </span>
+                </button>
+                <div x-show="open" x-transition class="px-4 pb-3 text-stone-700">
+                  {item.content}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
       </DoodleCard>
     </section>
-    
+
     <!-- Rules -->
     <section class="mb-12">
       <DoodleCard variant="elevated" padding="lg">
@@ -92,7 +93,7 @@ import Layout from '../layouts/Layout.astro';
           <span class="text-2xl">📋</span>
           Normas del albergue
         </h2>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-900 text-stone-800 mb-3">Horarios</h3>
@@ -133,7 +134,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </DoodleCard>
     </section>
-    
+
     <!-- Contact -->
     <section class="text-center">
       <DoodleCard variant="elevated" padding="lg">
@@ -146,20 +147,11 @@ import Layout from '../layouts/Layout.astro';
           <p><strong>Email:</strong> info@alberguecarrascalejo.com</p>
           <p><strong>Dirección:</strong> Rúa do Camiño 123, 15890 Carrascalejo, A Coruña</p>
           <div class="flex gap-4 justify-center mt-6">
-            <SketchyButton 
-              href="/book" 
-              text="Reservar Ahora" 
-              variant="primary" 
-            />
-            <SketchyButton 
-              href="/" 
-              text="Volver al Inicio" 
-              variant="outline" 
-            />
+            <SketchyButton href="/book" text="Reservar Ahora" variant="primary" />
+            <SketchyButton href="/" text="Volver al Inicio" variant="outline" />
           </div>
         </div>
       </DoodleCard>
     </section>
-    
   </main>
 </Layout>

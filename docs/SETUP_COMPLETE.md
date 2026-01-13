@@ -5,6 +5,7 @@
 Your frontend is now a **pure static site generator** with the Figma doodle design system.
 
 ### Stack (Simplified)
+
 - ✅ **Astro 5.16** - Static site generator
 - ✅ **Tailwind CSS v4** - Via Vite plugin (no PostCSS)
 - ✅ **Motion** - Animation library (installed, ready to use)
@@ -25,6 +26,7 @@ pnpm dev
 ```
 
 You should see a working homepage with:
+
 - Hand-drawn aesthetics
 - Doodle borders and shadows
 - Patrick Hand & Cabin Sketch fonts
@@ -37,7 +39,9 @@ You should see a working homepage with:
 ## 📁 Key Files
 
 ### 1. `src/pages/index.astro`
+
 The homepage - **pure Astro, no frameworks**
+
 - Hero section with "¡Bienvenido Peregrino!"
 - Info cards (€10/night, 24 beds)
 - Features grid
@@ -45,14 +49,18 @@ The homepage - **pure Astro, no frameworks**
 - CTA section
 
 ### 2. `src/layouts/Layout.astro`
+
 Base layout with:
+
 - Fixed language selector (top-right)
 - Sticky header with logo
 - Footer with 3 columns
 - All pure HTML, no JS
 
 ### 3. `src/styles/global.css`
+
 **Complete doodle design system:**
+
 - All Tailwind v4 utilities
 - Custom doodle classes (.doodle-border, .sketch-underline, etc.)
 - Animations (.wobble, .animate-float, etc.)
@@ -60,10 +68,13 @@ Base layout with:
 - Google Fonts import
 
 ### 4. `src/index.css`
+
 Entry point - just imports global.css
 
 ### 5. `astro.config.mjs`
+
 Minimal config:
+
 - Static output
 - Tailwind v4 via Vite plugin
 - Path aliases (@/components, @/layouts, etc.)
@@ -88,6 +99,7 @@ const { title, value, subtitle } = Astro.props;
 ```
 
 Usage:
+
 ```astro
 ---
 import InfoCard from '../components/InfoCard.astro';
@@ -112,6 +124,7 @@ import InfoCard from '../components/InfoCard.astro';
 ## 🎨 Complete Doodle Class Reference
 
 ### Typography
+
 ```html
 <p>Default (Patrick Hand)</p>
 <p class="hand-drawn">Shadows Into Light</p>
@@ -119,6 +132,7 @@ import InfoCard from '../components/InfoCard.astro';
 ```
 
 ### Borders & Shadows
+
 ```html
 <div class="doodle-border">Organic rounded borders</div>
 <div class="doodle-shadow">Layered shadow effect</div>
@@ -127,6 +141,7 @@ import InfoCard from '../components/InfoCard.astro';
 ```
 
 ### Decorations
+
 ```html
 <h2 class="sketch-underline">Wavy underline</h2>
 <div class="sketchy-bg">Cross-hatched pattern</div>
@@ -136,6 +151,7 @@ import InfoCard from '../components/InfoCard.astro';
 ```
 
 ### Animations
+
 ```html
 <div class="wobble">Subtle rotation</div>
 <div class="animate-float">Floating motion</div>
@@ -146,6 +162,7 @@ import InfoCard from '../components/InfoCard.astro';
 ```
 
 ### Utilities
+
 ```html
 <div class="scrollbar-hide">Hide scrollbar</div>
 <p class="text-shadow">Subtle shadow</p>
@@ -159,6 +176,7 @@ import InfoCard from '../components/InfoCard.astro';
 ## 🎨 Color Palette
 
 ### Extremadura Colors
+
 ```css
 #00AB39  /* Primary green */
 #008A2E  /* Dark green */
@@ -171,6 +189,7 @@ import InfoCard from '../components/InfoCard.astro';
 ```
 
 ### Usage in HTML
+
 ```html
 <div class="bg-[#00AB39]">Green background</div>
 <p class="text-[#00AB39]">Green text</p>
@@ -195,7 +214,7 @@ import Layout from '../layouts/Layout.astro';
       About Us
       <div class="sketch-underline"></div>
     </h1>
-    
+
     <div class="doodle-border doodle-shadow bg-white p-8 mt-6">
       <p class="text-lg text-gray-700">
         Content here...
@@ -206,6 +225,7 @@ import Layout from '../layouts/Layout.astro';
 ```
 
 File system routing:
+
 - `src/pages/index.astro` → `/`
 - `src/pages/about.astro` → `/about`
 - `src/pages/contact.astro` → `/contact`
@@ -216,13 +236,16 @@ File system routing:
 ## 🔧 Common Tasks
 
 ### Add a new section to homepage
+
 1. Open `src/pages/index.astro`
 2. Add HTML with doodle classes
 3. Save and refresh browser
 
 ### Create a reusable component
+
 1. Create `src/components/MyComponent.astro`
 2. Import and use in pages
+
 ```astro
 ---
 import MyComponent from '../components/MyComponent.astro';
@@ -232,11 +255,13 @@ import MyComponent from '../components/MyComponent.astro';
 ```
 
 ### Change colors globally
+
 1. Open `src/styles/global.css`
 2. Edit `:root` CSS variables
 3. All pages update automatically
 
 ### Add custom animations
+
 1. Open `src/styles/global.css`
 2. Add keyframes in `@keyframes` section
 3. Create utility class in `@layer utilities`
@@ -264,6 +289,7 @@ pnpm build
 ## 📚 Next Steps
 
 ### Immediate (Pure Static)
+
 1. ✅ Homepage is done - add more content
 2. ⬜ Create `/book` page (booking form)
 3. ⬜ Create `/info` page (albergue info)
@@ -272,6 +298,7 @@ pnpm build
 6. ⬜ Create legal pages (privacy, terms, cookies)
 
 ### Later (Add Interactivity)
+
 1. Add Motion animations (already installed)
 2. Add JavaScript for form validation
 3. Add API routes (Astro API endpoints)
@@ -311,6 +338,7 @@ From the Figma prototype, we have:
 ## 🐛 Troubleshooting
 
 ### Dev server won't start
+
 ```bash
 cd frontend
 pnpm clean
@@ -320,12 +348,15 @@ pnpm dev
 ```
 
 ### Styles not applying
+
 Check that `src/index.css` imports `src/styles/global.css`:
+
 ```css
-@import './styles/global.css';
+@import "./styles/global.css";
 ```
 
 ### Fonts not loading
+
 Fonts are loaded from Google Fonts CDN. Check browser Network tab.
 
 ---
@@ -356,6 +387,7 @@ Just create `.astro` files, use the doodle classes, and you're done.
 ---
 
 **Questions?**
+
 - Check `README.md` for detailed component examples
 - Check `src/styles/global.css` for all available classes
 - Check `src/pages/index.astro` for real-world usage examples

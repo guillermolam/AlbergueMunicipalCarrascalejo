@@ -17,7 +17,11 @@ component = "reviews-service"
 
 [component.reviews-service]
 source = "target/wasm32-wasip1/release/reviews_service.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com", "http://mqtt-broker-service.spin.internal"]
+allowed_outbound_hosts = [
+  "https://*.neon.tech",
+  "https://*.postgres.com",
+  "http://mqtt-broker-service.spin.internal",
+]
 sqlite_databases = ["default"]
 [component.reviews-service.build]
 command = "cargo build --target wasm32-wasip1 --release"

@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -11,7 +11,7 @@ export default defineConfig({
     baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    video: 'retain-on-failure',
   },
 
   projects: [
@@ -43,8 +43,8 @@ export default defineConfig({
       port: 3000,
       reuseExistingServer: !process.env.CI,
       env: {
-        PUBLIC_API_MODE: 'local'
-      }
-    }
+        PUBLIC_API_MODE: 'local',
+      },
+    },
   ],
-})
+});

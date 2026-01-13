@@ -1,7 +1,7 @@
 # Complete development and deployment pipeline
 # Integrates frontend, backend, gateway, and Spin/Fermyon deployment
 
-version: '3'
+version: "3"
 
 includes:
   frontend:
@@ -29,11 +29,11 @@ vars:
   SPIN_APP_NAME: '{{.SPIN_APP_NAME | default "albergue-carrascalejo"}}'
 
 env:
-  ENVIRONMENT: '{{.ENVIRONMENT}}'
-  NODE_ENV: '{{.NODE_ENV}}'
-  RUST_LOG: '{{.RUST_LOG}}'
-  SPIN_REGISTRY: '{{.SPIN_REGISTRY}}'
-  SPIN_APP_NAME: '{{.SPIN_APP_NAME}}'
+  ENVIRONMENT: "{{.ENVIRONMENT}}"
+  NODE_ENV: "{{.NODE_ENV}}"
+  RUST_LOG: "{{.RUST_LOG}}"
+  SPIN_REGISTRY: "{{.SPIN_REGISTRY}}"
+  SPIN_APP_NAME: "{{.SPIN_APP_NAME}}"
 
 tasks:
   # Main development workflow

@@ -62,9 +62,7 @@ const baseClasses = `
 const Tag = href ? 'a' : 'button';
 const finalClassName = `${baseClasses} ${className}`.trim();
 
-const additionalProps = href
-  ? { href, role: 'button' as const }
-  : { type, disabled };
+const additionalProps = href ? { href, role: 'button' as const } : { type, disabled };
 ---
 
 <Tag

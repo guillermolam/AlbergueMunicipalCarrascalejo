@@ -8,38 +8,44 @@ echo "Setting up development environment..."
 
 # Check dependencies
 echo "Checking dependencies..."
-command -v node >/dev/null 2>&1 || { echo "ERROR: Node.js is required but not installed."; exit 1; }
-command -v cargo >/dev/null 2>&1 || { echo "ERROR: Rust/Cargo is required but not installed."; exit 1; }
+command -v node >/dev/null 2>&1 || {
+	echo "ERROR: Node.js is required but not installed."
+	exit 1
+}
+command -v cargo >/dev/null 2>&1 || {
+	echo "ERROR: Rust/Cargo is required but not installed."
+	exit 1
+}
 command -v bun >/dev/null 2>&1 || echo "WARNING: Bun not found, falling back to npm"
 
 # Install frontend dependencies
 echo "Installing frontend dependencies..."
 cd frontend
 if command -v bun >/dev/null 2>&1; then
-    bun install
+	bun install
 else
-    npm install
+	npm install
 fi
 cd ..
 
 # Install auth service frontend dependencies
 if [[ -d "backend/auth-service" ]]; then
-    echo "Installing auth service frontend dependencies..."
-    cd backend/auth-service
-    if command -v bun >/dev/null 2>&1; then
-        bun install
-    else
-        npm install
-    fi
-    cd ../..
+	echo "Installing auth service frontend dependencies..."
+	cd backend/auth-service
+	if command -v bun >/dev/null 2>&1; then
+		bun install
+	else
+		npm install
+	fi
+	cd ../..
 fi
 
 # Setup database
 echo "Setting up database..."
 if [[ -f "database/scripts/setup-db.sh" ]]; then
-    ./database/scripts/setup-db.sh
+	./database/scripts/setup-db.sh
 else
-    echo "WARNING: Database setup script not found, skipping..."
+	echo "WARNING: Database setup script not found, skipping..."
 fi
 
 echo "Development environment setup complete!"

@@ -1,5 +1,4 @@
-
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Spanish Document OCR Lambda for Albergue Del Carrascalejo - Processes Spanish DNI/NIE and international passports
 
@@ -16,7 +15,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: target/lambda/spanish-document-ocr/
-      Description: 'Rust-based OCR service for Spanish DNI/NIE and passport processing with Tesseract integration'
+      Description: "Rust-based OCR service for Spanish DNI/NIE and passport processing with Tesseract integration"
       Handler: bootstrap
       MemorySize: 256
       Timeout: 30
@@ -30,19 +29,19 @@ Resources:
         Cors:
           AllowCredentials: false
           AllowOrigins:
-            - 'https://*.replit.dev'
-            - 'https://*.replit.app'
-            - 'http://localhost:*'
+            - "https://*.replit.dev"
+            - "https://*.replit.app"
+            - "http://localhost:*"
           AllowHeaders:
-            - 'Content-Type'
-            - 'Accept'
-            - 'Origin'
-            - 'Authorization'
-            - 'X-Requested-With'
+            - "Content-Type"
+            - "Accept"
+            - "Origin"
+            - "Authorization"
+            - "X-Requested-With"
           AllowMethods:
-            - 'GET'
-            - 'POST'
-            - 'OPTIONS'
+            - "GET"
+            - "POST"
+            - "OPTIONS"
           MaxAge: 86400
       PackageType: Zip
       Policies:
@@ -52,7 +51,7 @@ Resources:
                 - logs:CreateLogGroup
                 - logs:CreateLogStream
                 - logs:PutLogEvents
-              Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/spanish-document-ocr:*'
+              Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/spanish-document-ocr:*"
       Events:
         HttpApiEvent:
           Type: HttpApi
@@ -79,7 +78,7 @@ Outputs:
     Value: !GetAtt SpanishDocumentOCRFunctionUrl.FunctionUrl
     Export:
       Name: !Sub "${AWS::StackName}-ocr-function-url"
-      
+
   SpanishDocumentOCRFunction:
     Description: "Spanish Document OCR Lambda Function ARN"
     Value: !GetAtt SpanishDocumentOCRFunction.Arn

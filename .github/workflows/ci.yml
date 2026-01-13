@@ -1,299 +1,294 @@
 name: CI/CD Pipeline
 
 on:
-    push:
-        branches: [main, develop]
-    pull_request:
-        branches: [main]
-    workflow_dispatch:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 env:
-    CARGO_TERM_COLOR: always
-    NODE_ENV: test
-    PUBLIC_API_MODE: local
+  CARGO_TERM_COLOR: always
+  NODE_ENV: test
+  PUBLIC_API_MODE: local
 
 jobs:
-    # Frontend CI
-    frontend:
-        name: Frontend Build & Checks
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: frontend
+  # Frontend CI
+  frontend:
+    name: Frontend Build & Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "pnpm"
-                  cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v2
-              with:
-                  version: 8
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
 
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-            # package.json only defines "format" (write). In CI we should "check".
-            - name: Prettier check
-              run: pnpm exec prettier --check .
+      # package.json only defines "format" (write). In CI we should "check".
+      - name: Prettier check
+        run: pnpm exec prettier --check .
 
-            - name: Build
-              run: pnpm build
+      - name: Build
+        run: pnpm build
 
-            - name: Upload build artifacts
-              uses: actions/upload-artifact@v4
-              with:
-                  name: frontend-build
-                  path: frontend/dist/
+      - name: Upload build artifacts
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
 
-    # Gateway CI
-    gateway:
-        name: Gateway Checks
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: gateway
+  # Gateway CI
+  gateway:
+    name: Gateway Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Rust
-              uses: dtolnay/rust-toolchain@stable
-              with:
-                  components: rustfmt, clippy
-                  targets: wasm32-wasip1
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip1
 
-            - name: Install just
-              run: |
-                  cargo install just --locked || cargo install just
+      - name: Install just
+        run: |
+          cargo install just --locked || cargo install just
 
-            - name: Cache cargo registry
-              uses: actions/cache@v4
-              with:
-                  path: ~/.cargo/registry
-                  key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
 
-            - name: Cache cargo index
-              uses: actions/cache@v4
-              with:
-                  path: ~/.cargo/git
-                  key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.toml') }}
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.toml') }}
 
-            - name: Cache cargo build
-              uses: actions/cache@v4
-              with:
-                  path: gateway/target
-                  key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('gateway/**/Cargo.toml') }}
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: gateway/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('gateway/**/Cargo.toml') }}
 
-            - name: Format check
-              run: just fmt-check
+      - name: Format check
+        run: just fmt-check
 
-            - name: Clippy (deny warnings)
-              run: just clippy
+      - name: Clippy (deny warnings)
+        run: just clippy
 
-            - name: Test
-              run: just test
+      - name: Test
+        run: just test
 
-            - name: Build (wasm)
-              run: cargo build --workspace --release --target wasm32-wasip1
+      - name: Build (wasm)
+        run: cargo build --workspace --release --target wasm32-wasip1
 
-    # Database CI
-    database:
-        name: Database Tests
-        runs-on: ubuntu-latest
-        services:
-            postgres:
-                image: postgres:15
-                env:
-                    POSTGRES_DB: albergue_test
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                options: >-
-                    --health-cmd pg_isready
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 5432:5432
+  # Database CI
+  database:
+    name: Database Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: albergue_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Install PostgreSQL client
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y postgresql-client
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-            - name: Wait for PostgreSQL
-              run: |
-                  timeout 30 bash -c 'until pg_isready -h localhost -p 5432; do sleep 1; done'
+      - name: Wait for PostgreSQL
+        run: |
+          timeout 30 bash -c 'until pg_isready -h localhost -p 5432; do sleep 1; done'
 
-            - name: Apply migrations
-              run: |
-                  for migration in domain_model/migrations/*.sql; do
-                    echo "Applying $migration"
-                    psql -h localhost -U postgres -d albergue_test -f "$migration"
-                  done
-              env:
-                  PGPASSWORD: postgres
+      - name: Apply migrations
+        run: |
+          for migration in domain_model/migrations/*.sql; do
+            echo "Applying $migration"
+            psql -h localhost -U postgres -d albergue_test -f "$migration"
+          done
+        env:
+          PGPASSWORD: postgres
 
-            - name: Apply test seed
-              run: |
-                  psql -h localhost -U postgres -d albergue_test -f domain_model/seed/test_seed.sql
-              env:
-                  PGPASSWORD: postgres
+      - name: Apply test seed
+        run: |
+          psql -h localhost -U postgres -d albergue_test -f domain_model/seed/test_seed.sql
+        env:
+          PGPASSWORD: postgres
 
-            - name: Run SQL tests
-              run: |
-                  for test in domain_model/test/*.sql; do
-                    echo "Running $test"
-                    psql -h localhost -U postgres -d albergue_test -f "$test"
-                  done
-              env:
-                  PGPASSWORD: postgres
+      - name: Run SQL tests
+        run: |
+          for test in domain_model/test/*.sql; do
+            echo "Running $test"
+            psql -h localhost -U postgres -d albergue_test -f "$test"
+          done
+        env:
+          PGPASSWORD: postgres
 
-    # Integration Tests (Rust: tests/integration)
-    integration:
-        name: Integration Tests (Spin)
-        runs-on: ubuntu-latest
-        needs: [frontend, gateway, database]
-        services:
-            postgres:
-                image: postgres:15
-                env:
-                    POSTGRES_DB: albergue_test
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                options: >-
-                    --health-cmd pg_isready
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 5432:5432
+  # Integration Tests (Rust: tests/integration)
+  integration:
+    name: Integration Tests (Spin)
+    runs-on: ubuntu-latest
+    needs: [frontend, gateway, database]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: albergue_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Rust
-              uses: dtolnay/rust-toolchain@stable
-              with:
-                  components: rustfmt, clippy
-                  targets: wasm32-wasip1
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip1
 
-            - name: Install Spin CLI
-              run: |
-                  curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-                  echo "$HOME/.spin/bin" >> $GITHUB_PATH
+      - name: Install Spin CLI
+        run: |
+          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+          echo "$HOME/.spin/bin" >> $GITHUB_PATH
 
-            - name: Install just
-              run: |
-                  cargo install just --locked || cargo install just
+      - name: Install just
+        run: |
+          cargo install just --locked || cargo install just
 
-            - name: Build Spin app (root spin.toml)
-              run: |
-                  spin --version
-                  spin build
+      - name: Build Spin app (root spin.toml)
+        run: |
+          spin --version
+          spin build
 
-            - name: Run Rust integration tests (tests/integration)
-              run: |
-                  cd tests/integration
-                  just check
+      - name: Run Rust integration tests (tests/integration)
+        run: |
+          cd tests/integration
+          just check
 
-    # Security Scan
-    security:
-        name: Security Scan
-        runs-on: ubuntu-latest
+  # Security Scan
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "pnpm"
-                  cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v2
-              with:
-                  version: 8
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
 
-            - name: Install dependencies
-              run: |
-                  cd frontend
-                  pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
 
-            - name: Run security audit (Node)
-              run: |
-                  cd frontend
-                  pnpm audit --audit-level=high
+      - name: Run security audit (Node)
+        run: |
+          cd frontend
+          pnpm audit --audit-level=high
 
-            - name: Setup Rust
-              uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
-            - name: Install cargo-audit
-              run: cargo install cargo-audit
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
 
-            # cargo-audit needs a lockfile; generate it for the gateway workspace first.
-            - name: Generate lockfile (gateway)
-              run: |
-                  cd gateway
-                  cargo generate-lockfile
+      # cargo-audit needs a lockfile; generate it for the gateway workspace first.
+      - name: Generate lockfile (gateway)
+        run: |
+          cd gateway
+          cargo generate-lockfile
 
-            - name: Run cargo audit (gateway)
-              run: |
-                  cd gateway
-                  cargo audit
+      - name: Run cargo audit (gateway)
+        run: |
+          cd gateway
+          cargo audit
 
-    # Deployment Check
-    deploy-check:
-        name: Deployment Readiness
-        runs-on: ubuntu-latest
-        needs: [frontend, gateway, database, integration, security]
-        if: github.ref == 'refs/heads/main'
+  # Deployment Check
+  deploy-check:
+    name: Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: [frontend, gateway, database, integration, security]
+    if: github.ref == 'refs/heads/main'
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "pnpm"
-                  cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v2
-              with:
-                  version: 8
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
 
-            - name: Install dependencies
-              run: |
-                  cd frontend
-                  pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
 
-            - name: Build for production
-              run: |
-                  cd frontend
-                  pnpm build
+      - name: Build for production
+        run: |
+          cd frontend
+          pnpm build
 
-            - name: Check build artifacts
-              run: |
-                  cd frontend
-                  ls -la dist/
-                  test -f dist/index.html
-                  echo "✅ Build artifacts ready for deployment"
+      - name: Check build artifacts
+        run: |
+          cd frontend
+          ls -la dist/
+          test -f dist/index.html
+          echo "✅ Build artifacts ready for deployment"

@@ -4,13 +4,7 @@
 import { atom, map } from 'nanostores';
 import { persistentMap } from '@nanostores/persistent';
 import { jwtDecode } from 'jwt-decode';
-import type {
-  UserAuth,
-  UserRole,
-  Permission,
-  Session,
-  ApiResponse,
-} from '@/types/pilgrim';
+import type { UserAuth, UserRole, Permission, Session, ApiResponse } from '@/types/pilgrim';
 import type { IPilgrimService } from '@/types/pilgrim-operations';
 
 // SSR-safe environment check
@@ -30,11 +24,11 @@ class TokenManager {
 
   private loadTokens(): void {
     if (isServer) return;
-    
+
     try {
       this.accessToken = localStorage.getItem('access_token');
       this.refreshToken = localStorage.getItem('refresh_token');
-      
+
       if (this.accessToken) {
         const decoded = jwtDecode(this.accessToken);
         this.tokenExpiry = decoded.exp ? decoded.exp * 1000 : null;
@@ -48,13 +42,13 @@ class TokenManager {
   setTokens(accessToken: string, refreshToken: string): void {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
-    
+
     try {
       if (!isServer) {
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('refresh_token', refreshToken);
       }
-      
+
       const decoded = jwtDecode(accessToken);
       this.tokenExpiry = decoded.exp ? decoded.exp * 1000 : null;
     } catch (error) {
@@ -83,7 +77,7 @@ class TokenManager {
     this.accessToken = null;
     this.refreshToken = null;
     this.tokenExpiry = null;
-    
+
     try {
       if (!isServer) {
         localStorage.removeItem('access_token');
@@ -96,7 +90,7 @@ class TokenManager {
 
   decodeToken(): any {
     if (!this.accessToken) return null;
-    
+
     try {
       return jwtDecode(this.accessToken);
     } catch (error) {
@@ -120,43 +114,47 @@ export const authStore = persistentMap<{
   twoFactorRequired: boolean;
   loginAttempts: number;
   lockedUntil: string | null;
-}>('pilgrim:auth:', {
-  userAuth: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-  sessionToken: null,
-  refreshToken: null,
-  expiresAt: null,
-  twoFactorRequired: false,
-  loginAttempts: 0,
-  lockedUntil: null,
-}, {
-  encode: (value) => {
-    if (isServer) return JSON.stringify(value);
-    // Simple encryption for sensitive data (use proper crypto in production)
-    return btoa(JSON.stringify(value));
+}>(
+  'pilgrim:auth:',
+  {
+    userAuth: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null,
+    sessionToken: null,
+    refreshToken: null,
+    expiresAt: null,
+    twoFactorRequired: false,
+    loginAttempts: 0,
+    lockedUntil: null,
   },
-  decode: (value) => {
-    if (isServer) return JSON.parse(value);
-    try {
-      return JSON.parse(atob(value));
-    } catch {
-      return { 
-        userAuth: null, 
-        isAuthenticated: false, 
-        isLoading: false, 
-        error: null,
-        sessionToken: null,
-        refreshToken: null,
-        expiresAt: null,
-        twoFactorRequired: false,
-        loginAttempts: 0,
-        lockedUntil: null,
-      };
-    }
+  {
+    encode: (value) => {
+      if (isServer) return JSON.stringify(value);
+      // Simple encryption for sensitive data (use proper crypto in production)
+      return btoa(JSON.stringify(value));
+    },
+    decode: (value) => {
+      if (isServer) return JSON.parse(value);
+      try {
+        return JSON.parse(atob(value));
+      } catch {
+        return {
+          userAuth: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          sessionToken: null,
+          refreshToken: null,
+          expiresAt: null,
+          twoFactorRequired: false,
+          loginAttempts: 0,
+          lockedUntil: null,
+        };
+      }
+    },
   }
-});
+);
 
 /**
  * Permissions Store
@@ -198,7 +196,11 @@ export const authActions = {
   /**
    * Login with email and password
    */
-  async login(email: string, password: string, rememberMe: boolean = false): Promise<ApiResponse<UserAuth>> {
+  async login(
+    email: string,
+    password: string,
+    rememberMe: boolean = false
+  ): Promise<ApiResponse<UserAuth>> {
     authStore.setKey('isLoading', true);
     authStore.setKey('error', null);
 
@@ -214,7 +216,7 @@ export const authActions = {
 
       if (response.success && response.data) {
         const userAuth = response.data;
-        
+
         // Store authentication data
         authStore.setKey('userAuth', userAuth);
         authStore.setKey('isAuthenticated', true);
@@ -256,7 +258,7 @@ export const authActions = {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       authStore.setKey('error', errorMessage);
-      
+
       return {
         success: false,
         error: {
@@ -300,7 +302,7 @@ export const authActions = {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       authStore.setKey('error', errorMessage);
-      
+
       return {
         success: false,
         error: {
@@ -527,8 +529,8 @@ export const authActions = {
   hasPermission(permission: string): boolean {
     const { permissions, isAuthenticated } = permissionsStore.get();
     if (!isAuthenticated) return false;
-    
-    return permissions.some(p => p.name === permission);
+
+    return permissions.some((p) => p.name === permission);
   },
 
   /**
@@ -537,8 +539,8 @@ export const authActions = {
   hasRole(role: string): boolean {
     const { roles, isAuthenticated } = permissionsStore.get();
     if (!isAuthenticated) return false;
-    
-    return roles.some(r => r.name === role);
+
+    return roles.some((r) => r.name === role);
   },
 
   /**
@@ -547,10 +549,8 @@ export const authActions = {
   hasAnyPermission(permissions: string[]): boolean {
     const { permissions: userPermissions, isAuthenticated } = permissionsStore.get();
     if (!isAuthenticated) return false;
-    
-    return permissions.some(permission => 
-      userPermissions.some(p => p.name === permission)
-    );
+
+    return permissions.some((permission) => userPermissions.some((p) => p.name === permission));
   },
 
   /**
@@ -559,10 +559,8 @@ export const authActions = {
   hasAllPermissions(permissions: string[]): boolean {
     const { permissions: userPermissions, isAuthenticated } = permissionsStore.get();
     if (!isAuthenticated) return false;
-    
-    return permissions.every(permission => 
-      userPermissions.some(p => p.name === permission)
-    );
+
+    return permissions.every((permission) => userPermissions.some((p) => p.name === permission));
   },
 
   /**
@@ -592,9 +590,9 @@ export const authActions = {
   getAuthHeaders(): Record<string, string> {
     const token = tokenManager.getAccessToken();
     if (!token) return {};
-    
+
     return {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
   },
@@ -604,10 +602,13 @@ export const authActions = {
  * Helper functions (these would be implemented with actual API calls)
  */
 
-async function simulateLogin(email: string, password: string): Promise<ApiResponse<UserAuth> & { tokens?: { accessToken: string; refreshToken: string } }> {
+async function simulateLogin(
+  email: string,
+  password: string
+): Promise<ApiResponse<UserAuth> & { tokens?: { accessToken: string; refreshToken: string } }> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   // Simulate successful login
   if (email === 'test@example.com' && password === 'password123') {
     return {
@@ -630,7 +631,7 @@ async function simulateLogin(email: string, password: string): Promise<ApiRespon
             description: 'Pilgrim user',
             permissions: [],
             isActive: true,
-          }
+          },
         ],
         permissions: [],
         sessions: [],
@@ -640,12 +641,14 @@ async function simulateLogin(email: string, password: string): Promise<ApiRespon
         version: 1,
       },
       tokens: {
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-      }
+        accessToken:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+        refreshToken:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+      },
     };
   }
-  
+
   return {
     success: false,
     error: {
@@ -657,8 +660,8 @@ async function simulateLogin(email: string, password: string): Promise<ApiRespon
 
 async function simulateRegister(userData: any): Promise<ApiResponse<UserAuth>> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   // Simulate successful registration
   return {
     success: true,
@@ -684,23 +687,29 @@ async function simulateRegister(userData: any): Promise<ApiResponse<UserAuth>> {
   };
 }
 
-async function simulateEnableTwoFactor(userId: string): Promise<ApiResponse<{ secret: string; qrCode: string }>> {
+async function simulateEnableTwoFactor(
+  userId: string
+): Promise<ApiResponse<{ secret: string; qrCode: string }>> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   return {
     success: true,
     data: {
       secret: 'JBSWY3DPEHPK3PXP',
-      qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      qrCode:
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
     },
   };
 }
 
-async function simulateVerifyTwoFactor(userId: string, code: string): Promise<ApiResponse<boolean>> {
+async function simulateVerifyTwoFactor(
+  userId: string,
+  code: string
+): Promise<ApiResponse<boolean>> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   // Simulate successful verification
   if (code === '123456') {
     return {
@@ -708,7 +717,7 @@ async function simulateVerifyTwoFactor(userId: string, code: string): Promise<Ap
       data: true,
     };
   }
-  
+
   return {
     success: false,
     error: {
@@ -718,24 +727,29 @@ async function simulateVerifyTwoFactor(userId: string, code: string): Promise<Ap
   };
 }
 
-async function simulateRefreshToken(refreshToken: string): Promise<ApiResponse<boolean> & { tokens?: { accessToken: string; refreshToken: string } }> {
+async function simulateRefreshToken(
+  refreshToken: string
+): Promise<ApiResponse<boolean> & { tokens?: { accessToken: string; refreshToken: string } }> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   return {
     success: true,
     data: true,
     tokens: {
-      accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+      accessToken:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
       refreshToken: refreshToken, // Same refresh token
-    }
+    },
   };
 }
 
-async function simulateLoadUserPermissions(userId: string): Promise<ApiResponse<{ permissions: Permission[]; roles: UserRole[] }>> {
+async function simulateLoadUserPermissions(
+  userId: string
+): Promise<ApiResponse<{ permissions: Permission[]; roles: UserRole[] }>> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   return {
     success: true,
     data: {
@@ -760,16 +774,20 @@ async function simulateLoadUserPermissions(userId: string): Promise<ApiResponse<
           description: 'Pilgrim user',
           permissions: [],
           isActive: true,
-        }
-      ]
-    }
+        },
+      ],
+    },
   };
 }
 
-async function simulateCreateSession(userId: string, ipAddress: string | null, userAgent: string | null): Promise<ApiResponse<Session>> {
+async function simulateCreateSession(
+  userId: string,
+  ipAddress: string | null,
+  userAgent: string | null
+): Promise<ApiResponse<Session>> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   return {
     success: true,
     data: {
@@ -780,14 +798,14 @@ async function simulateCreateSession(userId: string, ipAddress: string | null, u
       userAgent: userAgent,
       isActive: true,
       lastActivityAt: new Date(),
-    }
+    },
   };
 }
 
 async function revokeSession(sessionId: string): Promise<ApiResponse<boolean>> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   return {
     success: true,
     data: true,
@@ -796,7 +814,7 @@ async function revokeSession(sessionId: string): Promise<ApiResponse<boolean>> {
 
 async function getClientIP(): Promise<string | null> {
   if (isServer) return null;
-  
+
   try {
     // In a real implementation, you'd get this from the server
     const response = await fetch('https://api.ipify.org?format=json');

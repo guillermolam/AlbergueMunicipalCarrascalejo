@@ -29,34 +29,40 @@ export interface IPilgrimRepository {
   createProfile(profile: CreatePilgrimProfileDto): Promise<ApiResponse<PilgrimProfile>>;
   createPilgrimage(pilgrimage: CreatePilgrimageDto): Promise<ApiResponse<Pilgrimage>>;
   createBooking(booking: CreateBookingDto): Promise<ApiResponse<Booking>>;
-  
+
   // Read operations
   getProfileById(id: string): Promise<ApiResponse<PilgrimProfile>>;
   getProfileByEmail(email: string): Promise<ApiResponse<PilgrimProfile>>;
-  getProfiles(filters?: FilterInfo[], pagination?: PaginationInfo): Promise<PaginatedResponse<PilgrimProfile>>;
+  getProfiles(
+    filters?: FilterInfo[],
+    pagination?: PaginationInfo
+  ): Promise<PaginatedResponse<PilgrimProfile>>;
   getPilgrimageById(id: string): Promise<ApiResponse<Pilgrimage>>;
   getPilgrimagesByProfileId(profileId: string): Promise<ApiResponse<Pilgrimage[]>>;
   getActivePilgrimage(profileId: string): Promise<ApiResponse<Pilgrimage>>;
-  
+
   // Update operations
   updateProfile(id: string, updates: UpdatePilgrimProfileDto): Promise<ApiResponse<PilgrimProfile>>;
   updatePilgrimage(id: string, updates: UpdatePilgrimageDto): Promise<ApiResponse<Pilgrimage>>;
   updateBooking(id: string, updates: UpdateBookingDto): Promise<ApiResponse<Booking>>;
-  
+
   // Delete operations
   deleteProfile(id: string): Promise<ApiResponse<boolean>>;
   deletePilgrimage(id: string): Promise<ApiResponse<boolean>>;
   deleteBooking(id: string): Promise<ApiResponse<boolean>>;
-  
+
   // Bulk operations
   bulkCreateProfiles(profiles: CreatePilgrimProfileDto[]): Promise<ApiResponse<PilgrimProfile[]>>;
   bulkUpdateProfiles(updates: UpdatePilgrimProfileDto[]): Promise<ApiResponse<PilgrimProfile[]>>;
   bulkDeleteProfiles(ids: string[]): Promise<ApiResponse<boolean[]>>;
-  
+
   // Search and filtering
   searchProfiles(query: SearchQuery): Promise<PaginatedResponse<PilgrimProfile>>;
-  filterProfiles(filters: FilterInfo[], sorting?: SortingInfo[]): Promise<PaginatedResponse<PilgrimProfile>>;
-  
+  filterProfiles(
+    filters: FilterInfo[],
+    sorting?: SortingInfo[]
+  ): Promise<PaginatedResponse<PilgrimProfile>>;
+
   // Export/Import
   exportProfiles(config: ExportConfig): Promise<ApiResponse<Blob>>;
   importProfiles(config: ImportConfig, file: File): Promise<ApiResponse<ImportResult>>;
@@ -68,49 +74,64 @@ export interface IPilgrimRepository {
 export interface IPilgrimService {
   // Profile management
   registerPilgrim(profile: CreatePilgrimProfileDto): Promise<ApiResponse<PilgrimProfile>>;
-  updatePilgrimProfile(id: string, updates: UpdatePilgrimProfileDto): Promise<ApiResponse<PilgrimProfile>>;
+  updatePilgrimProfile(
+    id: string,
+    updates: UpdatePilgrimProfileDto
+  ): Promise<ApiResponse<PilgrimProfile>>;
   deactivatePilgrim(id: string, reason: string): Promise<ApiResponse<boolean>>;
   reactivatePilgrim(id: string): Promise<ApiResponse<boolean>>;
-  
+
   // Pilgrimage management
-  startPilgrimage(profileId: string, pilgrimage: CreatePilgrimageDto): Promise<ApiResponse<Pilgrimage>>;
-  updatePilgrimageProgress(id: string, progress: UpdateProgressDto): Promise<ApiResponse<Pilgrimage>>;
-  completePilgrimage(id: string, completion: CompletePilgrimageDto): Promise<ApiResponse<Pilgrimage>>;
+  startPilgrimage(
+    profileId: string,
+    pilgrimage: CreatePilgrimageDto
+  ): Promise<ApiResponse<Pilgrimage>>;
+  updatePilgrimageProgress(
+    id: string,
+    progress: UpdateProgressDto
+  ): Promise<ApiResponse<Pilgrimage>>;
+  completePilgrimage(
+    id: string,
+    completion: CompletePilgrimageDto
+  ): Promise<ApiResponse<Pilgrimage>>;
   cancelPilgrimage(id: string, reason: string): Promise<ApiResponse<Pilgrimage>>;
-  
+
   // Booking management
   createBooking(profileId: string, booking: CreateBookingDto): Promise<ApiResponse<Booking>>;
   confirmBooking(id: string): Promise<ApiResponse<Booking>>;
   cancelBooking(id: string, reason: string): Promise<ApiResponse<Booking>>;
   checkBookingAvailability(booking: CheckAvailabilityDto): Promise<ApiResponse<AvailabilityResult>>;
-  
+
   // Progress tracking
   updateProgress(id: string, progress: UpdateProgressDto): Promise<ApiResponse<ProgressTracking>>;
   getProgressHistory(profileId: string): Promise<ApiResponse<ProgressTracking[]>>;
   getCurrentProgress(profileId: string): Promise<ApiResponse<ProgressTracking>>;
-  
+
   // Health and safety
   recordHealthCheck(profileId: string, check: HealthCheckDto): Promise<ApiResponse<HealthSafety>>;
   reportIncident(incident: IncidentReportDto): Promise<ApiResponse<Incident>>;
   getHealthHistory(profileId: string): Promise<ApiResponse<HealthSafety>>;
-  
+
   // Statistics and analytics
   getPilgrimStatistics(profileId: string): Promise<ApiResponse<PilgrimStatistics>>;
   getGlobalStatistics(filters?: FilterInfo[]): Promise<ApiResponse<GlobalStatistics>>;
   getPopularRoutes(): Promise<ApiResponse<RouteStatistics[]>>;
   getPeakSeasons(): Promise<ApiResponse<SeasonStatistics[]>>;
-  
+
   // Social features
   createSocialProfile(profile: CreateSocialProfileDto): Promise<ApiResponse<SocialProfile>>;
-  findCompanions(profileId: string, preferences: CompanionPreferencesDto): Promise<ApiResponse<PilgrimProfile[]>>;
+  findCompanions(
+    profileId: string,
+    preferences: CompanionPreferencesDto
+  ): Promise<ApiResponse<PilgrimProfile[]>>;
   sendFriendRequest(senderId: string, receiverId: string): Promise<ApiResponse<boolean>>;
   acceptFriendRequest(requestId: string): Promise<ApiResponse<boolean>>;
-  
+
   // Validation and verification
   validatePilgrimProfile(profile: CreatePilgrimProfileDto): Promise<ValidationResult>;
   verifyEmail(email: string, token: string): Promise<ApiResponse<boolean>>;
   verifyPhoneNumber(phone: string, code: string): Promise<ApiResponse<boolean>>;
-  
+
   // Export/Import
   exportPilgrimData(profileId: string, format: 'json' | 'csv' | 'pdf'): Promise<ApiResponse<Blob>>;
   importPilgrimData(file: File): Promise<ApiResponse<ImportResult>>;
@@ -437,7 +458,10 @@ export class UnauthorizedError extends PilgrimError {
 }
 
 export class ConflictError extends PilgrimError {
-  constructor(message: string, public conflictingField?: string) {
+  constructor(
+    message: string,
+    public conflictingField?: string
+  ) {
     super(message, 'CONFLICT', 409);
     this.name = 'ConflictError';
   }

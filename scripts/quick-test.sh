@@ -4,7 +4,7 @@
 cd /home/glam/git/personal/AlbergueMunicipalCarrascalejo
 
 echo "1. Cleaning Taskfile..."
-LC_ALL=C sed 's/[^\x00-\x7F]//g' Taskfile.yml > Taskfile.tmp
+LC_ALL=C sed 's/[^\x00-\x7F]//g' Taskfile.yml >Taskfile.tmp
 mv Taskfile.tmp Taskfile.yml
 
 echo "2. Testing YAML syntax..."

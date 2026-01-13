@@ -24,17 +24,17 @@ const isServer = typeof window === 'undefined';
  */
 class DataEncryption {
   private key: string;
-  
+
   constructor(key: string) {
     this.key = key;
   }
-  
+
   encrypt(data: any): string {
     if (isServer) return JSON.stringify(data);
     // In production, use proper encryption like crypto.subtle
     return btoa(JSON.stringify(data) + this.key);
   }
-  
+
   decrypt(encrypted: string): any {
     if (isServer) return JSON.parse(encrypted);
     try {
@@ -57,21 +57,32 @@ export const pilgrimProfileStore = persistentMap<{
   profiles: Record<string, PilgrimProfile>;
   isLoading: boolean;
   error: string | null;
-}>('pilgrim:profile:', {
-  currentProfile: null,
-  profiles: {},
-  isLoading: false,
-  error: null,
-}, {
-  encode: (value) => {
-    if (isServer) return JSON.stringify(value);
-    return encryption.encrypt(value);
+}>(
+  'pilgrim:profile:',
+  {
+    currentProfile: null,
+    profiles: {},
+    isLoading: false,
+    error: null,
   },
-  decode: (value) => {
-    if (isServer) return JSON.parse(value);
-    return encryption.decrypt(value) || { currentProfile: null, profiles: {}, isLoading: false, error: null };
+  {
+    encode: (value) => {
+      if (isServer) return JSON.stringify(value);
+      return encryption.encrypt(value);
+    },
+    decode: (value) => {
+      if (isServer) return JSON.parse(value);
+      return (
+        encryption.decrypt(value) || {
+          currentProfile: null,
+          profiles: {},
+          isLoading: false,
+          error: null,
+        }
+      );
+    },
   }
-});
+);
 
 /**
  * Current Pilgrimage Store
@@ -82,21 +93,32 @@ export const currentPilgrimageStore = persistentMap<{
   progress: ProgressTracking | null;
   isActive: boolean;
   lastUpdate: string | null;
-}>('pilgrim:pilgrimage:', {
-  pilgrimage: null,
-  progress: null,
-  isActive: false,
-  lastUpdate: null,
-}, {
-  encode: (value) => {
-    if (isServer) return JSON.stringify(value);
-    return encryption.encrypt(value);
+}>(
+  'pilgrim:pilgrimage:',
+  {
+    pilgrimage: null,
+    progress: null,
+    isActive: false,
+    lastUpdate: null,
   },
-  decode: (value) => {
-    if (isServer) return JSON.parse(value);
-    return encryption.decrypt(value) || { pilgrimage: null, progress: null, isActive: false, lastUpdate: null };
+  {
+    encode: (value) => {
+      if (isServer) return JSON.stringify(value);
+      return encryption.encrypt(value);
+    },
+    decode: (value) => {
+      if (isServer) return JSON.parse(value);
+      return (
+        encryption.decrypt(value) || {
+          pilgrimage: null,
+          progress: null,
+          isActive: false,
+          lastUpdate: null,
+        }
+      );
+    },
   }
-});
+);
 
 /**
  * Bookings Store
@@ -107,21 +129,32 @@ export const bookingsStore = persistentMap<{
   upcomingBookings: string[];
   pastBookings: string[];
   isLoading: boolean;
-}>('pilgrim:bookings:', {
-  bookings: {},
-  upcomingBookings: [],
-  pastBookings: [],
-  isLoading: false,
-}, {
-  encode: (value) => {
-    if (isServer) return JSON.stringify(value);
-    return encryption.encrypt(value);
+}>(
+  'pilgrim:bookings:',
+  {
+    bookings: {},
+    upcomingBookings: [],
+    pastBookings: [],
+    isLoading: false,
   },
-  decode: (value) => {
-    if (isServer) return JSON.parse(value);
-    return encryption.decrypt(value) || { bookings: {}, upcomingBookings: [], pastBookings: [], isLoading: false };
+  {
+    encode: (value) => {
+      if (isServer) return JSON.stringify(value);
+      return encryption.encrypt(value);
+    },
+    decode: (value) => {
+      if (isServer) return JSON.parse(value);
+      return (
+        encryption.decrypt(value) || {
+          bookings: {},
+          upcomingBookings: [],
+          pastBookings: [],
+          isLoading: false,
+        }
+      );
+    },
   }
-});
+);
 
 /**
  * Health & Safety Store
@@ -132,21 +165,32 @@ export const healthSafetyStore = persistentMap<{
   dailyChecks: Record<string, any>;
   incidents: Record<string, any>;
   emergencyContacts: any[];
-}>('pilgrim:health:', {
-  healthData: null,
-  dailyChecks: {},
-  incidents: {},
-  emergencyContacts: [],
-}, {
-  encode: (value) => {
-    if (isServer) return JSON.stringify(value);
-    return encryption.encrypt(value);
+}>(
+  'pilgrim:health:',
+  {
+    healthData: null,
+    dailyChecks: {},
+    incidents: {},
+    emergencyContacts: [],
   },
-  decode: (value) => {
-    if (isServer) return JSON.parse(value);
-    return encryption.decrypt(value) || { healthData: null, dailyChecks: {}, incidents: {}, emergencyContacts: [] };
+  {
+    encode: (value) => {
+      if (isServer) return JSON.stringify(value);
+      return encryption.encrypt(value);
+    },
+    decode: (value) => {
+      if (isServer) return JSON.parse(value);
+      return (
+        encryption.decrypt(value) || {
+          healthData: null,
+          dailyChecks: {},
+          incidents: {},
+          emergencyContacts: [],
+        }
+      );
+    },
   }
-});
+);
 
 /**
  * Social Profile Store
@@ -158,22 +202,34 @@ export const socialProfileStore = persistentMap<{
   friendRequests: any[];
   blockedUsers: string[];
   isLookingForCompanions: boolean;
-}>('pilgrim:social:', {
-  socialProfile: null,
-  friends: [],
-  friendRequests: [],
-  blockedUsers: [],
-  isLookingForCompanions: false,
-}, {
-  encode: (value) => {
-    if (isServer) return JSON.stringify(value);
-    return encryption.encrypt(value);
+}>(
+  'pilgrim:social:',
+  {
+    socialProfile: null,
+    friends: [],
+    friendRequests: [],
+    blockedUsers: [],
+    isLookingForCompanions: false,
   },
-  decode: (value) => {
-    if (isServer) return JSON.parse(value);
-    return encryption.decrypt(value) || { socialProfile: null, friends: [], friendRequests: [], blockedUsers: [], isLookingForCompanions: false };
+  {
+    encode: (value) => {
+      if (isServer) return JSON.stringify(value);
+      return encryption.encrypt(value);
+    },
+    decode: (value) => {
+      if (isServer) return JSON.parse(value);
+      return (
+        encryption.decrypt(value) || {
+          socialProfile: null,
+          friends: [],
+          friendRequests: [],
+          blockedUsers: [],
+          isLookingForCompanions: false,
+        }
+      );
+    },
   }
-});
+);
 
 /**
  * User Authentication Store
@@ -185,22 +241,34 @@ export const userAuthStore = persistentMap<{
   sessionToken: string | null;
   refreshToken: string | null;
   expiresAt: string | null;
-}>('pilgrim:auth:', {
-  userAuth: null,
-  isAuthenticated: false,
-  sessionToken: null,
-  refreshToken: null,
-  expiresAt: null,
-}, {
-  encode: (value) => {
-    if (isServer) return JSON.stringify(value);
-    return encryption.encrypt(value);
+}>(
+  'pilgrim:auth:',
+  {
+    userAuth: null,
+    isAuthenticated: false,
+    sessionToken: null,
+    refreshToken: null,
+    expiresAt: null,
   },
-  decode: (value) => {
-    if (isServer) return JSON.parse(value);
-    return encryption.decrypt(value) || { userAuth: null, isAuthenticated: false, sessionToken: null, refreshToken: null, expiresAt: null };
+  {
+    encode: (value) => {
+      if (isServer) return JSON.stringify(value);
+      return encryption.encrypt(value);
+    },
+    decode: (value) => {
+      if (isServer) return JSON.parse(value);
+      return (
+        encryption.decrypt(value) || {
+          userAuth: null,
+          isAuthenticated: false,
+          sessionToken: null,
+          refreshToken: null,
+          expiresAt: null,
+        }
+      );
+    },
   }
-});
+);
 
 /**
  * UI State Store
@@ -240,12 +308,12 @@ export const pilgrimageProgress = computed(currentPilgrimageStore, (state) => {
 
 // Upcoming bookings
 export const upcomingBookings = computed(bookingsStore, (state) => {
-  return state.upcomingBookings.map(id => state.bookings[id]).filter(Boolean);
+  return state.upcomingBookings.map((id) => state.bookings[id]).filter(Boolean);
 });
 
 // Active friend requests
 export const activeFriendRequests = computed(socialProfileStore, (state) => {
-  return state.friendRequests.filter(request => request.status === 'pending');
+  return state.friendRequests.filter((request) => request.status === 'pending');
 });
 
 // Is user authenticated
@@ -264,92 +332,101 @@ export const pilgrimActions = {
   async createProfile(profileData: CreatePilgrimProfileDto): Promise<void> {
     pilgrimProfileStore.setKey('isLoading', true);
     pilgrimProfileStore.setKey('error', null);
-    
+
     try {
       // Validate profile data
       const validation = await validatePilgrimProfile(profileData);
       if (!validation.isValid) {
         throw new Error(validation.errors[0]?.message || 'Invalid profile data');
       }
-      
+
       // Create profile with server
       const profile = await createPilgrimProfileOnServer(profileData);
-      
+
       // Update store
       pilgrimProfileStore.setKey('currentProfile', profile);
       pilgrimProfileStore.setKey('profiles', {
         ...pilgrimProfileStore.get().profiles,
         [profile.id]: profile,
       });
-      
+
       uiStateStore.setKey('success', 'Profile created successfully');
     } catch (error) {
-      pilgrimProfileStore.setKey('error', error instanceof Error ? error.message : 'Failed to create profile');
+      pilgrimProfileStore.setKey(
+        'error',
+        error instanceof Error ? error.message : 'Failed to create profile'
+      );
       throw error;
     } finally {
       pilgrimProfileStore.setKey('isLoading', false);
     }
   },
-  
+
   async updateProfile(profileId: string, updates: UpdatePilgrimProfileDto): Promise<void> {
     pilgrimProfileStore.setKey('isLoading', true);
     pilgrimProfileStore.setKey('error', null);
-    
+
     try {
       // Update profile on server
       const updatedProfile = await updatePilgrimProfileOnServer(profileId, updates);
-      
+
       // Update store
       pilgrimProfileStore.setKey('currentProfile', updatedProfile);
       pilgrimProfileStore.setKey('profiles', {
         ...pilgrimProfileStore.get().profiles,
         [profileId]: updatedProfile,
       });
-      
+
       uiStateStore.setKey('success', 'Profile updated successfully');
     } catch (error) {
-      pilgrimProfileStore.setKey('error', error instanceof Error ? error.message : 'Failed to update profile');
+      pilgrimProfileStore.setKey(
+        'error',
+        error instanceof Error ? error.message : 'Failed to update profile'
+      );
       throw error;
     } finally {
       pilgrimProfileStore.setKey('isLoading', false);
     }
   },
-  
+
   async deleteProfile(profileId: string): Promise<void> {
     pilgrimProfileStore.setKey('isLoading', true);
     pilgrimProfileStore.setKey('error', null);
-    
+
     try {
       // Delete profile on server
       await deletePilgrimProfileOnServer(profileId);
-      
+
       // Update store
       const profiles = { ...pilgrimProfileStore.get().profiles };
       delete profiles[profileId];
-      
+
       pilgrimProfileStore.setKey('profiles', profiles);
-      
+
       if (pilgrimProfileStore.get().currentProfile?.id === profileId) {
         pilgrimProfileStore.setKey('currentProfile', null);
       }
-      
+
       uiStateStore.setKey('success', 'Profile deleted successfully');
     } catch (error) {
-      pilgrimProfileStore.setKey('error', error instanceof Error ? error.message : 'Failed to delete profile');
+      pilgrimProfileStore.setKey(
+        'error',
+        error instanceof Error ? error.message : 'Failed to delete profile'
+      );
       throw error;
     } finally {
       pilgrimProfileStore.setKey('isLoading', false);
     }
   },
-  
+
   async loadProfile(profileId: string): Promise<void> {
     pilgrimProfileStore.setKey('isLoading', true);
     pilgrimProfileStore.setKey('error', null);
-    
+
     try {
       // Load profile from server
       const profile = await loadPilgrimProfileFromServer(profileId);
-      
+
       // Update store
       pilgrimProfileStore.setKey('currentProfile', profile);
       pilgrimProfileStore.setKey('profiles', {
@@ -357,7 +434,10 @@ export const pilgrimActions = {
         [profileId]: profile,
       });
     } catch (error) {
-      pilgrimProfileStore.setKey('error', error instanceof Error ? error.message : 'Failed to load profile');
+      pilgrimProfileStore.setKey(
+        'error',
+        error instanceof Error ? error.message : 'Failed to load profile'
+      );
       throw error;
     } finally {
       pilgrimProfileStore.setKey('isLoading', false);
@@ -371,63 +451,75 @@ export const pilgrimActions = {
 export const pilgrimageActions = {
   async startPilgrimage(pilgrimageData: any): Promise<void> {
     currentPilgrimageStore.setKey('isActive', false);
-    
+
     try {
       // Create pilgrimage on server
       const pilgrimage = await createPilgrimageOnServer(pilgrimageData);
       const progress = await initializeProgressTracking(pilgrimage.id);
-      
+
       // Update store
       currentPilgrimageStore.setKey('pilgrimage', pilgrimage);
       currentPilgrimageStore.setKey('progress', progress);
       currentPilgrimageStore.setKey('isActive', true);
       currentPilgrimageStore.setKey('lastUpdate', new Date().toISOString());
-      
+
       uiStateStore.setKey('success', 'Pilgrimage started successfully');
     } catch (error) {
-      uiStateStore.setKey('error', error instanceof Error ? error.message : 'Failed to start pilgrimage');
+      uiStateStore.setKey(
+        'error',
+        error instanceof Error ? error.message : 'Failed to start pilgrimage'
+      );
       throw error;
     }
   },
-  
+
   async updateProgress(progressData: any): Promise<void> {
     try {
       const currentState = currentPilgrimageStore.get();
       if (!currentState.isActive || !currentState.pilgrimage) {
         throw new Error('No active pilgrimage');
       }
-      
+
       // Update progress on server
-      const updatedProgress = await updateProgressOnServer(currentState.pilgrimage.id, progressData);
-      
+      const updatedProgress = await updateProgressOnServer(
+        currentState.pilgrimage.id,
+        progressData
+      );
+
       // Update store
       currentPilgrimageStore.setKey('progress', updatedProgress);
       currentPilgrimageStore.setKey('lastUpdate', new Date().toISOString());
-      
+
       uiStateStore.setKey('success', 'Progress updated successfully');
     } catch (error) {
-      uiStateStore.setKey('error', error instanceof Error ? error.message : 'Failed to update progress');
+      uiStateStore.setKey(
+        'error',
+        error instanceof Error ? error.message : 'Failed to update progress'
+      );
       throw error;
     }
   },
-  
+
   async completePilgrimage(completionData: any): Promise<void> {
     try {
       const currentState = currentPilgrimageStore.get();
       if (!currentState.isActive || !currentState.pilgrimage) {
         throw new Error('No active pilgrimage');
       }
-      
+
       // Complete pilgrimage on server
       await completePilgrimageOnServer(currentState.pilgrimage.id, completionData);
-      
+
       // Update store
       currentPilgrimageStore.setKey('isActive', false);
       currentPilgrimageStore.setKey('lastUpdate', new Date().toISOString());
-      
+
       uiStateStore.setKey('success', 'Pilgrimage completed successfully');
     } catch (error) {
-      uiStateStore.setKey('error', error instanceof Error ? error.message : 'Failed to complete pilgrimage');
+      uiStateStore.setKey(
+        'error',
+        error instanceof Error ? error.message : 'Failed to complete pilgrimage'
+      );
       throw error;
     }
   },
@@ -445,7 +537,9 @@ async function validatePilgrimProfile(data: CreatePilgrimProfileDto): Promise<Va
   };
 }
 
-async function createPilgrimProfileOnServer(data: CreatePilgrimProfileDto): Promise<PilgrimProfile> {
+async function createPilgrimProfileOnServer(
+  data: CreatePilgrimProfileDto
+): Promise<PilgrimProfile> {
   // Implement API call to create profile
   const profile: PilgrimProfile = {
     id: crypto.randomUUID(),
@@ -461,15 +555,18 @@ async function createPilgrimProfileOnServer(data: CreatePilgrimProfileDto): Prom
     version: 1,
     isActive: true,
   };
-  
+
   return profile;
 }
 
-async function updatePilgrimProfileOnServer(profileId: string, updates: UpdatePilgrimProfileDto): Promise<PilgrimProfile> {
+async function updatePilgrimProfileOnServer(
+  profileId: string,
+  updates: UpdatePilgrimProfileDto
+): Promise<PilgrimProfile> {
   // Implement API call to update profile
   const currentProfile = pilgrimProfileStore.get().profiles[profileId];
   if (!currentProfile) throw new Error('Profile not found');
-  
+
   return {
     ...currentProfile,
     ...updates,
@@ -503,7 +600,10 @@ async function updateProgressOnServer(pilgrimageId: string, progressData: any): 
   throw new Error('Not implemented');
 }
 
-async function completePilgrimageOnServer(pilgrimageId: string, completionData: any): Promise<void> {
+async function completePilgrimageOnServer(
+  pilgrimageId: string,
+  completionData: any
+): Promise<void> {
   // Implement API call to complete pilgrimage
   throw new Error('Not implemented');
 }
