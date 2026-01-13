@@ -1,8 +1,8 @@
 ---
 import RoughFrame from './RoughFrame.astro';
 
-export type Variant = "default" | "elevated";
-export type Padding = "sm" | "md" | "lg";
+export type Variant = 'default' | 'elevated';
+export type Padding = 'sm' | 'md' | 'lg';
 
 export interface Props {
   variant?: Variant;
@@ -12,24 +12,24 @@ export interface Props {
 }
 
 const {
-  variant = "default",
-  padding = "md",
+  variant = 'default',
+  padding = 'md',
   hoverable = false,
-  class: className = ""
+  class: className = '',
 } = Astro.props;
 
 const paddingClasses = {
-  sm: "p-4",
-  md: "p-6",
-  lg: "p-8"
+  sm: 'p-4',
+  md: 'p-6',
+  lg: 'p-8',
 };
 
 const variants = {
-  default: "bg-white ring-1 ring-stone-200",
-  elevated: "bg-white ring-1 ring-stone-200 shadow-lg"
+  default: 'bg-white ring-1 ring-stone-200',
+  elevated: 'bg-white ring-1 ring-stone-200 shadow-lg',
 };
 
-const hoverClasses = hoverable ? "transition-transform hover:-translate-y-1" : "";
+const hoverClasses = hoverable ? 'transition-transform hover:-translate-y-1' : '';
 ---
 
 <RoughFrame

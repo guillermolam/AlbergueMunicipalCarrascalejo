@@ -11,8 +11,8 @@ echo ""
 
 # Check if .env file exists
 if [ ! -f .env ]; then
-    echo " .env file not found"
-    exit 1
+	echo " .env file not found"
+	exit 1
 fi
 
 # Load environment variables from .env
@@ -23,10 +23,10 @@ set +a
 
 # Check if logged in to Fermyon Cloud
 if ! spin cloud login --status &>/dev/null; then
-    echo " Not logged in to Fermyon Cloud"
-    echo "Please run: spin cloud login --auth-method token"
-    echo "Or set SPIN_AUTH_TOKEN environment variable"
-    exit 1
+	echo " Not logged in to Fermyon Cloud"
+	echo "Please run: spin cloud login --auth-method token"
+	echo "Or set SPIN_AUTH_TOKEN environment variable"
+	exit 1
 fi
 
 echo " Authenticated to Fermyon Cloud"
@@ -35,8 +35,8 @@ echo ""
 # Build the Spin app
 echo " Building Spin app..."
 spin build || {
-    echo " Build failed"
-    exit 1
+	echo " Build failed"
+	exit 1
 }
 
 echo " Build completed"
@@ -47,32 +47,32 @@ echo ""
 DEPLOY_VARS=""
 
 while IFS='=' read -r key value; do
-    # Skip comments and empty lines
-    [[ "$key" =~ ^#.*$ ]] && continue
-    [[ -z "$key" ]] && continue
+	# Skip comments and empty lines
+	[[ $key =~ ^#.*$ ]] && continue
+	[[ -z $key ]] && continue
 
-    # Only process SPIN_VARIABLE_* entries
-    if [[ "$key" =~ ^SPIN_VARIABLE_ ]]; then
-        # Remove SPIN_VARIABLE_ prefix and convert to lowercase
-        var_name="${key#SPIN_VARIABLE_}"
-        var_name=$(echo "$var_name" | tr '[:upper:]' '[:lower:]')
+	# Only process SPIN_VARIABLE_* entries
+	if [[ $key =~ ^SPIN_VARIABLE_ ]]; then
+		# Remove SPIN_VARIABLE_ prefix and convert to lowercase
+		var_name="${key#SPIN_VARIABLE_}"
+		var_name=$(echo "$var_name" | tr '[:upper:]' '[:lower:]')
 
-        # Remove quotes from value
-        value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+		# Remove quotes from value
+		value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
 
-        # Add to deployment variables
-        DEPLOY_VARS="$DEPLOY_VARS --variable ${var_name}=${value}"
-        echo "   Setting variable: ${var_name}"
-    fi
-done < .env
+		# Add to deployment variables
+		DEPLOY_VARS="$DEPLOY_VARS --variable ${var_name}=${value}"
+		echo "   Setting variable: ${var_name}"
+	fi
+done <.env
 
 echo ""
 echo " Deploying to Fermyon Cloud..."
 
 # Deploy to Fermyon Cloud with variables
 spin cloud deploy --from spin.toml $DEPLOY_VARS || {
-    echo " Deployment failed"
-    exit 1
+	echo " Deployment failed"
+	exit 1
 }
 
 echo ""
@@ -83,9 +83,9 @@ echo ""
 # Initialize SQLite if this is first deployment
 echo "  Initializing SQLite database..."
 if ./scripts/init-sqlite-fermyon.sh; then
-    echo " SQLite initialized successfully"
+	echo " SQLite initialized successfully"
 else
-    echo "  SQLite initialization skipped or already initialized"
+	echo "  SQLite initialization skipped or already initialized"
 fi
 
 echo ""

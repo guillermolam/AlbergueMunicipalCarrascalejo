@@ -5,7 +5,6 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="Página no encontrada - Albergue Municipal Carrascalejo">
   <main class="container mx-auto px-4 py-8 max-w-2xl min-h-screen flex items-center justify-center">
-    
     <div class="text-center w-full">
       <RoughFrame padding="lg" texture="cross-hatch" class="mb-8">
         <div class="text-8xl mb-4">🚶‍♂️</div>
@@ -14,31 +13,20 @@ import Layout from '../layouts/Layout.astro';
           La página que buscas no existe. Pero no te preocupes, el Camino continúa.
         </p>
       </RoughFrame>
-      
+
       <div class="space-y-4">
         <p class="text-stone-700">Error 404 - Página no encontrada</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <SketchyButton 
-            href="/" 
-            text="Volver al Inicio" 
-            variant="primary" 
-            size="lg" 
-          />
-          <SketchyButton 
-            href="/info" 
-            text="Más Información" 
-            variant="outline" 
-            size="lg" 
-          />
+          <SketchyButton href="/" text="Volver al Inicio" variant="primary" size="lg" />
+          <SketchyButton href="/info" text="Más Información" variant="outline" size="lg" />
         </div>
       </div>
-      
+
       <div class="mt-12 text-center">
         <p class="text-sm text-stone-500 italic">
           "El Camino no se termina aquí. Cada paso es una nueva oportunidad."
         </p>
       </div>
     </div>
-    
   </main>
 </Layout>

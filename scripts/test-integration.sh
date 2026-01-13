@@ -27,19 +27,19 @@ SPIN_PID=$!
 # Wait for gateway to start with retries
 echo " Waiting for gateway to start..."
 for i in {1..30}; do
-    if curl -f "http://0.0.0.0:$PORT/api/health" > /dev/null 2>&1; then
-        echo " Gateway is healthy (attempt $i)"
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo " Gateway health check failed after 30 attempts"
-        echo " Checking gateway logs..."
-        jobs -p | xargs -r ps -f
-        kill $SPIN_PID 2>/dev/null || true
-        exit 1
-    fi
-    echo " Waiting for gateway... (attempt $i/30)"
-    sleep 2
+	if curl -f "http://0.0.0.0:$PORT/api/health" >/dev/null 2>&1; then
+		echo " Gateway is healthy (attempt $i)"
+		break
+	fi
+	if [ $i -eq 30 ]; then
+		echo " Gateway health check failed after 30 attempts"
+		echo " Checking gateway logs..."
+		jobs -p | xargs -r ps -f
+		kill $SPIN_PID 2>/dev/null || true
+		exit 1
+	fi
+	echo " Waiting for gateway... (attempt $i/30)"
+	sleep 2
 done
 
 # Run integration tests
@@ -60,8 +60,8 @@ kill $SPIN_PID 2>/dev/null || true
 wait $SPIN_PID 2>/dev/null || true
 
 if [ $TEST_RESULT -eq 0 ]; then
-    echo " All integration tests passed!"
+	echo " All integration tests passed!"
 else
-    echo " Some integration tests failed"
-    exit 1
+	echo " Some integration tests failed"
+	exit 1
 fi

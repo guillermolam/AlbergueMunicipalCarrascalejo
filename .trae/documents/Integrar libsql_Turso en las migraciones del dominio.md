@@ -3,6 +3,7 @@
 Dejar las migraciones listas para Turso usando **libsql** como driver remoto, sin romper el flujo actual de migraciones con SeaORM/SQLite que ya tienes en `crates/migration`.
 
 La idea es:
+
 - Mantener **SeaORM + sqlx-sqlite** para SQLite local (dev/tests).
 - Añadir un **camino paralelo de migraciones basado en libsql** para Turso (URL `libsql://…`).
 - No mezclar libsql y sqlx-sqlite en el mismo binario para evitar conflictos de SQLite embebido.
@@ -66,7 +67,6 @@ La idea es:
    - Se integrará con `DATABASE_URL` y `TURSO_AUTH_TOKEN` por env vars para no hardcodear secretos.
 
 6. **Flujos de uso concretos**
-
    - **Dev local (SQLite):**
      - `DATABASE_URL=sqlite://albergue.db cargo run -p albergue-migration -- fresh`.
      - Esto sigue usando tu stack actual SeaORM/SQLx.

@@ -1,7 +1,7 @@
 # Spin/Fermyon Cloud deployment tasks
 # WASM-based deployment for cloud-native architecture
 
-version: '3'
+version: "3"
 
 vars:
   SPIN_APP_NAME: '{{.SPIN_APP_NAME | default "albergue-carrascalejo"}}'
@@ -11,10 +11,10 @@ vars:
   SPIN_MANIFEST: '{{.SPIN_MANIFEST | default "spin.toml"}}'
 
 env:
-  SPIN_APP_NAME: '{{.SPIN_APP_NAME}}'
-  SPIN_REGISTRY: '{{.SPIN_REGISTRY}}'
-  SPIN_TAG: '{{.SPIN_TAG}}'
-  FERMYON_CLOUD_URL: '{{.FERMYON_CLOUD_URL}}'
+  SPIN_APP_NAME: "{{.SPIN_APP_NAME}}"
+  SPIN_REGISTRY: "{{.SPIN_REGISTRY}}"
+  SPIN_TAG: "{{.SPIN_TAG}}"
+  FERMYON_CLOUD_URL: "{{.FERMYON_CLOUD_URL}}"
 
 tasks:
   # Spin development

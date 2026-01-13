@@ -9,14 +9,22 @@ export const GET: APIRoute = async ({ params }) => {
       return new Response(
         JSON.stringify({
           error: 'Service name is required',
-          availableServices: ['database', 'redis', 'supabase', 'fermyon', 'mqtt', 'websocket', 'gateway'],
+          availableServices: [
+            'database',
+            'redis',
+            'supabase',
+            'fermyon',
+            'mqtt',
+            'websocket',
+            'gateway',
+          ],
         }),
         {
           status: 400,
           headers: {
             'Content-Type': 'application/json',
           },
-        },
+        }
       );
     }
 
@@ -53,14 +61,22 @@ export const GET: APIRoute = async ({ params }) => {
         return new Response(
           JSON.stringify({
             error: 'Unknown service',
-            availableServices: ['database', 'redis', 'supabase', 'fermyon', 'mqtt', 'websocket', 'gateway'],
+            availableServices: [
+              'database',
+              'redis',
+              'supabase',
+              'fermyon',
+              'mqtt',
+              'websocket',
+              'gateway',
+            ],
           }),
           {
             status: 404,
             headers: {
               'Content-Type': 'application/json',
             },
-          },
+          }
         );
     }
 
@@ -86,7 +102,7 @@ export const GET: APIRoute = async ({ params }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-      },
+      }
     );
   }
 };
@@ -121,7 +137,7 @@ export const ALL: APIRoute = async () => {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
         },
-      },
+      }
     );
   } catch (error) {
     console.error('Health check error:', error);
@@ -135,7 +151,7 @@ export const ALL: APIRoute = async () => {
         headers: {
           'Content-Type': 'application/json',
         },
-      },
+      }
     );
   }
 };

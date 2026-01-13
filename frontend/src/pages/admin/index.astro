@@ -10,8 +10,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         <div class="max-w-md">
           <h1 class="text-4xl font-bold">Admin Dashboard</h1>
           <p class="py-6 text-base-content/70">
-            Welcome to the Albergue Municipal administration panel. 
-            Monitor services, manage bookings, and oversee pilgrim data.
+            Welcome to the Albergue Municipal administration panel. Monitor services, manage
+            bookings, and oversee pilgrim data.
           </p>
         </div>
       </div>
@@ -22,7 +22,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-primary">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            ></path>
           </svg>
         </div>
         <div class="stat-title">Active Pilgrims</div>
@@ -33,7 +38,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-success">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            ></path>
           </svg>
         </div>
         <div class="stat-title">Today's Bookings</div>
@@ -44,7 +54,11 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-info">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
         <div class="stat-title">System Health</div>
@@ -55,7 +69,11 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-warning">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
         <div class="stat-title">Avg Response</div>
@@ -68,30 +86,69 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     <div class="space-y-4">
       <h2 class="text-xl font-semibold text-base-content">Quick Actions</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <a href="/admin/services" class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+        <a
+          href="/admin/services"
+          class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+        >
           <div class="card-body items-center text-center">
-            <svg class="w-12 h-12 text-primary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            <svg
+              class="w-12 h-12 text-primary mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              ></path>
             </svg>
             <h3 class="card-title">Monitor Services</h3>
             <p class="text-base-content/70">Check health status of all system services</p>
           </div>
         </a>
 
-        <a href="/admin/bookings" class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+        <a
+          href="/admin/bookings"
+          class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+        >
           <div class="card-body items-center text-center">
-            <svg class="w-12 h-12 text-success mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg
+              class="w-12 h-12 text-success mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
             </svg>
             <h3 class="card-title">Manage Bookings</h3>
             <p class="text-base-content/70">Review and manage pilgrim bookings</p>
           </div>
         </a>
 
-        <a href="/admin/pilgrims" class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+        <a
+          href="/admin/pilgrims"
+          class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+        >
           <div class="card-body items-center text-center">
-            <svg class="w-12 h-12 text-info mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <svg
+              class="w-12 h-12 text-info mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
             </svg>
             <h3 class="card-title">View Pilgrims</h3>
             <p class="text-base-content/70">Browse pilgrim profiles and check-ins</p>

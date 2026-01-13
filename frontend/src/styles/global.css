@@ -46,7 +46,7 @@
 
   /* Shadows */
   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.10);
+  --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.1);
 
   /* Layout */
   --container: 80rem; /* ~1280px */
@@ -434,7 +434,7 @@ button {
 }
 
 .opacity-10 {
-  opacity: 0.10;
+  opacity: 0.1;
 }
 
 /* Simple transitions */
@@ -487,7 +487,9 @@ button {
 
 /* Layered shadow */
 .doodle-shadow {
-  box-shadow: 2px 2px rgba(0, 0, 0, 0.20), 4px 4px rgba(0, 0, 0, 0.10);
+  box-shadow:
+    2px 2px rgba(0, 0, 0, 0.2),
+    4px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Sketch underline */
@@ -496,7 +498,7 @@ button {
 }
 
 .sketch-underline::after {
-  content: "";
+  content: '';
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='3' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,2 Q5,0 10,2 T20,2 T30,2 T40,2 T50,2 T60,2 T70,2 T80,2 T90,2 T100,2' stroke='%2300AB39' stroke-width='2' fill='none'/%3E%3C/svg%3E");
   background-repeat: repeat-x;
   background-size: 100px 3px;
@@ -511,8 +513,8 @@ button {
 /* Cross-hatch */
 .sketchy-bg {
   background-image:
-    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px 11px),
-    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px 11px);
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.03) 10px 11px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.03) 10px 11px);
 }
 
 /* Paper noise overlay */
@@ -528,7 +530,7 @@ button {
 
 .wired-border::before,
 .wired-border::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: -2px;
   pointer-events: none;
@@ -539,7 +541,7 @@ button {
 
 .wired-border::after {
   border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
-  opacity: 0.10;
+  opacity: 0.1;
 }
 
 /* Squiggle top decoration */
@@ -548,7 +550,7 @@ button {
 }
 
 .squiggle-top::before {
-  content: "";
+  content: '';
   opacity: 0.5;
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,2.5 Q5,0 10,2.5 T20,2.5 T30,2.5 T40,2.5 T50,2.5 T60,2.5 T70,2.5 T80,2.5 T90,2.5 T100,2.5' stroke='currentColor' stroke-width='2' fill='none'/%3E%3C/svg%3E");
   background-repeat: repeat-x;
@@ -561,7 +563,7 @@ button {
 
 /* Arrow doodle */
 .arrow-doodle::after {
-  content: "→";
+  content: '→';
   margin-left: 0.3em;
   font-size: 1.25em;
   display: inline-block;
@@ -588,9 +590,16 @@ button {
    ========================================================================== */
 
 @keyframes wobble {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(0.5deg); }
-  75% { transform: rotate(-0.5deg); }
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(0.5deg);
+  }
+  75% {
+    transform: rotate(-0.5deg);
+  }
 }
 
 .wobble {
@@ -598,8 +607,13 @@ button {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(2deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
 }
 
 .animate-float {

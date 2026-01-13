@@ -1,7 +1,7 @@
 ---
 import DoodleCard from './DoodleCard.astro';
 
-export type Tone = "green" | "blue" | "yellow";
+export type Tone = 'green' | 'blue' | 'yellow';
 
 export interface Props {
   emoji: string;
@@ -10,23 +10,18 @@ export interface Props {
   tone?: Tone;
 }
 
-const {
-  emoji,
-  title,
-  description,
-  tone = "green"
-} = Astro.props;
+const { emoji, title, description, tone = 'green' } = Astro.props;
 
 const toneColors = {
-  green: "text-brand-green",
-  blue: "text-brand-blue",
-  yellow: "text-yellow-600"
+  green: 'text-brand-green',
+  blue: 'text-brand-blue',
+  yellow: 'text-yellow-600',
 };
 
 const toneBorders = {
-  green: "border-brand-green/20",
-  blue: "border-brand-blue/20", 
-  yellow: "border-yellow-400/20"
+  green: 'border-brand-green/20',
+  blue: 'border-brand-blue/20',
+  yellow: 'border-yellow-400/20',
 };
 ---
 

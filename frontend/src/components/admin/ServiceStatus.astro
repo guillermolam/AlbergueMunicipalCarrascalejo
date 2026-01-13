@@ -19,18 +19,22 @@ const { initialServices = [] } = Astro.props;
         </tr>
       </thead>
       <tbody>
-        {initialServices.map((s) => (
-          <tr>
-            <td class="font-medium">{s.name}</td>
-            <td>
-              <span class={`badge ${s.status === 'healthy' ? 'badge-success' : s.status === 'warning' ? 'badge-warning' : 'badge-error'}`}>
-                {s.status}
-              </span>
-            </td>
-            <td class="font-mono">{s.responseTime}</td>
-            <td class="text-base-content/70">{s.message}</td>
-          </tr>
-        ))}
+        {
+          initialServices.map((s) => (
+            <tr>
+              <td class="font-medium">{s.name}</td>
+              <td>
+                <span
+                  class={`badge ${s.status === 'healthy' ? 'badge-success' : s.status === 'warning' ? 'badge-warning' : 'badge-error'}`}
+                >
+                  {s.status}
+                </span>
+              </td>
+              <td class="font-mono">{s.responseTime}</td>
+              <td class="text-base-content/70">{s.message}</td>
+            </tr>
+          ))
+        }
       </tbody>
     </table>
   </div>

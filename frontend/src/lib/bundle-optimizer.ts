@@ -5,17 +5,17 @@ export interface BundleOptimizationConfig {
   maxChunkSize: number;
   maxInitialChunkSize: number;
   maxAsyncChunkSize: number;
-  
+
   // Asset size limits (in bytes)
   maxAssetSize: number;
   maxEntrypointSize: number;
-  
+
   // Optimization flags
   splitChunks: boolean;
   minimize: boolean;
   sourceMaps: boolean;
   treeShaking: boolean;
-  
+
   // Performance budgets
   budgets: PerformanceBudget[];
 }
@@ -35,12 +35,12 @@ export const defaultBundleConfig: BundleOptimizationConfig = {
   maxAsyncChunkSize: 200, // 200KB
   maxAssetSize: 50 * 1024, // 50KB
   maxEntrypointSize: 150 * 1024, // 150KB
-  
+
   splitChunks: true,
   minimize: true,
   sourceMaps: true,
   treeShaking: true,
-  
+
   budgets: [
     {
       type: 'bundle',
@@ -97,7 +97,7 @@ export const microfrontendChunkStrategy = {
   maxInitialRequests: 10,
   automaticNameDelimiter: '~',
   name: true,
-  
+
   cacheGroups: {
     // Framework chunks
     'solid-js': {
@@ -106,14 +106,14 @@ export const microfrontendChunkStrategy = {
       priority: 10,
       reuseExistingChunk: true,
     },
-    
-    'nanostores': {
+
+    nanostores: {
       name: 'nanostores',
       test: /[\\/]node_modules[\\/]nanostores[\\/]/,
       priority: 9,
       reuseExistingChunk: true,
     },
-    
+
     // UI component chunks
     'ui-components': {
       name: 'ui-components',
@@ -121,7 +121,7 @@ export const microfrontendChunkStrategy = {
       priority: 8,
       reuseExistingChunk: true,
     },
-    
+
     // Feature-specific chunks
     'booking-components': {
       name: 'booking-components',
@@ -129,21 +129,21 @@ export const microfrontendChunkStrategy = {
       priority: 7,
       reuseExistingChunk: true,
     },
-    
+
     'dashboard-components': {
       name: 'dashboard-components',
       test: /[\\/]src[\\/](components|islands)[\\/]dashboard[\\/]/,
       priority: 7,
       reuseExistingChunk: true,
     },
-    
+
     'admin-components': {
       name: 'admin-components',
       test: /[\\/]src[\\/](components|islands)[\\/]admin[\\/]/,
       priority: 7,
       reuseExistingChunk: true,
     },
-    
+
     // Design system chunks
     'doodle-system': {
       name: 'doodle-system',
@@ -151,7 +151,7 @@ export const microfrontendChunkStrategy = {
       priority: 6,
       reuseExistingChunk: true,
     },
-    
+
     // Utility chunks
     'app-stores': {
       name: 'app-stores',
@@ -159,24 +159,24 @@ export const microfrontendChunkStrategy = {
       priority: 5,
       reuseExistingChunk: true,
     },
-    
+
     'app-utils': {
       name: 'app-utils',
       test: /[\\/]src[\\/](utils|lib)[\\/]/,
       priority: 4,
       reuseExistingChunk: true,
     },
-    
+
     // Vendor chunks
-    'vendor': {
+    vendor: {
       name: 'vendor',
       test: /[\\/]node_modules[\\/]/,
       priority: 1,
       reuseExistingChunk: true,
     },
-    
+
     // Common chunks
-    'common': {
+    common: {
       name: 'common',
       minChunks: 2,
       priority: 0,
@@ -188,30 +188,30 @@ export const microfrontendChunkStrategy = {
 // Performance monitoring utilities
 export class BundlePerformanceMonitor {
   private metrics: Map<string, number> = new Map();
-  
+
   recordChunkSize(name: string, size: number) {
     this.metrics.set(`chunk-${name}`, size);
   }
-  
+
   recordAssetSize(name: string, size: number) {
     this.metrics.set(`asset-${name}`, size);
   }
-  
+
   recordEntrypointSize(name: string, size: number) {
     this.metrics.set(`entrypoint-${name}`, size);
   }
-  
+
   checkBudgets(budgets: PerformanceBudget[]): { violations: string[]; warnings: string[] } {
     const violations: string[] = [];
     const warnings: string[] = [];
-    
-    budgets.forEach(budget => {
+
+    budgets.forEach((budget) => {
       const key = `${budget.type}-${budget.name}`;
       const size = this.metrics.get(key);
-      
+
       if (size !== undefined) {
         const sizeKB = size / 1024;
-        
+
         if (sizeKB > budget.maximumSize) {
           violations.push(
             `${budget.type} "${budget.name}" exceeds budget: ${sizeKB.toFixed(2)}KB > ${budget.maximumSize}KB`
@@ -223,14 +223,14 @@ export class BundlePerformanceMonitor {
         }
       }
     });
-    
+
     return { violations, warnings };
   }
-  
+
   getMetrics(): Record<string, number> {
     return Object.fromEntries(this.metrics);
   }
-  
+
   clear() {
     this.metrics.clear();
   }
@@ -240,7 +240,7 @@ export class BundlePerformanceMonitor {
 export function analyzeBundleStats(stats: any): BundleAnalysis {
   const chunks = stats.compilation.chunks;
   const assets = stats.compilation.assets;
-  
+
   const analysis: BundleAnalysis = {
     totalSize: 0,
     chunkCount: chunks.length,
@@ -251,20 +251,20 @@ export function analyzeBundleStats(stats: any): BundleAnalysis {
     chunks: [],
     assets: [],
   };
-  
+
   // Analyze chunks
   chunks.forEach((chunk: any) => {
     const size = chunk.size;
     analysis.totalSize += size;
-    
+
     if (size > analysis.largestChunk.size) {
       analysis.largestChunk = { name: chunk.name, size };
     }
-    
+
     if (size < analysis.smallestChunk.size) {
       analysis.smallestChunk = { name: chunk.name, size };
     }
-    
+
     analysis.chunks.push({
       name: chunk.name,
       size,
@@ -272,9 +272,9 @@ export function analyzeBundleStats(stats: any): BundleAnalysis {
       files: chunk.files,
     });
   });
-  
+
   analysis.averageChunkSize = analysis.totalSize / analysis.chunkCount;
-  
+
   // Analyze assets
   Object.entries(assets).forEach(([name, asset]: [string, any]) => {
     analysis.assets.push({
@@ -283,7 +283,7 @@ export function analyzeBundleStats(stats: any): BundleAnalysis {
       type: name.split('.').pop() || 'unknown',
     });
   });
-  
+
   return analysis;
 }
 
@@ -308,45 +308,49 @@ export interface BundleAnalysis {
 }
 
 // Optimization recommendations
-export function generateOptimizationRecommendations(analysis: BundleAnalysis, config: BundleOptimizationConfig): string[] {
+export function generateOptimizationRecommendations(
+  analysis: BundleAnalysis,
+  config: BundleOptimizationConfig
+): string[] {
   const recommendations: string[] = [];
-  
+
   // Check chunk sizes
   if (analysis.largestChunk.size > config.maxChunkSize * 1024) {
     recommendations.push(
       `Consider splitting the largest chunk "${analysis.largestChunk.name}" (${(analysis.largestChunk.size / 1024).toFixed(2)}KB)`
     );
   }
-  
+
   // Check average chunk size
   if (analysis.averageChunkSize > config.maxChunkSize * 1024) {
     recommendations.push(
       `Average chunk size (${(analysis.averageChunkSize / 1024).toFixed(2)}KB) exceeds recommended limit (${config.maxChunkSize}KB)`
     );
   }
-  
+
   // Check total size
-  if (analysis.totalSize > 1000 * 1024) { // 1MB
+  if (analysis.totalSize > 1000 * 1024) {
+    // 1MB
     recommendations.push(
       `Total bundle size (${(analysis.totalSize / 1024).toFixed(2)}KB) is quite large. Consider code splitting or lazy loading.`
     );
   }
-  
+
   // Check for duplicate modules
   const moduleCounts = new Map<string, number>();
-  analysis.chunks.forEach(chunk => {
+  analysis.chunks.forEach((chunk) => {
     (chunk.modules as any[]).forEach((module: any) => {
       moduleCounts.set(module, (moduleCounts.get(module) || 0) + 1);
     });
   });
-  
+
   const duplicates = Array.from(moduleCounts.entries()).filter(([_, count]) => count > 1);
   if (duplicates.length > 0) {
     recommendations.push(
       `Found ${duplicates.length} modules duplicated across chunks. Consider using shared chunks.`
     );
   }
-  
+
   return recommendations;
 }
 

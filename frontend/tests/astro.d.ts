@@ -11,11 +11,11 @@ declare namespace Astro {
   interface Props {
     [key: string]: any;
   }
-  
+
   interface Slots {
     [key: string]: any;
   }
-  
+
   interface PropsWithChildren<P = {}> extends P {
     children?: any;
   }

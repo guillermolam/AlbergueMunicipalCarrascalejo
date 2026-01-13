@@ -35,6 +35,7 @@ graph TD
 ```
 
 ## 2. Technology Description
+
 - **Frontend**: Astro@5 + UnoCSS@65 + TypeScript@5 + Solid.js (islands only)
 - **Initialization Tool**: astro-create
 - **Styling**: UnoCSS with neobrutalist preset, custom Extremadura color tokens
@@ -44,20 +45,22 @@ graph TD
 - **Deployment**: Vercel (frontend) + Fermyon Cloud (backend)
 
 ## 3. Route definitions
-| Route | Purpose |
-|-------|---------|
-| / | Home page with brutalist hero and booking form |
-| /booking | Bed selection and pilgrim details |
-| /verification | ID document upload and OCR validation |
-| /confirmation | Booking summary with QR code |
-| /admin | Dashboard for booking management |
-| /admin/bookings | Detailed booking list and controls |
-| /api/bookings | Booking API endpoints (Spin component) |
-| /api/verification | ID verification API (Spin component) |
+
+| Route             | Purpose                                        |
+| ----------------- | ---------------------------------------------- |
+| /                 | Home page with brutalist hero and booking form |
+| /booking          | Bed selection and pilgrim details              |
+| /verification     | ID document upload and OCR validation          |
+| /confirmation     | Booking summary with QR code                   |
+| /admin            | Dashboard for booking management               |
+| /admin/bookings   | Detailed booking list and controls             |
+| /api/bookings     | Booking API endpoints (Spin component)         |
+| /api/verification | ID verification API (Spin component)           |
 
 ## 4. API definitions
 
 ### 4.1 Booking API
+
 ```
 POST /api/bookings/create
 ```
@@ -78,6 +81,7 @@ Response:
 | status | string | Booking status |
 
 Example:
+
 ```json
 {
   "check_in": "2025-12-25",
@@ -94,6 +98,7 @@ Example:
 ```
 
 ### 4.2 Verification API
+
 ```
 POST /api/verification/upload
 ```
@@ -120,18 +125,18 @@ graph TD
   D --> E[Event Store]
   D --> F[MQTT Publisher]
   F --> G[websocket-bridge]
-  
+
   subgraph "Spin Component"
     B
     C
     D
   end
-  
+
   subgraph "Event Layer"
     E
     F
   end
-  
+
   subgraph "Real-time Layer"
     G
   end
@@ -140,11 +145,12 @@ graph TD
 ## 6. Data model
 
 ### 6.1 Data model definition
+
 ```mermaid
 erDiagram
   BOOKING ||--o{ PILGRIM : contains
   BOOKING ||--o{ VERIFICATION : has
-  
+
   BOOKING {
     string id PK
     string check_in
@@ -154,7 +160,7 @@ erDiagram
     string qr_code
     string created_at
   }
-  
+
   PILGRIM {
     string id PK
     string booking_id FK
@@ -163,7 +169,7 @@ erDiagram
     string document_number
     string nationality
   }
-  
+
   VERIFICATION {
     string id PK
     string booking_id FK
@@ -175,55 +181,58 @@ erDiagram
 ```
 
 ### 6.2 UnoCSS Configuration
+
 ```javascript
 // uno.config.ts
-import { defineConfig } from 'unocss'
-import presetBrutal from '@unocss/preset-brutal'
+import { defineConfig } from "unocss";
+import presetBrutal from "@unocss/preset-brutal";
 
 export default defineConfig({
   presets: [
     presetBrutal({
       colors: {
-        primary: '#00AB39',
-        secondary: '#FFFFFF',
-        accent: '#EAC102',
-        danger: '#ED1C24',
-        info: '#0071BC',
-        dark: '#000000'
+        primary: "#00AB39",
+        secondary: "#FFFFFF",
+        accent: "#EAC102",
+        danger: "#ED1C24",
+        info: "#0071BC",
+        dark: "#000000",
       },
       borderWidth: {
-        brutal: '4px',
-        chunky: '8px'
+        brutal: "4px",
+        chunky: "8px",
       },
       spacing: {
-        brutal: '32px',
-        chunky: '64px'
-      }
-    })
+        brutal: "32px",
+        chunky: "64px",
+      },
+    }),
   ],
   theme: {
     extend: {
       fontFamily: {
-        brutal: ['Space Grotesk', 'sans-serif']
-      }
-    }
-  }
-})
+        brutal: ["Space Grotesk", "sans-serif"],
+      },
+    },
+  },
+});
 ```
 
 ### 6.3 Rough.js Integration
+
 ```typescript
 // utils/rough.ts
-import rough from 'roughjs/bundled/rough.esm.js'
+import rough from "roughjs/bundled/rough.esm.js";
 
 export const addBrutalBorder = (element: HTMLElement, options = {}) => {
-  const rc = rough.svg(element)
+  const rc = rough.svg(element);
   const border = rc.rectangle(0, 0, element.offsetWidth, element.offsetHeight, {
     roughness: 2.5,
     bowing: 4,
-    stroke: '#000000',
+    stroke: "#000000",
     strokeWidth: 4,
-    ...options
-  })
-  element.appendChild(border)
-}
+    ...options,
+  });
+  element.appendChild(border);
+};
+```

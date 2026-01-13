@@ -1,72 +1,72 @@
 // SSR-safe configuration management with Supabase integration
 // Handles secrets, environment variables, and runtime configuration
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
 // SSR-safe environment check
-const isServer = typeof window === 'undefined'
+const isServer = typeof window === 'undefined';
 
 // Configuration interface
 export interface AppConfig {
   // Database & API
   supabase: {
-    url: string
-    anonKey: string
-    serviceKey?: string
-  }
-  
+    url: string;
+    anonKey: string;
+    serviceKey?: string;
+  };
+
   // Application settings
   app: {
-    name: string
-    version: string
-    environment: 'development' | 'staging' | 'production'
-    baseUrl: string
-    apiUrl: string
-  }
-  
+    name: string;
+    version: string;
+    environment: 'development' | 'staging' | 'production';
+    baseUrl: string;
+    apiUrl: string;
+  };
+
   // Security settings
   security: {
-    jwtSecret: string
-    encryptionKey: string
-    sessionTimeout: number
-    maxLoginAttempts: number
-  }
-  
+    jwtSecret: string;
+    encryptionKey: string;
+    sessionTimeout: number;
+    maxLoginAttempts: number;
+  };
+
   // Feature flags
   features: {
-    enable2FA: boolean
-    enableNotifications: boolean
-    enableAnalytics: boolean
-    enableCache: boolean
-  }
-  
+    enable2FA: boolean;
+    enableNotifications: boolean;
+    enableAnalytics: boolean;
+    enableCache: boolean;
+  };
+
   // External services
   services: {
     redis: {
-      url: string
-      password?: string
-    }
+      url: string;
+      password?: string;
+    };
     email: {
-      provider: string
-      apiKey: string
-      fromAddress: string
-    }
+      provider: string;
+      apiKey: string;
+      fromAddress: string;
+    };
     sms: {
-      provider: string
-      apiKey: string
-      fromNumber: string
-    }
-  }
-  
+      provider: string;
+      apiKey: string;
+      fromNumber: string;
+    };
+  };
+
   // Camino-specific settings
   camino: {
-    maxBookingDays: number
-    minBookingDays: number
-    checkInTime: string
-    checkOutTime: string
-    maxGuestsPerRoom: number
-    emergencyContact: string
-  }
+    maxBookingDays: number;
+    minBookingDays: number;
+    checkInTime: string;
+    checkOutTime: string;
+    maxGuestsPerRoom: number;
+    emergencyContact: string;
+  };
 }
 
 // Default configuration (fallback values)
@@ -76,19 +76,19 @@ const DEFAULT_CONFIG: Partial<AppConfig> = {
     version: '1.0.0',
     environment: 'development',
     baseUrl: 'https://alberguecarrascalejo.fermyon.app',
-    apiUrl: '/api'
+    apiUrl: '/api',
   },
   security: {
     jwtSecret: 'dev-secret-key',
     encryptionKey: 'dev-encryption-key',
     sessionTimeout: 24 * 60 * 60 * 1000, // 24 hours
-    maxLoginAttempts: 5
+    maxLoginAttempts: 5,
   },
   features: {
     enable2FA: true,
     enableNotifications: true,
     enableAnalytics: true,
-    enableCache: true
+    enableCache: true,
   },
   camino: {
     maxBookingDays: 30,
@@ -96,30 +96,31 @@ const DEFAULT_CONFIG: Partial<AppConfig> = {
     checkInTime: '14:00',
     checkOutTime: '11:00',
     maxGuestsPerRoom: 8,
-    emergencyContact: '+34-924-123-456'
-  }
-}
+    emergencyContact: '+34-924-123-456',
+  },
+};
 
 // Configuration cache
-let configCache: AppConfig | null = null
-let configLoaded = false
+let configCache: AppConfig | null = null;
+let configLoaded = false;
 
 // Supabase client (initialized lazily)
-let supabaseClient: ReturnType<typeof createClient> | null = null
+let supabaseClient: ReturnType<typeof createClient> | null = null;
 
 /**
  * Initialize Supabase client (SSR-safe)
  */
 function getSupabaseClient() {
   if (!supabaseClient && isServer) {
-    const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY
-    
+    const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey =
+      process.env.SUPABASE_ANON_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
     if (supabaseUrl && supabaseAnonKey) {
-      supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+      supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
     }
   }
-  return supabaseClient
+  return supabaseClient;
 }
 
 /**
@@ -127,14 +128,14 @@ function getSupabaseClient() {
  */
 async function loadConfigFromSupabase(): Promise<Partial<AppConfig>> {
   if (!isServer) {
-    console.warn('Configuration loading from Supabase is server-side only')
-    return {}
+    console.warn('Configuration loading from Supabase is server-side only');
+    return {};
   }
 
-  const client = getSupabaseClient()
+  const client = getSupabaseClient();
   if (!client) {
-    console.warn('Supabase client not available')
-    return {}
+    console.warn('Supabase client not available');
+    return {};
   }
 
   try {
@@ -142,35 +143,35 @@ async function loadConfigFromSupabase(): Promise<Partial<AppConfig>> {
       .from('app_config')
       .select('key, value, category')
       .eq('environment', getEnvironment())
-      .eq('is_active', true)
+      .eq('is_active', true);
 
     if (error) {
-      console.error('Error loading configuration from Supabase:', error)
-      return {}
+      console.error('Error loading configuration from Supabase:', error);
+      return {};
     }
 
     // Transform database rows into config object
-    const config: Partial<AppConfig> = {}
+    const config: Partial<AppConfig> = {};
     data?.forEach((row: { key: string; value: any }) => {
-      const keys = row.key.split('.')
-      let current: any = config
-      
+      const keys = row.key.split('.');
+      let current: any = config;
+
       // Navigate nested structure
       for (let i = 0; i < keys.length - 1; i++) {
         if (!current[keys[i]]) {
-          current[keys[i]] = {}
+          current[keys[i]] = {};
         }
-        current = current[keys[i]]
+        current = current[keys[i]];
       }
-      
-      // Set final value
-      current[keys[keys.length - 1]] = row.value
-    })
 
-    return config
+      // Set final value
+      current[keys[keys.length - 1]] = row.value;
+    });
+
+    return config;
   } catch (error) {
-    console.error('Exception loading configuration from Supabase:', error)
-    return {}
+    console.error('Exception loading configuration from Supabase:', error);
+    return {};
   }
 }
 
@@ -179,23 +180,23 @@ async function loadConfigFromSupabase(): Promise<Partial<AppConfig>> {
  */
 export function getEnvironment(): 'development' | 'staging' | 'production' {
   if (isServer) {
-    return (process.env.NODE_ENV || process.env.ENVIRONMENT || 'development') as any
+    return (process.env.NODE_ENV || process.env.ENVIRONMENT || 'development') as any;
   }
-  return (import.meta.env.MODE || 'development') as any
+  return (import.meta.env.MODE || 'development') as any;
 }
 
 /**
  * Check if we're running in production
  */
 export function isProduction(): boolean {
-  return getEnvironment() === 'production'
+  return getEnvironment() === 'production';
 }
 
 /**
  * Check if we're running in development
  */
 export function isDevelopment(): boolean {
-  return getEnvironment() === 'development'
+  return getEnvironment() === 'development';
 }
 
 /**
@@ -203,7 +204,7 @@ export function isDevelopment(): boolean {
  */
 export async function loadConfiguration(): Promise<AppConfig> {
   if (configLoaded && configCache) {
-    return configCache
+    return configCache;
   }
 
   // Start with default configuration
@@ -212,50 +213,54 @@ export async function loadConfiguration(): Promise<AppConfig> {
     supabase: {
       url: process.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || '',
       anonKey: process.env.SUPABASE_ANON_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '',
-      serviceKey: process.env.SUPABASE_SERVICE_KEY
+      serviceKey: process.env.SUPABASE_SERVICE_KEY,
     },
     security: {
-      jwtSecret: process.env.JWT_SECRET || import.meta.env.PUBLIC_JWT_SECRET || 'fallback-secret-key',
-      encryptionKey: process.env.ENCRYPTION_KEY || import.meta.env.PUBLIC_ENCRYPTION_KEY || 'fallback-encryption-key',
+      jwtSecret:
+        process.env.JWT_SECRET || import.meta.env.PUBLIC_JWT_SECRET || 'fallback-secret-key',
+      encryptionKey:
+        process.env.ENCRYPTION_KEY ||
+        import.meta.env.PUBLIC_ENCRYPTION_KEY ||
+        'fallback-encryption-key',
       sessionTimeout: DEFAULT_CONFIG.security?.sessionTimeout || 24 * 60 * 60 * 1000,
-      maxLoginAttempts: DEFAULT_CONFIG.security?.maxLoginAttempts || 5
+      maxLoginAttempts: DEFAULT_CONFIG.security?.maxLoginAttempts || 5,
     },
     services: {
       redis: {
         url: process.env.REDIS_URL || import.meta.env.PUBLIC_REDIS_URL || 'redis://localhost:6379',
-        password: process.env.REDIS_PASSWORD || import.meta.env.PUBLIC_REDIS_PASSWORD
+        password: process.env.REDIS_PASSWORD || import.meta.env.PUBLIC_REDIS_PASSWORD,
       },
       email: {
         provider: process.env.EMAIL_PROVIDER || 'smtp',
         apiKey: process.env.EMAIL_API_KEY || '',
-        fromAddress: process.env.EMAIL_FROM || 'noreply@alberguecarrascalejo.es'
+        fromAddress: process.env.EMAIL_FROM || 'noreply@alberguecarrascalejo.es',
       },
       sms: {
         provider: process.env.SMS_PROVIDER || 'twilio',
         apiKey: process.env.SMS_API_KEY || '',
-        fromNumber: process.env.SMS_FROM || '+1234567890'
-      }
-    }
-  } as AppConfig
+        fromNumber: process.env.SMS_FROM || '+1234567890',
+      },
+    },
+  } as AppConfig;
 
   // Load from Supabase (server-side only)
   if (isServer) {
-    const supabaseConfig = await loadConfigFromSupabase()
-    mergedConfig = { ...mergedConfig, ...supabaseConfig }
+    const supabaseConfig = await loadConfigFromSupabase();
+    mergedConfig = { ...mergedConfig, ...supabaseConfig };
   }
 
   // Cache the configuration
-  configCache = mergedConfig
-  configLoaded = true
+  configCache = mergedConfig;
+  configLoaded = true;
 
-  return mergedConfig
+  return mergedConfig;
 }
 
 /**
  * Get configuration (with caching)
  */
 export async function getConfig(): Promise<AppConfig> {
-  return await loadConfiguration()
+  return await loadConfiguration();
 }
 
 /**
@@ -263,21 +268,21 @@ export async function getConfig(): Promise<AppConfig> {
  */
 export function getConfigValue<T = any>(path: string, defaultValue?: T): T {
   if (!configCache) {
-    console.warn('Configuration not loaded yet, using default value')
-    return defaultValue as T
+    console.warn('Configuration not loaded yet, using default value');
+    return defaultValue as T;
   }
 
-  const keys = path.split('.')
-  let current: any = configCache
+  const keys = path.split('.');
+  let current: any = configCache;
 
   for (const key of keys) {
     if (current[key] === undefined) {
-      return defaultValue as T
+      return defaultValue as T;
     }
-    current = current[key]
+    current = current[key];
   }
 
-  return current as T
+  return current as T;
 }
 
 /**
@@ -285,37 +290,40 @@ export function getConfigValue<T = any>(path: string, defaultValue?: T): T {
  */
 export async function updateConfig(updates: Partial<AppConfig>): Promise<void> {
   if (!isServer) {
-    throw new Error('Configuration updates are server-side only')
+    throw new Error('Configuration updates are server-side only');
   }
 
-  const currentConfig = await getConfig()
-  configCache = { ...currentConfig, ...updates }
+  const currentConfig = await getConfig();
+  configCache = { ...currentConfig, ...updates };
 }
 
 /**
  * Clear configuration cache (useful for testing)
  */
 export function clearConfigCache(): void {
-  configCache = null
-  configLoaded = false
-  supabaseClient = null
+  configCache = null;
+  configLoaded = false;
+  supabaseClient = null;
 }
 
 /**
  * Validate configuration completeness
  */
 export function validateConfig(config: AppConfig): string[] {
-  const errors: string[] = []
+  const errors: string[] = [];
 
   // Required fields
-  if (!config.supabase?.url) errors.push('Supabase URL is required')
-  if (!config.supabase?.anonKey) errors.push('Supabase anon key is required')
+  if (!config.supabase?.url) errors.push('Supabase URL is required');
+  if (!config.supabase?.anonKey) errors.push('Supabase anon key is required');
   if (!config.security?.jwtSecret || config.security.jwtSecret === 'fallback-secret-key') {
-    errors.push('JWT secret must be properly configured')
+    errors.push('JWT secret must be properly configured');
   }
-  if (!config.security?.encryptionKey || config.security.encryptionKey === 'fallback-encryption-key') {
-    errors.push('Encryption key must be properly configured')
+  if (
+    !config.security?.encryptionKey ||
+    config.security.encryptionKey === 'fallback-encryption-key'
+  ) {
+    errors.push('Encryption key must be properly configured');
   }
 
-  return errors
+  return errors;
 }

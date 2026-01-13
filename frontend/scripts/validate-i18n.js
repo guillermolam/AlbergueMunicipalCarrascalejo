@@ -8,13 +8,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const languages = [
-  'es', 'en', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ko', 'ja', 
-  'zh', 'ru', 'cs', 'sk', 'hu', 'ca', 'eu', 'gl', 'oc', 'Gode'
+  'es',
+  'en',
+  'fr',
+  'de',
+  'it',
+  'pt',
+  'nl',
+  'pl',
+  'ko',
+  'ja',
+  'zh',
+  'ru',
+  'cs',
+  'sk',
+  'hu',
+  'ca',
+  'eu',
+  'gl',
+  'oc',
+  'Gode',
 ];
 
-const categories = [
-  'common', 'navigation', 'booking', 'dashboard', 'admin', 'messages'
-];
+const categories = ['common', 'navigation', 'booking', 'dashboard', 'admin', 'messages'];
 
 const localesDir = path.join(__dirname, '../src/components/LanguageSelector/locales');
 
@@ -22,8 +38,8 @@ console.log('🔍 Validating i18n configuration...');
 
 let valid = true;
 
-languages.forEach(lang => {
-  categories.forEach(cat => {
+languages.forEach((lang) => {
+  categories.forEach((cat) => {
     const file = path.join(localesDir, lang, `${cat}.json`);
     if (!fs.existsSync(file)) {
       console.error(`❌ Missing file: ${file}`);

@@ -3,16 +3,19 @@
 ## Usage
 
 ### Option 1: Using Task (Recommended)
+
 ```bash
 task update-deps
 ```
 
 ### Option 2: Direct Script Execution
+
 ```bash
 bash scripts/update-deps.sh
 ```
 
 ### Option 3: Manual Update
+
 ```bash
 # Install cargo-edit (first time only)
 cargo install cargo-edit
@@ -28,6 +31,7 @@ cargo upgrade --incompatible
 ## What It Does
 
 The `update-deps` task/script will:
+
 1. Check if `cargo-edit` is installed (provides `cargo upgrade` command)
 2. Install it if missing (~2-3 minutes on first run)
 3. Update all Cargo.toml dependencies to latest compatible versions in:
@@ -43,6 +47,7 @@ The `update-deps` task/script will:
 ## After Updating
 
 After dependencies are updated, rebuild the project:
+
 ```bash
 task build:all
 # or
@@ -52,6 +57,7 @@ spin build
 ## Troubleshooting
 
 If the task fails:
+
 1. Ensure cargo and rustc are installed: `cargo --version`
 2. Check for network connectivity (cargo needs to access crates.io)
 3. Try running the script directly: `bash scripts/update-deps.sh`

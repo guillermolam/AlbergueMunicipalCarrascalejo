@@ -1,8 +1,8 @@
 ---
 import RoughFrame from './RoughFrame.astro';
 
-export type Tone = "green" | "cream" | "blue" | "yellow";
-export type Size = "sm" | "md";
+export type Tone = 'green' | 'cream' | 'blue' | 'yellow';
+export type Size = 'sm' | 'md';
 
 export interface Props {
   label: string;
@@ -12,41 +12,35 @@ export interface Props {
   size?: Size;
 }
 
-const {
-  label,
-  value,
-  sublabel,
-  tone = "green",
-  size = "md"
-} = Astro.props;
+const { label, value, sublabel, tone = 'green', size = 'md' } = Astro.props;
 
 const toneColors = {
-  green: "text-brand-green",
-  cream: "text-stone-700",
-  blue: "text-brand-blue", 
-  yellow: "text-yellow-600"
+  green: 'text-brand-green',
+  cream: 'text-stone-700',
+  blue: 'text-brand-blue',
+  yellow: 'text-yellow-600',
 };
 
 const toneBorders = {
-  green: "border-brand-green",
-  cream: "border-stone-300",
-  blue: "border-brand-blue",
-  yellow: "border-yellow-400"
+  green: 'border-brand-green',
+  cream: 'border-stone-300',
+  blue: 'border-brand-blue',
+  yellow: 'border-yellow-400',
 };
 
 const sizes = {
   sm: {
-    padding: "sm" as const,
-    labelClass: "text-xs",
-    valueClass: "text-lg font-900",
-    sublabelClass: "text-xs"
+    padding: 'sm' as const,
+    labelClass: 'text-xs',
+    valueClass: 'text-lg font-900',
+    sublabelClass: 'text-xs',
   },
   md: {
-    padding: "md" as const,
-    labelClass: "text-sm",
-    valueClass: "text-2xl font-900",
-    sublabelClass: "text-sm"
-  }
+    padding: 'md' as const,
+    labelClass: 'text-sm',
+    valueClass: 'text-2xl font-900',
+    sublabelClass: 'text-sm',
+  },
 };
 
 const currentSize = sizes[size];
@@ -61,8 +55,6 @@ const currentSize = sizes[size];
   <div class="flex flex-col items-center text-center">
     <div class={`${currentSize.labelClass} font-600 mb-1`}>{label}</div>
     <div class={currentSize.valueClass}>{value}</div>
-    {sublabel && (
-      <div class={`${currentSize.sublabelClass} mt-1 opacity-80`}>{sublabel}</div>
-    )}
+    {sublabel && <div class={`${currentSize.sublabelClass} mt-1 opacity-80`}>{sublabel}</div>}
   </div>
 </RoughFrame>

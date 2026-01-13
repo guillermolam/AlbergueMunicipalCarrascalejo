@@ -2,8 +2,8 @@
 // Following CloudEvents specification with lenient parsing
 // Topic naming convention: albergue.v1.{aggregate}.{event}
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// CloudEvents envelope for domain events
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,24 +11,24 @@ pub struct CloudEvent<T> {
     /// CloudEvents version (default: "1.0")
     #[serde(default = "default_spec_version")]
     pub specversion: String,
-    
+
     /// Event type following topic convention: albergue.v1.{aggregate}.{event}
     #[serde(rename = "type")]
     pub event_type: String,
-    
+
     /// Event source (e.g., "booking-service", "notification-service")
     pub source: String,
-    
+
     /// Unique event ID
     pub id: String,
-    
+
     /// Event timestamp
     pub time: DateTime<Utc>,
-    
+
     /// Content type (default: "application/json")
     #[serde(default = "default_content_type")]
     pub datacontenttype: String,
-    
+
     /// Event data payload
     pub data: T,
 }
@@ -216,23 +216,23 @@ pub mod topics {
     pub const PILGRIM_REGISTERED: &str = "albergue.v1.pilgrim.registered";
     pub const PILGRIM_UPDATED: &str = "albergue.v1.pilgrim.updated";
     pub const GDPR_CONSENT_RECORDED: &str = "albergue.v1.pilgrim.gdpr_consent_recorded";
-    
+
     // Booking events
     pub const BOOKING_RESERVED: &str = "albergue.v1.booking.reserved";
     pub const BOOKING_BED_ASSIGNED: &str = "albergue.v1.booking.bed_assigned";
     pub const BOOKING_CONFIRMED: &str = "albergue.v1.booking.confirmed";
     pub const BOOKING_CANCELLED: &str = "albergue.v1.booking.cancelled";
     pub const BOOKING_EXPIRED: &str = "albergue.v1.booking.expired";
-    
+
     // Payment events
     pub const PAYMENT_RECORDED: &str = "albergue.v1.payment.recorded";
     pub const PAYMENT_COMPLETED: &str = "albergue.v1.payment.completed";
-    
+
     // Government submission events
     pub const GOVERNMENT_SUBMISSION_QUEUED: &str = "albergue.v1.government.submission_queued";
     pub const GOVERNMENT_SUBMISSION_SUCCEEDED: &str = "albergue.v1.government.submission_succeeded";
     pub const GOVERNMENT_SUBMISSION_FAILED: &str = "albergue.v1.government.submission_failed";
-    
+
     // Bed events
     pub const BED_STATUS_CHANGED: &str = "albergue.v1.bed.status_changed";
 }

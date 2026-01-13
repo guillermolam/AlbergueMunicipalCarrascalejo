@@ -59,65 +59,73 @@ const hoverClasses = hoverable
     'p-6 md:p-8',
     'transition-all duration-300',
     hoverClasses,
-    className
+    className,
   ]}
 >
   <!-- Icon/Emoji -->
-  {(icon || emoji) && (
-    <div class:list={[
-      'w-12 h-12 md:w-14 md:h-14',
-      'rounded-full',
-      'flex items-center justify-center',
-      'mb-4',
-      'wobble',
-      colorClasses[color]
-    ]}>
-      {emoji && (
-        <span class="text-2xl md:text-3xl">{emoji}</span>
-      )}
-      {icon && !emoji && (
-        <svg class="w-6 h-6 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icon} />
-        </svg>
-      )}
-    </div>
-  )}
+  {
+    (icon || emoji) && (
+      <div
+        class:list={[
+          'w-12 h-12 md:w-14 md:h-14',
+          'rounded-full',
+          'flex items-center justify-center',
+          'mb-4',
+          'wobble',
+          colorClasses[color],
+        ]}
+      >
+        {emoji && <span class="text-2xl md:text-3xl">{emoji}</span>}
+        {icon && !emoji && (
+          <svg
+            class="w-6 h-6 md:w-7 md:h-7 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icon} />
+          </svg>
+        )}
+      </div>
+    )
+  }
 
   <!-- Title -->
-  {title && (
-    <h3 class="sketch-title text-xl md:text-2xl text-[#1A1A1A] mb-2">
-      {title}
-    </h3>
-  )}
+  {title && <h3 class="sketch-title text-xl md:text-2xl text-[#1A1A1A] mb-2">{title}</h3>}
 
   <!-- Badge (if provided) -->
-  {badge && (
-    <div class="inline-block mb-3">
-      <span class="doodle-border px-3 py-1 text-xs font-bold text-[#00AB39] bg-[#E8F5E9] border border-[#00AB39]">
-        {badge}
-      </span>
-    </div>
-  )}
+  {
+    badge && (
+      <div class="inline-block mb-3">
+        <span class="doodle-border px-3 py-1 text-xs font-bold text-[#00AB39] bg-[#E8F5E9] border border-[#00AB39]">
+          {badge}
+        </span>
+      </div>
+    )
+  }
 
   <!-- Description -->
-  {description && (
-    <p class="text-gray-700 leading-relaxed">
-      {description}
-    </p>
-  )}
+  {description && <p class="text-gray-700 leading-relaxed">{description}</p>}
 
   <!-- Slot for additional content -->
   <slot />
 
   <!-- Arrow indicator for links -->
-  {href && (
-    <div class="mt-4 text-[#00AB39] font-bold hand-drawn text-sm flex items-center gap-2">
-      <span>Ver más</span>
-      <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-      </svg>
-    </div>
-  )}
+  {
+    href && (
+      <div class="mt-4 text-[#00AB39] font-bold hand-drawn text-sm flex items-center gap-2">
+        <span>Ver más</span>
+        <svg
+          class="w-4 h-4 transition-transform group-hover:translate-x-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    )
+  }
 </Component>
 
 <style>
@@ -153,7 +161,8 @@ const hoverClasses = hoverable
   }
 
   @keyframes gentle-wobble {
-    0%, 100% {
+    0%,
+    100% {
       transform: rotate(0deg);
     }
     25% {
@@ -175,12 +184,14 @@ const hoverClasses = hoverable
 
   /* Respect reduced motion */
   @media (prefers-reduced-motion: reduce) {
-    a, div {
+    a,
+    div {
       transition: none !important;
       animation: none !important;
     }
 
-    a:hover, div:hover {
+    a:hover,
+    div:hover {
       transform: none !important;
     }
 

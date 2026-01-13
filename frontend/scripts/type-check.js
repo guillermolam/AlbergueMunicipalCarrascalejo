@@ -70,14 +70,14 @@ function checkAstro() {
 // Run TypeScript compilation check
 function runTypeCheck() {
   log('\n🔍 Running TypeScript type checking...', colors.cyan);
-  
+
   try {
     // Run TypeScript compiler with strict settings
     execSync('npx tsc --noEmit --skipLibCheck --strict', {
       stdio: 'inherit',
-      cwd: process.cwd()
+      cwd: process.cwd(),
     });
-    
+
     success('TypeScript compilation completed successfully!');
     return true;
   } catch (error) {
@@ -89,14 +89,14 @@ function runTypeCheck() {
 // Run Astro check for .astro files
 function runAstroCheck() {
   log('\n🚀 Running Astro type checking...', colors.cyan);
-  
+
   try {
     // Run Astro check command
     execSync('npx astro check', {
       stdio: 'inherit',
-      cwd: process.cwd()
+      cwd: process.cwd(),
     });
-    
+
     success('Astro type checking completed successfully!');
     return true;
   } catch (error) {
@@ -108,7 +108,7 @@ function runAstroCheck() {
 // Check component interfaces
 function checkComponentInterfaces() {
   log('\n📋 Checking component interfaces...', colors.cyan);
-  
+
   const requiredFiles = [
     'src/types/components.ts',
     'src/types/global.d.ts',
@@ -117,11 +117,11 @@ function checkComponentInterfaces() {
     'src/components/ui/Card.astro',
     'src/components/ui/DoodleIcon.astro',
     'src/components/ui/Hero.astro',
-    'src/components/ui/Stats.astro'
+    'src/components/ui/Stats.astro',
   ];
-  
+
   let allFilesExist = true;
-  
+
   for (const file of requiredFiles) {
     const filePath = resolve(process.cwd(), file);
     if (existsSync(filePath)) {
@@ -131,34 +131,36 @@ function checkComponentInterfaces() {
       allFilesExist = false;
     }
   }
-  
+
   return allFilesExist;
 }
 
 // Check SSR compatibility
 function checkSSRCompatibility() {
   log('\n🌐 Checking SSR compatibility...', colors.cyan);
-  
+
   try {
     // Check if window/document usage is properly guarded
     const files = execSync('find src -name "*.astro" -o -name "*.ts" -o -name "*.tsx"', {
-      encoding: 'utf8'
-    }).trim().split('\n');
-    
+      encoding: 'utf8',
+    })
+      .trim()
+      .split('\n');
+
     let hasIssues = false;
-    
+
     for (const file of files) {
       if (!file) continue;
-      
+
       try {
         const content = execSync(`cat "${file}"`, { encoding: 'utf8' });
-        
+
         // Check for unguarded window/document usage
         if (content.includes('window.') && !content.includes('typeof window')) {
           warning(`Potential SSR issue in ${file}: unguarded window usage`);
           hasIssues = true;
         }
-        
+
         if (content.includes('document.') && !content.includes('typeof document')) {
           warning(`Potential SSR issue in ${file}: unguarded document usage`);
           hasIssues = true;
@@ -167,13 +169,13 @@ function checkSSRCompatibility() {
         // File read error, skip
       }
     }
-    
+
     if (!hasIssues) {
       success('SSR compatibility check passed!');
     } else {
       warning('Found potential SSR issues. Please review the warnings above.');
     }
-    
+
     return true;
   } catch (error) {
     error('Failed to check SSR compatibility');
@@ -184,14 +186,14 @@ function checkSSRCompatibility() {
 // Generate type report
 function generateTypeReport() {
   log('\n📊 Generating type checking report...', colors.cyan);
-  
+
   try {
     // Generate detailed type information
     execSync('npx tsc --noEmit --skipLibCheck --strict --generateTrace trace', {
       stdio: 'ignore',
-      cwd: process.cwd()
+      cwd: process.cwd(),
     });
-    
+
     info('Type checking report generated in ./trace directory');
     return true;
   } catch (error) {
@@ -206,37 +208,37 @@ async function main() {
   log('🎯 Astro + TypeScript Type Checking Tool', colors.magenta);
   log('SSR-Compatible Component Validation', colors.magenta);
   log('='.repeat(60), colors.magenta);
-  
+
   // Check prerequisites
   if (!checkTypeScript() || !checkAstro()) {
     process.exit(1);
   }
-  
+
   let hasErrors = false;
-  
+
   // Run all checks
   if (!checkComponentInterfaces()) {
     hasErrors = true;
   }
-  
+
   if (!checkSSRCompatibility()) {
     hasErrors = true;
   }
-  
+
   if (!runTypeCheck()) {
     hasErrors = true;
   }
-  
+
   if (!runAstroCheck()) {
     hasErrors = true;
   }
-  
+
   // Generate report (optional)
   generateTypeReport();
-  
+
   // Final summary
   log('\n' + '='.repeat(60), colors.magenta);
-  
+
   if (hasErrors) {
     error('Type checking completed with errors!');
     log('Please fix the issues above before deploying to production.', colors.red);
@@ -249,7 +251,7 @@ async function main() {
     log('  2. Test: pnpm run test', colors.white);
     log('  3. Deploy: pnpm run deploy', colors.white);
   }
-  
+
   log('='.repeat(60), colors.magenta);
 }
 

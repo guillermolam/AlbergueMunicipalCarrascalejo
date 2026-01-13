@@ -2,11 +2,14 @@
 
 ## Overview
 
-This project implements a comprehensive TypeScript configuration for an SSR-compatible Astro frontend based on the Figma prototype design system. The configuration ensures type safety, performance, and proper server-side rendering capabilities.
+This project implements a comprehensive TypeScript configuration for an SSR-compatible Astro
+frontend based on the Figma prototype design system. The configuration ensures type safety,
+performance, and proper server-side rendering capabilities.
 
 ## 🎯 Key Features
 
 ### TypeScript Configuration
+
 - **Strict Mode**: Full TypeScript strict mode enabled for production-grade type safety
 - **SSR Compatibility**: Proper handling of server/client environments
 - **Path Mapping**: Clean import aliases for better code organization
@@ -14,6 +17,7 @@ This project implements a comprehensive TypeScript configuration for an SSR-comp
 - **JSX Support**: Solid.js JSX configuration with proper hydration
 
 ### Astro Configuration
+
 - **Server-Side Rendering**: `output: "server"` for dynamic content
 - **TypeScript Integration**: Built-in TypeScript checking with `astro check`
 - **Solid.js Support**: Full Solid.js integration with SSR capabilities
@@ -52,23 +56,23 @@ frontend/
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    
+
     // Strict type checking for production
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     // ... additional strict options
-    
+
     // JSX configuration for Solid.js
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    
+
     // Path mapping for clean imports
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
-      "@/ui/*": ["./src/components/ui/*"],
+      "@/ui/*": ["./src/components/ui/*"]
       // ... additional path mappings
     }
   }
@@ -80,15 +84,15 @@ frontend/
 ```javascript
 export default defineConfig({
   // Server-side rendering configuration
-  output: "server",
-  
+  output: 'server',
+
   // TypeScript configuration
   typescript: {
-    tsconfig: "./tsconfig.json",
+    tsconfig: './tsconfig.json',
     check: true,
     strict: true,
   },
-  
+
   // Integrations
   integrations: [
     solid({
@@ -97,18 +101,18 @@ export default defineConfig({
       hydratable: true,
     }),
   ],
-  
+
   // Vite configuration for optimization
   vite: {
     build: {
-      target: "es2022",
-      minify: "terser",
+      target: 'es2022',
+      minify: 'terser',
       sourcemap: true,
       rollupOptions: {
         output: {
           manualChunks: {
-            "solid-js": ["solid-js"],
-            "nanostores": ["nanostores", "@nanostores/persistent", "@nanostores/solid"],
+            'solid-js': ['solid-js'],
+            nanostores: ['nanostores', '@nanostores/persistent', '@nanostores/solid'],
           },
         },
       },
@@ -120,6 +124,7 @@ export default defineConfig({
 ## 🚀 Available Scripts
 
 ### Development
+
 ```bash
 pnpm dev              # Start development server
 pnpm dev:host         # Start with host access
@@ -127,6 +132,7 @@ pnpm dev:debug        # Start with debug logging
 ```
 
 ### Building
+
 ```bash
 pnpm build            # Build with type checking
 pnpm build:analyze    # Build with bundle analysis
@@ -134,6 +140,7 @@ pnpm build:stats      # Build with detailed statistics
 ```
 
 ### Type Checking
+
 ```bash
 pnpm type-check       # Comprehensive type checking
 pnpm type-check:watch # Watch mode type checking
@@ -142,6 +149,7 @@ pnpm tsc              # TypeScript compiler check
 ```
 
 ### Code Quality
+
 ```bash
 pnpm lint             # ESLint checking
 pnpm lint:fix         # Auto-fix ESLint issues
@@ -150,6 +158,7 @@ pnpm format:check     # Check code formatting
 ```
 
 ### Testing
+
 ```bash
 pnpm test             # Run all tests
 pnpm test:watch       # Watch mode testing
@@ -198,12 +207,14 @@ const isServer = typeof window === 'undefined';
 ## 🔍 Type Safety Features
 
 ### Strict Type Checking
+
 - **No implicit any**: All variables must have explicit types
 - **Strict null checks**: Prevents null/undefined errors
 - **Function type checking**: Ensures proper function signatures
 - **Property initialization**: Enforces proper object initialization
 
 ### Component Props Validation
+
 ```typescript
 // Props interface with validation
 export interface CardProps extends BaseComponentProps {
@@ -218,6 +229,7 @@ export interface CardProps extends BaseComponentProps {
 ```
 
 ### Global Type Definitions
+
 ```typescript
 // Global type extensions
 declare global {
@@ -232,11 +244,13 @@ declare global {
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 - **Vitest**: Modern test runner with TypeScript support
 - **Testing Library**: Component testing utilities
 - **Coverage Reports**: Detailed test coverage analysis
 
 ### Type Testing
+
 - **TypeScript Compilation**: Ensures all types are valid
 - **Astro Check**: Validates Astro-specific syntax
 - **Component Props**: Validates component interfaces
@@ -244,6 +258,7 @@ declare global {
 ## 📊 Performance Optimizations
 
 ### Bundle Splitting
+
 ```javascript
 // Manual chunk splitting for better caching
 rollupOptions: {
@@ -258,6 +273,7 @@ rollupOptions: {
 ```
 
 ### Code Splitting
+
 - **Component-level splitting**: Automatic code splitting for components
 - **Route-based splitting**: Split code by routes for faster loading
 - **Dynamic imports**: Lazy load non-critical components
@@ -265,12 +281,14 @@ rollupOptions: {
 ## 🔒 Security Considerations
 
 ### Type Safety for Security
+
 - **Input validation**: TypeScript ensures proper input types
 - **XSS prevention**: Proper HTML escaping with Astro
 - **CSP headers**: Content Security Policy configuration
 - **Origin checking**: Security headers for production
 
 ### SSR Security
+
 - **Server-side validation**: All validation happens on the server
 - **No client-side secrets**: Sensitive data never exposed to client
 - **Secure headers**: Proper security headers configuration
@@ -278,6 +296,7 @@ rollupOptions: {
 ## 🚀 Deployment
 
 ### Production Build
+
 ```bash
 pnpm build              # Build with full type checking
 pnpm type-check         # Verify all types are correct
@@ -286,6 +305,7 @@ pnpm deploy             # Deploy to production
 ```
 
 ### Environment Variables
+
 ```bash
 # Required environment variables
 NODE_ENV=production
@@ -297,18 +317,21 @@ REDIS_URL=your-redis-url
 ## 📚 Best Practices
 
 ### Component Development
+
 1. **Always define Props interfaces** for type safety
 2. **Use explicit types** instead of `any`
 3. **Handle SSR cases** with proper environment checks
 4. **Validate props** with runtime type guards when needed
 
 ### State Management
+
 1. **Use nanostores** for global state with TypeScript
 2. **Define store interfaces** for type safety
 3. **Handle SSR hydration** properly
 4. **Use persistent stores** for user preferences
 
 ### Performance
+
 1. **Lazy load components** when possible
 2. **Use proper code splitting** strategies
 3. **Optimize bundle size** with manual chunks
@@ -317,12 +340,14 @@ REDIS_URL=your-redis-url
 ## 🔧 Troubleshooting
 
 ### Common TypeScript Errors
+
 - **Property does not exist**: Check interface definitions
 - **Type 'X' is not assignable**: Verify type compatibility
 - **Cannot find module**: Check path aliases in tsconfig.json
 - **JSX element type does not have any construct**: Verify Solid.js configuration
 
 ### SSR Issues
+
 - **window is not defined**: Add proper environment checks
 - **document is not defined**: Use Astro's client directives
 - **Hydration mismatch**: Ensure server and client render the same content
@@ -330,6 +355,7 @@ REDIS_URL=your-redis-url
 ## 📞 Support
 
 For issues related to:
+
 - **TypeScript configuration**: Check tsconfig.json
 - **Astro configuration**: Review astro.config.mjs
 - **Component types**: Verify component interfaces
@@ -344,4 +370,5 @@ For issues related to:
 
 ---
 
-This TypeScript configuration ensures your Astro project is production-ready with excellent type safety, performance, and SSR compatibility based on the Figma prototype design system.
+This TypeScript configuration ensures your Astro project is production-ready with excellent type
+safety, performance, and SSR compatibility based on the Figma prototype design system.

@@ -18,7 +18,11 @@ component = "booking-service"
 
 [component.booking-service]
 source = "target/wasm32-wasip1/release/booking_service.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com", "http://mqtt-broker-service.spin.internal"]
+allowed_outbound_hosts = [
+  "https://*.neon.tech",
+  "https://*.postgres.com",
+  "http://mqtt-broker-service.spin.internal",
+]
 key_value_stores = ["default"]
 sqlite_databases = ["default"]
 

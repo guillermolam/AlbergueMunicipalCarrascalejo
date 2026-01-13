@@ -1,20 +1,21 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Mi Camino - Camino Dashboard" description="Tu progreso y estadísticas del Camino de Santiago">
+<Layout
+  title="Mi Camino - Camino Dashboard"
+  description="Tu progreso y estadísticas del Camino de Santiago"
+>
   <main class="container mx-auto px-4 py-8">
-    
     <!-- Hero Section -->
     <section class="text-center mb-12 animate-fade-in-up">
       <div class="card mx-auto max-w-4xl">
         <div class="flex flex-col items-center text-center">
           <div class="text-6xl mb-4">🥾</div>
-          <h1 class="text-4xl md:text-5xl font-bold text-primary-900 mb-4">
-            Mi Camino
-          </h1>
+          <h1 class="text-4xl md:text-5xl font-bold text-primary-900 mb-4">Mi Camino</h1>
           <p class="text-lg text-primary-600 mb-6 max-w-2xl">
-            Tu viaje personal por el Camino de Santiago con estadísticas detalladas y progreso en tiempo real
+            Tu viaje personal por el Camino de Santiago con estadísticas detalladas y progreso en
+            tiempo real
           </p>
           <div class="flex flex-wrap justify-center gap-4">
             <div class="badge badge-blue">📍 Etapa Actual: Mérida → Alcuéscar</div>
@@ -29,7 +30,6 @@ import Layout from "../layouts/Layout.astro";
     <section class="mb-12">
       <h2 class="text-3xl font-bold text-primary-900 mb-8 text-center">Progreso General</h2>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         <!-- Overall Progress -->
         <div class="lg:col-span-2">
           <div class="card">
@@ -40,7 +40,7 @@ import Layout from "../layouts/Layout.astro";
                 <p class="text-sm text-primary-600">Tu progreso en el Camino de Santiago</p>
               </div>
             </div>
-            
+
             <div class="space-y-6">
               <!-- Progress Bar -->
               <div>
@@ -57,7 +57,7 @@ import Layout from "../layouts/Layout.astro";
                   <span>847 km total</span>
                 </div>
               </div>
-              
+
               <!-- Stats Grid -->
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-primary-50 p-4 rounded-lg text-center">
@@ -166,7 +166,7 @@ import Layout from "../layouts/Layout.astro";
             <p class="text-sm text-primary-600">Mérida → Alcuéscar (38.2 km)</p>
           </div>
         </div>
-        
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <div class="flex justify-between items-center mb-4">
@@ -187,7 +187,7 @@ import Layout from "../layouts/Layout.astro";
               </div>
             </div>
           </div>
-          
+
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-primary-50 p-4 rounded-lg">
               <div class="flex items-center gap-3 mb-2">
@@ -236,7 +236,7 @@ import Layout from "../layouts/Layout.astro";
             <p class="text-sm text-primary-600">Basadas en tu progreso y condición</p>
           </div>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="bg-accent-red-50 border border-accent-red-200 rounded-lg p-6">
             <div class="flex items-center gap-3 mb-4">
@@ -244,28 +244,30 @@ import Layout from "../layouts/Layout.astro";
               <h3 class="text-lg font-bold text-accent-red-800">Importante</h3>
             </div>
             <p class="text-accent-red-700 mb-4">
-              Considera tomarte un día de descanso en Alcuéscar. Tu ritmo ha sido constante pero exigente.
+              Considera tomarte un día de descanso en Alcuéscar. Tu ritmo ha sido constante pero
+              exigente.
             </p>
             <div class="flex gap-2">
               <span class="badge badge-red">7 días seguidos</span>
               <span class="badge badge-red">18.1 km/día</span>
             </div>
           </div>
-          
+
           <div class="bg-accent-green-50 border border-accent-green-200 rounded-lg p-6">
             <div class="flex items-center gap-3 mb-4">
               <span class="text-2xl">🌟</span>
               <h3 class="text-lg font-bold text-accent-green-800">Optimización</h3>
             </div>
             <p class="text-accent-green-700 mb-4">
-              Tu ritmo actual es excelente. Podrías alcanzar Santiago en 34 días si mantienes este ritmo.
+              Tu ritmo actual es excelente. Podrías alcanzar Santiago en 34 días si mantienes este
+              ritmo.
             </p>
             <div class="flex gap-2">
               <span class="badge badge-green">Est. 34 días</span>
               <span class="badge badge-green">Ritmo óptimo</span>
             </div>
           </div>
-          
+
           <div class="bg-accent-blue-50 border border-accent-blue-200 rounded-lg p-6">
             <div class="flex items-center gap-3 mb-4">
               <span class="text-2xl">🏃</span>
@@ -279,14 +281,15 @@ import Layout from "../layouts/Layout.astro";
               <span class="badge badge-blue">Est. 5-6 horas</span>
             </div>
           </div>
-          
+
           <div class="bg-accent-yellow-50 border border-accent-yellow-200 rounded-lg p-6">
             <div class="flex items-center gap-3 mb-4">
               <span class="text-2xl">⚡</span>
               <h3 class="text-lg font-bold text-accent-yellow-800">Rendimiento</h3>
             </div>
             <p class="text-accent-yellow-700 mb-4">
-              Has mantenido un ritmo constante. Tu velocidad promedio de 4.9 km/h es ideal para el Camino.
+              Has mantenido un ritmo constante. Tu velocidad promedio de 4.9 km/h es ideal para el
+              Camino.
             </p>
             <div class="flex gap-2">
               <span class="badge badge-yellow">4.9 km/h</span>
@@ -307,7 +310,7 @@ import Layout from "../layouts/Layout.astro";
             <p class="text-sm text-primary-600">Datos fascinantes sobre tu viaje</p>
           </div>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="bg-primary-50 p-6 rounded-lg">
             <div class="flex items-center gap-4 mb-4">
@@ -315,37 +318,41 @@ import Layout from "../layouts/Layout.astro";
               <h3 class="text-lg font-bold text-primary-900">Has caminado el equivalente a...</h3>
             </div>
             <p class="text-primary-700">
-              ¡Cruzar la península ibérica de este a oeste! Tu distancia recorrida (127 km) es similar a la anchura de España en su punto más estrecho.
+              ¡Cruzar la península ibérica de este a oeste! Tu distancia recorrida (127 km) es
+              similar a la anchura de España en su punto más estrecho.
             </p>
           </div>
-          
+
           <div class="bg-primary-50 p-6 rounded-lg">
             <div class="flex items-center gap-4 mb-4">
               <span class="text-3xl">🔥</span>
               <h3 class="text-lg font-bold text-primary-900">Calorías quemadas</h3>
             </div>
             <p class="text-primary-700">
-              Las 18,932 calorías que has quemado equivalen a aproximadamente 37 bocadillos de tortilla española o 75 cafés con leche. ¡Eso es mucha energía!
+              Las 18,932 calorías que has quemado equivalen a aproximadamente 37 bocadillos de
+              tortilla española o 75 cafés con leche. ¡Eso es mucha energía!
             </p>
           </div>
-          
+
           <div class="bg-primary-50 p-6 rounded-lg">
             <div class="flex items-center gap-4 mb-4">
               <span class="text-3xl">👣</span>
               <h3 class="text-lg font-bold text-primary-900">Pasos dados</h3>
             </div>
             <p class="text-primary-700">
-              Tus 168,420 pasos equivalen a subir y bajar la Torre Eiffel aproximadamente 28 veces. ¡Qué altura!
+              Tus 168,420 pasos equivalen a subir y bajar la Torre Eiffel aproximadamente 28 veces.
+              ¡Qué altura!
             </p>
           </div>
-          
+
           <div class="bg-primary-50 p-6 rounded-lg">
             <div class="flex items-center gap-4 mb-4">
               <span class="text-3xl">⏰</span>
               <h3 class="text-lg font-bold text-primary-900">Tiempo de calidad</h3>
             </div>
             <p class="text-primary-700">
-              Has pasado 29.4 horas caminando, lo que equivale a ver 14 películas largas o leer aproximadamente 147 páginas de un buen libro.
+              Has pasado 29.4 horas caminando, lo que equivale a ver 14 películas largas o leer
+              aproximadamente 147 páginas de un buen libro.
             </p>
           </div>
         </div>
@@ -357,18 +364,13 @@ import Layout from "../layouts/Layout.astro";
       <div class="card mx-auto max-w-2xl">
         <h3 class="text-xl font-bold text-primary-900 mb-4">¿Qué te gustaría hacer?</h3>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/book" class="btn btn-primary text-white">
-            🏨 Reservar Albergue
-          </a>
+          <a href="/book" class="btn btn-primary text-white"> 🏨 Reservar Albergue </a>
           <a href="/camino" class="btn btn-outline text-primary-700 border-primary-300">
             📊 Ver Más Estadísticas
           </a>
-          <button class="btn btn-ghost text-primary-600">
-            🔄 Actualizar Progreso
-          </button>
+          <button class="btn btn-ghost text-primary-600"> 🔄 Actualizar Progreso </button>
         </div>
       </div>
     </section>
-
   </main>
 </Layout>

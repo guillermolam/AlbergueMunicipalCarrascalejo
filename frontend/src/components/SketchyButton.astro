@@ -1,9 +1,9 @@
 ---
 import RoughFrame from './RoughFrame.astro';
 
-export type Variant = "primary" | "outline";
-export type Size = "md" | "lg";
-export type ElementType = "a" | "button";
+export type Variant = 'primary' | 'outline';
+export type Size = 'md' | 'lg';
+export type ElementType = 'a' | 'button';
 
 export interface Props {
   href?: string;
@@ -17,34 +17,34 @@ export interface Props {
 const {
   href,
   text,
-  variant = "primary",
-  size = "md",
+  variant = 'primary',
+  size = 'md',
   disabled = false,
-  as = href ? "a" : "button"
+  as = href ? 'a' : 'button',
 } = Astro.props;
 
 const variants = {
   primary: {
-    texture: "cross-hatch" as const,
+    texture: 'cross-hatch' as const,
     textureOpacity: 0.2,
-    class: "bg-brand-green text-white border-brand-green"
+    class: 'bg-brand-green text-white border-brand-green',
   },
   outline: {
-    texture: "hachure" as const,
+    texture: 'hachure' as const,
     textureOpacity: 0.1,
-    class: "bg-white text-stone-900 border-stone-300"
-  }
+    class: 'bg-white text-stone-900 border-stone-300',
+  },
 };
 
 const sizes = {
   md: {
-    padding: "md" as const,
-    textClass: "text-base font-900"
+    padding: 'md' as const,
+    textClass: 'text-base font-900',
   },
   lg: {
-    padding: "lg" as const,
-    textClass: "text-lg font-900"
-  }
+    padding: 'lg' as const,
+    textClass: 'text-lg font-900',
+  },
 };
 
 const currentVariant = variants[variant];
@@ -54,13 +54,13 @@ const currentSize = sizes[size];
 <RoughFrame
   as={as}
   href={href}
-  type={as === "button" ? "button" : undefined}
+  type={as === 'button' ? 'button' : undefined}
   padding={currentSize.padding}
   texture={currentVariant.texture}
   textureOpacity={currentVariant.textureOpacity}
   hover={!disabled}
   class={`ds-btn inline-flex items-center justify-center transition select-none ${currentVariant.class} ${currentSize.textClass} ${disabled ? 'opacity-60 pointer-events-none' : 'hover:translate-y--0.5 active:translate-y-0'}`}
-  {...(disabled && { "aria-disabled": "true" })}
+  {...disabled && { 'aria-disabled': 'true' }}
 >
   <span
     x-data="{ pressed: false }"

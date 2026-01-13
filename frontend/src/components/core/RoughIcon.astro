@@ -16,18 +16,24 @@ const {
   size = 'md',
   color = 'current',
   animated = false,
-  class: className = ''
+  class: className = '',
 }: Props = Astro.props;
 
 const px = { xs: 16, sm: 20, md: 28, lg: 36, xl: 48 }[size];
-const stroke = (
-  color === 'primary' ? '#00AB39' :
-  color === 'secondary' ? '#EAC102' :
-  color === 'error' ? '#ED1C24' :
-  color === 'white' ? '#FFFFFF' :
-  color === 'black' ? '#111111' :
-  color === 'current' ? 'currentColor' : String(color)
-);
+const stroke =
+  color === 'primary'
+    ? '#00AB39'
+    : color === 'secondary'
+      ? '#EAC102'
+      : color === 'error'
+        ? '#ED1C24'
+        : color === 'white'
+          ? '#FFFFFF'
+          : color === 'black'
+            ? '#111111'
+            : color === 'current'
+              ? 'currentColor'
+              : String(color);
 
 const id = `rough-icon-${name}-${Math.random().toString(36).slice(2)}`;
 ---
@@ -39,14 +45,13 @@ const id = `rough-icon-${name}-${Math.random().toString(36).slice(2)}`;
     height={px}
     viewBox={`0 0 ${px} ${px}`}
     class="inline-block align-middle"
-    data-icon-type={rawSvg ? 'raw' : (svgPath ? 'path' : 'builtin')}
+    data-icon-type={rawSvg ? 'raw' : svgPath ? 'path' : 'builtin'}
     data-svg-path={typeof svgPath === 'string' ? svgPath : ''}
     data-svg-paths={Array.isArray(svgPath) ? JSON.stringify(svgPath) : ''}
     data-raw-svg={rawSvg ? encodeURIComponent(rawSvg) : ''}
     data-icon-name={name}
     data-stroke={stroke}
-    data-size={px}
-  ></svg>
+    data-size={px}></svg>
 </span>
 
 <script define:vars={{ id, animated }}>
@@ -69,48 +74,73 @@ const id = `rough-icon-${name}-${Math.random().toString(36).slice(2)}`;
           svg.innerHTML = decodeURIComponent(dataRaw);
         } else if (iconType === 'path' && (dataPath || dataPaths)) {
           while (svg.firstChild) svg.removeChild(svg.firstChild);
-          const paths = dataPath ? [dataPath] : (dataPaths ? JSON.parse(dataPaths) : []);
-          paths.forEach(d => svg.appendChild(rc.path(d, { ...opts })));
+          const paths = dataPath ? [dataPath] : dataPaths ? JSON.parse(dataPaths) : [];
+          paths.forEach((d) => svg.appendChild(rc.path(d, { ...opts })));
         } else {
           switch (iconName) {
             case 'dot': {
-              const c = rc.circle(size/2, size/2, size * 0.4, { ...opts, fill: stroke, fillStyle: 'solid' });
+              const c = rc.circle(size / 2, size / 2, size * 0.4, {
+                ...opts,
+                fill: stroke,
+                fillStyle: 'solid',
+              });
               svg.appendChild(c);
               break;
             }
             case 'circle': {
-              const c = rc.circle(size/2, size/2, size * 0.7, { ...opts, fill: 'transparent' });
+              const c = rc.circle(size / 2, size / 2, size * 0.7, { ...opts, fill: 'transparent' });
               svg.appendChild(c);
               break;
             }
             case 'star': {
-              const path = rc.path('M14 2 L17 9 L24 10 L18 14 L20 21 L14 17 L8 21 L10 14 L4 10 L11 9 Z', { ...opts, stroke });
+              const path = rc.path(
+                'M14 2 L17 9 L24 10 L18 14 L20 21 L14 17 L8 21 L10 14 L4 10 L11 9 Z',
+                { ...opts, stroke }
+              );
               svg.appendChild(path);
               break;
             }
             case 'menu': {
-              const y = [6, size/2, size-6];
-              y.forEach(yy => svg.appendChild(rc.line(4, yy, size-4, yy, opts)));
+              const y = [6, size / 2, size - 6];
+              y.forEach((yy) => svg.appendChild(rc.line(4, yy, size - 4, yy, opts)));
               break;
             }
             case 'arrow-down': {
-              const p = rc.path(`M ${size/2} 4 L ${size-6} ${size/2} L 6 ${size/2} Z`, { ...opts, fill: stroke, fillStyle: 'zigzag' });
+              const p = rc.path(`M ${size / 2} 4 L ${size - 6} ${size / 2} L 6 ${size / 2} Z`, {
+                ...opts,
+                fill: stroke,
+                fillStyle: 'zigzag',
+              });
               svg.appendChild(p);
               break;
             }
             case 'shell':
             default: {
-              const base = rc.path('M4 20 C6 14, 12 9, 20 6 C24 5, 28 5, 32 7 C36 9, 38 13, 38 17 C38 21, 34 24, 30 26 C24 28, 18 29, 12 28 C8 28, 5 26, 4 24 Z', { ...opts, stroke, fill: 'transparent' });
+              const base = rc.path(
+                'M4 20 C6 14, 12 9, 20 6 C24 5, 28 5, 32 7 C36 9, 38 13, 38 17 C38 21, 34 24, 30 26 C24 28, 18 29, 12 28 C8 28, 5 26, 4 24 Z',
+                { ...opts, stroke, fill: 'transparent' }
+              );
               svg.appendChild(base);
               break;
             }
           }
         }
       }
-      
+
       draw();
       const mo = new MutationObserver(() => draw());
-      mo.observe(svg, { attributes: true, attributeFilter: ['data-icon-name','data-stroke','data-size','data-icon-type','data-svg-path','data-svg-paths','data-raw-svg'] });
+      mo.observe(svg, {
+        attributes: true,
+        attributeFilter: [
+          'data-icon-name',
+          'data-stroke',
+          'data-size',
+          'data-icon-type',
+          'data-svg-path',
+          'data-svg-paths',
+          'data-raw-svg',
+        ],
+      });
     });
   }
 </script>

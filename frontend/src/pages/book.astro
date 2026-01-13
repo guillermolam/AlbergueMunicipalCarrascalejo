@@ -4,14 +4,12 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="Reservar Albergue - Camino Dashboard">
   <main class="container mx-auto px-4 py-8">
-    
     <div class="text-center mb-12">
       <h1 class="text-4xl font-bold text-primary-900 mb-4">Reserva tu Albergue</h1>
       <p class="text-lg text-primary-600">Encuentra y reserva tu próximo refugio en el Camino</p>
     </div>
-    
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-      
       <!-- Booking Form -->
       <div class="card animate-slide-in-left">
         <div class="flex items-center gap-4 mb-6">
@@ -21,66 +19,64 @@ import Layout from '../layouts/Layout.astro';
             <p class="text-sm text-primary-600">Completa los datos para tu estancia</p>
           </div>
         </div>
-        
+
         <form class="space-y-6">
           <div>
-            <label for="name" class="block text-sm font-semibold text-primary-700 mb-2">Nombre completo</label>
-            <input 
-              type="text" 
-              id="name" 
-              name="name" 
+            <label for="name" class="block text-sm font-semibold text-primary-700 mb-2"
+              >Nombre completo</label
+            >
+            <input
+              type="text"
+              id="name"
+              name="name"
               required
               placeholder="Ingresa tu nombre completo"
               class="input w-full"
             />
           </div>
-          
+
           <div>
-            <label for="email" class="block text-sm font-semibold text-primary-700 mb-2">Email</label>
-            <input 
-              type="email" 
-              id="email" 
-              name="email" 
+            <label for="email" class="block text-sm font-semibold text-primary-700 mb-2"
+              >Email</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
               required
               placeholder="tu@email.com"
               class="input w-full"
             />
           </div>
-          
+
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="date" class="block text-sm font-semibold text-primary-700 mb-2">Fecha de entrada</label>
-              <input 
-                type="date" 
-                id="date" 
-                name="date" 
-                required
-                class="input w-full"
-              />
+              <label for="date" class="block text-sm font-semibold text-primary-700 mb-2"
+                >Fecha de entrada</label
+              >
+              <input type="date" id="date" name="date" required class="input w-full" />
             </div>
             <div>
-              <label for="nights" class="block text-sm font-semibold text-primary-700 mb-2">Noches</label>
-              <select 
-                id="nights" 
-                name="nights" 
-                required
-                class="input w-full"
+              <label for="nights" class="block text-sm font-semibold text-primary-700 mb-2"
+                >Noches</label
               >
-                {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                  <option value={n}>{n} {n === 1 ? 'noche' : 'noches'}</option>
-                ))}
+              <select id="nights" name="nights" required class="input w-full">
+                {
+                  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                    <option value={n}>
+                      {n} {n === 1 ? 'noche' : 'noches'}
+                    </option>
+                  ))
+                }
               </select>
             </div>
           </div>
-          
+
           <div>
-            <label for="albergue" class="block text-sm font-semibold text-primary-700 mb-2">Albergue preferido</label>
-            <select 
-              id="albergue" 
-              name="albergue" 
-              required
-              class="input w-full"
+            <label for="albergue" class="block text-sm font-semibold text-primary-700 mb-2"
+              >Albergue preferido</label
             >
+            <select id="albergue" name="albergue" required class="input w-full">
               <option value="">Selecciona un albergue</option>
               <option value="carrascalejo">Albergue Municipal Carrascalejo</option>
               <option value="merida">Albergue de Mérida</option>
@@ -88,29 +84,33 @@ import Layout from '../layouts/Layout.astro';
               <option value="villafranca">Albergue de Villafranca</option>
             </select>
           </div>
-          
+
           <div>
-            <label for="message" class="block text-sm font-semibold text-primary-700 mb-2">Comentarios (opcional)</label>
-            <textarea 
-              id="message" 
-              name="message" 
+            <label for="message" class="block text-sm font-semibold text-primary-700 mb-2"
+              >Comentarios (opcional)</label
+            >
+            <textarea
+              id="message"
+              name="message"
               rows="4"
               placeholder="¿Alguna necesidad especial o comentario?"
-              class="input w-full resize-none"
-            ></textarea>
+              class="input w-full resize-none"></textarea>
           </div>
-          
+
           <div class="flex flex-col sm:flex-row gap-4 pt-4">
             <button type="submit" class="btn btn-primary text-white flex-1">
               🏨 Reservar Ahora
             </button>
-            <button type="button" class="btn btn-outline text-primary-700 border-primary-300 flex-1">
+            <button
+              type="button"
+              class="btn btn-outline text-primary-700 border-primary-300 flex-1"
+            >
               📞 Contactar
             </button>
           </div>
         </form>
       </div>
-      
+
       <!-- Progress Panel -->
       <div class="card animate-slide-in-right">
         <div class="flex items-center gap-4 mb-6">
@@ -120,9 +120,8 @@ import Layout from '../layouts/Layout.astro';
             <p class="text-sm text-primary-600">Mantén tu progreso actualizado</p>
           </div>
         </div>
-        
+
         <div class="space-y-8">
-          
           <!-- Daily Goal -->
           <div>
             <div class="flex justify-between items-center mb-4">
@@ -131,14 +130,18 @@ import Layout from '../layouts/Layout.astro';
                 <div class="text-xs text-primary-500">Kilómetros por día</div>
               </div>
               <div class="flex gap-2 items-center">
-                <button 
+                <button
                   data-action="goal:dec"
                   class="px-2 py-1 text-sm bg-primary-100 rounded hover:bg-primary-200 transition-colors text-primary-700"
                 >
                   −
                 </button>
-                <span data-store="dailyGoalKm" class="px-3 py-1 bg-white border border-primary-200 rounded font-semibold text-primary-900 min-w-[3rem] text-center">25</span>
-                <button 
+                <span
+                  data-store="dailyGoalKm"
+                  class="px-3 py-1 bg-white border border-primary-200 rounded font-semibold text-primary-900 min-w-[3rem] text-center"
+                  >25</span
+                >
+                <button
                   data-action="goal:inc"
                   class="px-2 py-1 text-sm bg-primary-100 rounded hover:bg-primary-200 transition-colors text-primary-700"
                 >
@@ -150,7 +153,7 @@ import Layout from '../layouts/Layout.astro';
               <div class="bg-gradient-primary h-2 rounded-full w-5/6"></div>
             </div>
           </div>
-          
+
           <!-- Stage Progress -->
           <div>
             <div class="flex justify-between items-center mb-4">
@@ -159,14 +162,18 @@ import Layout from '../layouts/Layout.astro';
                 <div class="text-xs text-primary-500">Actual etapa actual</div>
               </div>
               <div class="flex gap-2 items-center">
-                <button 
+                <button
                   data-action="stage:dec"
                   class="px-2 py-1 text-sm bg-primary-100 rounded hover:bg-primary-200 transition-colors text-primary-700"
                 >
                   −5%
                 </button>
-                <span data-store="stageProgress" class="px-3 py-1 bg-white border border-primary-200 rounded font-semibold text-primary-900 min-w-[3rem] text-center">68</span>
-                <button 
+                <span
+                  data-store="stageProgress"
+                  class="px-3 py-1 bg-white border border-primary-200 rounded font-semibold text-primary-900 min-w-[3rem] text-center"
+                  >68</span
+                >
+                <button
                   data-action="stage:inc"
                   class="px-2 py-1 text-sm bg-primary-100 rounded hover:bg-primary-200 transition-colors text-primary-700"
                 >
@@ -178,7 +185,7 @@ import Layout from '../layouts/Layout.astro';
               <div class="bg-gradient-primary h-2 rounded-full w-17/25"></div>
             </div>
           </div>
-          
+
           <!-- Remaining Days -->
           <div class="pt-6 border-t border-primary-200">
             <div class="flex justify-between items-center mb-4">
@@ -186,9 +193,13 @@ import Layout from '../layouts/Layout.astro';
                 <span class="text-sm font-semibold text-primary-700">Tiempo restante</span>
                 <div class="text-xs text-primary-500">Estimado para terminar</div>
               </div>
-              <span data-store="remainingDays" class="px-4 py-2 bg-accent-green-100 text-accent-green-800 rounded-full font-bold text-lg">29</span>
+              <span
+                data-store="remainingDays"
+                class="px-4 py-2 bg-accent-green-100 text-accent-green-800 rounded-full font-bold text-lg"
+                >29</span
+              >
             </div>
-            
+
             <div class="grid grid-cols-2 gap-4 text-sm text-primary-600">
               <div class="bg-primary-50 p-3 rounded-lg">
                 <div class="font-semibold">Kilómetros totales</div>
@@ -199,18 +210,20 @@ import Layout from '../layouts/Layout.astro';
                 <div class="text-primary-500">720 km</div>
               </div>
             </div>
-            
+
             <div class="mt-6 flex gap-3">
-              <button class="btn btn-outline text-primary-700 border-primary-300 w-full" data-action="progress:sync">
+              <button
+                class="btn btn-outline text-primary-700 border-primary-300 w-full"
+                data-action="progress:sync"
+              >
                 🔄 Sincronizar Progreso
               </button>
             </div>
           </div>
         </div>
       </div>
-      
     </div>
-    
+
     <!-- Additional Info -->
     <div class="mt-12 text-center">
       <div class="card mx-auto max-w-2xl">
@@ -234,6 +247,5 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>
     </div>
-    
   </main>
 </Layout>

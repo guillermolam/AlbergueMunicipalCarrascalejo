@@ -9,7 +9,6 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 - Use **pnpm workspaces** for orchestration and dependencies
 - Use **Vite** (via Astro) for dev/build
 - Ensure output is compatible with **Spin and Fermyon deployments**:
-
   - Each microfrontend builds to its own `dist/`
   - Each can be served independently OR mounted under scoped base paths (`/auth`, `/dashboard`, etc.)
   - Routing is isolated per microfrontend and compatible with Spin routing via `spin.toml`
@@ -21,7 +20,6 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 
 - Split the existing monolith into **feature-based microfrontends**
 - Each microfrontend must have:
-
   - its own `astro.config.*`, `vite` integration (through Astro), `tsconfig.json`, and routing boundaries
   - strict base path scoping (`/auth`, `/dashboard`, etc.)
 
@@ -30,10 +28,8 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 #### 2) Integration (Shell / Host)
 
 - Create a **shell/host app** that:
-
   - provides top-level navigation, shared layout, and shared design tokens
   - mounts microfrontends via:
-
     - **static composition** (build-time linking) and/or
     - **runtime composition** (loading microfrontend entry points as static assets under base paths)
 
@@ -44,7 +40,6 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 - Package manager: **pnpm only**
 - Workspaces: one root `pnpm-workspace.yaml`
 - Scripts:
-
   - `pnpm dev` runs shell + microfrontends concurrently
   - `pnpm build` builds all microfrontends into final `dist/` outputs
   - `pnpm test` runs unit + integration + e2e across apps/packages
@@ -54,7 +49,6 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 #### 4) UI Engineering Best Practices
 
 - Apply **SOLID** and **Clean Architecture** principles:
-
   - UI (Astro/Solid components)
   - state and domain logic
   - services/adapters (API clients)
@@ -62,7 +56,6 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 - Use **Solid** for interactivity as islands only; keep pages mostly static where possible.
 - Ensure reactive, non-blocking UI and minimal client-side JS.
 - Styling:
-
   - **Tailwind CSS** as baseline
   - **daisyUI** for primitives and theming
   - Use **wired.js-style visuals** and **css-doodle** as optional decorative layers (must be performance-safe and respect reduced motion).
@@ -70,11 +63,9 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 #### 5) Figma-driven implementation (Source of truth)
 
 - Use **Figma** as the visual reference:
-
   - spacing, typography, colors, component states, breakpoints
 
 - Translate Figma tokens into:
-
   - Tailwind theme extensions
   - daisyUI theme configuration
 
@@ -85,26 +76,21 @@ Refactor **all pages and UI** to follow a **microfrontend-by-domain** model wher
 Refactor all UI elements in console + registration flows into small, reusable, independently testable components (framework-appropriate):
 
 - **ID Verification Component** (Solid island):
-
   - camera or file upload, validation status UI, fallback rendering logic
   - supports DNI, NIE, NIF, passport numbers, EU residence permits, CIF (if applicable)
   - performs format validation + checksum + country-specific rules where applicable
 
 - **Phone Input with Country Selector**:
-
   - intl dialing codes and flags
   - includes regional flags support where required by design (Catalonia, Valencia, Galicia, Basque Country) as _visual assets only_ (no political claims)
 
 - **Stay Date Selector**:
-
   - localized date formats
 
 - **Address Component with Google Places API**:
-
   - autocomplete UX, country restrictions, maps full address object
 
 - **Language Selector**:
-
   - supports international + regional languages per Figma design
 
 Each component must:
@@ -113,7 +99,6 @@ Each component must:
 - live in `packages/components/*` (or similar)
 - be publishable to GitHub Packages (versioned)
 - include:
-
   - unit tests (Vitest)
   - integration tests (Vitest + Testing Library where appropriate)
   - e2e tests (Playwright) for critical paths
@@ -125,7 +110,6 @@ Each component must:
 
 - Every microfrontend and package is independently buildable and testable
 - Validate production builds:
-
   - no mock data in shipped bundles
   - correct base paths
   - correct static asset references for Spin hosting
@@ -168,7 +152,6 @@ dist/                 # final static outputs (per-app dist retained too)
 4. Component examples:
 
 - at least one full example component from the list above with:
-
   - code, tests, README stub, package publishing config
 
 5. Build orchestration:
@@ -180,7 +163,6 @@ dist/                 # final static outputs (per-app dist retained too)
 
 - Print the full folder tree
 - Provide concrete code snippets for:
-
   - Astro app layout + routing
   - Solid island component
   - Tailwind + daisyUI theming

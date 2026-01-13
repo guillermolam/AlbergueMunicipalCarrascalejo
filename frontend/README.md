@@ -43,4 +43,5 @@ See `src/scripts/README.md` for the `data-*` contracts used by the runtime modul
 
 ## Windows note
 
-If you are in a \\wsl.localhost\\... path, some Windows tools fail due to UNC path limitations. Prefer running frontend commands inside WSL (for example: cd frontend && pnpm build).
+If you are in a \\wsl.localhost\\... path, some Windows tools fail due to UNC path limitations.
+Prefer running frontend commands inside WSL (for example: cd frontend && pnpm build).

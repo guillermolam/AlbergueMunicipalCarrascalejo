@@ -1,13 +1,19 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Dashboard - Albergue Municipal Carrascalejo" description="Panel de control del peregrino">
+<Layout
+  title="Dashboard - Albergue Municipal Carrascalejo"
+  description="Panel de control del peregrino"
+>
   <link rel="stylesheet" href="/src/styles/dashboard.css" />
   <main class="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50">
     <!-- Hero Section -->
     <div class="relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 opacity-90"></div>
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 opacity-90"
+      >
+      </div>
       <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="text-center">
           <h1 class="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
@@ -27,14 +33,19 @@ import Layout from "../layouts/Layout.astro";
         </div>
       </div>
       <!-- Decorative Elements -->
-      <div class="absolute top-10 left-10 w-20 h-20 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
-      <div class="absolute bottom-10 right-10 w-32 h-32 bg-white bg-opacity-10 rounded-full animate-pulse delay-1000"></div>
+      <div
+        class="absolute top-10 left-10 w-20 h-20 bg-white bg-opacity-10 rounded-full animate-pulse"
+      >
+      </div>
+      <div
+        class="absolute bottom-10 right-10 w-32 h-32 bg-white bg-opacity-10 rounded-full animate-pulse delay-1000"
+      >
+      </div>
     </div>
 
     <!-- Dashboard Grid -->
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        
         <!-- My Booking Section -->
         <div class="dashboard-card group">
           <div class="card-header bg-gradient-to-br from-green-500 to-emerald-600">
@@ -214,7 +225,6 @@ import Layout from "../layouts/Layout.astro";
             </a>
           </div>
         </div>
-
       </div>
 
       <!-- Quick Actions -->
@@ -249,7 +259,7 @@ import Layout from "../layouts/Layout.astro";
     background: white;
     border-radius: 1.5rem;
     overflow: hidden;
-    box-shadow: 
+    box-shadow:
       0 20px 40px rgba(0, 0, 0, 0.1),
       0 0 0 1px rgba(255, 255, 255, 0.5) inset;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -258,7 +268,7 @@ import Layout from "../layouts/Layout.astro";
 
   .dashboard-card:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 
+    box-shadow:
       0 30px 60px rgba(0, 0, 0, 0.15),
       0 0 0 1px rgba(255, 255, 255, 0.6) inset;
   }
@@ -277,7 +287,7 @@ import Layout from "../layouts/Layout.astro";
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
     pointer-events: none;
   }
 
@@ -404,7 +414,12 @@ import Layout from "../layouts/Layout.astro";
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%
+    );
     animation: shimmer 2s infinite;
   }
 
@@ -514,7 +529,7 @@ import Layout from "../layouts/Layout.astro";
     position: relative;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 
+    box-shadow:
       0 8px 16px rgba(0, 0, 0, 0.1),
       0 0 0 1px rgba(255, 255, 255, 0.2) inset;
   }
@@ -541,7 +556,7 @@ import Layout from "../layouts/Layout.astro";
 
   .gorgeous-button.green:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 
+    box-shadow:
       0 16px 32px rgba(16, 185, 129, 0.3),
       0 0 0 1px rgba(255, 255, 255, 0.4) inset;
   }
@@ -553,7 +568,7 @@ import Layout from "../layouts/Layout.astro";
 
   .gorgeous-button.red:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 
+    box-shadow:
       0 16px 32px rgba(239, 68, 68, 0.3),
       0 0 0 1px rgba(255, 255, 255, 0.4) inset;
   }
@@ -565,7 +580,7 @@ import Layout from "../layouts/Layout.astro";
 
   .gorgeous-button.blue:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 
+    box-shadow:
       0 16px 32px rgba(59, 130, 246, 0.3),
       0 0 0 1px rgba(255, 255, 255, 0.4) inset;
   }
@@ -610,13 +625,22 @@ import Layout from "../layouts/Layout.astro";
 
   /* Animations */
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 
   @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 
   /* Responsive Design */
@@ -624,11 +648,11 @@ import Layout from "../layouts/Layout.astro";
     .dashboard-card:hover {
       transform: translateY(-4px) scale(1.01);
     }
-    
+
     .gorgeous-button:hover {
       transform: translateY(-2px) scale(1.02);
     }
-    
+
     .quick-action-button:hover {
       transform: translateY(-2px) scale(1.02);
     }

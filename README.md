@@ -41,6 +41,9 @@ task dev
 - [Scripts](scripts/README.md)
 - [Tests](tests/README.md)
 - [UX docs](docs/ux/README.md)
+- [Documentation hub](docs/README.md)
+- [Architecture (arc42)](docs/arc42/README.md)
+- [ADRs](docs/adr/README.md)
 
 ## Frontend
 

@@ -20,13 +20,13 @@ TURSO_AUTH_TOKEN="$($TURSO_BIN db tokens create "$TURSO_DB_NAME")"
 rm -f "$TURSO_REPLICA_PATH"
 
 DATABASE_URL="$TURSO_DATABASE_URL" TURSO_AUTH_TOKEN="$TURSO_AUTH_TOKEN" TURSO_REPLICA_PATH="$TURSO_REPLICA_PATH" \
-  cargo run -p albergue-turso-sync --manifest-path "$MANIFEST_PATH" >/dev/null
+	cargo run -p albergue-turso-sync --manifest-path "$MANIFEST_PATH" >/dev/null
 
 DATABASE_URL="sqlite://$TURSO_REPLICA_PATH" \
-  cargo run -p albergue-migration --manifest-path "$MANIFEST_PATH" -- fresh >/dev/null
+	cargo run -p albergue-migration --manifest-path "$MANIFEST_PATH" -- fresh >/dev/null
 
 DATABASE_URL="$TURSO_DATABASE_URL" TURSO_AUTH_TOKEN="$TURSO_AUTH_TOKEN" TURSO_REPLICA_PATH="$TURSO_REPLICA_PATH" \
-  cargo run -p albergue-turso-sync --manifest-path "$MANIFEST_PATH" >/dev/null
+	cargo run -p albergue-turso-sync --manifest-path "$MANIFEST_PATH" >/dev/null
 
 printf "migrations_remote_count="
 "$TURSO_BIN" db shell "$TURSO_DB_NAME" "select count(*) from seaql_migrations;" | tail -n 1

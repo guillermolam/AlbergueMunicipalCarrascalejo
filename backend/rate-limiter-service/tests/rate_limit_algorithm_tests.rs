@@ -9,18 +9,21 @@ mod rate_limit_algorithm_tests {
     fn test_get_current_timestamp() {
         let timestamp = get_current_timestamp();
         assert!(timestamp > 0, "Timestamp should be positive");
-        
+
         // Test that timestamps are increasing
         std::thread::sleep(std::time::Duration::from_millis(10));
         let timestamp2 = get_current_timestamp();
-        assert!(timestamp2 >= timestamp, "Timestamps should be non-decreasing");
+        assert!(
+            timestamp2 >= timestamp,
+            "Timestamps should be non-decreasing"
+        );
     }
 
     #[test]
     fn test_calculate_rate_limit_new_entry() {
         let current_time = 1000;
         let result = calculate_rate_limit(None, current_time, 60, 10);
-        
+
         let (allowed, entry, remaining) = result;
         assert!(allowed, "New entry should be allowed");
         assert_eq!(entry.requests, 1);
@@ -37,10 +40,10 @@ mod rate_limit_algorithm_tests {
             window_start: 1000,
             last_request: 1000,
         };
-        
+
         let result = calculate_rate_limit(Some(existing.clone()), current_time + 30, 60, 10);
         let (allowed, entry, remaining) = result;
-        
+
         assert!(allowed, "Request within limit should be allowed");
         assert_eq!(entry.requests, 6);
         assert_eq!(entry.window_start, 1000);
@@ -56,10 +59,10 @@ mod rate_limit_algorithm_tests {
             window_start: 1000,
             last_request: 1000,
         };
-        
+
         let result = calculate_rate_limit(Some(existing.clone()), current_time + 61, 60, 10);
         let (allowed, entry, remaining) = result;
-        
+
         assert!(allowed, "Expired window should reset and allow");
         assert_eq!(entry.requests, 1);
         assert_eq!(entry.window_start, current_time + 61);
@@ -75,10 +78,10 @@ mod rate_limit_algorithm_tests {
             window_start: 1000,
             last_request: 1000,
         };
-        
+
         let result = calculate_rate_limit(Some(existing.clone()), current_time + 30, 60, 10);
         let (allowed, entry, remaining) = result;
-        
+
         assert!(!allowed, "Request over limit should be denied");
         assert_eq!(entry.requests, 10);
         assert_eq!(entry.window_start, 1000);
@@ -95,17 +98,17 @@ mod rate_limit_algorithm_tests {
             window_start: 1000,
             last_request: 1000,
         };
-        
+
         let result = calculate_rate_limit(Some(existing.clone()), current_time, 0, 10);
         let (allowed, entry, remaining) = result;
-        
+
         assert!(allowed, "Zero window should reset");
         assert_eq!(entry.requests, 1);
-        
+
         // Test with max requests = 0 (should always deny)
         let result = calculate_rate_limit(None, current_time, 60, 0);
         let (allowed, entry, remaining) = result;
-        
+
         assert!(!allowed, "Zero max requests should deny");
         assert_eq!(entry.requests, 1);
         assert_eq!(remaining, 0);
@@ -113,7 +116,7 @@ mod rate_limit_algorithm_tests {
 
     #[test]
     fn test_extract_client_id() {
-        use http::{Request, HeaderMap};
+        use http::{HeaderMap, Request};
 
         // Test with x-forwarded-for header
         let mut headers = HeaderMap::new();

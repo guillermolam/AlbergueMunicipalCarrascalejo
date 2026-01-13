@@ -49,7 +49,13 @@ impl Node {
         let len = self.children.len();
         for (idx, (name, node)) in self.children.iter().enumerate() {
             let is_last = idx + 1 == len;
-            writeln!(writer, "{}{}{}", prefix, if is_last { "└── " } else { "├── " }, name)?;
+            writeln!(
+                writer,
+                "{}{}{}",
+                prefix,
+                if is_last { "└── " } else { "├── " },
+                name
+            )?;
             let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
             node.print(&new_prefix, writer)?;
         }

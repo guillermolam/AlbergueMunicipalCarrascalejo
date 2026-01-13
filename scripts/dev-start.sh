@@ -7,9 +7,9 @@ echo "Starting Albergue del Carrascalejo development environment..."
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Check if Spin is available
-if ! command -v ./spin &> /dev/null; then
-    echo "Spin not found, using local installation..."
-    export PATH="./spin:$PATH"
+if ! command -v ./spin &>/dev/null; then
+	echo "Spin not found, using local installation..."
+	export PATH="./spin:$PATH"
 fi
 
 # Build WASM services first

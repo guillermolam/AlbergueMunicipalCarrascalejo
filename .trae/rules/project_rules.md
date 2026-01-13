@@ -219,7 +219,6 @@ Objective: Everything runnable via Taskfile targets; CI uses same targets locall
 Rules:
 
 - Root Taskfile.yml exposes canonical targets:
-
   - task dev
   - task lint
   - task test

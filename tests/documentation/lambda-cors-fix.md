@@ -1,4 +1,3 @@
-
 # AWS Lambda CORS Fix - UPDATED CODE READY
 
 ## ✅ Code Updated with CORS Support
@@ -23,6 +22,7 @@ I've updated your Lambda function code to include proper CORS headers. Now you h
 If you want to deploy the latest code with CORS fixes:
 
 Run the CORS-enabled deployment script:
+
 ```bash
 # On your local machine with AWS CLI configured
 chmod +x update-lambda-cors.sh
@@ -34,6 +34,7 @@ chmod +x update-lambda-cors.sh
 If you prefer not to redeploy, configure CORS in AWS Console:
 
 ### Option B: Manual ZIP Upload
+
 1. Build the Rust code locally:
    ```bash
    cd backend-rust/src/spanish-document-ocr
@@ -43,6 +44,7 @@ If you prefer not to redeploy, configure CORS in AWS Console:
 2. AWS Console → Lambda → Upload .zip file
 
 ### Option C: Update Function Code in Console
+
 Paste this CORS-enabled handler in the Lambda console inline editor:
 
 ```rust
@@ -61,10 +63,10 @@ async fn handler(request: Request) -> Result<Response<String>, lambda_web::Error
             .header("Access-Control-Max-Age", "86400")
             .body("".to_string())?);
     }
-    
+
     // Your existing OCR processing code here...
     let result = process_document(&request).await?;
-    
+
     // Return response with CORS headers
     Ok(Response::builder()
         .status(200)
@@ -79,6 +81,7 @@ async fn handler(request: Request) -> Result<Response<String>, lambda_web::Error
 ## Test After Fix
 
 Once CORS is fixed, test with:
+
 ```bash
 curl -X POST https://ypeekiyyo4wb4mvzg3vsa2yy2m0lhmew.lambda-url.eu-west-3.on.aws/ \
   -H "Content-Type: application/json" \
@@ -89,10 +92,14 @@ curl -X POST https://ypeekiyyo4wb4mvzg3vsa2yy2m0lhmew.lambda-url.eu-west-3.on.aw
 Should return JSON response instead of 403 Forbidden.
 
 ## Status
+
 - ✅ Lambda function deployed and running
-- ✅ SSL/TLS working correctly  
+- ✅ SSL/TLS working correctly
 - ❌ CORS headers missing (causing 403)
 - 🔧 **Fix needed**: Configure CORS in Function URL settings
 
 The fastest fix is Method 1 (AWS Console CORS configuration).
+
+```
+
 ```

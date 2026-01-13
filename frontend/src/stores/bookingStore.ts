@@ -94,37 +94,37 @@ export const bookingActions = {
   setCheckInDate: (date: string) => {
     bookingStore.setKey('checkInDate', date);
   },
-  
+
   setCheckOutDate: (date: string) => {
     bookingStore.setKey('checkOutDate', date);
   },
-  
+
   // Guest management
   setNumberOfGuests: (count: number) => {
     bookingStore.setKey('numberOfGuests', count);
   },
-  
+
   addPilgrim: (pilgrim: Omit<Pilgrim, 'id'>) => {
     const newPilgrim: Pilgrim = {
       ...pilgrim,
       id: `pilgrim_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
     };
-    
+
     bookingStore.setKey('pilgrims', [...bookingStore.get().pilgrims, newPilgrim]);
   },
-  
+
   updatePilgrim: (id: string, updates: Partial<Pilgrim>) => {
-    const pilgrims = bookingStore.get().pilgrims.map(pilgrim =>
-      pilgrim.id === id ? { ...pilgrim, ...updates } : pilgrim
-    );
+    const pilgrims = bookingStore
+      .get()
+      .pilgrims.map((pilgrim) => (pilgrim.id === id ? { ...pilgrim, ...updates } : pilgrim));
     bookingStore.setKey('pilgrims', pilgrims);
   },
-  
+
   removePilgrim: (id: string) => {
-    const pilgrims = bookingStore.get().pilgrims.filter(pilgrim => pilgrim.id !== id);
+    const pilgrims = bookingStore.get().pilgrims.filter((pilgrim) => pilgrim.id !== id);
     bookingStore.setKey('pilgrims', pilgrims);
   },
-  
+
   // Bed selection
   selectBed: (bedId: string) => {
     const currentBeds = bookingStore.get().selectedBedIds;
@@ -132,68 +132,71 @@ export const bookingActions = {
       bookingStore.setKey('selectedBedIds', [...currentBeds, bedId]);
     }
   },
-  
+
   deselectBed: (bedId: string) => {
     const currentBeds = bookingStore.get().selectedBedIds;
-    bookingStore.setKey('selectedBedIds', currentBeds.filter(id => id !== bedId));
+    bookingStore.setKey(
+      'selectedBedIds',
+      currentBeds.filter((id) => id !== bedId)
+    );
   },
-  
+
   clearBedSelection: () => {
     bookingStore.setKey('selectedBedIds', []);
   },
-  
+
   // Pricing
   setTotalPrice: (price: number) => {
     bookingStore.setKey('totalPrice', price);
   },
-  
+
   setCurrency: (currency: string) => {
     bookingStore.setKey('currency', currency);
   },
-  
+
   // Booking flow
   setCurrentStep: (step: number) => {
     bookingStore.setKey('currentStep', step);
   },
-  
+
   nextStep: () => {
     const currentStep = bookingStore.get().currentStep;
     bookingStore.setKey('currentStep', currentStep + 1);
   },
-  
+
   previousStep: () => {
     const currentStep = bookingStore.get().currentStep;
     if (currentStep > 1) {
       bookingStore.setKey('currentStep', currentStep - 1);
     }
   },
-  
+
   // Contact info
   setContactInfo: (info: Partial<ContactInfo>) => {
     const current = bookingStore.get().contactInfo;
     bookingStore.setKey('contactInfo', { ...current, ...info });
   },
-  
+
   // Payment info
   setPaymentInfo: (info: Partial<PaymentInfo>) => {
     const current = bookingStore.get().paymentInfo;
     bookingStore.setKey('paymentInfo', { ...current, ...info });
   },
-  
+
   // Booking completion
   setBookingId: (id: string) => {
     bookingStore.setKey('bookingId', id);
   },
-  
+
   setStatus: (status: BookingState['status']) => {
     bookingStore.setKey('status', status);
   },
-  
+
   // Reset booking
   resetBooking: () => {
     bookingStore.set(initialBookingState);
   },
-  
+
   // Load booking from storage
   loadBooking: (bookingData: Partial<BookingState>) => {
     bookingStore.set({ ...initialBookingState, ...bookingData });
@@ -214,26 +217,26 @@ export const bookingSelectors = {
       state.contactInfo.lastName
     );
   },
-  
+
   getBookingDuration: () => {
     const state = bookingStore.get();
     if (!state.checkInDate || !state.checkOutDate) return 0;
-    
+
     const checkIn = new Date(state.checkInDate);
     const checkOut = new Date(state.checkOutDate);
     const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   },
-  
+
   getSelectedBedsCount: () => {
     return bookingStore.get().selectedBedIds.length;
   },
-  
+
   isStepComplete: (step: number) => {
     const state = bookingStore.get();
-    
+
     switch (step) {
       case 1: // Dates
         return !!state.checkInDate && !!state.checkOutDate;
@@ -242,7 +245,9 @@ export const bookingSelectors = {
       case 3: // Beds
         return state.selectedBedIds.length === state.numberOfGuests;
       case 4: // Contact
-        return !!state.contactInfo.email && !!state.contactInfo.firstName && !!state.contactInfo.lastName;
+        return (
+          !!state.contactInfo.email && !!state.contactInfo.firstName && !!state.contactInfo.lastName
+        );
       case 5: // Payment
         return !!state.paymentInfo.method;
       default:

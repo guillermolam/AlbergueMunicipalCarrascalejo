@@ -4,4 +4,3 @@ type = "env"
 [key_value_store.default]
 type = "redis"
 url = "redis://default:<REPLACE_PASSWORD>@redis-19061.c339.eu-west-3-1.ec2.cloud.redislabs.com:19061"
-

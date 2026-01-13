@@ -1,20 +1,20 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import "@testing-library/jest-dom";
-import { BookingConfirmation } from "../../apps/booking/src/components/BookingConfirmation";
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import '@testing-library/jest-dom';
+import { BookingConfirmation } from '../../apps/booking/src/components/BookingConfirmation';
 
 const mockBookingData = {
-  roomId: "dorm-a",
-  roomName: "Dormitorio A",
-  checkIn: "2024-01-15",
-  checkOut: "2024-01-17",
+  roomId: 'dorm-a',
+  roomName: 'Dormitorio A',
+  checkIn: '2024-01-15',
+  checkOut: '2024-01-17',
   guests: 2,
   totalPrice: 60,
   guestInfo: {
-    name: "Juan García",
-    email: "juan@email.com",
-    phone: "600123456",
-    passport: "12345678A",
+    name: 'Juan García',
+    email: 'juan@email.com',
+    phone: '600123456',
+    passport: '12345678A',
   },
 };
 
@@ -22,7 +22,7 @@ const mockBookingData = {
 const mockFetch = vi.fn();
 global.fetch = mockFetch as any;
 
-describe("BookingConfirmation", () => {
+describe('BookingConfirmation', () => {
   const mockOnConfirm = vi.fn();
   const mockOnBack = vi.fn();
 
@@ -31,32 +31,30 @@ describe("BookingConfirmation", () => {
     mockFetch.mockReset();
   });
 
-  it("displays booking details correctly", () => {
+  it('displays booking details correctly', () => {
     render(
       <BookingConfirmation
         bookingData={mockBookingData}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    expect(screen.getByText("Confirmar Reserva")).toBeInTheDocument();
-    expect(screen.getByText("Dormitorio A")).toBeInTheDocument();
-    expect(
-      screen.getByText("Entrada: 15/1/2024 - Salida: 17/1/2024"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("2 persona(s)")).toBeInTheDocument();
-    expect(screen.getByText("Juan García")).toBeInTheDocument();
-    expect(screen.getByText("juan@email.com")).toBeInTheDocument();
-    expect(screen.getByText("600123456")).toBeInTheDocument();
-    expect(screen.getByText("Pasaporte: 12345678A")).toBeInTheDocument();
-    expect(screen.getByText("€60")).toBeInTheDocument();
+    expect(screen.getByText('Confirmar Reserva')).toBeInTheDocument();
+    expect(screen.getByText('Dormitorio A')).toBeInTheDocument();
+    expect(screen.getByText('Entrada: 15/1/2024 - Salida: 17/1/2024')).toBeInTheDocument();
+    expect(screen.getByText('2 persona(s)')).toBeInTheDocument();
+    expect(screen.getByText('Juan García')).toBeInTheDocument();
+    expect(screen.getByText('juan@email.com')).toBeInTheDocument();
+    expect(screen.getByText('600123456')).toBeInTheDocument();
+    expect(screen.getByText('Pasaporte: 12345678A')).toBeInTheDocument();
+    expect(screen.getByText('€60')).toBeInTheDocument();
   });
 
-  it("calls onConfirm when booking is successful", async () => {
+  it('calls onConfirm when booking is successful', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ id: "booking-123" }),
+      json: async () => ({ id: 'booking-123' }),
     } as Response);
 
     render(
@@ -64,17 +62,17 @@ describe("BookingConfirmation", () => {
         bookingData={mockBookingData}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    const confirmButton = screen.getByText("Confirmar Reserva");
+    const confirmButton = screen.getByText('Confirmar Reserva');
     fireEvent.click(confirmButton);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith("/api/bookings", {
-        method: "POST",
+      expect(mockFetch).toHaveBeenCalledWith('/api/bookings', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(mockBookingData),
       });
@@ -82,28 +80,26 @@ describe("BookingConfirmation", () => {
     });
   });
 
-  it("shows error message when booking fails", async () => {
-    mockFetch.mockRejectedValueOnce(new Error("Network error"));
+  it('shows error message when booking fails', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
     render(
       <BookingConfirmation
         bookingData={mockBookingData}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    const confirmButton = screen.getByText("Confirmar Reserva");
+    const confirmButton = screen.getByText('Confirmar Reserva');
     fireEvent.click(confirmButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Error al confirmar la reserva"),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Error al confirmar la reserva')).toBeInTheDocument();
     });
   });
 
-  it("handles API error response", async () => {
+  it('handles API error response', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 400,
@@ -114,35 +110,33 @@ describe("BookingConfirmation", () => {
         bookingData={mockBookingData}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    const confirmButton = screen.getByText("Confirmar Reserva");
+    const confirmButton = screen.getByText('Confirmar Reserva');
     fireEvent.click(confirmButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Error al confirmar la reserva"),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Error al confirmar la reserva')).toBeInTheDocument();
     });
   });
 
-  it("calls onBack when back button is clicked", () => {
+  it('calls onBack when back button is clicked', () => {
     render(
       <BookingConfirmation
         bookingData={mockBookingData}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    const backButton = screen.getByText("Volver");
+    const backButton = screen.getByText('Volver');
     fireEvent.click(backButton);
 
     expect(mockOnBack).toHaveBeenCalled();
   });
 
-  it("displays booking without passport", () => {
+  it('displays booking without passport', () => {
     const bookingWithoutPassport = {
       ...mockBookingData,
       guestInfo: {
@@ -156,17 +150,17 @@ describe("BookingConfirmation", () => {
         bookingData={bookingWithoutPassport}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
     expect(screen.queryByText(/Pasaporte:/)).not.toBeInTheDocument();
   });
 
-  it("formats dates correctly", () => {
+  it('formats dates correctly', () => {
     const bookingWithDifferentDates = {
       ...mockBookingData,
-      checkIn: "2024-12-25",
-      checkOut: "2024-12-31",
+      checkIn: '2024-12-25',
+      checkOut: '2024-12-31',
     };
 
     render(
@@ -174,15 +168,13 @@ describe("BookingConfirmation", () => {
         bookingData={bookingWithDifferentDates}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    expect(
-      screen.getByText("Entrada: 25/12/2024 - Salida: 31/12/2024"),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Entrada: 25/12/2024 - Salida: 31/12/2024')).toBeInTheDocument();
   });
 
-  it("handles single guest correctly", () => {
+  it('handles single guest correctly', () => {
     const bookingWithSingleGuest = {
       ...mockBookingData,
       guests: 1,
@@ -193,13 +185,13 @@ describe("BookingConfirmation", () => {
         bookingData={bookingWithSingleGuest}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    expect(screen.getByText("1 persona")).toBeInTheDocument();
+    expect(screen.getByText('1 persona')).toBeInTheDocument();
   });
 
-  it("displays different price points", () => {
+  it('displays different price points', () => {
     const bookingWithHighPrice = {
       ...mockBookingData,
       totalPrice: 350,
@@ -210,13 +202,13 @@ describe("BookingConfirmation", () => {
         bookingData={bookingWithHighPrice}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    expect(screen.getByText("€350")).toBeInTheDocument();
+    expect(screen.getByText('€350')).toBeInTheDocument();
   });
 
-  it("handles zero decimal prices", () => {
+  it('handles zero decimal prices', () => {
     const bookingWithRoundPrice = {
       ...mockBookingData,
       totalPrice: 100,
@@ -227,9 +219,9 @@ describe("BookingConfirmation", () => {
         bookingData={bookingWithRoundPrice}
         onConfirm={mockOnConfirm}
         onBack={mockOnBack}
-      />,
+      />
     );
 
-    expect(screen.getByText("€100")).toBeInTheDocument();
+    expect(screen.getByText('€100')).toBeInTheDocument();
   });
 });

@@ -21,11 +21,11 @@ const languages: Language[] = await (async () => {
     // Fire-and-forget non-blocking call to our gateway
     const res = await fetch('/api/gateway/camino-languages', {
       method: 'GET',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
-      keepalive: true
+      keepalive: true,
     });
 
     if (!res.ok) throw new Error(`Gateway error: ${res.status}`);
@@ -56,14 +56,14 @@ const languages: Language[] = await (async () => {
       { code: 'eu', name: 'Euskara', flag: '🏴' },
       { code: 'gl', name: 'Galego', flag: '🏴' },
       { code: 'oc', name: 'Occitan (Aranés)', flag: '🏴' },
-      { code: 'Gode', name: 'Gothic', flag: '🏴' }
+      { code: 'Gode', name: 'Gothic', flag: '🏴' },
     ];
   }
-})( );
+})();
 
 // Get current locale from store
 const currentLocale = i18nStore.get().locale;
-const currentLanguage = languages.find(lang => lang.code === currentLocale) || languages[0];
+const currentLanguage = languages.find((lang) => lang.code === currentLocale) || languages[0];
 
 // Generate unique ID for Alpine.js component
 const componentId = `language-selector-${Math.random().toString(36).substring(2, 11)}`;
@@ -71,7 +71,7 @@ const componentId = `language-selector-${Math.random().toString(36).substring(2,
 const { class: className = '', showFlags = true, compact = false } = Astro.props;
 ---
 
-<div 
+<div
   id={componentId}
   class={`language-selector relative ${className}`}
   x-data={`{
@@ -159,10 +159,10 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
   {/* Trigger Button */}
   <button
     type="button"
-    @click="toggleDropdown"
-    @keydown="handleKeydown"
+    x-on:click="toggleDropdown"
+    x-on:keydown="handleKeydown"
     class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200"
-    :class="{'text-sm': ${compact}}"
+    x-bind:class="{'text-sm': ${compact}}"
     aria-label="Seleccionar idioma"
     aria-expanded="false"
     aria-haspopup="true"
@@ -170,13 +170,13 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
     x-ref="trigger"
   >
     {/* Flag Display */}
-    {showFlags && (
-      <span class="text-lg" aria-hidden="true" x-text="currentLanguage.flag"></span>
-    )}
-    
+    {showFlags && <span class="text-lg" aria-hidden="true" x-text="currentLanguage.flag" />}
+
     {/* Language Name/Code */}
-    <span class="font-medium text-gray-700" x-text="${compact ? 'currentLanguage.code.toUpperCase()' : 'currentLanguage.name'}"></span>
-    
+    <span
+      class="font-medium text-gray-700"
+      x-text="${compact ? 'currentLanguage.code.toUpperCase()' : 'currentLanguage.name'}"></span>
+
     {/* Custom SVG Arrow with RoughJS styling */}
     <svg
       class="w-4 h-4 text-gray-500 transition-transform duration-200"
@@ -190,13 +190,12 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
-        fill="none"
-      />
+        fill="none"></path>
     </svg>
   </button>
 
   {/* Dropdown Menu */}
-  <div 
+  <div
     id={`${componentId}-dropdown`}
     class="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
     role="menu"
@@ -212,47 +211,47 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
     tabindex="-1"
   >
     <div class="py-1">
-      {languages.map((language) => (
-        <button
-          type="button"
-          @click={`selectLanguage('${language.code}')`}
-          class="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150"
-          :class={`selectedLanguage === '${language.code}' ? 'bg-primary-50 text-primary-700' : 'text-gray-700'`}
-          aria-label={`Cambiar a ${language.name}`}
-          role="menuitem"
-          :aria-selected={`selectedLanguage === '${language.code}'`}
-          x-bind:aria-selected={`selectedLanguage === '${language.code}'`}
-        >
-          {/* Language Flag */}
-          {showFlags && (
-            <span class="text-lg" aria-hidden="true" x-text={JSON.stringify(language.flag)}></span>
-          )}
-          
-          {/* Language Info */}
-          <div class="flex-1">
-            <div class="font-medium" x-text={JSON.stringify(language.name)}></div>
-            <div class="text-sm text-gray-500" x-text={JSON.stringify(language.code.toUpperCase())}></div>
-          </div>
-          
-          {/* Checkmark for selected language */}
-          {currentLanguage.code === language.code && (
-            <svg
-              class="w-4 h-4 text-primary-600"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                d="M5 13l4 4L19 7"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                fill="none"
+      {
+        languages.map((language) => (
+          <button
+            type="button"
+            x-on:click={`selectLanguage('${language.code}')`}
+            class="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150"
+            x-bind:class={`selectedLanguage === '${language.code}' ? 'bg-primary-50 text-primary-700' : 'text-gray-700'`}
+            aria-label={`Cambiar a ${language.name}`}
+            role="menuitem"
+            x-bind:aria-selected={`selectedLanguage === '${language.code}'`}
+          >
+            {/* Language Flag */}
+            {showFlags && (
+              <span class="text-lg" aria-hidden="true" x-text={JSON.stringify(language.flag)} />
+            )}
+
+            {/* Language Info */}
+            <div class="flex-1">
+              <div class="font-medium" x-text={JSON.stringify(language.name)} />
+              <div
+                class="text-sm text-gray-500"
+                x-text={JSON.stringify(language.code.toUpperCase())}
               />
-            </svg>
-          )}
-        </button>
-      ))}
+            </div>
+
+            {/* Checkmark for selected language */}
+            {currentLanguage.code === language.code && (
+              <svg class="w-4 h-4 text-primary-600" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  fill="none"
+                />
+              </svg>
+            )}
+          </button>
+        ))
+      }
     </div>
   </div>
 </div>

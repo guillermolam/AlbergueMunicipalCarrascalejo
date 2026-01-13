@@ -11,10 +11,10 @@ export default {
   bracketSpacing: true,
   bracketSameLine: false,
   arrowParens: 'always',
-  endOfLine: 'lf',
-  
+  endOfLine: 'auto',
+
   // Astro-specific settings
-  plugins: ['prettier-plugin-astro', 'prettier-plugin-tailwindcss'],
+  plugins: ['prettier-plugin-astro'],
   overrides: [
     {
       files: '*.astro',
@@ -97,15 +97,4 @@ export default {
       },
     },
   ],
-  
-  // Tailwind CSS class sorting
-  tailwindConfig: './tailwind.config.mjs',
-  tailwindFunctions: ['clsx', 'cn', 'tw', 'twMerge', 'cva'],
-  
-  // Ignore patterns
-  ignorePath: '.prettierignore',
-  
-  // Custom rules for specific patterns
-  astroAllowShorthand: false,
-  astroSortOrder: ['markup', 'styles', 'scripts'],
 };

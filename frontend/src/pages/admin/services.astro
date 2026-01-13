@@ -10,7 +10,7 @@ const services = [
     responseTime: '45ms',
     uptime: '99.9%',
     icon: 'shield',
-    description: 'Error tracking and monitoring'
+    description: 'Error tracking and monitoring',
   },
   {
     name: 'PostgreSQL',
@@ -19,7 +19,7 @@ const services = [
     responseTime: '12ms',
     uptime: '99.8%',
     icon: 'database',
-    description: 'Primary database'
+    description: 'Primary database',
   },
   {
     name: 'Redis',
@@ -28,7 +28,7 @@ const services = [
     responseTime: '89ms',
     uptime: '98.5%',
     icon: 'lightning-bolt',
-    description: 'Caching and session storage'
+    description: 'Caching and session storage',
   },
   {
     name: 'Supabase',
@@ -37,7 +37,7 @@ const services = [
     responseTime: '67ms',
     uptime: '99.7%',
     icon: 'lightning-bolt',
-    description: 'Backend services'
+    description: 'Backend services',
   },
   {
     name: 'Fermyon Spin',
@@ -46,7 +46,7 @@ const services = [
     responseTime: '156ms',
     uptime: '99.6%',
     icon: 'cog',
-    description: 'WASM runtime platform'
+    description: 'WASM runtime platform',
   },
   {
     name: 'MQTT Broker',
@@ -55,7 +55,7 @@ const services = [
     responseTime: '23ms',
     uptime: '99.9%',
     icon: 'wifi',
-    description: 'Message broker for real-time updates'
+    description: 'Message broker for real-time updates',
   },
   {
     name: 'WebSocket Gateway',
@@ -64,7 +64,7 @@ const services = [
     responseTime: '34ms',
     uptime: '99.4%',
     icon: 'globe',
-    description: 'Real-time communication'
+    description: 'Real-time communication',
   },
   {
     name: 'API Gateway',
@@ -73,20 +73,20 @@ const services = [
     responseTime: 'Timeout',
     uptime: '95.2%',
     icon: 'server',
-    description: 'API routing and load balancing'
-  }
+    description: 'API routing and load balancing',
+  },
 ];
 
 const statusColors: Record<string, string> = {
   healthy: 'bg-success',
   warning: 'bg-warning',
-  error: 'bg-error'
+  error: 'bg-error',
 };
 
 const statusIcons: Record<string, string> = {
   healthy: 'check-circle',
   warning: 'exclamation-triangle',
-  error: 'x-circle'
+  error: 'x-circle',
 };
 ---
 
@@ -104,7 +104,12 @@ const statusIcons: Record<string, string> = {
         </div>
         <button class="btn btn-primary btn-sm" onclick="location.reload()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            ></path>
           </svg>
           Refresh
         </button>
@@ -116,45 +121,75 @@ const statusIcons: Record<string, string> = {
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-success">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
         <div class="stat-title">Healthy Services</div>
-        <div class="stat-value text-success">{services.filter(s => s.status === 'healthy').length}</div>
+        <div class="stat-value text-success">
+          {services.filter((s) => s.status === 'healthy').length}
+        </div>
         <div class="stat-desc">of {services.length} total</div>
       </div>
 
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-warning">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+            ></path>
           </svg>
         </div>
         <div class="stat-title">Warnings</div>
-        <div class="stat-value text-warning">{services.filter(s => s.status === 'warning').length}</div>
+        <div class="stat-value text-warning">
+          {services.filter((s) => s.status === 'warning').length}
+        </div>
         <div class="stat-desc">Requires attention</div>
       </div>
 
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-error">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
         <div class="stat-title">Errors</div>
-        <div class="stat-value text-error">{services.filter(s => s.status === 'error').length}</div>
+        <div class="stat-value text-error">
+          {services.filter((s) => s.status === 'error').length}
+        </div>
         <div class="stat-desc">Critical issues</div>
       </div>
 
       <div class="stat bg-base-200 rounded-box">
         <div class="stat-figure text-info">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
         </div>
         <div class="stat-title">Avg Response</div>
         <div class="stat-value text-info">
-          {Math.round(services.filter(s => s.status !== 'error').reduce((acc, s) => acc + parseInt(s.responseTime), 0) / services.filter(s => s.status !== 'error').length)}ms
+          {
+            Math.round(
+              services
+                .filter((s) => s.status !== 'error')
+                .reduce((acc, s) => acc + parseInt(s.responseTime), 0) /
+                services.filter((s) => s.status !== 'error').length
+            )
+          }ms
         </div>
         <div class="stat-desc">Across all services</div>
       </div>
@@ -164,72 +199,108 @@ const statusIcons: Record<string, string> = {
     <div class="space-y-4">
       <h2 class="text-xl font-semibold text-base-content">Service Status</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {services.map((service) => (
-          <div class="card bg-base-200 shadow-sm border border-base-300">
-            <div class="card-body p-4">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-3">
-                  <div class={`w-3 h-3 rounded-full ${statusColors[service.status]}`}></div>
-                  <h3 class="card-title text-lg">{service.name}</h3>
+        {
+          services.map((service) => (
+            <div class="card bg-base-200 shadow-sm border border-base-300">
+              <div class="card-body p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class={`w-3 h-3 rounded-full ${statusColors[service.status]}`} />
+                    <h3 class="card-title text-lg">{service.name}</h3>
+                  </div>
+                  <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-xs btn-circle">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                        />
+                      </svg>
+                    </label>
+                    <ul
+                      tabindex="0"
+                      class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-32"
+                    >
+                      <li>
+                        <a>View logs</a>
+                      </li>
+                      <li>
+                        <a>Restart service</a>
+                      </li>
+                      <li>
+                        <a>Configure alerts</a>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <div class="dropdown dropdown-end">
-                  <label tabindex="0" class="btn btn-ghost btn-xs btn-circle">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+
+                <p class="text-sm text-base-content/70 mb-4">{service.description}</p>
+
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-base-content/60">Status:</span>
+                    <span
+                      class={`font-medium ${
+                        service.status === 'healthy'
+                          ? 'text-success'
+                          : service.status === 'warning'
+                            ? 'text-warning'
+                            : 'text-error'
+                      }`}
+                    >
+                      {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-base-content/60">Response Time:</span>
+                    <span class="font-mono">{service.responseTime}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-base-content/60">Uptime:</span>
+                    <span class="font-mono">{service.uptime}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-base-content/60">Last Check:</span>
+                    <span class="font-mono text-xs">{service.lastCheck}</span>
+                  </div>
+                </div>
+
+                <div class="card-actions justify-end mt-4">
+                  <button class="btn btn-ghost btn-xs">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
                     </svg>
-                  </label>
-                  <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-32">
-                    <li><a>View logs</a></li>
-                    <li><a>Restart service</a></li>
-                    <li><a>Configure alerts</a></li>
-                  </ul>
+                    Logs
+                  </button>
+                  <button class="btn btn-ghost btn-xs">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                    Monitor
+                  </button>
                 </div>
-              </div>
-              
-              <p class="text-sm text-base-content/70 mb-4">{service.description}</p>
-              
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-base-content/60">Status:</span>
-                  <span class={`font-medium ${
-                    service.status === 'healthy' ? 'text-success' :
-                    service.status === 'warning' ? 'text-warning' : 'text-error'
-                  }`}>
-                    {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
-                  </span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-base-content/60">Response Time:</span>
-                  <span class="font-mono">{service.responseTime}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-base-content/60">Uptime:</span>
-                  <span class="font-mono">{service.uptime}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-base-content/60">Last Check:</span>
-                  <span class="font-mono text-xs">{service.lastCheck}</span>
-                </div>
-              </div>
-              
-              <div class="card-actions justify-end mt-4">
-                <button class="btn btn-ghost btn-xs">
-                  <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Logs
-                </button>
-                <button class="btn btn-ghost btn-xs">
-                  <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  Monitor
-                </button>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
     </div>
 
@@ -239,19 +310,34 @@ const statusIcons: Record<string, string> = {
       <div class="flex flex-wrap gap-3">
         <button class="btn btn-primary btn-sm">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            ></path>
           </svg>
           Refresh All
         </button>
         <button class="btn btn-outline btn-sm">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
           </svg>
           Export Report
         </button>
         <button class="btn btn-outline btn-sm">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            ></path>
           </svg>
           Configure Alerts
         </button>

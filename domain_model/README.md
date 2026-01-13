@@ -573,11 +573,3 @@ Example:
 ```bash
 RUST_LOG=debug ALBERGUE_SQLX_LOGGING=false DATABASE_URL=sqlite://albergue.db cargo run -p albergue-seaography --manifest-path domain_model/rust/Cargo.toml
 ```
-
-
-
-
-
-
-
-

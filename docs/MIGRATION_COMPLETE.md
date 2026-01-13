@@ -3,6 +3,7 @@
 ## What's Been Done
 
 ### 1. ✅ Upgraded to Tailwind CSS v4
+
 - **Removed**: Tailwind v3 configuration files
   - `tailwind.config.mjs` (deleted)
   - `tailwind.config.js` (deleted)
@@ -13,19 +14,23 @@
   - No JavaScript config needed
 
 ### 2. ✅ Added Motion Library
+
 - Installed `motion` v11.18.2 for Solid.js animations
 - Replaces Framer Motion with Solid-compatible animations
 - Ready for interactive island components
 
 ### 3. ✅ Implemented Doodle Design System
+
 Based on the exact Figma prototype specifications:
 
 #### **Typography Classes**
+
 - `.hand-drawn` - Shadows Into Light font
 - `.sketch-title` - Cabin Sketch bold font
 - Default body: Patrick Hand font
 
 #### **Doodle Border Effects**
+
 - `.doodle-border` - Organic, hand-drawn border radius
   ```
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px
@@ -36,6 +41,7 @@ Based on the exact Figma prototype specifications:
   ```
 
 #### **Decorative Elements**
+
 - `.sketch-underline` - Wavy hand-drawn underline (SVG)
 - `.sketchy-bg` - Cross-hatched background pattern
 - `.paper-texture` - Subtle noise/grain overlay
@@ -45,6 +51,7 @@ Based on the exact Figma prototype specifications:
 - `.highlight-doodle` - Yellow highlighter effect
 
 #### **Animations**
+
 - `.wobble` - Subtle rotation animation (3s infinite)
 - `.animate-float` - Floating motion (3s ease-in-out)
 - `.animate-shimmer` - Shimmer effect (1.5s infinite)
@@ -54,6 +61,7 @@ Based on the exact Figma prototype specifications:
 - `.animate-fade-in` - Fade in entrance
 
 #### **Utility Classes**
+
 - `.scrollbar-hide` - Hide scrollbars
 - `.text-shadow` - Subtle text shadow
 - `.text-shadow-lg` - Large text shadow
@@ -66,37 +74,31 @@ Based on the exact Figma prototype specifications:
 - `.shadow-card` - Card shadow
 
 ### 4. ✅ Extremadura Color Palette
+
 CSS Custom Properties defined in `:root`:
 
 ```css
 /* Primary - Extremadura Green */
---color-primary-main: #00ab39
---color-primary-dark: #008a2e
---color-primary-light: #33c161
-
-/* Secondary Colors */
---color-secondary-yellow: #eac102
---color-secondary-red: #ed1c24
---color-secondary-blue: #0071bc
-
-/* Semantic Colors */
---color-success-500: #10b981
---color-warning-500: #f59e0b
---color-error-500: #ef4444
---color-info-500: #3b82f6
-
-/* Neutral Palette (50-900) */
-/* And many more... */
+--color-primary-main: #00ab39 --color-primary-dark: #008a2e
+  --color-primary-light: #33c161 /* Secondary Colors */
+  --color-secondary-yellow: #eac102 --color-secondary-red: #ed1c24
+  --color-secondary-blue: #0071bc /* Semantic Colors */
+  --color-success-500: #10b981 --color-warning-500: #f59e0b
+  --color-error-500: #ef4444 --color-info-500: #3b82f6
+  /* Neutral Palette (50-900) */ /* And many more... */;
 ```
 
 ### 5. ✅ Google Fonts Auto-Loaded
+
 The following fonts are automatically imported:
+
 - **Patrick Hand** (body text)
 - **Cabin Sketch** (headings)
 - **Shadows Into Light** (special accents)
 - **Indie Flower** (alternative handwritten)
 
 ### 6. ✅ Project Structure
+
 ```
 frontend/
 ├── src/
@@ -123,6 +125,7 @@ frontend/
 ## 🚀 Next Steps
 
 ### Step 1: Start Development Server
+
 ```bash
 cd frontend
 pnpm dev
@@ -131,12 +134,14 @@ pnpm dev
 The server should start at `http://localhost:3000`
 
 ### Step 2: Build the Homepage
+
 Now you need to recreate the Figma prototype homepage using:
 
 1. **Static Astro Components** for non-interactive elements
 2. **Solid.js Islands** for interactive elements
 
 #### Example Homepage Structure:
+
 ```astro
 ---
 // src/pages/index.astro
@@ -148,7 +153,7 @@ import ParallaxHero from '../islands/home/ParallaxHero.tsx';
 <Layout title="Albergue Municipal Carrascalejo">
   <!-- Hero with parallax (Solid island) -->
   <ParallaxHero client:load />
-  
+
   <!-- Static content with doodle styles -->
   <main class="max-w-7xl mx-auto px-4 py-12">
     <div class="grid md:grid-cols-2 gap-8">
@@ -159,40 +164,40 @@ import ParallaxHero from '../islands/home/ParallaxHero.tsx';
             <!-- Heart icon -->
           </svg>
         </div>
-        
+
         <h2 class="sketch-title text-6xl text-[#1A1A1A]">
           ¡Bienvenido!
           <div class="sketch-underline"></div>
         </h2>
-        
+
         <h3 class="hand-drawn text-4xl text-[#00AB39]">
           Peregrino
         </h3>
-        
+
         <p class="text-lg text-gray-700">
-          Your resting place on the historic 
+          Your resting place on the historic
           <span class="highlight-doodle">Vía de la Plata</span>
         </p>
-        
+
         <div class="flex gap-4">
           <DoodleCard class="doodle-border doodle-shadow p-4">
             <p class="text-sm text-gray-600">Price</p>
             <p class="text-2xl font-bold text-[#00AB39]">€10</p>
             <p class="text-xs text-gray-500">/night</p>
           </DoodleCard>
-          
+
           <DoodleCard class="doodle-border doodle-shadow p-4">
             <p class="text-sm text-gray-600">Beds</p>
             <p class="text-2xl font-bold text-[#00AB39]">24</p>
             <p class="text-xs text-gray-500">available</p>
           </DoodleCard>
         </div>
-        
+
         <DoodleButton variant="primary" size="lg" href="/book">
           Reservar Ahora
         </DoodleButton>
       </div>
-      
+
       <!-- Right Column - 3D Carousel -->
       <VisualCarousel client:visible />
     </div>
@@ -203,14 +208,15 @@ import ParallaxHero from '../islands/home/ParallaxHero.tsx';
 ### Step 3: Create Solid Islands for Interactivity
 
 #### Example: ParallaxHero Island
+
 ```tsx
 // src/islands/home/ParallaxHero.tsx
-import { createSignal, onMount } from 'solid-js';
-import { Motion } from 'motion/solid';
+import { createSignal, onMount } from "solid-js";
+import { Motion } from "motion/solid";
 
 export default function ParallaxHero() {
   const [mousePos, setMousePos] = createSignal({ x: 0, y: 0 });
-  
+
   onMount(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({
@@ -218,9 +224,9 @@ export default function ParallaxHero() {
         y: (e.clientY - window.innerHeight / 2) / 50,
       });
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
   });
-  
+
   return (
     <Motion.div
       style={{
@@ -235,18 +241,22 @@ export default function ParallaxHero() {
 ```
 
 ### Step 4: Reference the Figma Prototype
+
 Copy the exact structure from:
+
 ```
 docs/ux/assets/Figma/prototipo/src/components/
 ```
 
 Key files to reference:
+
 - `HomePage.tsx` - Overall structure
 - `SketchyButton` component - Button animations
 - `VisualAreaShowcase.tsx` - 3D carousel
 - `doodle/*.tsx` - Doodle component patterns
 
 ### Step 5: Use Doodle Classes
+
 Apply the doodle classes throughout:
 
 ```html
@@ -264,7 +274,7 @@ Apply the doodle classes throughout:
 
 <!-- Highlighted text -->
 <p>
-  Welcome to the 
+  Welcome to the
   <span class="highlight-doodle">Camino de Santiago</span>
 </p>
 
@@ -278,16 +288,17 @@ Apply the doodle classes throughout:
 
 ## 📚 Key Differences from React
 
-| React (Figma Prototype) | Astro + Solid (New) |
-|-------------------------|---------------------|
-| `motion/react` | `motion/solid` |
-| `useState` | `createSignal` |
-| `useEffect` | `onMount` / `createEffect` |
-| `React.FC` | Plain functions |
-| All client-side | Static + Islands |
-| `.tsx` everywhere | `.astro` + `.tsx` islands |
+| React (Figma Prototype) | Astro + Solid (New)        |
+| ----------------------- | -------------------------- |
+| `motion/react`          | `motion/solid`             |
+| `useState`              | `createSignal`             |
+| `useEffect`             | `onMount` / `createEffect` |
+| `React.FC`              | Plain functions            |
+| All client-side         | Static + Islands           |
+| `.tsx` everywhere       | `.astro` + `.tsx` islands  |
 
 ### Solid.js Quick Reference
+
 ```tsx
 // State
 const [count, setCount] = createSignal(0);
@@ -297,7 +308,7 @@ const doubled = () => count() * 2;
 
 // Effects
 createEffect(() => {
-  console.log('Count changed:', count());
+  console.log("Count changed:", count());
 });
 
 // Lifecycle
@@ -306,11 +317,7 @@ onMount(() => {
 });
 
 // JSX (almost identical to React)
-return (
-  <div onClick={() => setCount(count() + 1)}>
-    Count: {count()}
-  </div>
-);
+return <div onClick={() => setCount(count() + 1)}>Count: {count()}</div>;
 ```
 
 ---
@@ -318,31 +325,47 @@ return (
 ## 🎨 Design Tokens Available
 
 ### Colors (use with Tailwind)
+
 ```html
 <!-- Backgrounds -->
-bg-[#00AB39]    <!-- Primary green -->
-bg-[#EAC102]    <!-- Yellow -->
-bg-[#ED1C24]    <!-- Red -->
-bg-[#0071BC]    <!-- Blue -->
-bg-[#FFF9F0]    <!-- Cream background -->
+bg-[#00AB39]
+<!-- Primary green -->
+bg-[#EAC102]
+<!-- Yellow -->
+bg-[#ED1C24]
+<!-- Red -->
+bg-[#0071BC]
+<!-- Blue -->
+bg-[#FFF9F0]
+<!-- Cream background -->
 
 <!-- Text -->
-text-[#1A1A1A]  <!-- Dark text -->
-text-[#00AB39]  <!-- Primary green text -->
-text-gray-700   <!-- Body text -->
+text-[#1A1A1A]
+<!-- Dark text -->
+text-[#00AB39]
+<!-- Primary green text -->
+text-gray-700
+<!-- Body text -->
 ```
 
 ### Fonts
+
 ```html
-font-['Patrick_Hand']          <!-- Body -->
-font-['Cabin_Sketch']          <!-- Headings -->
-font-['Shadows_Into_Light']    <!-- Accents -->
+font-['Patrick_Hand']
+<!-- Body -->
+font-['Cabin_Sketch']
+<!-- Headings -->
+font-['Shadows_Into_Light']
+<!-- Accents -->
 ```
 
 Or use utility classes:
+
 ```html
-class="hand-drawn"      <!-- Shadows Into Light -->
-class="sketch-title"    <!-- Cabin Sketch bold -->
+class="hand-drawn"
+<!-- Shadows Into Light -->
+class="sketch-title"
+<!-- Cabin Sketch bold -->
 <!-- Default is Patrick Hand -->
 ```
 
@@ -351,21 +374,27 @@ class="sketch-title"    <!-- Cabin Sketch bold -->
 ## 🐛 Troubleshooting
 
 ### Issue: Tailwind classes not working
+
 **Solution**: Make sure `src/index.css` imports `src/styles/global.css`:
+
 ```css
-@import './styles/global.css';
+@import "./styles/global.css";
 ```
 
 ### Issue: Fonts not loading
+
 **Solution**: Fonts are auto-imported via Google Fonts in `global.css`. Check browser DevTools Network tab.
 
 ### Issue: Motion animations not working
-**Solution**: 
+
+**Solution**:
+
 1. Use `motion/solid` not `motion/react`
 2. Import `{ Motion }` from `motion/solid`
 3. Use in `.tsx` files (islands), not `.astro` files
 
 ### Issue: Doodle classes not applying
+
 **Solution**: Check that the class is in the `@layer utilities` section of `global.css`
 
 ---
@@ -402,6 +431,7 @@ Recreate the exact visual design from the Figma prototype at:
 `docs/ux/assets/Figma/prototipo/`
 
 **Key Visual Elements:**
+
 1. ✅ Hand-drawn, sketchy aesthetics (doodle border, shadows)
 2. ✅ Patrick Hand font for body text
 3. ✅ Cabin Sketch bold for headings

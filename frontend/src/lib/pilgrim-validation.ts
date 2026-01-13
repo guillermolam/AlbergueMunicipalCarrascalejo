@@ -61,11 +61,11 @@ abstract class BaseValidator<T> {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age >= minAge;
   }
 
@@ -97,20 +97,50 @@ export class PersonalInfoValidator extends BaseValidator<PersonalInfo> {
 
     // First name validation
     if (!data.firstName || data.firstName.trim().length < 2) {
-      this.addError('firstName', 'First name must be at least 2 characters long', 'MIN_LENGTH', data.firstName);
+      this.addError(
+        'firstName',
+        'First name must be at least 2 characters long',
+        'MIN_LENGTH',
+        data.firstName
+      );
     } else if (data.firstName.length > 50) {
-      this.addError('firstName', 'First name must not exceed 50 characters', 'MAX_LENGTH', data.firstName);
+      this.addError(
+        'firstName',
+        'First name must not exceed 50 characters',
+        'MAX_LENGTH',
+        data.firstName
+      );
     } else if (!/^[a-zA-ZÀ-ÿ\s\-\']+$/.test(data.firstName)) {
-      this.addError('firstName', 'First name contains invalid characters', 'INVALID_CHARACTERS', data.firstName);
+      this.addError(
+        'firstName',
+        'First name contains invalid characters',
+        'INVALID_CHARACTERS',
+        data.firstName
+      );
     }
 
     // Last name validation
     if (!data.lastName || data.lastName.trim().length < 2) {
-      this.addError('lastName', 'Last name must be at least 2 characters long', 'MIN_LENGTH', data.lastName);
+      this.addError(
+        'lastName',
+        'Last name must be at least 2 characters long',
+        'MIN_LENGTH',
+        data.lastName
+      );
     } else if (data.lastName.length > 50) {
-      this.addError('lastName', 'Last name must not exceed 50 characters', 'MAX_LENGTH', data.lastName);
+      this.addError(
+        'lastName',
+        'Last name must not exceed 50 characters',
+        'MAX_LENGTH',
+        data.lastName
+      );
     } else if (!/^[a-zA-ZÀ-ÿ\s\-\']+$/.test(data.lastName)) {
-      this.addError('lastName', 'Last name contains invalid characters', 'INVALID_CHARACTERS', data.lastName);
+      this.addError(
+        'lastName',
+        'Last name contains invalid characters',
+        'INVALID_CHARACTERS',
+        data.lastName
+      );
     }
 
     // Email validation
@@ -127,48 +157,88 @@ export class PersonalInfoValidator extends BaseValidator<PersonalInfo> {
 
     // Date of birth validation
     if (!data.dateOfBirth || !this.isValidDate(data.dateOfBirth)) {
-      this.addError('dateOfBirth', 'Please provide a valid date of birth', 'INVALID_DATE', data.dateOfBirth);
+      this.addError(
+        'dateOfBirth',
+        'Please provide a valid date of birth',
+        'INVALID_DATE',
+        data.dateOfBirth
+      );
     } else if (!this.isValidAge(data.dateOfBirth, 16)) {
-      this.addError('dateOfBirth', 'Pilgrim must be at least 16 years old', 'MIN_AGE', data.dateOfBirth);
+      this.addError(
+        'dateOfBirth',
+        'Pilgrim must be at least 16 years old',
+        'MIN_AGE',
+        data.dateOfBirth
+      );
     } else if (data.dateOfBirth > new Date()) {
-      this.addError('dateOfBirth', 'Date of birth cannot be in the future', 'FUTURE_DATE', data.dateOfBirth);
+      this.addError(
+        'dateOfBirth',
+        'Date of birth cannot be in the future',
+        'FUTURE_DATE',
+        data.dateOfBirth
+      );
     }
 
     // Nationality validation
     if (!data.nationality || data.nationality.length < 2) {
-      this.addError('nationality', 'Please provide a valid nationality', 'INVALID_NATIONALITY', data.nationality);
+      this.addError(
+        'nationality',
+        'Please provide a valid nationality',
+        'INVALID_NATIONALITY',
+        data.nationality
+      );
     }
 
     // Document validation (passport or ID card required)
     if (!data.passportNumber && !data.idCardNumber) {
-      this.addError('documents', 'Either passport number or ID card number is required', 'REQUIRED_DOCUMENT');
+      this.addError(
+        'documents',
+        'Either passport number or ID card number is required',
+        'REQUIRED_DOCUMENT'
+      );
     }
 
     if (data.passportNumber && !this.isValidPassport(data.passportNumber)) {
-      this.addError('passportNumber', 'Please provide a valid passport number', 'INVALID_PASSPORT', data.passportNumber);
+      this.addError(
+        'passportNumber',
+        'Please provide a valid passport number',
+        'INVALID_PASSPORT',
+        data.passportNumber
+      );
     }
 
     if (data.idCardNumber && !this.isValidIdCard(data.idCardNumber)) {
-      this.addError('idCardNumber', 'Please provide a valid ID card number', 'INVALID_ID_CARD', data.idCardNumber);
+      this.addError(
+        'idCardNumber',
+        'Please provide a valid ID card number',
+        'INVALID_ID_CARD',
+        data.idCardNumber
+      );
     }
 
     // Emergency contact validation
-    const emergencyContactValidation = new EmergencyContactValidator().validate(data.emergencyContact);
+    const emergencyContactValidation = new EmergencyContactValidator().validate(
+      data.emergencyContact
+    );
     if (!emergencyContactValidation.isValid) {
-      this.errors.push(...emergencyContactValidation.errors.map(error => ({
-        ...error,
-        field: `emergencyContact.${error.field}`,
-      })));
+      this.errors.push(
+        ...emergencyContactValidation.errors.map((error) => ({
+          ...error,
+          field: `emergencyContact.${error.field}`,
+        }))
+      );
     }
 
     // Medical info validation (if provided)
     if (data.medicalInfo) {
       const medicalValidation = new MedicalInfoValidator().validate(data.medicalInfo);
       if (!medicalValidation.isValid) {
-        this.errors.push(...medicalValidation.errors.map(error => ({
-          ...error,
-          field: `medicalInfo.${error.field}`,
-        })));
+        this.errors.push(
+          ...medicalValidation.errors.map((error) => ({
+            ...error,
+            field: `medicalInfo.${error.field}`,
+          }))
+        );
       }
     }
 
@@ -185,29 +255,59 @@ export class EmergencyContactValidator extends BaseValidator<EmergencyContact> {
 
     // Name validation
     if (!data.name || data.name.trim().length < 2) {
-      this.addError('name', 'Emergency contact name must be at least 2 characters long', 'MIN_LENGTH', data.name);
+      this.addError(
+        'name',
+        'Emergency contact name must be at least 2 characters long',
+        'MIN_LENGTH',
+        data.name
+      );
     } else if (data.name.length > 100) {
-      this.addError('name', 'Emergency contact name must not exceed 100 characters', 'MAX_LENGTH', data.name);
+      this.addError(
+        'name',
+        'Emergency contact name must not exceed 100 characters',
+        'MAX_LENGTH',
+        data.name
+      );
     }
 
     // Relationship validation
     if (!data.relationship || data.relationship.trim().length < 2) {
-      this.addError('relationship', 'Please specify the relationship to the emergency contact', 'REQUIRED', data.relationship);
+      this.addError(
+        'relationship',
+        'Please specify the relationship to the emergency contact',
+        'REQUIRED',
+        data.relationship
+      );
     }
 
     // Phone validation
     if (!data.phone || !this.isValidPhone(data.phone)) {
-      this.addError('phone', 'Please provide a valid phone number for the emergency contact', 'INVALID_PHONE', data.phone);
+      this.addError(
+        'phone',
+        'Please provide a valid phone number for the emergency contact',
+        'INVALID_PHONE',
+        data.phone
+      );
     }
 
     // Email validation (optional)
     if (data.email && !this.isValidEmail(data.email)) {
-      this.addError('email', 'Please provide a valid email address for the emergency contact', 'INVALID_EMAIL', data.email);
+      this.addError(
+        'email',
+        'Please provide a valid email address for the emergency contact',
+        'INVALID_EMAIL',
+        data.email
+      );
     }
 
     // Country validation
     if (!data.country || data.country.length < 2) {
-      this.addError('country', 'Please provide the country where the emergency contact is located', 'REQUIRED', data.country);
+      this.addError(
+        'country',
+        'Please provide the country where the emergency contact is located',
+        'REQUIRED',
+        data.country
+      );
     }
 
     return this.getValidationResult();
@@ -222,8 +322,16 @@ export class MedicalInfoValidator extends BaseValidator<MedicalInfo> {
     this.reset();
 
     // Blood type validation (optional)
-    if (data.bloodType && !['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(data.bloodType)) {
-      this.addError('bloodType', 'Please provide a valid blood type', 'INVALID_BLOOD_TYPE', data.bloodType);
+    if (
+      data.bloodType &&
+      !['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(data.bloodType)
+    ) {
+      this.addError(
+        'bloodType',
+        'Please provide a valid blood type',
+        'INVALID_BLOOD_TYPE',
+        data.bloodType
+      );
     }
 
     // Allergies validation (optional)
@@ -233,7 +341,12 @@ export class MedicalInfoValidator extends BaseValidator<MedicalInfo> {
       } else {
         data.allergies.forEach((allergy, index) => {
           if (typeof allergy !== 'string' || allergy.trim().length < 2) {
-            this.addError(`allergies[${index}]`, 'Each allergy must be a valid string', 'INVALID_ALLERGY', allergy);
+            this.addError(
+              `allergies[${index}]`,
+              'Each allergy must be a valid string',
+              'INVALID_ALLERGY',
+              allergy
+            );
           }
         });
       }
@@ -242,11 +355,21 @@ export class MedicalInfoValidator extends BaseValidator<MedicalInfo> {
     // Medications validation (optional)
     if (data.medications) {
       if (!Array.isArray(data.medications)) {
-        this.addError('medications', 'Medications must be an array', 'INVALID_TYPE', data.medications);
+        this.addError(
+          'medications',
+          'Medications must be an array',
+          'INVALID_TYPE',
+          data.medications
+        );
       } else {
         data.medications.forEach((medication, index) => {
           if (typeof medication !== 'string' || medication.trim().length < 2) {
-            this.addError(`medications[${index}]`, 'Each medication must be a valid string', 'INVALID_MEDICATION', medication);
+            this.addError(
+              `medications[${index}]`,
+              'Each medication must be a valid string',
+              'INVALID_MEDICATION',
+              medication
+            );
           }
         });
       }
@@ -255,11 +378,21 @@ export class MedicalInfoValidator extends BaseValidator<MedicalInfo> {
     // Medical conditions validation (optional)
     if (data.medicalConditions) {
       if (!Array.isArray(data.medicalConditions)) {
-        this.addError('medicalConditions', 'Medical conditions must be an array', 'INVALID_TYPE', data.medicalConditions);
+        this.addError(
+          'medicalConditions',
+          'Medical conditions must be an array',
+          'INVALID_TYPE',
+          data.medicalConditions
+        );
       } else {
         data.medicalConditions.forEach((condition, index) => {
           if (typeof condition !== 'string' || condition.trim().length < 2) {
-            this.addError(`medicalConditions[${index}]`, 'Each medical condition must be a valid string', 'INVALID_CONDITION', condition);
+            this.addError(
+              `medicalConditions[${index}]`,
+              'Each medical condition must be a valid string',
+              'INVALID_CONDITION',
+              condition
+            );
           }
         });
       }
@@ -267,14 +400,29 @@ export class MedicalInfoValidator extends BaseValidator<MedicalInfo> {
 
     // Special requirements validation (optional)
     if (data.specialRequirements && data.specialRequirements.length > 500) {
-      this.addError('specialRequirements', 'Special requirements must not exceed 500 characters', 'MAX_LENGTH', data.specialRequirements);
+      this.addError(
+        'specialRequirements',
+        'Special requirements must not exceed 500 characters',
+        'MAX_LENGTH',
+        data.specialRequirements
+      );
     }
 
     // Last medical check validation (optional)
     if (data.lastMedicalCheck && !this.isValidDate(data.lastMedicalCheck)) {
-      this.addError('lastMedicalCheck', 'Please provide a valid date for the last medical check', 'INVALID_DATE', data.lastMedicalCheck);
+      this.addError(
+        'lastMedicalCheck',
+        'Please provide a valid date for the last medical check',
+        'INVALID_DATE',
+        data.lastMedicalCheck
+      );
     } else if (data.lastMedicalCheck && data.lastMedicalCheck > new Date()) {
-      this.addError('lastMedicalCheck', 'Last medical check date cannot be in the future', 'FUTURE_DATE', data.lastMedicalCheck);
+      this.addError(
+        'lastMedicalCheck',
+        'Last medical check date cannot be in the future',
+        'FUTURE_DATE',
+        data.lastMedicalCheck
+      );
     }
 
     return this.getValidationResult();
@@ -294,11 +442,21 @@ export class PilgrimProfileValidator extends BaseValidator<PilgrimProfile> {
     }
 
     if (!data.createdAt || !this.isValidDate(data.createdAt)) {
-      this.addError('createdAt', 'Created date is required and must be valid', 'INVALID_DATE', data.createdAt);
+      this.addError(
+        'createdAt',
+        'Created date is required and must be valid',
+        'INVALID_DATE',
+        data.createdAt
+      );
     }
 
     if (!data.updatedAt || !this.isValidDate(data.updatedAt)) {
-      this.addError('updatedAt', 'Updated date is required and must be valid', 'INVALID_DATE', data.updatedAt);
+      this.addError(
+        'updatedAt',
+        'Updated date is required and must be valid',
+        'INVALID_DATE',
+        data.updatedAt
+      );
     }
 
     if (data.version < 1) {
@@ -307,7 +465,12 @@ export class PilgrimProfileValidator extends BaseValidator<PilgrimProfile> {
 
     // Personal info validation
     if (!data.personalInfo) {
-      this.addError('personalInfo', 'Personal information is required', 'REQUIRED', data.personalInfo);
+      this.addError(
+        'personalInfo',
+        'Personal information is required',
+        'REQUIRED',
+        data.personalInfo
+      );
     } else {
       const personalInfoValidation = new PersonalInfoValidator().validate(data.personalInfo);
       if (!personalInfoValidation.isValid) {
@@ -317,36 +480,74 @@ export class PilgrimProfileValidator extends BaseValidator<PilgrimProfile> {
 
     // Languages validation
     if (!data.languages || !Array.isArray(data.languages) || data.languages.length === 0) {
-      this.addError('languages', 'At least one language must be specified', 'REQUIRED', data.languages);
+      this.addError(
+        'languages',
+        'At least one language must be specified',
+        'REQUIRED',
+        data.languages
+      );
     } else {
       data.languages.forEach((language, index) => {
         if (typeof language !== 'string' || language.length < 2) {
-          this.addError(`languages[${index}]`, 'Each language must be a valid string', 'INVALID_LANGUAGE', language);
+          this.addError(
+            `languages[${index}]`,
+            'Each language must be a valid string',
+            'INVALID_LANGUAGE',
+            language
+          );
         }
       });
     }
 
     // Experience level validation
-    if (!data.experienceLevel || !['beginner', 'intermediate', 'advanced', 'expert'].includes(data.experienceLevel)) {
-      this.addError('experienceLevel', 'Please select a valid experience level', 'INVALID_EXPERIENCE_LEVEL', data.experienceLevel);
+    if (
+      !data.experienceLevel ||
+      !['beginner', 'intermediate', 'advanced', 'expert'].includes(data.experienceLevel)
+    ) {
+      this.addError(
+        'experienceLevel',
+        'Please select a valid experience level',
+        'INVALID_EXPERIENCE_LEVEL',
+        data.experienceLevel
+      );
     }
 
     // Preferred pace validation
     if (!data.preferredPace || !['slow', 'moderate', 'fast'].includes(data.preferredPace)) {
-      this.addError('preferredPace', 'Please select a valid preferred pace', 'INVALID_PACE', data.preferredPace);
+      this.addError(
+        'preferredPace',
+        'Please select a valid preferred pace',
+        'INVALID_PACE',
+        data.preferredPace
+      );
     }
 
     // Motivation validation
     if (!data.motivation || data.motivation.trim().length < 10) {
-      this.addError('motivation', 'Please provide a motivation of at least 10 characters', 'MIN_LENGTH', data.motivation);
+      this.addError(
+        'motivation',
+        'Please provide a motivation of at least 10 characters',
+        'MIN_LENGTH',
+        data.motivation
+      );
     } else if (data.motivation.length > 1000) {
-      this.addError('motivation', 'Motivation must not exceed 1000 characters', 'MAX_LENGTH', data.motivation);
+      this.addError(
+        'motivation',
+        'Motivation must not exceed 1000 characters',
+        'MAX_LENGTH',
+        data.motivation
+      );
     }
 
     // Previous experience validation (optional)
     if (data.previousCaminoExperience) {
       if (!Array.isArray(data.previousCaminoExperience)) {
-        this.addError('previousCaminoExperience', 'Previous Camino experience must be an array', 'INVALID_TYPE', data.previousCaminoExperience);
+        this.addError(
+          'previousCaminoExperience',
+          'Previous Camino experience must be an array',
+          'INVALID_TYPE',
+          data.previousCaminoExperience
+        );
       } else {
         // Additional validation for each experience would go here
       }
@@ -373,21 +574,48 @@ export class PilgrimageValidator extends BaseValidator<Pilgrimage> {
       this.addError('pilgrimId', 'Pilgrim ID is required', 'REQUIRED', data.pilgrimId);
     }
 
-    if (!data.route || !['frances', 'portugues', 'del-norte', 'primitivo', 'ingles', 'via-plata', 'finisterre', 'muxia'].includes(data.route)) {
+    if (
+      !data.route ||
+      ![
+        'frances',
+        'portugues',
+        'del-norte',
+        'primitivo',
+        'ingles',
+        'via-plata',
+        'finisterre',
+        'muxia',
+      ].includes(data.route)
+    ) {
       this.addError('route', 'Please select a valid Camino route', 'INVALID_ROUTE', data.route);
     }
 
     if (!data.startDate || !this.isValidDate(data.startDate)) {
-      this.addError('startDate', 'Start date is required and must be valid', 'INVALID_DATE', data.startDate);
+      this.addError(
+        'startDate',
+        'Start date is required and must be valid',
+        'INVALID_DATE',
+        data.startDate
+      );
     }
 
     if (!data.estimatedEndDate || !this.isValidDate(data.estimatedEndDate)) {
-      this.addError('estimatedEndDate', 'Estimated end date is required and must be valid', 'INVALID_DATE', data.estimatedEndDate);
+      this.addError(
+        'estimatedEndDate',
+        'Estimated end date is required and must be valid',
+        'INVALID_DATE',
+        data.estimatedEndDate
+      );
     }
 
     // Date logic validation
     if (data.startDate && data.estimatedEndDate && data.startDate >= data.estimatedEndDate) {
-      this.addError('estimatedEndDate', 'Estimated end date must be after start date', 'INVALID_DATE_RANGE', data.estimatedEndDate);
+      this.addError(
+        'estimatedEndDate',
+        'Estimated end date must be after start date',
+        'INVALID_DATE_RANGE',
+        data.estimatedEndDate
+      );
     }
 
     if (data.startDate && data.startDate < new Date()) {
@@ -400,20 +628,40 @@ export class PilgrimageValidator extends BaseValidator<Pilgrimage> {
     }
 
     if (!data.finalDestination || data.finalDestination.trim().length < 2) {
-      this.addError('finalDestination', 'Final destination is required', 'REQUIRED', data.finalDestination);
+      this.addError(
+        'finalDestination',
+        'Final destination is required',
+        'REQUIRED',
+        data.finalDestination
+      );
     }
 
     // Distance validation
     if (!data.totalDistance || data.totalDistance <= 0) {
-      this.addError('totalDistance', 'Total distance must be greater than 0', 'INVALID_DISTANCE', data.totalDistance);
+      this.addError(
+        'totalDistance',
+        'Total distance must be greater than 0',
+        'INVALID_DISTANCE',
+        data.totalDistance
+      );
     }
 
     if (data.completedDistance < 0 || data.completedDistance > data.totalDistance) {
-      this.addError('completedDistance', 'Completed distance must be between 0 and total distance', 'INVALID_DISTANCE', data.completedDistance);
+      this.addError(
+        'completedDistance',
+        'Completed distance must be between 0 and total distance',
+        'INVALID_DISTANCE',
+        data.completedDistance
+      );
     }
 
     if (data.dailyDistance <= 0 || data.dailyDistance > 100) {
-      this.addError('dailyDistance', 'Daily distance must be between 0 and 100 km', 'INVALID_DAILY_DISTANCE', data.dailyDistance);
+      this.addError(
+        'dailyDistance',
+        'Daily distance must be between 0 and 100 km',
+        'INVALID_DAILY_DISTANCE',
+        data.dailyDistance
+      );
     }
 
     return this.getValidationResult();
@@ -433,25 +681,50 @@ export class BookingValidator extends BaseValidator<Booking> {
     }
 
     if (!data.accommodationId || data.accommodationId.trim().length === 0) {
-      this.addError('accommodationId', 'Accommodation ID is required', 'REQUIRED', data.accommodationId);
+      this.addError(
+        'accommodationId',
+        'Accommodation ID is required',
+        'REQUIRED',
+        data.accommodationId
+      );
     }
 
     if (!data.accommodationName || data.accommodationName.trim().length === 0) {
-      this.addError('accommodationName', 'Accommodation name is required', 'REQUIRED', data.accommodationName);
+      this.addError(
+        'accommodationName',
+        'Accommodation name is required',
+        'REQUIRED',
+        data.accommodationName
+      );
     }
 
     // Date validation
     if (!data.checkInDate || !this.isValidDate(data.checkInDate)) {
-      this.addError('checkInDate', 'Check-in date is required and must be valid', 'INVALID_DATE', data.checkInDate);
+      this.addError(
+        'checkInDate',
+        'Check-in date is required and must be valid',
+        'INVALID_DATE',
+        data.checkInDate
+      );
     }
 
     if (!data.checkOutDate || !this.isValidDate(data.checkOutDate)) {
-      this.addError('checkOutDate', 'Check-out date is required and must be valid', 'INVALID_DATE', data.checkOutDate);
+      this.addError(
+        'checkOutDate',
+        'Check-out date is required and must be valid',
+        'INVALID_DATE',
+        data.checkOutDate
+      );
     }
 
     // Date logic validation
     if (data.checkInDate && data.checkOutDate && data.checkInDate >= data.checkOutDate) {
-      this.addError('checkOutDate', 'Check-out date must be after check-in date', 'INVALID_DATE_RANGE', data.checkOutDate);
+      this.addError(
+        'checkOutDate',
+        'Check-out date must be after check-in date',
+        'INVALID_DATE_RANGE',
+        data.checkOutDate
+      );
     }
 
     if (data.checkInDate && data.checkInDate < new Date()) {
@@ -460,34 +733,77 @@ export class BookingValidator extends BaseValidator<Booking> {
 
     // Booking details validation
     if (!data.roomType || !['shared', 'private', 'family'].includes(data.roomType)) {
-      this.addError('roomType', 'Please select a valid room type', 'INVALID_ROOM_TYPE', data.roomType);
+      this.addError(
+        'roomType',
+        'Please select a valid room type',
+        'INVALID_ROOM_TYPE',
+        data.roomType
+      );
     }
 
     if (!data.numberOfBeds || data.numberOfBeds < 1 || data.numberOfBeds > 10) {
-      this.addError('numberOfBeds', 'Number of beds must be between 1 and 10', 'INVALID_BED_COUNT', data.numberOfBeds);
+      this.addError(
+        'numberOfBeds',
+        'Number of beds must be between 1 and 10',
+        'INVALID_BED_COUNT',
+        data.numberOfBeds
+      );
     }
 
     // Price validation
     if (!data.pricePerNight || data.pricePerNight < 0) {
-      this.addError('pricePerNight', 'Price per night must be a positive number', 'INVALID_PRICE', data.pricePerNight);
+      this.addError(
+        'pricePerNight',
+        'Price per night must be a positive number',
+        'INVALID_PRICE',
+        data.pricePerNight
+      );
     }
 
     if (!data.totalPrice || data.totalPrice < 0) {
-      this.addError('totalPrice', 'Total price must be a positive number', 'INVALID_PRICE', data.totalPrice);
+      this.addError(
+        'totalPrice',
+        'Total price must be a positive number',
+        'INVALID_PRICE',
+        data.totalPrice
+      );
     }
 
     // Status validation
-    if (!data.status || !['pending', 'confirmed', 'checked-in', 'checked-out', 'cancelled', 'no-show'].includes(data.status)) {
-      this.addError('status', 'Please select a valid booking status', 'INVALID_STATUS', data.status);
+    if (
+      !data.status ||
+      !['pending', 'confirmed', 'checked-in', 'checked-out', 'cancelled', 'no-show'].includes(
+        data.status
+      )
+    ) {
+      this.addError(
+        'status',
+        'Please select a valid booking status',
+        'INVALID_STATUS',
+        data.status
+      );
     }
 
-    if (!data.paymentStatus || !['pending', 'partial', 'paid', 'refunded', 'failed'].includes(data.paymentStatus)) {
-      this.addError('paymentStatus', 'Please select a valid payment status', 'INVALID_PAYMENT_STATUS', data.paymentStatus);
+    if (
+      !data.paymentStatus ||
+      !['pending', 'partial', 'paid', 'refunded', 'failed'].includes(data.paymentStatus)
+    ) {
+      this.addError(
+        'paymentStatus',
+        'Please select a valid payment status',
+        'INVALID_PAYMENT_STATUS',
+        data.paymentStatus
+      );
     }
 
     // Confirmation code validation
     if (!data.confirmationCode || data.confirmationCode.length < 6) {
-      this.addError('confirmationCode', 'Confirmation code must be at least 6 characters long', 'MIN_LENGTH', data.confirmationCode);
+      this.addError(
+        'confirmationCode',
+        'Confirmation code must be at least 6 characters long',
+        'MIN_LENGTH',
+        data.confirmationCode
+      );
     }
 
     return this.getValidationResult();
@@ -503,7 +819,12 @@ export class CreatePilgrimProfileDtoValidator extends BaseValidator<CreatePilgri
 
     // Personal info validation
     if (!data.personalInfo) {
-      this.addError('personalInfo', 'Personal information is required', 'REQUIRED', data.personalInfo);
+      this.addError(
+        'personalInfo',
+        'Personal information is required',
+        'REQUIRED',
+        data.personalInfo
+      );
     } else {
       const personalInfoValidation = new PersonalInfoValidator().validate(data.personalInfo);
       if (!personalInfoValidation.isValid) {
@@ -513,22 +834,45 @@ export class CreatePilgrimProfileDtoValidator extends BaseValidator<CreatePilgri
 
     // Languages validation
     if (!data.languages || !Array.isArray(data.languages) || data.languages.length === 0) {
-      this.addError('languages', 'At least one language must be specified', 'REQUIRED', data.languages);
+      this.addError(
+        'languages',
+        'At least one language must be specified',
+        'REQUIRED',
+        data.languages
+      );
     }
 
     // Experience level validation
-    if (!data.experienceLevel || !['beginner', 'intermediate', 'advanced', 'expert'].includes(data.experienceLevel)) {
-      this.addError('experienceLevel', 'Please select a valid experience level', 'INVALID_EXPERIENCE_LEVEL', data.experienceLevel);
+    if (
+      !data.experienceLevel ||
+      !['beginner', 'intermediate', 'advanced', 'expert'].includes(data.experienceLevel)
+    ) {
+      this.addError(
+        'experienceLevel',
+        'Please select a valid experience level',
+        'INVALID_EXPERIENCE_LEVEL',
+        data.experienceLevel
+      );
     }
 
     // Preferred pace validation
     if (!data.preferredPace || !['slow', 'moderate', 'fast'].includes(data.preferredPace)) {
-      this.addError('preferredPace', 'Please select a valid preferred pace', 'INVALID_PACE', data.preferredPace);
+      this.addError(
+        'preferredPace',
+        'Please select a valid preferred pace',
+        'INVALID_PACE',
+        data.preferredPace
+      );
     }
 
     // Motivation validation
     if (!data.motivation || data.motivation.trim().length < 10) {
-      this.addError('motivation', 'Please provide a motivation of at least 10 characters', 'MIN_LENGTH', data.motivation);
+      this.addError(
+        'motivation',
+        'Please provide a motivation of at least 10 characters',
+        'MIN_LENGTH',
+        data.motivation
+      );
     }
 
     return this.getValidationResult();
@@ -547,7 +891,9 @@ export function validatePilgrimData(data: any): ValidationResult {
     if (!data || typeof data !== 'object') {
       return {
         isValid: false,
-        errors: [{ field: 'data', message: 'Invalid data format', code: 'INVALID_FORMAT', value: data }],
+        errors: [
+          { field: 'data', message: 'Invalid data format', code: 'INVALID_FORMAT', value: data },
+        ],
         warnings: [],
       };
     }
@@ -562,22 +908,30 @@ export function validatePilgrimData(data: any): ValidationResult {
     }
 
     if (data.personalInfo?.emergencyContact) {
-      const emergencyContactValidation = new EmergencyContactValidator().validate(data.personalInfo.emergencyContact);
+      const emergencyContactValidation = new EmergencyContactValidator().validate(
+        data.personalInfo.emergencyContact
+      );
       if (!emergencyContactValidation.isValid) {
-        errors.push(...emergencyContactValidation.errors.map(error => ({
-          ...error,
-          field: `emergencyContact.${error.field}`,
-        })));
+        errors.push(
+          ...emergencyContactValidation.errors.map((error) => ({
+            ...error,
+            field: `emergencyContact.${error.field}`,
+          }))
+        );
       }
     }
 
     if (data.personalInfo?.medicalInfo) {
-      const medicalInfoValidation = new MedicalInfoValidator().validate(data.personalInfo.medicalInfo);
+      const medicalInfoValidation = new MedicalInfoValidator().validate(
+        data.personalInfo.medicalInfo
+      );
       if (!medicalInfoValidation.isValid) {
-        errors.push(...medicalInfoValidation.errors.map(error => ({
-          ...error,
-          field: `medicalInfo.${error.field}`,
-        })));
+        errors.push(
+          ...medicalInfoValidation.errors.map((error) => ({
+            ...error,
+            field: `medicalInfo.${error.field}`,
+          }))
+        );
       }
     }
 
@@ -589,7 +943,14 @@ export function validatePilgrimData(data: any): ValidationResult {
   } catch (error) {
     return {
       isValid: false,
-      errors: [{ field: 'validation', message: 'Validation failed', code: 'VALIDATION_ERROR', value: error }],
+      errors: [
+        {
+          field: 'validation',
+          message: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          value: error,
+        },
+      ],
       warnings: [],
     };
   }
@@ -613,7 +974,7 @@ export function sanitizePilgrimData(data: any): any {
   }
 
   if (Array.isArray(data)) {
-    return data.map(item => sanitizePilgrimData(item));
+    return data.map((item) => sanitizePilgrimData(item));
   }
 
   if (typeof data === 'object' && data !== null) {
@@ -637,11 +998,17 @@ export function normalizePilgrimData(data: any): any {
 
   // Normalize strings
   if (normalized.personalInfo?.firstName) {
-    normalized.personalInfo.firstName = normalized.personalInfo.firstName.trim().toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
+    normalized.personalInfo.firstName = normalized.personalInfo.firstName
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (l: string) => l.toUpperCase());
   }
 
   if (normalized.personalInfo?.lastName) {
-    normalized.personalInfo.lastName = normalized.personalInfo.lastName.trim().toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
+    normalized.personalInfo.lastName = normalized.personalInfo.lastName
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (l: string) => l.toUpperCase());
   }
 
   if (normalized.personalInfo?.email) {
@@ -649,7 +1016,10 @@ export function normalizePilgrimData(data: any): any {
   }
 
   if (normalized.personalInfo?.nationality) {
-    normalized.personalInfo.nationality = normalized.personalInfo.nationality.trim().toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
+    normalized.personalInfo.nationality = normalized.personalInfo.nationality
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (l: string) => l.toUpperCase());
   }
 
   // Normalize dates
