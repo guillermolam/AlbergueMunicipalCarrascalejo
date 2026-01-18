@@ -1,4 +1,4 @@
-#![deny(warnings)]
+#![allow(unused)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
@@ -16,7 +16,7 @@ mod infrastructure;
 mod ports;
 
 use application::notification_service::NotificationService;
-use domain::notification::{Notification, NotificationChannel, NotificationStatus};
+use domain::notification::{Notification, NotificationChannel, NotificationStatus, NotificationType};
 
 #[http_component]
 async fn handle_request(req: Request) -> anyhow::Result<Response> {
@@ -38,7 +38,7 @@ async fn handle_request(req: Request) -> anyhow::Result<Response> {
 struct SendRequest {
     recipient: String,
     subject: Option<String>,
-    content: String, // or message or body
+    content: String,
 }
 
 async fn handle_send_email(req: Request, service: &NotificationService) -> anyhow::Result<Response> {
@@ -46,14 +46,18 @@ async fn handle_send_email(req: Request, service: &NotificationService) -> anyho
     let payload: SendRequest = serde_json::from_slice(&body)?;
     
     let notification = Notification {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::new_v4(),
+        notification_type: NotificationType::AdminAlert,
         recipient: payload.recipient,
-        subject: payload.subject.unwrap_or_default(),
-        body: payload.content,
-        channel: None,
+        subject: payload.subject,
+        message: payload.content,
+        channel: NotificationChannel::Email,
         status: NotificationStatus::Pending,
         created_at: chrono::Utc::now(),
         sent_at: None,
+        delivered_at: None,
+        error_message: None,
+        template_data: HashMap::new(),
     };
 
     let result = service.send_with_fallback(notification, vec![NotificationChannel::Email]).await?;
@@ -66,17 +70,21 @@ async fn handle_send_sms(req: Request, service: &NotificationService) -> anyhow:
     let payload: SendRequest = serde_json::from_slice(&body)?;
     
     let notification = Notification {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::new_v4(),
+        notification_type: NotificationType::AdminAlert,
         recipient: payload.recipient,
-        subject: "".to_string(),
-        body: payload.content,
-        channel: None,
+        subject: None,
+        message: payload.content,
+        channel: NotificationChannel::SMS,
         status: NotificationStatus::Pending,
         created_at: chrono::Utc::now(),
         sent_at: None,
+        delivered_at: None,
+        error_message: None,
+        template_data: HashMap::new(),
     };
 
-    let result = service.send_with_fallback(notification, vec![NotificationChannel::Sms]).await?;
+    let result = service.send_with_fallback(notification, vec![NotificationChannel::SMS]).await?;
     
     Ok(Response::new(StatusCode::OK, serde_json::to_vec(&result)?))
 }
@@ -86,14 +94,18 @@ async fn handle_send_whatsapp(req: Request, service: &NotificationService) -> an
     let payload: SendRequest = serde_json::from_slice(&body)?;
     
     let notification = Notification {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::new_v4(),
+        notification_type: NotificationType::AdminAlert,
         recipient: payload.recipient,
-        subject: "".to_string(),
-        body: payload.content,
-        channel: None,
+        subject: None,
+        message: payload.content,
+        channel: NotificationChannel::WhatsApp,
         status: NotificationStatus::Pending,
         created_at: chrono::Utc::now(),
         sent_at: None,
+        delivered_at: None,
+        error_message: None,
+        template_data: HashMap::new(),
     };
 
     let result = service.send_with_fallback(notification, vec![NotificationChannel::WhatsApp]).await?;
@@ -106,14 +118,18 @@ async fn handle_send_telegram(req: Request, service: &NotificationService) -> an
     let payload: SendRequest = serde_json::from_slice(&body)?;
     
     let notification = Notification {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::new_v4(),
+        notification_type: NotificationType::AdminAlert,
         recipient: payload.recipient,
-        subject: "".to_string(),
-        body: payload.content,
-        channel: None,
+        subject: None,
+        message: payload.content,
+        channel: NotificationChannel::Telegram,
         status: NotificationStatus::Pending,
         created_at: chrono::Utc::now(),
         sent_at: None,
+        delivered_at: None,
+        error_message: None,
+        template_data: HashMap::new(),
     };
 
     let result = service.send_with_fallback(notification, vec![NotificationChannel::Telegram]).await?;

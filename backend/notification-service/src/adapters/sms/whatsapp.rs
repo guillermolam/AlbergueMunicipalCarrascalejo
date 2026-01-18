@@ -2,12 +2,11 @@ use crate::domain::Notification;
 use crate::ports::SmsPort;
 use anyhow::Result;
 use async_trait::async_trait;
-use reqwest::Client;
+use spin_sdk::http::{Request, Response, Method};
 use shared::{AlbergueError, AlbergueResult};
 use std::env;
 
 pub struct WhatsAppAdapter {
-    client: Client,
     app_id: String,
     business_number: String,
     business_account_id: String,
@@ -20,7 +19,6 @@ impl WhatsAppAdapter {
         let business_account_id = env::var("WHATSAPP_BUSINESS_ACCOUNT_ID").unwrap_or_default();
 
         Self {
-            client: Client::new(),
             app_id,
             business_number,
             business_account_id,
@@ -41,38 +39,37 @@ impl WhatsAppAdapter {
             "type": "text",
             "text": {"body": body}
         });
+        
+        let body_bytes = serde_json::to_vec(&payload).map_err(|e|
+             AlbergueError::ExternalServiceError(format!("Failed to serialize payload: {}", e))
+        )?;
 
-        let response = self
-            .client
-            .post(&url)
-            .bearer_auth(&self.app_id)
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|e| {
-                AlbergueError::ExternalServiceError(format!("WhatsApp request failed: {}", e))
-            })?;
+        let auth_header = format!("Bearer {}", self.app_id);
 
-        if response.status().is_success() {
-            let result: serde_json::Value = response.json().await.map_err(|e| {
-                AlbergueError::ExternalServiceError(format!(
-                    "Failed to parse WhatsApp response: {}",
-                    e
-                ))
-            })?;
+        let req = Request::builder()
+            .method(Method::Post)
+            .uri(url)
+            .header("Authorization", auth_header)
+            .header("Content-Type", "application/json")
+            .body(body_bytes)
+            .build();
+
+        let response: Response = spin_sdk::http::send(req).await.map_err(|e| {
+             AlbergueError::ExternalServiceError(format!("WhatsApp request failed: {}", e))
+        })?;
+
+        if response.status() == 200 || response.status() == 201 {
+            let body_bytes = response.body();
+            let result: serde_json::Value = serde_json::from_slice(body_bytes).map_err(|e| 
+                AlbergueError::ExternalServiceError(format!("Failed to parse WhatsApp response: {}", e))
+            )?;
             Ok(result["messages"][0]["id"]
                 .as_str()
                 .unwrap_or("unknown")
                 .to_string())
         } else {
-            let error_text: String = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            Err(AlbergueError::ExternalServiceError(format!(
-                "WhatsApp error: {}",
-                error_text
-            )))
+             let body_str = String::from_utf8_lossy(response.body());
+             Err(AlbergueError::ExternalServiceError(format!("WhatsApp error: {}", body_str)))
         }
     }
 }
