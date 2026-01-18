@@ -52,7 +52,7 @@ impl TelegramPort for TelegrafAdapter {
             })?;
 
         if response.status().is_success() {
-            let result: serde_json::Value = response.json().await.map_err(|e| {
+            let result: serde_json::Value = response.json::<serde_json::Value>().await.map_err(|e| {
                 AlbergueError::ExternalServiceError(format!(
                     "Failed to parse Telegram response: {}",
                     e
@@ -61,7 +61,7 @@ impl TelegramPort for TelegrafAdapter {
 
             Ok(result["result"]["message_id"].to_string())
         } else {
-            let error_text = response
+            let error_text: String = response
                 .text()
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
@@ -76,7 +76,10 @@ impl TelegramPort for TelegrafAdapter {
         let url = format!("https://api.telegram.org/bot{}/getMe", self.bot_token);
 
         match self.client.get(&url).send().await {
-            Ok(response) => Ok(response.status().is_success()),
+            Ok(response) => {
+                let success: bool = response.status().is_success();
+                Ok(success)
+            },
             Err(_) => Ok(false),
         }
     }

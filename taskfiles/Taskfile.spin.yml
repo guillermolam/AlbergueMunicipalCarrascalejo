@@ -1,7 +1,4 @@
-# Spin/Fermyon Cloud deployment tasks
-# WASM-based deployment for cloud-native architecture
-
-version: "3"
+﻿version: "3"
 
 vars:
   SPIN_APP_NAME: '{{.SPIN_APP_NAME | default "albergue-carrascalejo"}}'
@@ -17,232 +14,54 @@ env:
   FERMYON_CLOUD_URL: "{{.FERMYON_CLOUD_URL}}"
 
 tasks:
-  # Spin development
   spin:dev:
     desc: Start Spin development environment
     cmds:
-      - echo "🚀 Starting Spin development environment..."
-      - task: spin:build
-      - task: spin:up
+      - spin build
+      - spin up --listen 127.0.0.1:3000
 
   spin:build:
     desc: Build Spin WASM components
     cmds:
-      - echo "🏗️ Building Spin WASM components..."
       - spin build
-      - echo "✅ Spin components built successfully"
 
-  spin:up:
-    desc: Start Spin local development server
+  spin:build:prod:
+    desc: Build Spin WASM components (release)
+    env:
+      NODE_ENV: production
     cmds:
-      - echo "🌐 Starting Spin local server..."
-      - spin up --listen 127.0.0.1:3000
-      - echo "✅ Spin server running at http://localhost:3000"
-
-  spin:watch:
-    desc: Watch and rebuild Spin components
-    cmds:
-      - echo "👀 Watching for changes..."
-      - spin watch
-
-  spin:test:
-    desc: Test Spin components
-    cmds:
-      - echo "🧪 Testing Spin components..."
-      - spin test
-      - echo "✅ Spin tests completed"
+      - spin build
 
   spin:validate:
     desc: Validate Spin manifest and components
     cmds:
-      - echo "🔍 Validating Spin configuration..."
       - spin doctor
-      - echo "✅ Spin validation completed"
 
-  # Spin production build
-  spin:build:prod:
-    desc: Build Spin for production
+  spin:up:
+    desc: Start Spin local development server
     cmds:
-      - echo "🏭 Building Spin for production..."
-      - NODE_ENV=production spin build --release
-      - echo "✅ Production build completed"
+      - spin up --listen 127.0.0.1:3000
 
-  spin:optimize:
-    desc: Optimize WASM components
+  spin:test:
+    desc: Test Spin components
     cmds:
-      - echo "⚡ Optimizing WASM components..."
-      - find target/wasm32-wasi/release -name "*.wasm" -exec wasm-opt -Oz -o {} {} \;
-      - echo "✅ WASM optimization completed"
+      - spin test
 
-  # Spin deployment
   spin:deploy:
     desc: Deploy to Fermyon Cloud
     deps: [spin:build:prod, spin:validate]
     cmds:
-      - echo "☁️ Deploying to Fermyon Cloud..."
       - spin deploy
-      - echo "✅ Deployment to Fermyon Cloud completed"
 
   spin:deploy:staging:
     desc: Deploy to staging environment
+    deps: [spin:build:prod, spin:validate]
+    env:
+      SPIN_ENV: staging
     cmds:
-      - echo "🧪 Deploying to staging..."
-      - SPIN_ENV=staging spin deploy
-      - echo "✅ Staging deployment completed"
+      - spin deploy
 
-  spin:deploy:local:
-    desc: Deploy locally with Spin
-    cmds:
-      - echo "🏠 Deploying locally..."
-      - task: spin:build
-      - task: spin:up
-
-  # Spin registry management
-  spin:push:
-    desc: Push Spin app to registry
-    cmds:
-      - echo "📤 Pushing to registry..."
-      - spin registry push {{.SPIN_REGISTRY}}/{{.SPIN_APP_NAME}}:{{.SPIN_TAG}}
-      - echo "✅ Registry push completed"
-
-  spin:pull:
-    desc: Pull Spin app from registry
-    cmds:
-      - echo "📥 Pulling from registry..."
-      - spin registry pull {{.SPIN_REGISTRY}}/{{.SPIN_APP_NAME}}:{{.SPIN_TAG}}
-      - echo "✅ Registry pull completed"
-
-  # Spin component management
-  spin:add:
-    desc: Add new Spin component
-    cmds:
-      - echo "➕ Adding new Spin component..."
-      - echo "Usage: task spin:add COMPONENT_NAME TEMPLATE"
-      - echo "Available templates: http-rust, http-go, http-ts, redis-rust, redis-go"
-
-  spin:remove:
-    desc: Remove Spin component
-    cmds:
-      - echo "➖ Removing Spin component..."
-      - echo "Usage: task spin:remove COMPONENT_NAME"
-
-  # Spin secrets management
-  spin:secrets:list:
-    desc: List Spin secrets
-    cmds:
-      - echo "🔐 Listing Spin secrets..."
-      - spin secrets list
-
-  spin:secrets:set:
-    desc: Set Spin secret
-    cmds:
-      - echo "🔑 Setting Spin secret..."
-      - echo "Usage: task spin:secrets:set KEY VALUE"
-
-  spin:secrets:delete:
-    desc: Delete Spin secret
-    cmds:
-      - echo "🗑️ Deleting Spin secret..."
-      - echo "Usage: task spin:secrets:delete KEY"
-
-  # Spin key-value management
-  spin:kv:list:
-    desc: List Spin key-value stores
-    cmds:
-      - echo "🗃️ Listing Spin key-value stores..."
-      - spin kv list
-
-  spin:kv:create:
-    desc: Create Spin key-value store
-    cmds:
-      - echo "🏗️ Creating Spin key-value store..."
-      - echo "Usage: task spin:kv:create STORE_NAME"
-
-  spin:kv:delete:
-    desc: Delete Spin key-value store
-    cmds:
-      - echo "🗑️ Deleting Spin key-value store..."
-      - echo "Usage: task spin:kv:delete STORE_NAME"
-
-  # Spin logs
-  spin:logs:
-    desc: View Spin application logs
-    cmds:
-      - echo "📝 Viewing Spin logs..."
-      - spin logs
-
-  spin:logs:follow:
-    desc: Follow Spin application logs
-    cmds:
-      - echo "👀 Following Spin logs..."
-      - spin logs --follow
-
-  # Spin health checks
-  spin:health:
-    desc: Check Spin application health
-    cmds:
-      - echo "🏥 Checking Spin application health..."
-      - curl -f http://localhost:3000/health || echo "⚠️ Health check failed"
-
-  spin:status:
-    desc: Check Spin application status
-    cmds:
-      - echo "📊 Checking Spin application status..."
-      - spin status
-
-  # Spin cleanup
   spin:clean:
     desc: Clean Spin build artifacts
     cmds:
-      - echo "🧹 Cleaning Spin build artifacts..."
-      - rm -rf target/
-      - rm -rf .spin/
-      - echo "✅ Spin artifacts cleaned"
-
-  # Spin upgrade
-  spin:upgrade:
-    desc: Upgrade Spin CLI
-    cmds:
-      - echo "⬆️ Upgrading Spin CLI..."
-      - spin upgrade
-      - echo "✅ Spin CLI upgraded"
-
-  # Spin plugin management
-  spin:plugins:list:
-    desc: List Spin plugins
-    cmds:
-      - echo "🔌 Listing Spin plugins..."
-      - spin plugins list
-
-  spin:plugins:install:
-    desc: Install Spin plugin
-    cmds:
-      - echo "📦 Installing Spin plugin..."
-      - echo "Usage: task spin:plugins:install PLUGIN_NAME"
-
-  spin:plugins:uninstall:
-    desc: Uninstall Spin plugin
-    cmds:
-      - echo "🗑️ Uninstalling Spin plugin..."
-      - echo "Usage: task spin:plugins:uninstall PLUGIN_NAME"
-
-  # Default task
-  default:
-    desc: Show Spin tasks
-    cmds:
-      - echo "🎯 Spin/Fermyon Cloud Tasks"
-      - echo ""
-      - echo "Development:"
-      - echo "  task spin:dev          - Start development environment"
-      - echo "  task spin:build        - Build WASM components"
-      - echo "  task spin:test         - Test components"
-      - echo ""
-      - echo "Production:"
-      - echo "  task spin:build:prod   - Build for production"
-      - echo "  task spin:deploy       - Deploy to Fermyon Cloud"
-      - echo ""
-      - echo "Management:"
-      - echo "  task spin:secrets:list - List secrets"
-      - echo "  task spin:kv:list      - List key-value stores"
-      - echo "  task spin:logs         - View logs"
-      - echo "  task spin:clean        - Clean artifacts"
+      - rm -rf target/ .spin/

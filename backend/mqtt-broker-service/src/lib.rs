@@ -142,22 +142,22 @@ async fn handle_publish(req: Request, _params: Params) -> Result<impl IntoRespon
 /// Register webhook for event delivery
 async fn handle_register_webhook(req: Request, _params: Params) -> Result<impl IntoResponse> {
     let registration: WebhookRegistration = serde_json::from_slice(req.body())?;
-    
+
     let redis_address = variables::get("redis_address")?;
-    
+
     let subscription = WebhookSubscription {
         service_id: registration.service_id.clone(),
         webhook_url: registration.webhook_url.clone(),
         topic_filters: registration.topic_filters.clone(),
         registered_at: chrono::Utc::now().to_rfc3339(),
     };
-    
+
     // Store webhook subscription in Redis
     let webhook_key = format!("mqtt:webhooks:{}", registration.service_id);
     let subscription_json = serde_json::to_vec(&subscription)?;
-    
+
     redis::set(&redis_address, &webhook_key, &subscription_json).await?;
-    
+
     // Add to webhooks index
     redis::execute(
         &redis_address,
@@ -165,12 +165,12 @@ async fn handle_register_webhook(req: Request, _params: Params) -> Result<impl I
         &[b"mqtt:webhooks:index", webhook_key.as_bytes()],
     )
     .await?;
-    
+
     println!(
         "[MQTT Broker] Registered webhook for service {} with filters: {:?}",
         registration.service_id, registration.topic_filters
     );
-    
+
     Ok(ResponseBuilder::new(200)
         .header("content-type", "application/json")
         .body(
@@ -187,33 +187,30 @@ async fn handle_register_webhook(req: Request, _params: Params) -> Result<impl I
 /// Deliver message to registered webhooks (fire-and-forget)
 async fn deliver_to_webhooks(redis_address: &str, topic: &str, message_json: &[u8]) {
     // Get all webhook subscriptions
-    let webhooks_index = match redis::execute(
-        redis_address,
-        "SMEMBERS",
-        &[b"mqtt:webhooks:index"],
-    )
-    .await {
-        Ok(keys) => keys,
-        Err(_) => return, // No webhooks registered
-    };
-    
+    let webhooks_index =
+        match redis::execute(redis_address, "SMEMBERS", &[b"mqtt:webhooks:index"]).await {
+            Ok(keys) => keys,
+            Err(_) => return, // No webhooks registered
+        };
+
     for webhook_key in webhooks_index {
         // Get webhook subscription
-        let subscription_data = match redis::get(redis_address, &String::from_utf8_lossy(&webhook_key)).await {
-            Ok(data) => data,
-            Err(_) => continue,
-        };
-        
+        let subscription_data =
+            match redis::get(redis_address, &String::from_utf8_lossy(&webhook_key)).await {
+                Ok(data) => data,
+                Err(_) => continue,
+            };
+
         let subscription: WebhookSubscription = match serde_json::from_slice(&subscription_data) {
             Ok(sub) => sub,
             Err(_) => continue,
         };
-        
+
         // Check if topic matches any filter
         if !topic_matches_filters(topic, &subscription.topic_filters) {
             continue;
         }
-        
+
         // Fire-and-forget POST to webhook URL
         let webhook_request = match spin_sdk::http::Request::builder()
             .method(Method::Post)
@@ -221,14 +218,15 @@ async fn deliver_to_webhooks(redis_address: &str, topic: &str, message_json: &[u
             .header("Content-Type", "application/json")
             .header("X-MQTT-Topic", topic)
             .body(message_json)
-            .build() {
-                Ok(req) => req,
-                Err(_) => continue,
-            };
-        
+            .build()
+        {
+            Ok(req) => req,
+            Err(_) => continue,
+        };
+
         // Fire and forget - ignore result
-        let _ = spin_sdk::http::send(webhook_request);
-        
+        let _ = spin_sdk::http::send(webhook_request).await;
+
         println!(
             "[MQTT Broker] Delivered event to webhook: {} (service: {})",
             subscription.webhook_url, subscription.service_id

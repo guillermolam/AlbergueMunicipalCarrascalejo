@@ -5,27 +5,23 @@ description = "OIDC and OAuth2 Service"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "auth"
-path = "src/main.rs"
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1"
 async-trait = "0.1"
-axum = "0.7"
 chrono = { version = "0.4", features = ["serde"] }
-jsonwebtoken = "8"
-openidconnect = "3"
+openidconnect = "4.0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-spin-sdk = { version = "2.2.0", features = ["http"] }
-
-# Needed by handlers/main across targets
-tower = { version = "0.4", features = ["util"] }
-uuid = { version = "1", features = ["v4"] }
+spin-sdk = { workspace = true }
+bytes = "1"
+serde_urlencoded = "0.7"
+http = "1.0"
 url = "2"
+uuid = { version = "1", features = ["v4"] }
 
-# Tokio with WebAssembly compatible features
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.tokio]
 version = "1.0"
 features = ["full"]
@@ -34,15 +30,12 @@ features = ["full"]
 version = "1.0"
 features = ["sync", "macros", "io-util", "rt", "time"]
 
-# Disable ring and other crypto crates for wasm32 target
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 reqwest = { version = "0.11", features = ["json"] }
-ring = "0.16"
+ring = "0.17"
 rsa = "0.9"
 ed25519-dalek = "2.0"
-jsonwebtoken = { version = "8", features = ["use_pem"] }
+jsonwebtoken = { version = "10", features = ["use_pem"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-jsonwebtoken = { version = "8", default-features = false, features = [
-  "use_pem",
-] }
+jsonwebtoken = { version = "10", default-features = false, features = ["use_pem", "rust_crypto"] }

@@ -1,8 +1,4 @@
-import { persistentMap } from '@nanostores/persistent';
 import { atom } from 'nanostores';
-
-// SSR-safe initialization
-const isServer = typeof window === 'undefined';
 
 export interface Pilgrim {
   id: string;
@@ -19,25 +15,19 @@ export interface Pilgrim {
   updatedAt: string;
 }
 
-export const currentUser = atom<Pilgrim | null>(null);
-
-export const userPreferences = persistentMap<{
+export type UserPreferences = {
   language: string;
   theme: 'light' | 'dark';
   notifications: boolean;
-}>(
-  'preferences:',
-  {
-    language: 'es',
-    theme: 'light',
-    notifications: true,
-  },
-  {
-    // SSR-safe: only persist on client side
-    encode: isServer ? () => '' : undefined,
-    decode: isServer ? () => ({}) : undefined,
-  }
-);
+};
+
+export const currentUser = atom<Pilgrim | null>(null);
+
+export const userPreferences = atom<UserPreferences>({
+  language: 'es',
+  theme: 'light',
+  notifications: true,
+});
 
 export const bookingCart = atom<{
   pilgrim: Pilgrim | null;
@@ -59,14 +49,8 @@ export function clearCurrentUser() {
   currentUser.set(null);
 }
 
-export function updateUserPreferences(
-  updates: Partial<{
-    language: string;
-    theme: 'light' | 'dark';
-    notifications: boolean;
-  }>
-) {
-  userPreferences.set(updates);
+export function updateUserPreferences(updates: Partial<UserPreferences>) {
+  userPreferences.set({ ...userPreferences.get(), ...updates });
 }
 
 export function updateBookingCart(

@@ -65,7 +65,7 @@ impl WhatsAppAdapter {
                 .unwrap_or("unknown")
                 .to_string())
         } else {
-            let error_text = response
+            let error_text: String = response
                 .text()
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
@@ -93,5 +93,9 @@ impl SmsPort for WhatsAppAdapter {
             format!("whatsapp:{}", notification.recipient)
         };
         self.send_message(&to, &notification.message).await
+    }
+
+    async fn verify_twilio_connection(&self) -> AlbergueResult<bool> {
+        Ok(true)
     }
 }

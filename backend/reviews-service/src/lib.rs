@@ -10,7 +10,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use spin_sdk::{
-    http::{IntoResponse, Request, Response},
+    http::{Request, Response},
     http_component,
 };
 use std::collections::HashMap;
@@ -43,11 +43,12 @@ pub struct ErrorResponse {
 
 #[http_component]
 async fn handle_request(req: Request) -> Result<Response, anyhow::Error> {
-    let uri = req.uri().to_string();
-    let path = req.uri().path();
+    let _uri = req.uri().to_string();
+    let path = req.uri();
 
     // Enable CORS
-    let mut response_builder = Response::builder()
+    let mut response_builder = Response::builder();
+    response_builder
         .header("Access-Control-Allow-Origin", "*")
         .header("Access-Control-Allow-Methods", "GET, OPTIONS")
         .header(
@@ -77,7 +78,7 @@ async fn handle_request(req: Request) -> Result<Response, anyhow::Error> {
     Ok(response)
 }
 
-async fn handle_google_reviews() -> Result<impl IntoResponse> {
+async fn handle_google_reviews() -> Result<Response> {
     let google_reviews = vec![
         Review {
             id: "google_1".to_string(),
@@ -125,7 +126,7 @@ async fn handle_google_reviews() -> Result<impl IntoResponse> {
         .build())
 }
 
-async fn handle_booking_reviews() -> Result<impl IntoResponse> {
+async fn handle_booking_reviews() -> Result<Response> {
     let booking_reviews = vec![
         Review {
             id: "booking_1".to_string(),
@@ -173,7 +174,7 @@ async fn handle_booking_reviews() -> Result<impl IntoResponse> {
         .build())
 }
 
-async fn handle_all_reviews() -> Result<impl IntoResponse> {
+async fn handle_all_reviews() -> Result<Response> {
     // Combine Google and Booking.com reviews
     let mut all_reviews = Vec::new();
 
@@ -265,7 +266,7 @@ async fn handle_all_reviews() -> Result<impl IntoResponse> {
         .build())
 }
 
-async fn handle_review_stats() -> Result<impl IntoResponse> {
+async fn handle_review_stats() -> Result<Response> {
     let stats = serde_json::json!({
         "total_reviews": 6,
         "average_rating": 4.7,

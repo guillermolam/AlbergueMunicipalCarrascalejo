@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick validation and test
 
-cd /home/glam/git/personal/AlbergueMunicipalCarrascalejo
+cd /home/glam/git/personal/AlbergueMunicipalCarrascalejo || exit
 
 echo "1. Cleaning Taskfile..."
 LC_ALL=C sed 's/[^\x00-\x7F]//g' Taskfile.yml >Taskfile.tmp

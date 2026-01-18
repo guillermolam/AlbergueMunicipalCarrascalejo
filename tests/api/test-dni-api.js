@@ -1,6 +1,3 @@
-
-#!/usr/bin/env node
-
 /**
  * DNI API Integration Test
  * Tests the core API endpoints that power the DNI registration flow

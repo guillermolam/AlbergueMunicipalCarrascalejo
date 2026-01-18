@@ -14,6 +14,7 @@ This directory contains reusable scripts invoked by taskfiles and CI.
 - `port-management.sh` / `port-manager.py` - Port allocation and validation
 - `deploy.sh` / `deploy-fermyon.sh` / `deploy-all-services.sh` - Deployment helpers
 - `validate-architecture.sh` - Architecture validation
+- `act-local.sh` - Run a single GitHub Actions job locally via `act` from an isolated temp workspace (no `rsync`)
 
 ## Usage
 

@@ -6,13 +6,13 @@
     clippy::missing_panics_doc
 )]
 
+mod handlers;
 mod models;
 mod service;
-mod handlers;
 
+pub use handlers::RequestHandler;
 pub use models::{ApiResponse, CacheConfig, CacheEntry, CountryData, LocationServiceError};
 pub use service::{CountryCache, CountryService};
-pub use handlers::RequestHandler;
 
 use anyhow::Result;
 use spin_sdk::http::{Request, Response};
@@ -48,12 +48,12 @@ mod tests {
     async fn test_handle_request_integration() {
         // Test with in-memory cache for testing
         let handler = RequestHandler {
-            service: Arc::new(tokio::sync::Mutex::new(
-                CountryService::with_memory_cache(Some(CacheConfig {
+            service: Arc::new(tokio::sync::Mutex::new(CountryService::with_memory_cache(
+                Some(CacheConfig {
                     enabled: true,
                     ttl: Duration::from_secs(60),
-                }))
-            )),
+                }),
+            ))),
         };
 
         // Test GET /api/countries/ES

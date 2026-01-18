@@ -9,7 +9,7 @@ import os
 import random
 import socket
 import sys
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 
 class PortManager:

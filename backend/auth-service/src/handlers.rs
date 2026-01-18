@@ -1,47 +1,70 @@
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    response::{IntoResponse, Redirect},
-    Json as AxumJson,
-};
+use spin_sdk::http::{Request, Response};
 use chrono::Utc;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde_json::json;
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use http::StatusCode;
 
 use crate::config::{AppConfig, Claims};
 
-type SharedConfig = Arc<AppConfig>;
-
-/// Redirect user to primary auth, fallback to secondary if needed
-pub async fn login_handler(State(cfg): State<SharedConfig>) -> impl IntoResponse {
+pub async fn login_handler(_req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
     let state = uuid::Uuid::new_v4().to_string();
-    let url = cfg.primary.authorization_url(&state);
-    Redirect::temporary(url.as_str())
+    if let Some(provider) = cfg.providers.first() {     
+        let url = provider.authorization_url(&state);   
+        
+        Ok(Response::builder()
+            .status(StatusCode::TEMPORARY_REDIRECT)
+            .header("Location", url)
+            .body(vec![])
+            .build())
+    } else {
+        Ok(Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("No auth providers configured")
+            .build())
+    }
 }
 
-/// Handle OAuth2 callback, exchange code, issue our JWT
-pub async fn callback_handler(
-    State(cfg): State<SharedConfig>,
-    Query(params): Query<HashMap<String, String>>,
-) -> axum::response::Response {
+pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
+    let uri = req.uri();
+    let query = uri.split_once('?').map(|(_, q)| q).unwrap_or("");
+    let params: HashMap<String, String> = serde_urlencoded::from_str(query).unwrap_or_default();
+    
     let code = match params.get("code") {
         Some(c) => c,
-        None => return (StatusCode::BAD_REQUEST, "Missing code").into_response(),
-    };
-
-    // Try primary, fallback to secondary
-    let token = match cfg.primary.exchange_code(code, &cfg.redirect_uri).await {
-        Ok(t) => t,
-        Err(_) => match cfg.secondary.exchange_code(code, &cfg.redirect_uri).await {
-            Ok(t) => t,
-            Err(e) => {
-                return (StatusCode::UNAUTHORIZED, format!("Auth failed: {e}")).into_response();
-            }
+        None => {
+            return Ok(Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body("Missing code")
+                .build());
         },
     };
 
-    // Issue our own JWT
+    let mut token = None;
+    let mut last_error = String::new();
+
+    for provider in &cfg.providers {
+        match provider.exchange_code(code, &cfg.redirect_uri).await {
+            Ok(t) => {
+                token = Some(t);
+                break;
+            }
+            Err(e) => {
+                last_error = e.to_string();
+            }
+        }
+    }
+
+    let token = match token {
+        Some(t) => t,
+        None => {
+            return Ok(Response::builder()
+                .status(StatusCode::UNAUTHORIZED)
+                .body(format!("Auth failed: {}", last_error))
+                .build());
+        },
+    };
+
     let claims = Claims {
         sub: token.access_token.clone(),
         exp: (Utc::now() + cfg.token_ttl).timestamp() as usize,
@@ -51,42 +74,73 @@ pub async fn callback_handler(
     let header = Header::new(Algorithm::HS256);
     let jwt = match encode(&header, &claims, &EncodingKey::from_secret(&cfg.jwt_secret)) {
         Ok(t) => t,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
-    };
-
-    AxumJson(json!({
-        "jwt": jwt,
-        "refresh_token": token.refresh_token,
-    }))
-    .into_response()
-}
-
-/// Clear session (client should drop JWT)
-pub async fn logout_handler() -> impl IntoResponse {
-    // Invalidate cookie or client-side drop
-    Redirect::temporary("/")
-}
-
-/// Refresh our JWT using provider refresh token
-pub async fn refresh_handler(
-    State(cfg): State<SharedConfig>,
-    AxumJson(payload): AxumJson<HashMap<String, String>>,
-) -> axum::response::Response {
-    let refresh = match payload.get("refresh_token") {
-        Some(r) => r,
-        None => return (StatusCode::BAD_REQUEST, "Missing refresh_token").into_response(),
-    };
-
-    // Try primary then secondary (cannot `await` inside `or_else`)
-    let token = match cfg.primary.refresh_token(refresh).await {
-        Ok(t) => t,
-        Err(_) => match cfg.secondary.refresh_token(refresh).await {
-            Ok(t) => t,
-            Err(e) => return (StatusCode::UNAUTHORIZED, e.to_string()).into_response(),
+        Err(e) => {
+             return Ok(Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(e.to_string())
+                .build());
         },
     };
 
-    // Issue new JWT
+    let body = json!({
+        "jwt": jwt,
+        "refresh_token": token.refresh_token,
+    });
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
+        .body(serde_json::to_vec(&body)?)
+        .build())
+}
+
+pub async fn logout_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Result<Response> {       
+    Ok(Response::builder()
+        .status(StatusCode::TEMPORARY_REDIRECT)
+        .header("Location", "/")
+        .body(vec![])
+        .build())
+}
+
+pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
+    let body = req.into_body();
+    let payload: HashMap<String, String> = serde_json::from_slice(&body).unwrap_or_default();
+
+    let refresh = match payload.get("refresh_token") {     
+        Some(r) => r,
+        None => {
+            return Ok(Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body("Missing refresh_token")
+                .build());
+        },
+    };
+
+    let mut token = None;
+    let mut last_error = String::new();
+
+    for provider in &cfg.providers {
+        match provider.refresh_token(refresh).await {   
+            Ok(t) => {
+                token = Some(t);
+                break;
+            }
+            Err(e) => {
+                last_error = e.to_string();
+            }
+        }
+    }
+
+    let token = match token {
+        Some(t) => t,
+        None => {
+            return Ok(Response::builder()
+                .status(StatusCode::UNAUTHORIZED)
+                .body(format!("Refresh failed: {}", last_error))
+                .build());
+        },
+    };
+
     let claims = Claims {
         sub: token.access_token.clone(),
         exp: (Utc::now() + cfg.token_ttl).timestamp() as usize,
@@ -96,26 +150,40 @@ pub async fn refresh_handler(
     let jwt = match encode(
         &Header::new(Algorithm::HS256),
         &claims,
-        &EncodingKey::from_secret(&cfg.jwt_secret),
+        &EncodingKey::from_secret(&cfg.jwt_secret),     
     ) {
         Ok(t) => t,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        Err(e) => {
+            return Ok(Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(e.to_string())
+                .build());
+        },
     };
 
-    AxumJson(json!({ "jwt": jwt })).into_response()
+    let body = json!({ "jwt": jwt });
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
+        .body(serde_json::to_vec(&body)?)
+        .build())
 }
 
-/// OIDC discovery endpoint
-pub async fn well_known_handler(State(_cfg): State<SharedConfig>) -> axum::response::Response {
-    let issuer = "https://your-spin-host";
+pub async fn well_known_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Result<Response> {
+    let issuer = "https://alberguecarrascalejo.fermyon.app/api/auth";
     let config = json!({
         "issuer": issuer,
         "authorization_endpoint": format!("{}/login", issuer),
-        "token_endpoint": format!("{}/callback", issuer),
+        "token_endpoint": format!("{}/callback", issuer),  
         "jwks_uri": format!("{}/.well-known/jwks.json", issuer),
         "response_types_supported": ["code"],
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": ["RS256", "HS256"],
     });
-    AxumJson(config).into_response()
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
+        .body(serde_json::to_vec(&config)?)
+        .build())
 }

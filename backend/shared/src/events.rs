@@ -5,10 +5,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// CloudEvents envelope for domain events
+/// `CloudEvents` envelope for domain events
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CloudEvent<T> {
-    /// CloudEvents version (default: "1.0")
+    /// `CloudEvents` version (default: "1.0")
     #[serde(default = "default_spec_version")]
     pub specversion: String,
 
@@ -59,7 +59,7 @@ impl<T> CloudEvent<T> {
 // Pilgrim Aggregate Events (albergue.v1.pilgrim.*)
 // ============================================================================
 
-/// Topic: albergue.v1.pilgrim.registered
+/// Topic: `albergue.v1.pilgrim.registered`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PilgrimRegistered {
     pub pilgrim_id: String,
@@ -71,14 +71,14 @@ pub struct PilgrimRegistered {
     pub phone: Option<String>,
 }
 
-/// Topic: albergue.v1.pilgrim.updated
+/// Topic: `albergue.v1.pilgrim.updated`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PilgrimUpdated {
     pub pilgrim_id: String,
     pub updated_fields: Vec<String>,
 }
 
-/// Topic: albergue.v1.pilgrim.gdpr_consent_recorded
+/// Topic: `albergue.v1.pilgrim.gdpr_consent_recorded`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GDPRConsentRecorded {
     pub pilgrim_id: String,
@@ -91,7 +91,7 @@ pub struct GDPRConsentRecorded {
 // Booking Aggregate Events (albergue.v1.booking.*)
 // ============================================================================
 
-/// Topic: albergue.v1.booking.reserved
+/// Topic: `albergue.v1.booking.reserved`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookingReserved {
     pub booking_id: String,
@@ -103,7 +103,7 @@ pub struct BookingReserved {
     pub expires_at: DateTime<Utc>,
 }
 
-/// Topic: albergue.v1.booking.bed_assigned
+/// Topic: `albergue.v1.booking.bed_assigned`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookingBedAssigned {
     pub booking_id: String,
@@ -112,7 +112,7 @@ pub struct BookingBedAssigned {
     pub room_type: String,
 }
 
-/// Topic: albergue.v1.booking.confirmed
+/// Topic: `albergue.v1.booking.confirmed`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookingConfirmed {
     pub booking_id: String,
@@ -122,7 +122,7 @@ pub struct BookingConfirmed {
     pub bed_id: Option<String>,
 }
 
-/// Topic: albergue.v1.booking.cancelled
+/// Topic: `albergue.v1.booking.cancelled`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookingCancelled {
     pub booking_id: String,
@@ -131,7 +131,7 @@ pub struct BookingCancelled {
     pub cancelled_at: DateTime<Utc>,
 }
 
-/// Topic: albergue.v1.booking.expired
+/// Topic: `albergue.v1.booking.expired`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookingExpired {
     pub booking_id: String,
@@ -143,7 +143,7 @@ pub struct BookingExpired {
 // Payment Aggregate Events (albergue.v1.payment.*)
 // ============================================================================
 
-/// Topic: albergue.v1.payment.recorded
+/// Topic: `albergue.v1.payment.recorded`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaymentRecorded {
     pub payment_id: String,
@@ -153,7 +153,7 @@ pub struct PaymentRecorded {
     pub payment_method: String,
 }
 
-/// Topic: albergue.v1.payment.completed
+/// Topic: `albergue.v1.payment.completed`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaymentCompleted {
     pub payment_id: String,
@@ -167,7 +167,7 @@ pub struct PaymentCompleted {
 // Government Submission Events (albergue.v1.government.*)
 // ============================================================================
 
-/// Topic: albergue.v1.government.submission_queued
+/// Topic: `albergue.v1.government.submission_queued`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernmentSubmissionQueued {
     pub submission_id: String,
@@ -175,7 +175,7 @@ pub struct GovernmentSubmissionQueued {
     pub submission_type: String,
 }
 
-/// Topic: albergue.v1.government.submission_succeeded
+/// Topic: `albergue.v1.government.submission_succeeded`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernmentSubmissionSucceeded {
     pub submission_id: String,
@@ -184,7 +184,7 @@ pub struct GovernmentSubmissionSucceeded {
     pub confirmation_id: Option<String>,
 }
 
-/// Topic: albergue.v1.government.submission_failed
+/// Topic: `albergue.v1.government.submission_failed`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernmentSubmissionFailed {
     pub submission_id: String,
@@ -197,7 +197,7 @@ pub struct GovernmentSubmissionFailed {
 // Bed Aggregate Events (albergue.v1.bed.*)
 // ============================================================================
 
-/// Topic: albergue.v1.bed.status_changed
+/// Topic: `albergue.v1.bed.status_changed`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BedStatusChanged {
     pub bed_id: String,

@@ -2,6 +2,7 @@ use crate::domain::*;
 use crate::ports::*;
 use serde_json;
 use shared::{AlbergueError, AlbergueResult};
+use futures::future::BoxFuture;
 
 pub struct CardsServiceImpl {
     storage: Box<crate::adapters::storage::PostgresCardsRepository>,
@@ -16,7 +17,11 @@ impl CardsServiceImpl {
         Self { storage, scraper }
     }
 
-    async fn get_or_create_card<F, Fut>(&self, card_type: CardType, create_card: F) -> AlbergueResult<String>
+    async fn get_or_create_card<F, Fut>(
+        &self,
+        card_type: CardType,
+        create_card: F,
+    ) -> AlbergueResult<String>
     where
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = AlbergueResult<InfoCard>>,
@@ -286,12 +291,20 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
                 url: route_data.map_embed_url.clone(),
                 description: Some("Mapa detallado de la ruta".to_string()),
                 link_type: LinkType::Map,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
             InfoLink {
                 title: "🌤️ Previsión meteorológica".to_string(),
                 url: format!("https://www.aemet.es/es/eltiempo/prediccion/municipios/{}", next_stage.to_lowercase()),
                 description: Some("Consulta el tiempo antes de salir".to_string()),
                 link_type: LinkType::Website,
+                phone: None,
+                address: None,
+                rating: None,
+                price_range: None,
             },
         ])
         .with_priority(3);
@@ -482,14 +495,14 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         let mut all_cards = Vec::new();
 
         // Get all card types - including new ones
-        let card_methods = vec![
-            self.get_merida_attractions(),
-            self.get_carrascalejo_info(),
-            self.get_emergency_contacts(),
-            self.get_route_map("almendralejo"),
-            self.get_restaurants_eat(),
-            self.get_taxi_services(),
-            self.get_car_rentals(),
+        let card_methods: Vec<BoxFuture<'_, AlbergueResult<String>>> = vec![
+            Box::pin(self.get_merida_attractions()),
+            Box::pin(self.get_carrascalejo_info()),
+            Box::pin(self.get_emergency_contacts()),
+            Box::pin(self.get_route_map("almendralejo")),
+            Box::pin(self.get_restaurants_eat()),
+            Box::pin(self.get_taxi_services()),
+            Box::pin(self.get_car_rentals()),
         ];
 
         for card_future in card_methods {
@@ -512,7 +525,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         content: &str,
     ) -> AlbergueResult<String> {
         let card_uuid = uuid::Uuid::parse_str(card_id)
-            .map_err(|_| AlbergueError::ValidationError("Invalid card ID format".to_string()))?;
+            .map_err(|_| AlbergueError::Validation { message: "Invalid card ID format".to_string() })?;
 
         let mut card = self.storage.get_card_by_id(card_uuid).await?;
         card.update_content(content.to_string());

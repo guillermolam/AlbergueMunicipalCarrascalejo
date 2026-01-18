@@ -20,18 +20,22 @@ impl CountryCache {
         }
     }
 
-    pub async fn get_country(&self, country_code: &str) -> Result<Option<CountryData>, LocationServiceError> {
+    pub async fn get_country(
+        &self,
+        country_code: &str,
+    ) -> Result<Option<CountryData>, LocationServiceError> {
         let key = format!("country:{}", country_code);
-        
+
         match self.redis.get(&key).await {
             Ok(Some(data)) => {
-                let entry: CacheEntry = serde_json::from_str(&data)
-                    .map_err(|e| LocationServiceError::Cache(format!("Failed to deserialize cache entry: {}", e)))?;
-                
-                let now = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .map_err(|_| LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string()))?;
-                
+                let entry: CacheEntry = serde_json::from_str(&data).map_err(|e| {
+                    LocationServiceError::Cache(format!("Failed to deserialize cache entry: {}", e))
+                })?;
+
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|_| {
+                    LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string())
+                })?;
+
                 if now.as_secs() - entry.timestamp < self.cache_ttl.as_secs() {
                     return Ok(Some(entry.data));
                 }
@@ -43,32 +47,42 @@ impl CountryCache {
             }
             _ => {}
         }
-        
+
         Ok(None)
     }
 
-    pub async fn set_country(&self, country_code: &str, country: &CountryData) -> Result<(), LocationServiceError> {
+    pub async fn set_country(
+        &self,
+        country_code: &str,
+        country: &CountryData,
+    ) -> Result<(), LocationServiceError> {
         let key = format!("country:{}", country_code);
         let entry = CacheEntry {
             data: country.clone(),
             timestamp: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .map_err(|_| LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string()))?
+                .map_err(|_| {
+                    LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string())
+                })?
                 .as_secs(),
         };
-        
-        let serialized = serde_json::to_string(&entry)
-            .map_err(|e| LocationServiceError::Cache(format!("Failed to serialize cache entry: {}", e)))?;
-        
+
+        let serialized = serde_json::to_string(&entry).map_err(|e| {
+            LocationServiceError::Cache(format!("Failed to serialize cache entry: {}", e))
+        })?;
+
         self.redis
             .set_with_ttl(&key, &serialized, self.cache_ttl.as_secs() as u64)
             .await
             .map_err(|e| LocationServiceError::Redis(e.to_string()))?;
-            
+
         Ok(())
     }
 
-    pub async fn clear_country_cache(&self, country_code: &str) -> Result<(), LocationServiceError> {
+    pub async fn clear_country_cache(
+        &self,
+        country_code: &str,
+    ) -> Result<(), LocationServiceError> {
         let key = format!("country:{}", country_code);
         self.redis
             .delete_key(&key)
@@ -115,7 +129,10 @@ impl LocationService {
     }
 
     /// Get country data by country code
-    pub async fn get_country_data(&mut self, code: &str) -> Result<Option<CountryData>, LocationServiceError> {
+    pub async fn get_country_data(
+        &mut self,
+        code: &str,
+    ) -> Result<Option<CountryData>, LocationServiceError> {
         let code = code.to_uppercase();
 
         // Check Redis cache first if enabled
@@ -131,9 +148,11 @@ impl LocationService {
         if let Some(entry) = self.memory_cache.get(&code) {
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .map_err(|_| LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string()))?
+                .map_err(|_| {
+                    LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string())
+                })?
                 .as_secs();
-                
+
             if now - entry.timestamp < self.cache_config.ttl.as_secs() {
                 return Ok(Some(entry.data.clone()));
             }
@@ -149,7 +168,10 @@ impl LocationService {
     }
 
     /// Get country data from the primary data source
-    async fn get_country_from_source(&self, code: &str) -> Result<Option<CountryData>, LocationServiceError> {
+    async fn get_country_from_source(
+        &self,
+        code: &str,
+    ) -> Result<Option<CountryData>, LocationServiceError> {
         // This is a simplified example - in a real application, you would fetch from a database or API
         match code.as_str() {
             "ES" => Ok(Some(CountryData {
@@ -169,10 +191,16 @@ impl LocationService {
     }
 
     /// Update all caches with new data
-    async fn update_caches(&mut self, code: &str, data: &CountryData) -> Result<(), LocationServiceError> {
+    async fn update_caches(
+        &mut self,
+        code: &str,
+        data: &CountryData,
+    ) -> Result<(), LocationServiceError> {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .map_err(|_| LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string()))?
+            .map_err(|_| {
+                LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string())
+            })?
             .as_secs();
 
         let entry = CacheEntry {
@@ -204,7 +232,7 @@ impl LocationService {
     /// Clear all caches
     pub async fn clear_cache(&mut self) -> Result<(), LocationServiceError> {
         self.memory_cache.clear();
-        
+
         if let Some(redis_cache) = &self.redis_cache {
             // In a real implementation, you might want to clear all country keys
             // This is a simplified version that doesn't clear the entire Redis cache
@@ -212,22 +240,25 @@ impl LocationService {
         } else {
             log::info!("Memory cache cleared");
         }
-        
+
         Ok(())
     }
 
     /// Clear cache for a specific country
-    pub async fn clear_country_cache(&self, country_code: &str) -> Result<(), LocationServiceError> {
+    pub async fn clear_country_cache(
+        &self,
+        country_code: &str,
+    ) -> Result<(), LocationServiceError> {
         let code = country_code.to_uppercase();
-        
+
         // Clear from memory cache
         self.memory_cache.remove(&code);
-        
+
         // Clear from Redis if enabled
         if let Some(redis_cache) = &self.redis_cache {
             redis_cache.clear_country_cache(&code).await?;
         }
-        
+
         Ok(())
     }
 
@@ -249,6 +280,8 @@ impl LocationService {
             false
         }
     }
+}
+
 #[cfg(test)]
 impl Default for LocationService {
     fn default() -> Self {

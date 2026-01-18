@@ -1,5 +1,5 @@
-use rate_limiter_service::*;
 use http::{Request, StatusCode};
+use rate_limiter_service::*;
 use std::collections::HashMap;
 
 #[cfg(test)]
@@ -65,7 +65,10 @@ mod unit_tests {
 
         let result = perform_rate_limit_check(&req, config).await;
 
-        assert!(result.is_ok(), "perform_rate_limit_check should succeed with default");
+        assert!(
+            result.is_ok(),
+            "perform_rate_limit_check should succeed with default"
+        );
         let response = result.unwrap();
         assert!(response.allowed, "Default should allow requests");
         assert_eq!(response.remaining, 100);
@@ -140,6 +143,9 @@ mod unit_tests {
         let result = handle_rate_limit_reset(req).await;
 
         // Should still succeed with default client_id
-        assert!(result.is_ok(), "handle_rate_limit_reset should handle invalid JSON gracefully");
+        assert!(
+            result.is_ok(),
+            "handle_rate_limit_reset should handle invalid JSON gracefully"
+        );
     }
 }

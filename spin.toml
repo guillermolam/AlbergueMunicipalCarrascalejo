@@ -119,7 +119,7 @@ redis_address = "{{ redis_address }}"
 source = "backend/auth-service/target/wasm32-wasip1/release/auth.wasm"
 allowed_outbound_hosts = ["https://*.logto.app", "https://*.zitadel.cloud"]
 [component.auth-service.build]
-command = "cd backend/auth-service && cargo build --target wasm32-wasip1 --release --bin auth"
+command = "cd backend/auth-service && cargo build --target wasm32-wasip1 --release"
 
 [component.booking-service]
 source = "backend/booking-service/target/wasm32-wasip1/release/booking_service.wasm"

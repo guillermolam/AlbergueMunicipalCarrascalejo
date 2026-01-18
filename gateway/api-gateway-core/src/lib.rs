@@ -2,21 +2,22 @@
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct GatewayConfig {
     pub defaults: DefaultsConfig,
     pub services: BTreeMap<String, ServiceConfig>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct DefaultsConfig {
-    pub policy: toml::Value,
+    #[serde(default)]
+    pub policy: Option<toml::Value>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct ServiceConfig {
     pub url: String,
-    #[serde(default)]
+    #[serde(default = "Option::default")]
     pub policy: Option<toml::Value>,
 }
 
@@ -41,3 +42,5 @@ pub fn rewrite_upstream_path_for_test(path: &str, service: &str) -> String {
 
     path.to_string()
 }
+
+

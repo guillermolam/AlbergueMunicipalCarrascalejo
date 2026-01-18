@@ -6,8 +6,8 @@ pub enum AlbergueError {
     #[error("Validation error: {message}")]
     Validation { message: String },
 
-    #[error("Database error: {message}")]
-    Database { message: String },
+    #[error("Database error: {0}")]
+    DatabaseError(String),
 
     #[error("Authentication error: {message}")]
     Authentication { message: String },
@@ -15,14 +15,17 @@ pub enum AlbergueError {
     #[error("Authorization error: {message}")]
     Authorization { message: String },
 
-    #[error("Not found: {resource}")]
-    NotFound { resource: String },
+    #[error("Not found: {0}")]
+    NotFound(String),
+
+    #[error("Not implemented: {0}")]
+    NotImplemented(String),
 
     #[error("OCR processing error: {message}")]
     OCRProcessing { message: String },
 
-    #[error("External service error: {service}: {message}")]
-    ExternalService { service: String, message: String },
+    #[error("External service error: {0}")]
+    ExternalServiceError(String),
 
     #[error("Rate limit exceeded")]
     RateLimit,
@@ -32,3 +35,11 @@ pub enum AlbergueError {
 }
 
 pub type AlbergueResult<T> = Result<T, AlbergueError>;
+
+impl From<serde_json::Error> for AlbergueError {
+    fn from(err: serde_json::Error) -> Self {
+        AlbergueError::Internal {
+            message: format!("Serialization error: {}", err),
+        }
+    }
+}

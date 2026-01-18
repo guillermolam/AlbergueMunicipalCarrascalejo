@@ -3,7 +3,7 @@ tasks:
   frontend:
     desc: Build frontend (if using Spin static assets)
     cmds:
-      - cd frontend && pnpm install --frozen-lockfile && pnpm run build
+      - cd frontend && ../scripts/pnpm.sh install --frozen-lockfile && ../scripts/pnpm.sh run build
 
   gateway:
     desc: Build gateway (Spin WASM)

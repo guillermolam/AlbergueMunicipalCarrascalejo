@@ -1,4 +1,4 @@
-use http::{Request, Method, StatusCode};
+use http::{Method, Request, StatusCode};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -15,8 +15,9 @@ mod integration_tests {
             "client_id": "test-client",
             "endpoint": "/booking",
             "method": "POST"
-        }).to_string();
-        
+        })
+        .to_string();
+
         let req = Request::builder()
             .uri("http://example.com/rate-limit/check")
             .method("POST")
@@ -24,10 +25,10 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
+
         assert!(result.is_ok(), "Rate limit check should succeed");
         let response = result.unwrap();
-        
+
         assert_eq!(response.status(), StatusCode::OK);
         let headers = response.headers();
         assert_eq!(headers.get("content-type").unwrap(), "application/json");
@@ -45,10 +46,10 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
+
         assert!(result.is_ok(), "Rate limit status should succeed");
         let response = result.unwrap();
-        
+
         assert_eq!(response.status(), StatusCode::OK);
         let headers = response.headers();
         assert_eq!(headers.get("content-type").unwrap(), "application/json");
@@ -65,10 +66,10 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
+
         assert!(result.is_ok(), "Rate limit reset should succeed");
         let response = result.unwrap();
-        
+
         assert_eq!(response.status(), StatusCode::OK);
         let headers = response.headers();
         assert_eq!(headers.get("content-type").unwrap(), "application/json");
@@ -84,10 +85,10 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
+
         assert!(result.is_ok(), "Non-existent endpoint should return 404");
         let response = result.unwrap();
-        
+
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
         let headers = response.headers();
         assert_eq!(headers.get("content-type").unwrap(), "application/json");
@@ -102,10 +103,10 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
+
         assert!(result.is_ok(), "Invalid method should return 404");
         let response = result.unwrap();
-        
+
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
@@ -122,8 +123,9 @@ mod integration_tests {
                 "client_id": "test-client",
                 "endpoint": endpoint,
                 "method": method
-            }).to_string();
-            
+            })
+            .to_string();
+
             let req = Request::builder()
                 .uri("http://example.com/rate-limit/check")
                 .method("POST")
@@ -131,11 +133,16 @@ mod integration_tests {
                 .unwrap();
 
             let result = handle_request(req).await;
-            assert!(result.is_ok(), "Rate limit check for {} {} should succeed", method, endpoint);
-            
+            assert!(
+                result.is_ok(),
+                "Rate limit check for {} {} should succeed",
+                method,
+                endpoint
+            );
+
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::OK);
-            
+
             // Check that remaining is one less than max for first request
             let remaining_header = response.headers().get("X-RateLimit-Remaining");
             assert!(remaining_header.is_some());
@@ -150,8 +157,9 @@ mod integration_tests {
             "client_id": "test-client",
             "endpoint": "/booking",
             "method": "POST"
-        }).to_string();
-        
+        })
+        .to_string();
+
         let req = Request::builder()
             .uri("http://example.com/rate-limit/check")
             .method("POST")
@@ -160,8 +168,11 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
-        assert!(result.is_ok(), "Rate limit check with client headers should succeed");
+
+        assert!(
+            result.is_ok(),
+            "Rate limit check with client headers should succeed"
+        );
         let response = result.unwrap();
         assert_eq!(response.status(), StatusCode::OK);
     }
@@ -175,27 +186,33 @@ mod integration_tests {
             "client_id": "concurrent-client",
             "endpoint": "/booking",
             "method": "POST"
-        }).to_string();
+        })
+        .to_string();
 
-        let requests: Vec<_> = (0..5).map(|i| {
-            let body = body.clone();
-            tokio::spawn(async move {
-                let req = Request::builder()
-                    .uri("http://example.com/rate-limit/check")
-                    .method("POST")
-                    .body(body.as_bytes().to_vec())
-                    .unwrap();
-                
-                handle_request(req).await
+        let requests: Vec<_> = (0..5)
+            .map(|i| {
+                let body = body.clone();
+                tokio::spawn(async move {
+                    let req = Request::builder()
+                        .uri("http://example.com/rate-limit/check")
+                        .method("POST")
+                        .body(body.as_bytes().to_vec())
+                        .unwrap();
+
+                    handle_request(req).await
+                })
             })
-        }).collect();
+            .collect();
 
         let results = join_all(requests).await;
-        
+
         for result in results {
             assert!(result.is_ok(), "Concurrent requests should succeed");
             let response = result.unwrap();
-            assert!(response.status().is_success(), "All concurrent requests should succeed");
+            assert!(
+                response.status().is_success(),
+                "All concurrent requests should succeed"
+            );
         }
     }
 
@@ -209,7 +226,7 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
+
         // Should still process with default values
         assert!(result.is_ok(), "Invalid JSON should be handled gracefully");
     }
@@ -223,7 +240,7 @@ mod integration_tests {
             .unwrap();
 
         let result = handle_request(req).await;
-        
+
         // Should still process with default values
         assert!(result.is_ok(), "Empty body should be handled gracefully");
     }

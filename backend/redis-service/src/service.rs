@@ -1,5 +1,5 @@
+use spin_sdk::redis::{Connection, RedisResult, RedisParameter};
 use std::time::Duration;
-use spin_sdk::redis::{self, RedisParameter, RedisResult};
 
 use crate::error::RedisServiceError;
 use crate::models::{CacheEntry, RedisConfig};
@@ -29,12 +29,10 @@ impl RedisService {
         })
     }
 
-    // Note: Methods are marked async to maintain API compatibility with consumers,
-    // even though spin-sdk redis calls are blocking FFI calls in the current version.
-
     pub async fn get_connection(&self) -> Result<(), RedisServiceError> {
-        // No-op for Spin SDK as connections are managed by the host
-        Ok(())
+        Connection::open(&self.address)
+            .map(|_| ())
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))
     }
 
     pub async fn set_with_expiry<K, V>(
@@ -51,15 +49,16 @@ impl RedisService {
         let json = serde_json::to_string(&value)?;
         let seconds = expiry.as_secs().to_string();
 
-        // Use execute to perform SET with EX (expiry) option
-        redis::execute(
-            &self.address,
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        conn.execute(
             "SET",
             &[
-                redis::RedisParameter::Binary(key_str.as_bytes().to_vec()),
-                redis::RedisParameter::Binary(json.into_bytes()),
-                redis::RedisParameter::Binary("EX".as_bytes().to_vec()),
-                redis::RedisParameter::Binary(seconds.into_bytes()),
+                RedisParameter::Binary(key_str.as_bytes().to_vec()),
+                RedisParameter::Binary(json.as_bytes().to_vec()),
+                RedisParameter::Binary(b"EX".to_vec()),
+                RedisParameter::Binary(seconds.as_bytes().to_vec()),
             ],
         )
         .map_err(|e| RedisServiceError::Operation(format!("Failed to set key: {:?}", e)))?;
@@ -73,10 +72,11 @@ impl RedisService {
         V: serde::de::DeserializeOwned,
     {
         let key_str = key.as_ref();
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
 
-        // Using standard redis::get for simplicity.
-        match redis::get(&self.address, key_str) {
-            Ok(bytes) => {
+        match conn.get(key_str) {
+            Ok(Some(bytes)) => {
                 if bytes.is_empty() {
                     return Ok(None);
                 }
@@ -85,6 +85,7 @@ impl RedisService {
                     Err(_) => Ok(None),
                 }
             }
+            Ok(None) => Ok(None),
             Err(_) => Ok(None),
         }
     }
@@ -94,7 +95,10 @@ impl RedisService {
         K: AsRef<str>,
     {
         let key_str = key.as_ref();
-        let count = redis::del(&self.address, &[key_str])
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+            
+        let count = conn.del(&[key_str.to_string()])
             .map_err(|e| RedisServiceError::Operation(format!("Failed to delete key: {:?}", e)))?;
         Ok(count > 0)
     }
@@ -104,16 +108,18 @@ impl RedisService {
         K: AsRef<str>,
     {
         let key_str = key.as_ref();
-        let result = redis::execute(
-            &self.address,
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        let result = conn.execute(
             "EXISTS",
-            &[redis::RedisParameter::Binary(key_str.as_bytes().to_vec())],
+            &[RedisParameter::Binary(key_str.as_bytes().to_vec())],
         )
         .map_err(|e| RedisServiceError::Operation(format!("Failed to check existence: {:?}", e)))?;
 
         if let Some(first) = result.first() {
             match first {
-                redis::RedisResult::Int64(val) => Ok(val > 0),
+                RedisResult::Int64(val) => Ok(*val > 0),
                 _ => Ok(false),
             }
         } else {
@@ -161,7 +167,10 @@ impl RedisService {
         K: AsRef<str>,
     {
         let key_str = key.as_ref();
-        redis::incr(&self.address, key_str)
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        conn.incr(key_str)
             .map_err(|e| RedisServiceError::Operation(format!("Failed to incr: {:?}", e)))
     }
 
@@ -170,16 +179,18 @@ impl RedisService {
         K: AsRef<str>,
     {
         let key_str = key.as_ref();
-        let result = redis::execute(
-            &self.address,
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        let result = conn.execute(
             "DECR",
-            &[redis::RedisParameter::Binary(key_str.as_bytes().to_vec())],
+            &[RedisParameter::Binary(key_str.as_bytes().to_vec())],
         )
         .map_err(|e| RedisServiceError::Operation(format!("Failed to decr: {:?}", e)))?;
 
         if let Some(first) = result.first() {
             match first {
-                redis::RedisResult::Int64(val) => Ok(val),
+                RedisResult::Int64(val) => Ok(*val),
                 _ => Err(RedisServiceError::Operation(
                     "Unexpected response type".to_string(),
                 )),
@@ -195,19 +206,21 @@ impl RedisService {
     {
         let key_str = key.as_ref();
         let seconds = ttl.as_secs().to_string();
-        let result = redis::execute(
-            &self.address,
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        let result = conn.execute(
             "EXPIRE",
             &[
-                redis::RedisParameter::Binary(key_str.as_bytes().to_vec()),
-                redis::RedisParameter::Binary(seconds.into_bytes()),
+                RedisParameter::Binary(key_str.as_bytes().to_vec()),
+                RedisParameter::Binary(seconds.as_bytes().to_vec()),
             ],
         )
         .map_err(|e| RedisServiceError::Operation(format!("Failed to set ttl: {:?}", e)))?;
 
         if let Some(first) = result.first() {
             match first {
-                redis::RedisResult::Int64(val) => Ok(val > 0),
+                RedisResult::Int64(val) => Ok(*val > 0),
                 _ => Ok(false),
             }
         } else {
@@ -220,17 +233,19 @@ impl RedisService {
         K: AsRef<str>,
     {
         let key_str = key.as_ref();
-        let result = redis::execute(
-            &self.address,
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        let result = conn.execute(
             "TTL",
-            &[redis::RedisParameter::Binary(key_str.as_bytes().to_vec())],
+            &[RedisParameter::Binary(key_str.as_bytes().to_vec())],
         )
         .map_err(|e| RedisServiceError::Operation(format!("Failed to get ttl: {:?}", e)))?;
 
         if let Some(first) = result.first() {
             match first {
-                redis::RedisResult::Int64(val) => {
-                    let v = val;
+                RedisResult::Int64(val) => {
+                    let v = *val;
                     if v > 0 {
                         Ok(Some(Duration::from_secs(v as u64)))
                     } else {
@@ -245,19 +260,25 @@ impl RedisService {
     }
 
     pub async fn flush_all(&self) -> Result<(), RedisServiceError> {
-        redis::execute(&self.address, "FLUSHALL", &[])
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        conn.execute("FLUSHALL", &[])
             .map_err(|e| RedisServiceError::Operation(format!("Failed to flush: {:?}", e)))?;
         Ok(())
     }
 
     pub async fn ping(&self) -> Result<String, RedisServiceError> {
-        let result = redis::execute(&self.address, "PING", &[])
+        let conn = Connection::open(&self.address)
+            .map_err(|e| RedisServiceError::Connection(format!("Failed to connect: {:?}", e)))?;
+
+        let result = conn.execute("PING", &[])
             .map_err(|e| RedisServiceError::Operation(format!("Failed to ping: {:?}", e)))?;
 
         if let Some(first) = result.first() {
             match first {
-                redis::RedisResult::Status(s) => Ok(s.clone()),
-                redis::RedisResult::Binary(b) => Ok(String::from_utf8_lossy(&b).to_string()),
+                RedisResult::Status(s) => Ok(s.clone()),
+                RedisResult::Binary(b) => Ok(String::from_utf8_lossy(b).to_string()),
                 _ => Ok("PONG".to_string()),
             }
         } else {

@@ -7,11 +7,12 @@ pub struct EventPublisher {
 }
 
 impl EventPublisher {
+    #[must_use]
     pub fn new(broker_url: String) -> Self {
         Self { broker_url }
     }
 
-    pub fn publish<T: Serialize>(&self, event: &CloudEvent<T>) -> AlbergueResult<()> {
+    pub async fn publish<T: Serialize>(&self, event: &CloudEvent<T>) -> AlbergueResult<()> {
         let topic = &event.event_type;
 
         let payload = serde_json::to_string(event).map_err(|e| AlbergueError::Internal {
@@ -22,7 +23,7 @@ impl EventPublisher {
 
         #[cfg(target_arch = "wasm32")]
         {
-            use spin_sdk::http::{Method, Request};
+            use spin_sdk::http::{Method, Request, Response};
 
             let body = serde_json::json!({
                 "topic": topic,
@@ -38,30 +39,26 @@ impl EventPublisher {
                 .body(serde_json::to_vec(&body).unwrap_or_default())
                 .build();
 
-            let _ = spin_sdk::http::send(request);
+            let _ = spin_sdk::http::send::<_, Response>(request).await;
         }
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            log::debug!(
-                "Would publish event to {}: topic={} payload={}",
-                publish_url,
-                topic,
-                payload
-            );
+            log::debug!("Would publish event to {publish_url}: topic={topic} payload={payload}");
         }
 
         Ok(())
     }
 
-    pub fn publish_batch<T: Serialize>(&self, events: &[CloudEvent<T>]) -> AlbergueResult<()> {
+    pub async fn publish_batch<T: Serialize>(&self, events: &[CloudEvent<T>]) -> AlbergueResult<()> {
         for event in events {
-            let _ = self.publish(event);
+            let _ = self.publish(event).await;
         }
         Ok(())
     }
 }
 
+#[must_use]
 pub fn create_publisher() -> EventPublisher {
     EventPublisher::new("http://mqtt-broker-service.spin.internal".to_string())
 }
