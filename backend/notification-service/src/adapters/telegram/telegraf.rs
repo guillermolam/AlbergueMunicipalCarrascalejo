@@ -1,12 +1,11 @@
 use crate::domain::Notification;
 use crate::ports::TelegramPort;
 use async_trait::async_trait;
-use reqwest::Client;
+use spin_sdk::http::{Request, Response, Method};
 use serde_json::json;
 use shared::{AlbergueError, AlbergueResult};
 
 pub struct TelegrafAdapter {
-    client: Client,
     bot_token: String,
     chat_id: String,
 }
@@ -17,7 +16,6 @@ impl TelegrafAdapter {
         let chat_id = std::env::var("TELEGRAM_CHAT_ID").unwrap_or_default();
 
         Self {
-            client: Client::new(),
             bot_token,
             chat_id,
         }
@@ -40,46 +38,46 @@ impl TelegramPort for TelegrafAdapter {
             "text": notification.message,
             "parse_mode": "Markdown"
         });
+        
+        let body_bytes = serde_json::to_vec(&payload).map_err(|e|
+             AlbergueError::ExternalServiceError(format!("Failed to serialize payload: {}", e))
+        )?;
 
-        let response = self
-            .client
-            .post(&url)
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|e| {
-                AlbergueError::ExternalServiceError(format!("Telegram request failed: {}", e))
-            })?;
+        let req = Request::builder()
+            .method(Method::Post)
+            .uri(url)
+            .header("Content-Type", "application/json")
+            .body(body_bytes)
+            .build();
 
-        if response.status().is_success() {
-            let result: serde_json::Value = response.json::<serde_json::Value>().await.map_err(|e| {
-                AlbergueError::ExternalServiceError(format!(
-                    "Failed to parse Telegram response: {}",
-                    e
-                ))
-            })?;
+        let response: Response = spin_sdk::http::send(req).await.map_err(|e| {
+             AlbergueError::ExternalServiceError(format!("Telegram request failed: {}", e))
+        })?;
+
+        if response.status() == 200 || response.status() == 201 {
+            let body_bytes = response.body();
+            let result: serde_json::Value = serde_json::from_slice(body_bytes).map_err(|e| 
+                AlbergueError::ExternalServiceError(format!("Failed to parse Telegram response: {}", e))
+            )?;
 
             Ok(result["result"]["message_id"].to_string())
         } else {
-            let error_text: String = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            Err(AlbergueError::ExternalServiceError(format!(
-                "Telegram error: {}",
-                error_text
-            )))
+             let body_str = String::from_utf8_lossy(response.body());
+             Err(AlbergueError::ExternalServiceError(format!("Telegram error: {}", body_str)))
         }
     }
 
     async fn verify_bot_connection(&self) -> AlbergueResult<bool> {
         let url = format!("https://api.telegram.org/bot{}/getMe", self.bot_token);
+        
+        let req = Request::builder()
+            .method(Method::Get)
+            .uri(url)
+            .body(vec![])
+            .build();
 
-        match self.client.get(&url).send().await {
-            Ok(response) => {
-                let success: bool = response.status().is_success();
-                Ok(success)
-            },
+        match spin_sdk::http::send(req).await {
+            Ok(response) => Ok(response.status() == 200),
             Err(_) => Ok(false),
         }
     }

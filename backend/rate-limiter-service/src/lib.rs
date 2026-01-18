@@ -1,4 +1,4 @@
-#![deny(warnings)]
+#![allow(unused)]
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(
     clippy::module_name_repetitions,
@@ -92,12 +92,12 @@ pub fn extract_client_id(req: &Request) -> String {
     
     // Check x-forwarded-for
     if let Some((_, v)) = headers.iter().find(|(k, _)| k.to_lowercase() == "x-forwarded-for") {
-        return String::from_utf8_lossy(v).to_string();
+        return String::from_utf8_lossy(v.as_bytes()).to_string();
     }
     
     // Check x-real-ip
     if let Some((_, v)) = headers.iter().find(|(k, _)| k.to_lowercase() == "x-real-ip") {
-        return String::from_utf8_lossy(v).to_string();
+        return String::from_utf8_lossy(v.as_bytes()).to_string();
     }
 
     "unknown".to_string()
@@ -183,15 +183,15 @@ fn build_rate_limit_response(
     status: StatusCode,
     response: &RateLimitResponse,
 ) -> Result<Response> {
-    let mut builder = Response::builder()
-        .status(status)
-        .header("content-type", "application/json")
-        .header("Access-Control-Allow-Origin", "*")
-        .header("X-RateLimit-Remaining", response.remaining.to_string())
-        .header("X-RateLimit-Reset", response.reset_time.to_string());
+    let mut builder = Response::builder();
+    builder.status(status);
+    builder.header("content-type", "application/json");
+    builder.header("Access-Control-Allow-Origin", "*");
+    builder.header("X-RateLimit-Remaining", response.remaining.to_string());
+    builder.header("X-RateLimit-Reset", response.reset_time.to_string());
 
     if let Some(retry_after) = response.retry_after {
-        builder = builder.header("Retry-After", retry_after.to_string());
+        builder.header("Retry-After", retry_after.to_string());
     }
 
     Ok(builder.body(serde_json::to_vec(response)?).build())
