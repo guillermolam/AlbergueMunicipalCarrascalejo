@@ -7,13 +7,29 @@ authors = ["Guillermo Lam <guillermolam.m@gmail.com>"]
 description = "OIDC and OAuth2 Service"
 
 [[trigger.http]]
-[[trigger.http]]
 route = "/api/auth/*"
 component = "auth-service"
 
+[variables]
+github_client_id = { required = true }
+github_client_secret = { required = true }
+logto_app_id = { required = false }
+logto_app_secret = { required = false }
+logto_issuer_endpoint = { required = false }
+logto_origin_url = { required = false }
+zitadel_domain = { required = false }
+jwt_secret = { required = false }
+
 [component.auth-service]
 source = "target/wasm32-wasip1/release/auth.wasm"
-allowed_outbound_hosts = ["https://*.logto.app", "https://*.zitadel.cloud"]
+allowed_outbound_hosts = [
+    "https://*.logto.app",
+    "https://*.zitadel.cloud",
+    "https://github.com",
+    "https://api.github.com"
+]
+env = { GITHUB_CLIENT_ID = "{{ github_client_id }}", GITHUB_CLIENT_SECRET = "{{ github_client_secret }}" }
+
 [component.auth-service.build]
-command = "cargo build --target wasm32-wasip1 --release --bin auth"
+command = "cargo build --target wasm32-wasip1 --release"
 watch = ["src/**/*.rs", "Cargo.toml"]

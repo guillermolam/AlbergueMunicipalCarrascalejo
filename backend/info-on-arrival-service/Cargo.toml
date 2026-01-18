@@ -3,22 +3,29 @@ name = "info-on-arrival-service"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
 # Core dependencies
 anyhow = "1.0"
+async-trait = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_urlencoded = "0.7"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+tracing = "0.1"
 
 # Async runtime (wasm-compatible features only)
-tokio = { version = "1.0", features = ["sync", "macros", "io-util", "time"] }
-futures = "0.3"
+tokio = { version = "1.49.0", features = ["sync", "macros", "io-util", "time"] }
+futures = "0.3.31"
 
 # Spin SDK
-spin-sdk = "2.1"
-wit-bindgen = "0.25"
+spin-sdk = "5.1.1"
+wit-bindgen = "0.51.0"
 
 # HTTP
 http = "1.1"
@@ -26,5 +33,8 @@ http = "1.1"
 # Shared
 shared = { path = "../shared" }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "chrono", "uuid"] }
+
 [dev-dependencies]
-tokio = { version = "1.0", features = ["sync", "macros", "io-util", "time"] }
+tokio = { version = "1.49.0", features = ["sync", "macros", "io-util", "time"] }

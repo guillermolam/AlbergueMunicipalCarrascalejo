@@ -7,13 +7,10 @@
 )]
 
 use anyhow::Result;
-use futures::future::try_join_all;
+use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use spin_sdk::{
-    http::{IntoResponse, Method, Request, Response, ResponseBuilder, StatusCode},
-    http_component,
-};
-use std::sync::Arc;
+use spin_sdk::http::{Method, Request, Response};
+use spin_sdk::http_component;
 use tokio::task;
 
 #[derive(Serialize, Deserialize)]
@@ -33,7 +30,6 @@ struct DocumentValidationRequest {
     image_data: Option<String>,
 }
 
-// Stateless pure function for DNI checksum validation
 fn validate_dni_checksum(dni: &str) -> bool {
     if dni.len() != 9 {
         return false;
@@ -51,7 +47,6 @@ fn validate_dni_checksum(dni: &str) -> bool {
     }
 }
 
-// Stateless pure function for NIE validation
 fn validate_nie_format(nie: &str) -> bool {
     if nie.len() != 9 {
         return false;
@@ -61,16 +56,12 @@ fn validate_nie_format(nie: &str) -> bool {
     matches!(first_char, 'X' | 'Y' | 'Z')
 }
 
-// Stateless pure function for passport MRZ validation
 fn validate_passport_mrz(mrz: &str) -> bool {
-    // Basic MRZ format validation - should have 2 or 3 lines
     let lines: Vec<&str> = mrz.lines().collect();
     matches!(lines.len(), 2 | 3) && lines.iter().all(|line| line.len() >= 30)
 }
 
-// Async stateless function for OCR processing simulation
 async fn process_ocr_document(_image_data: &str) -> Result<serde_json::Value> {
-    // Simulate async OCR processing
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 
     Ok(serde_json::json!({
@@ -83,14 +74,12 @@ async fn process_ocr_document(_image_data: &str) -> Result<serde_json::Value> {
     }))
 }
 
-// Async stateless function for comprehensive document validation
 async fn validate_document_comprehensive(
     req_data: DocumentValidationRequest,
 ) -> Result<DocumentValidationResult> {
     let document_type = req_data.document_type.as_str();
     let document_number = &req_data.document_number;
 
-    // Run validations concurrently where possible
     let validation_result = match document_type {
         "dni" => {
             let checksum_task = task::spawn({
@@ -99,7 +88,7 @@ async fn validate_document_comprehensive(
             });
 
             let ocr_task = if let Some(image) = req_data.image_data {
-                Some(task::spawn(process_ocr_document(image)))
+                Some(task::spawn(async move { process_ocr_document(&image).await }))
             } else {
                 None
             };
@@ -184,36 +173,36 @@ async fn validate_document_comprehensive(
     Ok(validation_result)
 }
 
-// Stateless pure function for building responses
 fn build_validation_response(
     status: StatusCode,
     result: &DocumentValidationResult,
-) -> Result<impl IntoResponse> {
-    Ok(ResponseBuilder::new(status)
+) -> Result<Response> {
+    Ok(Response::builder()
+        .status(status)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
-        .body(serde_json::to_string(result)?)
+        .body(serde_json::to_vec(result)?)
         .build())
 }
 
 #[http_component]
-async fn handle_request(req: Request) -> Result<impl IntoResponse> {
-    let method = req.method().clone();
-    let path = req.uri().path().to_string();
+async fn handle_request(req: Request) -> Result<Response> {
+    let method = req.method();
+    let path = req.uri();
 
-    match (method, path.as_str()) {
-        (Method::POST, "/validate/document") => handle_document_validation(req).await,
-        (Method::POST, "/validate/dni") => handle_dni_validation(req).await,
-        (Method::POST, "/validate/nie") => handle_nie_validation(req).await,
-        (Method::POST, "/validate/passport") => handle_passport_validation(req).await,
-        _ => Ok(ResponseBuilder::new(StatusCode::NOT_FOUND)
-            .header("content-type", "application/json")
-            .body(r#"{"error":"Validation endpoint not found"}"#)?
-            .build()),
+    match (method, path) {
+        (&Method::Post, "/validate/document") => handle_document_validation(req).await,
+        (&Method::Post, "/validate/dni") => handle_dni_validation(req).await,
+        (&Method::Post, "/validate/nie") => handle_nie_validation(req).await,
+        (&Method::Post, "/validate/passport") => handle_passport_validation(req).await,
+        _ => Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(r#"{"error":"Validation endpoint not found"}"#.as_bytes().to_vec())
+            .build())
     }
 }
 
-async fn handle_document_validation(req: Request) -> Result<impl IntoResponse> {
+async fn handle_document_validation(req: Request) -> Result<Response> {
     let body_bytes = req.into_body();
     let body = std::str::from_utf8(&body_bytes)?;
     let req_data: DocumentValidationRequest =
@@ -227,7 +216,7 @@ async fn handle_document_validation(req: Request) -> Result<impl IntoResponse> {
     build_validation_response(StatusCode::OK, &result)
 }
 
-async fn handle_dni_validation(req: Request) -> Result<impl IntoResponse> {
+async fn handle_dni_validation(req: Request) -> Result<Response> {
     let body_bytes = req.into_body();
     let body = std::str::from_utf8(&body_bytes)?;
     let req_data: serde_json::Value = serde_json::from_str(body)?;
@@ -252,7 +241,7 @@ async fn handle_dni_validation(req: Request) -> Result<impl IntoResponse> {
     build_validation_response(StatusCode::OK, &result)
 }
 
-async fn handle_nie_validation(req: Request) -> Result<impl IntoResponse> {
+async fn handle_nie_validation(req: Request) -> Result<Response> {
     let body_bytes = req.into_body();
     let body = std::str::from_utf8(&body_bytes)?;
     let req_data: serde_json::Value = serde_json::from_str(body)?;
@@ -277,7 +266,7 @@ async fn handle_nie_validation(req: Request) -> Result<impl IntoResponse> {
     build_validation_response(StatusCode::OK, &result)
 }
 
-async fn handle_passport_validation(req: Request) -> Result<impl IntoResponse> {
+async fn handle_passport_validation(req: Request) -> Result<Response> {
     let body_bytes = req.into_body();
     let body = std::str::from_utf8(&body_bytes)?;
     let _req_data: serde_json::Value = serde_json::from_str(body)?;

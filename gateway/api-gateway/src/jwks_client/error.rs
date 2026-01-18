@@ -25,9 +25,7 @@ pub enum Type {
     Connection,
     Header,
     Payload,
-    Signature,
-    Internal,
-}
+    Signature,}
 
 pub(crate) fn err(msg: &'static str, typ: Type) -> Error {
     Error { msg, typ }
@@ -67,8 +65,4 @@ pub(crate) fn err_pay(msg: &'static str) -> Error {
 
 pub(crate) fn err_sig(msg: &'static str) -> Error {
     err(msg, Type::Signature)
-}
-
-pub(crate) fn err_int(msg: &'static str) -> Error {
-    err(msg, Type::Internal)
 }

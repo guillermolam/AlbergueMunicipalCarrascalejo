@@ -24,8 +24,8 @@ futures = "0.3"
 
 
 # Spin SDK
-spin-sdk = { version = "2.2.0" }
-wit-bindgen = "0.25"
+spin-sdk = { version = "5.1.1" }
+wit-bindgen = "0.51.0"
 
 # HTTP
 http = "1.1"

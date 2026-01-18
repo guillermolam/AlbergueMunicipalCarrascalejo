@@ -53,7 +53,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1"
-spin-sdk = "2.2.0"
+spin-sdk = "3.5.1"
 ```
 
 ---

@@ -6,11 +6,13 @@ edition = "2021"
 [dependencies]
 # Core dependencies
 anyhow = "1.0"
+regex = "1"
+base64 = "0.22"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-thiserror = "1.0"
+thiserror = "2.0.17"
 
 # Async runtime
 tokio = { version = "1.0", features = [
@@ -23,8 +25,8 @@ tokio = { version = "1.0", features = [
 futures = "0.3"
 
 # Spin SDK
-spin-sdk = "2.1"
-wit-bindgen = "0.25"
+spin-sdk = "5.1.1"
+wit-bindgen = "0.51.0"
 
 # HTTP
 http = "1.1"

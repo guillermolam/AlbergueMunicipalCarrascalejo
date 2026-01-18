@@ -23,9 +23,12 @@
     "build": "astro build",
     "preview": "astro preview",
     "clean": "rimraf dist .astro node_modules/.cache",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lint": "tsc -p tsconfig.typecheck.json --noEmit",
+    "type-check": "tsc -p tsconfig.typecheck.json --noEmit"
   },
   "dependencies": {
+    "@nanostores/persistent": "^1.2.0",
     "@supabase/supabase-js": "^2.49.1",
     "alpinejs": "^3.14.0",
     "astro": "^5.16.6",

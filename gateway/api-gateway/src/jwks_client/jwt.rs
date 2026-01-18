@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::jwks_client::error::{err_inv, Error};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{Map, Value};

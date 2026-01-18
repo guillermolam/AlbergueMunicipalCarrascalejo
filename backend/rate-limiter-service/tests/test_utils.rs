@@ -12,9 +12,7 @@ pub mod test_utils {
         body: Option<&str>,
         headers: Option<Vec<(&str, &str)>>,
     ) -> Request<Vec<u8>> {
-        let mut builder = Request::builder()
-            .uri(uri)
-            .method(method);
+        let mut builder = Request::builder().uri(uri).method(method);
 
         if let Some(headers_vec) = headers {
             for (key, value) in headers_vec {
@@ -22,9 +20,7 @@ pub mod test_utils {
             }
         }
 
-        let body_bytes = body
-            .map(|s| s.as_bytes().to_vec())
-            .unwrap_or_else(Vec::new);
+        let body_bytes = body.map(|s| s.as_bytes().to_vec()).unwrap_or_else(Vec::new);
 
         builder.body(body_bytes).unwrap()
     }
@@ -41,7 +37,7 @@ pub mod test_utils {
     pub fn assert_response_ok(response: impl IntoResponse) {
         let response = response.into_response();
         assert_eq!(response.status(), StatusCode::OK);
-        
+
         let headers = response.headers();
         assert_eq!(headers.get("content-type").unwrap(), "application/json");
         assert_eq!(headers.get("Access-Control-Allow-Origin").unwrap(), "*");

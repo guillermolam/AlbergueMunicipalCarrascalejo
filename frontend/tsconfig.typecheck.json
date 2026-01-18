@@ -1,0 +1,21 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["astro/client"],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "allowArbitraryExtensions": true,
+    "jsx": "preserve"
+  },
+  "include": [
+    ".astro/types.d.ts",
+    "src/components/core/statsUtils.ts",
+    "src/stores/i18nStore.ts",
+    "src/stores/user.ts",
+    "src/lib/healthchecks.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

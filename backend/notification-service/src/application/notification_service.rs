@@ -1,4 +1,4 @@
-use crate::domain::notification::{Notification, NotificationChannel, NotificationStatus};
+use crate::domain::notification::{Notification, NotificationChannel, NotificationStatus, NotificationType};
 use crate::ports::{email_port::EmailPort, sms_port::SmsPort, telegram_port::TelegramPort};
 use anyhow::Result;
 use futures::future::try_join_all;
@@ -38,29 +38,27 @@ impl NotificationService {
         match channel {
             NotificationChannel::Email => {
                 self.email_adapter
-                    .send_email(
-                        &notification.recipient,
-                        &notification.subject,
-                        &notification.body,
-                    )
+                    .send_email(notification)
                     .await
             }
-            NotificationChannel::Sms => {
+            NotificationChannel::SMS => {
                 self.sms_adapter
-                    .send_sms(&notification.recipient, &notification.body)
+                    .send_sms(notification)
                     .await
             }
             NotificationChannel::WhatsApp => {
                 self.sms_adapter
-                    .send_whatsapp(&notification.recipient, &notification.body)
+                    .send_whatsapp(notification)
                     .await
             }
             NotificationChannel::Telegram => {
                 self.telegram_adapter
-                    .send_telegram(&notification.recipient, &notification.body)
+                    .send_telegram(notification)
                     .await
             }
         }
+        .map(|_| NotificationStatus::Sent)
+        .map_err(|e| e.into())
     }
 
     // Async function to send notification with fallback channels
@@ -70,12 +68,21 @@ impl NotificationService {
         channels: Vec<NotificationChannel>,
     ) -> Result<Notification> {
         for channel in channels {
-            let status = self.send_single_channel(&notification, channel).await?;
+            // We need to clone notification or update its channel before sending?
+            // Adapters take &Notification.
+            // But we want to track which channel was used.
+            // We can update notification.channel before sending if needed, but adapters might ignore it.
+            // The logic here is trying to send.
+            
+            let status = match self.send_single_channel(&notification, channel.clone()).await {
+                Ok(_) => NotificationStatus::Sent,
+                Err(_) => NotificationStatus::Failed,
+            };
 
             match status {
                 NotificationStatus::Sent => {
                     notification.status = NotificationStatus::Sent;
-                    notification.channel = Some(channel);
+                    notification.channel = channel;
                     return Ok(notification);
                 }
                 NotificationStatus::Failed => {
@@ -84,7 +91,7 @@ impl NotificationService {
                 }
                 _ => {
                     notification.status = status;
-                    notification.channel = Some(channel);
+                    notification.channel = channel;
                 }
             }
         }
@@ -104,7 +111,7 @@ impl NotificationService {
                     // Default fallback order: WhatsApp -> SMS -> Email
                     let channels = vec![
                         NotificationChannel::WhatsApp,
-                        NotificationChannel::Sms,
+                        NotificationChannel::SMS,
                         NotificationChannel::Email,
                     ];
                     service.send_with_fallback(notification, channels).await
@@ -132,34 +139,42 @@ impl NotificationService {
 
         // Email notification
         let email_notification = Notification {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: uuid::Uuid::new_v4(),
+            notification_type: NotificationType::ReservationCreated,
             recipient: guest_email.to_string(),
-            subject: "Booking Confirmation - Albergue Del Carrascalejo".to_string(),
-            body: format!(
+            subject: Some("Booking Confirmation - Albergue Del Carrascalejo".to_string()),
+            message: format!(
                 "Your booking has been confirmed. Details: {}",
                 booking_details
             ),
-            channel: None,
+            channel: NotificationChannel::Email,
+            template_data: std::collections::HashMap::new(),
             status: NotificationStatus::Pending,
             created_at: chrono::Utc::now(),
             sent_at: None,
+            delivered_at: None,
+            error_message: None,
         };
         notifications.push(email_notification);
 
         // SMS notification if phone provided
         if let Some(phone) = guest_phone {
             let sms_notification = Notification {
-                id: uuid::Uuid::new_v4().to_string(),
+                id: uuid::Uuid::new_v4(),
+                notification_type: NotificationType::ReservationCreated,
                 recipient: phone.to_string(),
-                subject: "Booking Confirmed".to_string(),
-                body: format!(
+                subject: Some("Booking Confirmed".to_string()),
+                message: format!(
                     "Booking confirmed at Albergue Del Carrascalejo. {}",
                     booking_details
                 ),
-                channel: None,
+                channel: NotificationChannel::SMS,
+                template_data: std::collections::HashMap::new(),
                 status: NotificationStatus::Pending,
                 created_at: chrono::Utc::now(),
                 sent_at: None,
+                delivered_at: None,
+                error_message: None,
             };
             notifications.push(sms_notification);
         }
@@ -182,7 +197,9 @@ impl NotificationService {
         // Group notifications by priority/type for optimal processing
         let (urgent, normal): (Vec<_>, Vec<_>) = queue
             .into_iter()
-            .partition(|n| n.subject.contains("URGENT") || n.subject.contains("EMERGENCY"));
+            .partition(|n| {
+                n.subject.as_ref().map(|s| s.contains("URGENT") || s.contains("EMERGENCY")).unwrap_or(false)
+            });
 
         // Process urgent notifications first
         let urgent_results = if !urgent.is_empty() {

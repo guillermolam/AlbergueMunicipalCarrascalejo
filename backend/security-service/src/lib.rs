@@ -7,10 +7,10 @@
 )]
 
 use anyhow::Result;
-use futures::future::try_join_all;
-use http::{Method, Request, StatusCode};
+use base64::Engine;
+use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use spin_sdk::http::{IntoResponse, ResponseBuilder};
+use spin_sdk::http::{Request, Response, Method};
 use spin_sdk::http_component;
 use std::collections::HashMap;
 use tokio::task;
@@ -55,7 +55,6 @@ struct EncryptionResult {
     timestamp: u64,
 }
 
-// Stateless pure function for XSS detection
 fn detect_xss_patterns(content: &str) -> Vec<ThreatDetail> {
     let xss_patterns = [
         (r"<script[^>]*>", "Script injection", "high"),
@@ -84,7 +83,6 @@ fn detect_xss_patterns(content: &str) -> Vec<ThreatDetail> {
     threats
 }
 
-// Stateless pure function for SQL injection detection
 fn detect_sql_injection(content: &str) -> Vec<ThreatDetail> {
     let sql_patterns = [
         (r"(?i)union\s+select", "UNION SELECT injection", "high"),
@@ -117,7 +115,6 @@ fn detect_sql_injection(content: &str) -> Vec<ThreatDetail> {
     threats
 }
 
-// Stateless pure function for malware signature detection
 fn detect_malware_signatures(content: &str) -> Vec<ThreatDetail> {
     let malware_patterns = [
         (r"(?i)cmd\.exe", "Command execution", "high"),
@@ -146,10 +143,9 @@ fn detect_malware_signatures(content: &str) -> Vec<ThreatDetail> {
     threats
 }
 
-// Async stateless function for comprehensive security scanning
 async fn perform_comprehensive_scan(
     content: String,
-    scan_type: String,
+    _scan_type: String,
 ) -> Result<SecurityScanResult> {
     let start_time = std::time::Instant::now();
 
@@ -170,7 +166,6 @@ async fn perform_comprehensive_scan(
         async move { detect_malware_signatures(c.as_str()) }
     });
 
-    // Additional async security checks
     let entropy_task = task::spawn({
         let c = content_arc.clone();
         async move {
@@ -179,7 +174,6 @@ async fn perform_comprehensive_scan(
         }
     });
 
-    // Wait for all scans to complete
     let (xss_threats, sql_threats, malware_threats, entropy_score) =
         tokio::try_join!(xss_task, sql_task, malware_task, entropy_task)?;
 
@@ -188,7 +182,6 @@ async fn perform_comprehensive_scan(
     all_threats.extend(sql_threats);
     all_threats.extend(malware_threats);
 
-    // Add entropy-based detection
     if entropy_score > 7.5 {
         all_threats.push(ThreatDetail {
             threat_type: "High Entropy".to_string(),
@@ -218,7 +211,6 @@ async fn perform_comprehensive_scan(
     })
 }
 
-// Stateless pure function for entropy calculation
 fn calculate_entropy(content: &str) -> f64 {
     if content.is_empty() {
         return 0.0;
@@ -240,7 +232,6 @@ fn calculate_entropy(content: &str) -> f64 {
     entropy
 }
 
-// Stateless pure function for risk level determination
 fn determine_risk_level(threats: &[ThreatDetail]) -> String {
     let critical_count = threats.iter().filter(|t| t.severity == "critical").count();
     let high_count = threats.iter().filter(|t| t.severity == "high").count();
@@ -259,10 +250,9 @@ fn determine_risk_level(threats: &[ThreatDetail]) -> String {
     }
 }
 
-// Stateless pure function for confidence score calculation
 fn calculate_confidence_score(threats: &[ThreatDetail], content: &str) -> f64 {
     if threats.is_empty() {
-        return 0.95; // High confidence in clean content
+        return 0.95;
     }
 
     let base_confidence = 0.8;
@@ -276,15 +266,13 @@ fn calculate_confidence_score(threats: &[ThreatDetail], content: &str) -> f64 {
     (base_confidence + content_length_factor * 0.1 + threat_diversity * 0.05).min(0.99)
 }
 
-// Async stateless function for data encryption simulation
 async fn perform_encryption(data: String, key_id: Option<String>) -> Result<EncryptionResult> {
     let actual_key_id = key_id.unwrap_or_else(|| "default-key-2024".to_string());
 
     let encryption_task = task::spawn(async move {
         tokio::time::sleep(tokio::time::Duration::from_millis(25)).await;
 
-        // Simulate AES-256-GCM encryption
-        let encrypted = base64::encode(format!("encrypted:{}", data));
+        let encrypted = base64::engine::general_purpose::STANDARD.encode(format!("encrypted:{}", data));
 
         EncryptionResult {
             encrypted_data: encrypted,
@@ -303,24 +291,26 @@ async fn perform_encryption(data: String, key_id: Option<String>) -> Result<Encr
 }
 
 #[http_component]
-async fn handle_request(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
+async fn handle_request(req: Request) -> Result<Response> {
     let method = req.method();
-    let path = req.uri().path();
+    let path = req.uri();
 
     match (method, path) {
-        (&Method::POST, "/security/scan") => handle_security_scan(req).await,
-        (&Method::POST, "/security/encrypt") => handle_encryption(req).await,
-        (&Method::POST, "/security/validate") => handle_validation(req).await,
-        (&Method::GET, "/security/status") => handle_security_status().await,
-        _ => Ok(ResponseBuilder::new(StatusCode::NOT_FOUND)
+        (&Method::Post, "/security/scan") => handle_security_scan(req).await,
+        (&Method::Post, "/security/encrypt") => handle_encryption(req).await,
+        (&Method::Post, "/security/validate") => handle_validation(req).await,
+        (&Method::Get, "/security/status") => handle_security_status().await,
+        _ => Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
             .header("content-type", "application/json")
-            .body(r#"{"error":"Security endpoint not found"}"#)
-            .build()),
+            .body(r#"{"error":"Security endpoint not found"}"#.as_bytes().to_vec())
+            .build())
     }
 }
 
-async fn handle_security_scan(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
-    let body = std::str::from_utf8(req.body())?;
+async fn handle_security_scan(req: Request) -> Result<Response> {
+    let body_bytes = req.into_body();
+    let body = std::str::from_utf8(&body_bytes)?;
     let scan_req: SecurityScanRequest =
         serde_json::from_str(body).unwrap_or_else(|_| SecurityScanRequest {
             content: String::new(),
@@ -330,29 +320,33 @@ async fn handle_security_scan(req: Request<Vec<u8>>) -> Result<impl IntoResponse
 
     let result = perform_comprehensive_scan(scan_req.content, scan_req.scan_type).await?;
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
+    Ok(Response::builder()
+        .status(StatusCode::OK)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
-        .body(serde_json::to_string(&result)?)
+        .body(serde_json::to_vec(&result)?)
         .build())
 }
 
-async fn handle_encryption(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
-    let body = std::str::from_utf8(req.body())?;
+async fn handle_encryption(req: Request) -> Result<Response> {
+    let body_bytes = req.into_body();
+    let body = std::str::from_utf8(&body_bytes)?;
     let enc_req: EncryptionRequest = serde_json::from_str(body)?;
 
     let result = perform_encryption(enc_req.data, enc_req.key_id).await?;
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
+    Ok(Response::builder()
+        .status(StatusCode::OK)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
-        .body(serde_json::to_string(&result)?)
+        .body(serde_json::to_vec(&result)?)
         .build())
 }
 
-async fn handle_validation(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
-    let body = std::str::from_utf8(req.body())?;
-    let validation_data: serde_json::Value = serde_json::from_str(body)?;
+async fn handle_validation(req: Request) -> Result<Response> {
+    let body_bytes = req.into_body();
+    let body = std::str::from_utf8(&body_bytes)?;
+    let _validation_data: serde_json::Value = serde_json::from_str(body)?;
 
     let validation_task = task::spawn(async move {
         tokio::time::sleep(tokio::time::Duration::from_millis(15)).await;
@@ -372,14 +366,15 @@ async fn handle_validation(req: Request<Vec<u8>>) -> Result<impl IntoResponse> {
 
     let result = validation_task.await?;
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
+    Ok(Response::builder()
+        .status(StatusCode::OK)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
-        .body(result.to_string())
+        .body(serde_json::to_vec(&result)?)
         .build())
 }
 
-async fn handle_security_status() -> Result<impl IntoResponse> {
+async fn handle_security_status() -> Result<Response> {
     let status_task = task::spawn(async {
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
 
@@ -408,9 +403,10 @@ async fn handle_security_status() -> Result<impl IntoResponse> {
 
     let status = status_task.await?;
 
-    Ok(ResponseBuilder::new(StatusCode::OK)
+    Ok(Response::builder()
+        .status(StatusCode::OK)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
-        .body(status.to_string())
+        .body(serde_json::to_vec(&status)?)
         .build())
 }

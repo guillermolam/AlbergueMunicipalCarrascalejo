@@ -7,7 +7,8 @@ use spin_sdk::http::{Request, Response};
 /// Response envelope that may contain events
 #[derive(Debug, Deserialize)]
 pub struct EventCarryingResponse<T> {
-    pub data: T,
+    #[serde(rename = "data")]
+    pub _data: T,
     #[serde(default)]
     pub events: Vec<serde_json::Value>,
 }
@@ -22,10 +23,9 @@ pub fn extract_events_from_response(response: &Response) -> Vec<serde_json::Valu
     // Pattern 1: Check X-CloudEvents header
     if let Some((_, header_value)) = response
         .headers()
-        .iter()
-        .find(|(k, _)| k.as_str() == "x-cloudevents")
+        .find(|(k, _)| k.eq_ignore_ascii_case("x-cloudevents"))
     {
-        if let Ok(header_str) = std::str::from_utf8(header_value) {
+        if let Ok(header_str) = std::str::from_utf8(header_value.as_bytes()) {
             if let Ok(header_events) = serde_json::from_str::<Vec<serde_json::Value>>(header_str) {
                 events.extend(header_events);
             }
@@ -75,12 +75,11 @@ pub fn publish_events_async(events: Vec<serde_json::Value>) {
         let publish_url = format!("{}/api/mqtt/publish", broker_url);
 
         // Build request and fire-and-forget
-        let request = Request::post(&publish_url)
+        let request = Request::post(&publish_url, serde_json::to_vec(&publish_body).unwrap_or_default())
             .header("Content-Type", "application/json")
-            .body(serde_json::to_vec(&publish_body).unwrap_or_default())
             .build();
 
-        let _ = spin_sdk::http::send(request);
+        let _ = spin_sdk::http::send::<Request, Response>(request);
     }
 }
 

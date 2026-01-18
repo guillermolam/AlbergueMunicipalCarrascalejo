@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@nanostores/persistent':
+    specifier: ^1.2.0
+    version: 1.2.0(nanostores@0.11.4)
   '@supabase/supabase-js':
     specifier: ^2.49.1
     version: 2.90.1
@@ -948,6 +951,18 @@ packages:
       {
         integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==,
       }
+
+  /@nanostores/persistent@1.2.0(nanostores@0.11.4):
+    resolution:
+      {
+        integrity: sha512-kf5WOLpVI9Pk+AwXHIax4in3pesNe8299BEGQ2H8kgI05SZw7KKWCDv7bt2FOlND8E5y7rO5PRW34q0UCAl/DA==,
+      }
+    engines: { node: ^20.0.0 || >=22.0.0 }
+    peerDependencies:
+      nanostores: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^1.0.0
+    dependencies:
+      nanostores: 0.11.4
+    dev: false
 
   /@nodelib/fs.scandir@2.1.5:
     resolution:

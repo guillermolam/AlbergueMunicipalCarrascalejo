@@ -14,8 +14,8 @@ pub mod config;
 pub mod db;
 pub mod dto;
 pub mod error;
-pub mod events;
 pub mod event_publisher;
+pub mod events;
 pub mod webhook_handler;
 
 use serde::{Deserialize, Serialize};

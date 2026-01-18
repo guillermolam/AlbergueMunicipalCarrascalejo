@@ -31,7 +31,7 @@ for i in {1..30}; do
 		echo " Gateway is healthy (attempt $i)"
 		break
 	fi
-	if [ $i -eq 30 ]; then
+	if [ "$i" -eq 30 ]; then
 		echo " Gateway health check failed after 30 attempts"
 		echo " Checking gateway logs..."
 		jobs -p | xargs -r ps -f

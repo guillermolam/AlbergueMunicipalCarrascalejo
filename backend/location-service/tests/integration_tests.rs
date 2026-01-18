@@ -1,6 +1,6 @@
+use http::{Method, Request, StatusCode};
 use location_service::handlers::RequestHandler;
 use location_service::models::CountryData;
-use http::{Method, Request, StatusCode};
 use serde_json;
 
 #[cfg(test)]
@@ -18,9 +18,9 @@ mod integration_tests {
 
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
-        
+
         assert_eq!(http_response.status(), StatusCode::OK);
-        
+
         let body = String::from_utf8(http_response.into_body()).unwrap();
         let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(json_response["success"].as_bool().unwrap());
@@ -38,10 +38,15 @@ mod integration_tests {
 
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
-        
+
         let headers = http_response.headers();
         assert_eq!(headers.get("Access-Control-Allow-Origin").unwrap(), "*");
-        assert!(headers.get("content-type").unwrap().to_str().unwrap().contains("application/json"));
+        assert!(headers
+            .get("content-type")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("application/json"));
     }
 
     #[tokio::test]
@@ -57,7 +62,7 @@ mod integration_tests {
             let response = RequestHandler::handle_request(request).await.unwrap();
             let http_response = response.into_response();
             assert_eq!(http_response.status(), StatusCode::OK);
-            
+
             let body = String::from_utf8(http_response.into_body()).unwrap();
             let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
             assert_eq!(json_response["data"]["code"], "PT");
@@ -75,7 +80,7 @@ mod integration_tests {
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
         assert_eq!(http_response.status(), StatusCode::NOT_FOUND);
-        
+
         let body = String::from_utf8(http_response.into_body()).unwrap();
         let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(!json_response["success"].as_bool().unwrap());
@@ -93,10 +98,13 @@ mod integration_tests {
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
         assert_eq!(http_response.status(), StatusCode::OK);
-        
+
         let headers = http_response.headers();
         assert_eq!(headers.get("Access-Control-Allow-Origin").unwrap(), "*");
-        assert_eq!(headers.get("Access-Control-Allow-Methods").unwrap(), "GET, POST, PUT, DELETE, OPTIONS");
+        assert_eq!(
+            headers.get("Access-Control-Allow-Methods").unwrap(),
+            "GET, POST, PUT, DELETE, OPTIONS"
+        );
     }
 
     #[tokio::test]
@@ -109,7 +117,7 @@ mod integration_tests {
 
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
-        
+
         let headers = http_response.headers();
         let content_type = headers.get("content-type").unwrap().to_str().unwrap();
         assert!(content_type.contains("application/json"));
@@ -118,18 +126,18 @@ mod integration_tests {
     #[tokio::test]
     async fn test_all_known_countries() {
         let known_countries = ["ES", "FR", "PT", "IT", "DE", "GB"];
-        
+
         for country_code in known_countries {
             let request = Request::builder()
                 .method(Method::GET)
-                .uri(format!("/api/countries/{}" , country_code))
+                .uri(format!("/api/countries/{}", country_code))
                 .body(vec![])
                 .unwrap();
 
             let response = RequestHandler::handle_request(request).await.unwrap();
             let http_response = response.into_response();
             assert_eq!(http_response.status(), StatusCode::OK);
-            
+
             let body = String::from_utf8(http_response.into_body()).unwrap();
             let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
             assert_eq!(json_response["data"]["code"], country_code);
@@ -147,7 +155,7 @@ mod integration_tests {
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
         assert_eq!(http_response.status(), StatusCode::OK);
-        
+
         let body = String::from_utf8(http_response.into_body()).unwrap();
         let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(json_response["success"].as_bool().unwrap());
@@ -165,7 +173,7 @@ mod integration_tests {
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
         assert_eq!(http_response.status(), StatusCode::OK);
-        
+
         let body = String::from_utf8(http_response.into_body()).unwrap();
         let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(json_response["success"].as_bool().unwrap());
@@ -183,7 +191,7 @@ mod integration_tests {
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
         assert_eq!(http_response.status(), StatusCode::OK);
-        
+
         let body = String::from_utf8(http_response.into_body()).unwrap();
         let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(json_response["success"].as_bool().unwrap());
@@ -200,7 +208,7 @@ mod integration_tests {
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
         assert_eq!(http_response.status(), StatusCode::BAD_REQUEST);
-        
+
         let body = String::from_utf8(http_response.into_body()).unwrap();
         let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(!json_response["success"].as_bool().unwrap());
@@ -217,7 +225,7 @@ mod integration_tests {
         let response = RequestHandler::handle_request(request).await.unwrap();
         let http_response = response.into_response();
         assert_eq!(http_response.status(), StatusCode::NOT_FOUND);
-        
+
         let body = String::from_utf8(http_response.into_body()).unwrap();
         let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(!json_response["success"].as_bool().unwrap());
@@ -253,7 +261,7 @@ mod integration_tests {
         for country_code in ["ES", "FR", "PT", "IT"] {
             let request = Request::builder()
                 .method(Method::GET)
-                .uri(format!("/api/countries/{}" , country_code))
+                .uri(format!("/api/countries/{}", country_code))
                 .body(vec![])
                 .unwrap();
 
@@ -266,13 +274,13 @@ mod integration_tests {
     #[tokio::test]
     async fn test_performance_multiple_requests() {
         use std::time::Instant;
-        
+
         let start = Instant::now();
-        
+
         for country_code in ["ES", "FR", "PT", "IT"] {
             let request = Request::builder()
                 .method(Method::GET)
-                .uri(format!("/api/countries/{}" , country_code))
+                .uri(format!("/api/countries/{}", country_code))
                 .body(vec![])
                 .unwrap();
 
@@ -280,7 +288,7 @@ mod integration_tests {
             let http_response = response.into_response();
             assert_eq!(http_response.status(), StatusCode::OK);
         }
-        
+
         let duration = start.elapsed();
         assert!(duration.as_millis() < 1000); // Should complete quickly
     }

@@ -1,58 +1,59 @@
-﻿version: "3"
+version: "3"
 
 tasks:
   deploy:local:
     desc: Deploy to local environment
     cmds:
-      - echo "ðŸš€ Deploying to local environment..."
+      - echo "Deploying to local environment..."
       - ./scripts/build-services.sh all
       - ./scripts/dev-services.sh start
-      - echo "âœ… Local deployment complete"
+      - echo "Local deployment complete"
 
   deploy:staging:
     desc: Deploy to staging environment
     cmds:
-      - echo "ðŸš€ Deploying to staging..."
-      - echo "âš ï¸ Staging deployment not configured"
+      - echo "Deploying to staging..."
+      - echo "Staging deployment not configured"
 
   deploy:production:
     desc: Deploy to production environment
     cmds:
-      - echo "ðŸš€ Deploying to production..."
-      - echo "âš ï¸ Production deployment not configured"
+      - echo "Deploying to production..."
+      - echo "Production deployment not configured"
 
   health:check:
     desc: Check service health
     cmds:
-      - echo "ðŸ¥ Checking service health..."
+      - echo "Checking service health..."
       - ./scripts/health-check.sh || echo "Health check script not found, running basic checks..."
-      - curl -f http://localhost:3000/health || echo "âš ï¸ Gateway health check failed"
-      - curl -f http://localhost:5173/health || echo "âš ï¸ Frontend health check failed"
-      - echo "âœ… Health checks completed"
+      - curl -f http://localhost:3000/health || echo "Gateway health check failed"
+      - curl -f http://localhost:5173/health || echo "Frontend health check failed"
+      - echo "Health checks completed"
 
   logs:gateway:
     desc: View gateway logs
     cmds:
-      - echo "ðŸ“ Viewing gateway logs..."
+      - echo "Viewing gateway logs..."
       - tail -f gateway/logs/*.log 2>/dev/null || echo "No gateway logs found"
 
   logs:backend:
     desc: View backend logs
     cmds:
-      - echo "ðŸ“ Viewing backend logs..."
+      - echo "Viewing backend logs..."
       - tail -f backend/*/logs/*.log 2>/dev/null || echo "No backend logs found"
 
   logs:all:
     desc: View all service logs
     cmds:
-      - echo "ðŸ“ Viewing all service logs..."
+      - echo "Viewing all service logs..."
       - tail -f */logs/*.log 2>/dev/null || echo "No logs found"
+
   ci:act:
-    desc: Ejecuta GitHub Actions localmente con act
+    desc: Run GitHub Actions locally with act
     cmds:
       - ./scripts/act-ci.sh
 
   ci:act:gateway:
-    desc: Ejecuta solo el job gateway con act
+    desc: Run only the gateway job with act
     cmds:
-      - ACT_JOB=gateway ./scripts/act-ci.sh\n
+      - ACT_JOB=gateway ./scripts/act-ci.sh

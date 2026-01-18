@@ -6,7 +6,7 @@ echo "🚀 Setting up development environment..."
 
 # Check prerequisites
 check_command() {
-	if ! command -v $1 &>/dev/null; then
+	if ! command -v "$1" &>/dev/null; then
 		echo "❌ $1 is not installed. Please install it first."
 		exit 1
 	fi

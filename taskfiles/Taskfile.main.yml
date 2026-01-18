@@ -1,4 +1,4 @@
-# Complete development and deployment pipeline
+﻿# Complete development and deployment pipeline
 # Integrates frontend, backend, gateway, and Spin/Fermyon deployment
 
 version: "3"
@@ -40,18 +40,18 @@ tasks:
   dev:
     desc: Start complete development environment
     cmds:
-      - echo "🚀 Starting complete development environment..."
+      - echo "ðŸš€ Starting complete development environment..."
       - task: dev:all
 
   dev:all:
     desc: Start all services in development mode
     deps: [dev:check-deps, dev:setup-env]
     cmds:
-      - echo "🏃‍♂️ Starting all development services..."
+      - echo "ðŸƒâ€â™‚ï¸ Starting all development services..."
       - task: dev:gateway &
       - task: dev:backend &
       - task: dev:frontend &
-      - echo "✅ All services started in development mode"
+      - echo "âœ… All services started in development mode"
       - echo "Frontend http://localhost 3000"
       - echo "Gateway http://localhost 8080"
       - echo "Backend services Various ports"
@@ -81,12 +81,12 @@ tasks:
     desc: Build all services for production
     deps: [build:check-deps]
     cmds:
-      - echo "🏗️ Building all services for production..."
+      - echo "ðŸ—ï¸ Building all services for production..."
       - task: build:frontend
       - task: build:backend
       - task: build:gateway
       - task: build:spin
-      - echo "✅ All services built successfully"
+      - echo "âœ… All services built successfully"
 
   build:frontend:
     desc: Build frontend for production
@@ -112,11 +112,11 @@ tasks:
   test:
     desc: Run all tests
     cmds:
-      - echo "🧪 Running complete test suite..."
+      - echo "ðŸ§ª Running complete test suite..."
       - task: test:frontend
       - task: test:backend
       - task: test:integration
-      - echo "✅ All tests passed"
+      - echo "âœ… All tests passed"
 
   test:frontend:
     desc: Run frontend tests
@@ -138,11 +138,11 @@ tasks:
   quality:
     desc: Run all quality checks
     cmds:
-      - echo "🔍 Running quality checks..."
+      - echo "ðŸ” Running quality checks..."
       - task: quality:frontend
       - task: quality:backend
       - task: quality:gateway
-      - echo "✅ Quality checks completed"
+      - echo "âœ… Quality checks completed"
 
   quality:frontend:
     desc: Run frontend quality checks
@@ -151,22 +151,28 @@ tasks:
 
   quality:backend:
     desc: Run backend quality checks
+    dir: backend
     cmds:
-      - task: backend:backend:quality
+      - cargo fmt --all
+      - cargo clippy --all-targets --all-features -- -D warnings
+      - cargo test --all
 
   quality:gateway:
     desc: Run gateway quality checks
+    dir: gateway
     cmds:
-      - task: gateway:gateway:quality
+      - cargo fmt --all
+      - cargo clippy --all-targets --all-features -- -D warnings
+      - cargo test --all
 
   # Deployment pipeline
   deploy:
     desc: Deploy to production
     deps: [deploy:check-deps, deploy:validate]
     cmds:
-      - echo "🚀 Deploying to production..."
+      - echo "ðŸš€ Deploying to production..."
       - task: deploy:fermyon
-      - echo "✅ Deployment completed"
+      - echo "âœ… Deployment completed"
 
   deploy:fermyon:
     desc: Deploy to Fermyon Cloud
@@ -176,7 +182,7 @@ tasks:
   deploy:staging:
     desc: Deploy to staging environment
     cmds:
-      - echo "🧪 Deploying to staging..."
+      - echo "ðŸ§ª Deploying to staging..."
       - task: main:build
         env:
           ENVIRONMENT: staging
@@ -191,26 +197,26 @@ tasks:
   clean:
     desc: Clean all build artifacts
     cmds:
-      - echo "🧹 Cleaning build artifacts..."
+      - echo "ðŸ§¹ Cleaning build artifacts..."
       - task: frontend:frontend:clean
       - task: backend:backend:clean
       - task: gateway:gateway:clean
       - task: spin:spin:clean
-      - echo "✅ All artifacts cleaned"
+      - echo "âœ… All artifacts cleaned"
 
   setup:
     desc: Complete environment setup
     cmds:
-      - echo "⚙️ Setting up development environment..."
+      - echo "âš™ï¸ Setting up development environment..."
       - task: setup:deps
       - task: setup:db
       - task: setup:config
-      - echo "✅ Environment setup completed"
+      - echo "âœ… Environment setup completed"
 
   setup:deps:
     desc: Install all dependencies
     cmds:
-      - echo "📦 Installing dependencies..."
+      - echo "ðŸ“¦ Installing dependencies..."
       - task: frontend:frontend:install
       - task: backend:backend:install
       - task: gateway:gateway:install
@@ -218,14 +224,14 @@ tasks:
   setup:db:
     desc: Setup databases
     cmds:
-      - echo "🗄️ Setting up databases..."
+      - echo "ðŸ—„ï¸ Setting up databases..."
       - task: frontend:frontend:db:migrate
       - task: backend:backend:db:migrate
 
   setup:config:
     desc: Setup configuration files
     cmds:
-      - echo "⚙️ Setting up configuration..."
+      - echo "âš™ï¸ Setting up configuration..."
       - task: config:validate
       - task: config:generate
 
@@ -233,13 +239,13 @@ tasks:
   config:
     desc: Manage configuration
     cmds:
-      - echo "⚙️ Configuration management..."
+      - echo "âš™ï¸ Configuration management..."
       - task: config:validate
 
   config:validate:
     desc: Validate configuration
     cmds:
-      - echo "🔍 Validating configuration..."
+      - echo "ðŸ” Validating configuration..."
       - task: frontend:frontend:check-env
       - task: backend:backend:check-env
       - task: gateway:gateway:check-env
@@ -247,14 +253,14 @@ tasks:
   config:generate:
     desc: Generate configuration files
     cmds:
-      - echo "📝 Generating configuration files..."
+      - echo "ðŸ“ Generating configuration files..."
       - task: frontend:frontend:generate-types
 
   # Health checks
   health:
     desc: Check service health
     cmds:
-      - echo "🏥 Checking service health..."
+      - echo "ðŸ¥ Checking service health..."
       - task: health:frontend
       - task: health:backend
       - task: health:gateway
@@ -263,48 +269,48 @@ tasks:
   health:frontend:
     desc: Check frontend health
     cmds:
-      - echo "🌐 Checking frontend health..."
-      - curl -f http://localhost:3000/health || echo "⚠️ Frontend not responding"
+      - echo "ðŸŒ Checking frontend health..."
+      - curl -f http://localhost:3000/health || echo "âš ï¸ Frontend not responding"
 
   health:backend:
     desc: Check backend health
     cmds:
-      - echo "🔧 Checking backend health..."
+      - echo "ðŸ”§ Checking backend health..."
       - task: backend:backend:health
 
   health:gateway:
     desc: Check gateway health
     cmds:
-      - echo "🚪 Checking gateway health..."
+      - echo "ðŸšª Checking gateway health..."
       - task: gateway:gateway:health
 
   health:spin:
     desc: Check Spin health
     cmds:
-      - echo "🔄 Checking Spin health..."
+      - echo "ðŸ”„ Checking Spin health..."
       - task: spin:spin:health
 
   # Dependency checks
   dev:check-deps:
     desc: Check development dependencies
     cmds:
-      - echo "🔍 Checking development dependencies..."
-      - command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm not found"; exit 1; }
-      - command -v cargo >/dev/null 2>&1 || { echo "❌ Rust toolchain not found"; exit 1; }
-      - command -v spin >/dev/null 2>&1 || { echo "❌ Spin not found"; exit 1; }
-      - echo "✅ All dependencies available"
+      - echo "ðŸ” Checking development dependencies..."
+      - command -v pnpm >/dev/null 2>&1 || { echo "âŒ pnpm not found"; exit 1; }
+      - command -v cargo >/dev/null 2>&1 || { echo "âŒ Rust toolchain not found"; exit 1; }
+      - command -v spin >/dev/null 2>&1 || { echo "âŒ Spin not found"; exit 1; }
+      - echo "âœ… All dependencies available"
 
   deploy:check-deps:
     desc: Check deployment dependencies
     cmds:
-      - echo "🔍 Checking deployment dependencies..."
-      - command -v spin >/dev/null 2>&1 || { echo "❌ Spin not found"; exit 1; }
-      - echo "✅ Deployment dependencies available"
+      - echo "ðŸ” Checking deployment dependencies..."
+      - command -v spin >/dev/null 2>&1 || { echo "âŒ Spin not found"; exit 1; }
+      - echo "âœ… Deployment dependencies available"
 
   deploy:validate:
     desc: Validate deployment configuration
     cmds:
-      - echo "✅ Validating deployment configuration..."
+      - echo "âœ… Validating deployment configuration..."
       - task: config:validate
       - task: test
       - task: build
@@ -313,7 +319,7 @@ tasks:
   default:
     desc: Show available tasks
     cmds:
-      - echo "🎯 Albergue Municipal Carrascalejo - Development & Deployment"
+      - echo "ðŸŽ¯ Albergue Municipal Carrascalejo - Development & Deployment"
       - echo ""
       - echo "Available tasks:"
       - echo "  task dev          - Start development environment"
@@ -326,3 +332,6 @@ tasks:
       - echo "  task health       - Check service health"
       - echo ""
       - echo "For more details, run task --list-all"
+
+
+

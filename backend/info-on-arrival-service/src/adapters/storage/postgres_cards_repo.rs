@@ -1,20 +1,31 @@
 use crate::domain::*;
 use crate::ports::StoragePort;
 use async_trait::async_trait;
-use serde_json;
-use shared::{AlbergueError, AlbergueResult, DatabaseConfig};
+use shared::{AlbergueError, AlbergueResult};
+#[cfg(not(target_arch = "wasm32"))]
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 pub struct PostgresCardsRepository {
+    #[cfg(not(target_arch = "wasm32"))]
     pool: Option<PgPool>,
+    #[cfg(target_arch = "wasm32")]
+    #[allow(dead_code)]
+    pool: (),
 }
 
 impl PostgresCardsRepository {
     pub fn new() -> Self {
         // In WASM context, database operations would be handled differently
         // For now, we'll simulate the repository
-        Self { pool: None }
+        #[cfg(target_arch = "wasm32")]
+        {
+            Self { pool: () }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Self { pool: None }
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -206,6 +217,7 @@ impl StoragePort for PostgresCardsRepository {
     async fn get_cards_by_language(&self, language: &str) -> AlbergueResult<Vec<InfoCard>> {
         #[cfg(target_arch = "wasm32")]
         {
+            let _ = language;
             Ok(Vec::new())
         }
 

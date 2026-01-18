@@ -3,9 +3,12 @@ use crate::ports::ScraperPort;
 use async_trait::async_trait;
 use chrono::Utc;
 use reqwest::Client;
-use shared::{AlbergueError, AlbergueResult};
+use shared::AlbergueResult;
+#[cfg(not(target_arch = "wasm32"))]
+use shared::AlbergueError;
 
 pub struct MeridaScraperAdapter {
+    #[allow(dead_code)]
     client: Client,
 }
 
@@ -19,6 +22,7 @@ impl MeridaScraperAdapter {
     async fn scrape_url(&self, url: &str) -> AlbergueResult<String> {
         #[cfg(target_arch = "wasm32")]
         {
+            let _ = url;
             // In WASM, we can't do direct HTTP scraping due to CORS
             // Return default content instead
             Ok("Contenido por defecto para WASM".to_string())
@@ -50,7 +54,7 @@ impl MeridaScraperAdapter {
         }
     }
 
-    fn extract_attractions_from_html(&self, html: &str) -> Vec<String> {
+    fn extract_attractions_from_html(&self, _html: &str) -> Vec<String> {
         // Simple text extraction - in a real implementation this would use scraper crate
         vec![
             "Teatro Romano - Espectacular teatro del siglo I a.C.".to_string(),

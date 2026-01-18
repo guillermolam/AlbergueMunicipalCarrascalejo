@@ -1,45 +1,32 @@
-// Webhook event handlers for domain events
-// Provides utilities for services to receive and process CloudEvents via webhooks
-
 use crate::events::{topics, CloudEvent};
 use anyhow::Result;
 use serde_json::Value;
 
-/// Webhook event handler trait
 pub trait EventHandler: Send + Sync {
-    /// Handle an incoming event
     fn handle_event(&self, event: &CloudEvent<Value>) -> Result<()>;
 
-    /// Get the topic filters this handler subscribes to
     fn topic_filters(&self) -> Vec<String>;
 }
 
-/// Parse CloudEvent from webhook request body
 pub fn parse_cloud_event(body: &[u8]) -> Result<CloudEvent<Value>> {
-    serde_json::from_slice(body).map_err(|e| anyhow::anyhow!("Failed to parse CloudEvent: {}", e))
+    serde_json::from_slice(body).map_err(|e| anyhow::anyhow!("Failed to parse CloudEvent: {e}"))
 }
 
-/// Check if event matches topic filter
+#[must_use]
 pub fn matches_topic(event_type: &str, filter: &str) -> bool {
-    if filter.ends_with(".*") {
-        let prefix = &filter[..filter.len() - 2];
-        event_type.starts_with(prefix)
-    } else if filter == "*" {
-        true
-    } else {
-        event_type == filter
-    }
+    filter.strip_suffix(".*").map_or_else(
+        || filter == "*" || event_type == filter,
+        |prefix| event_type.starts_with(prefix),
+    )
 }
-
-/// Register webhook with mqtt-broker-service
-pub fn register_webhook(
+pub async fn register_webhook(
     service_id: &str,
     webhook_url: &str,
-    topic_filters: Vec<String>,
+    topic_filters: &[String],
 ) -> Result<()> {
     #[cfg(target_arch = "wasm32")]
     {
-        use spin_sdk::http::{Method, Request};
+        use spin_sdk::http::{Method, Request, Response};
 
         let registration = serde_json::json!({
             "service_id": service_id,
@@ -56,15 +43,10 @@ pub fn register_webhook(
             .body(serde_json::to_vec(&registration)?)
             .build();
 
-        // Send registration request
-        let response = spin_sdk::http::send(request)?;
+        let response: Response = spin_sdk::http::send(request).await?;
 
-        if response.status() == 200 {
-            log::info!(
-                "Registered webhook for {} with filters: {:?}",
-                service_id,
-                topic_filters
-            );
+        if *response.status() == 200 {
+            log::info!("Registered webhook for {service_id} with filters: {topic_filters:?}");
             Ok(())
         } else {
             Err(anyhow::anyhow!(
@@ -77,15 +59,12 @@ pub fn register_webhook(
     #[cfg(not(target_arch = "wasm32"))]
     {
         log::debug!(
-            "Would register webhook for {} with filters: {:?}",
-            service_id,
-            topic_filters
+            "Would register webhook for {service_id} -> {webhook_url} with filters: {topic_filters:?}"
         );
         Ok(())
     }
 }
 
-/// Example event handler implementation for notification service
 pub struct NotificationEventHandler;
 
 impl EventHandler for NotificationEventHandler {
@@ -93,22 +72,18 @@ impl EventHandler for NotificationEventHandler {
         match event.event_type.as_str() {
             topics::BOOKING_RESERVED => {
                 log::info!("Handling BookingReserved event: {:?}", event.data);
-                // Send reservation confirmation notification
                 Ok(())
             }
             topics::BOOKING_CONFIRMED => {
                 log::info!("Handling BookingConfirmed event: {:?}", event.data);
-                // Send booking confirmation notification
                 Ok(())
             }
             topics::BOOKING_CANCELLED => {
                 log::info!("Handling BookingCancelled event: {:?}", event.data);
-                // Send cancellation notification
                 Ok(())
             }
             topics::PAYMENT_COMPLETED => {
                 log::info!("Handling PaymentCompleted event: {:?}", event.data);
-                // Send payment receipt
                 Ok(())
             }
             _ => {
@@ -127,7 +102,6 @@ impl EventHandler for NotificationEventHandler {
     }
 }
 
-/// Example event handler for security service (audit logging)
 pub struct SecurityEventHandler;
 
 impl EventHandler for SecurityEventHandler {
@@ -137,12 +111,11 @@ impl EventHandler for SecurityEventHandler {
             event.event_type,
             event.source
         );
-        // Log all events to audit log
         Ok(())
     }
 
     fn topic_filters(&self) -> Vec<String> {
-        vec!["*".to_string()] // Subscribe to all events
+        vec!["*".to_string()]
     }
 }
 

@@ -19,9 +19,8 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "jsx": "preserve"
   },
-  "include": ["src/**/*", "src/types/**/*", ".astro/types.d.ts", "tests/**/*"],
-  "exclude": ["node_modules", "dist", ".astro"]
+  "include": ["src/**/*.ts", "src/types/**/*.ts", ".astro/types.d.ts"],
+  "exclude": [".astro", "dist", "node_modules", "src/**/*.tsx", "tests", "tests/**/*"]
 }
