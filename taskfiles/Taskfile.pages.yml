@@ -1,0 +1,190 @@
+version: "3"
+
+vars:
+  CLOUDFLARE_ACCOUNT_ID: "798e36259a38e6217cc9987ce0bf1316"
+  FERMYON_APP_NAME: "albergue-carrascalejo"
+  CLOUDFLARE_PROJECT_NAME: "albergue-carrascalejo"
+
+tasks:
+  check:env:
+    desc: Verify required environment variables
+    cmds:
+      - |
+        echo "🔍 Checking environment variables..."
+        if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+          echo "❌ CLOUDFLARE_API_TOKEN not set"
+          echo "   Set it with: export CLOUDFLARE_API_TOKEN=your_token"
+          exit 1
+        fi
+        echo "✅ CLOUDFLARE_API_TOKEN is set"
+        echo "   Account ID: $CLOUDFLARE_ACCOUNT_ID"
+
+  cloudflare:project:create:
+    desc: Create Cloudflare Pages project
+    cmds:
+      - |
+        echo "📦 Creating Cloudflare Pages project '$CLOUDFLARE_PROJECT_NAME'..."
+        wrangler pages project create $CLOUDFLARE_PROJECT_NAME \
+          --production-branch=main \
+          --account-id=$CLOUDFLARE_ACCOUNT_ID \
+          2>&1 || echo "Project may already exist, continuing..."
+
+  build:frontend:
+    desc: Build frontend with correct API URL
+    cmds:
+      - |
+        echo "🏗️ Building frontend..."
+        FERMYON_URL=$(spin cloud apps info $FERMYON_APP_NAME 2>/dev/null | grep "URL:" | awk '{print $2}' || echo "")
+        if [ -z "$FERMYON_URL" ]; then
+          echo "⚠️ Could not get Fermyon app URL, using default"
+          export PUBLIC_API_URL="https://albergue-carrascalejo-v99ew1nt.fermyon.app/api"
+        else
+          export PUBLIC_API_URL="${FERMYON_URL}/api"
+        fi
+        echo "   API URL: $PUBLIC_API_URL"
+        cd frontend && pnpm build
+
+  deploy:cloudflare:
+    desc: Deploy frontend to Cloudflare Pages
+    deps: [check:env, build:frontend]
+    cmds:
+      - |
+        echo "🚀 Deploying frontend to Cloudflare Pages..."
+        CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN wrangler pages deploy frontend/dist \
+          --project-name=$CLOUDFLARE_PROJECT_NAME \
+          --account-id=$CLOUDFLARE_ACCOUNT_ID \
+          2>&1
+
+  deploy:vercel:
+    desc: Deploy frontend to Vercel (alternative)
+    cmds:
+      - |
+        echo "🚀 Deploying frontend to Vercel..."
+        if ! command -v vercel &> /dev/null; then
+          echo "Installing Vercel CLI..."
+          npm install -g vercel
+        fi
+        cd frontend && vercel --yes --prod
+
+  deploy:netlify:
+    desc: Deploy frontend to Netlify (alternative)
+    cmds:
+      - |
+        echo "🚀 Deploying frontend to Netlify..."
+        if ! command -v netlify &> /dev/null; then
+          echo "Installing Netlify CLI..."
+          npm install -g netlify-cli
+        fi
+        cd frontend && netlify deploy --prod --dir=dist
+
+  deploy:fermyon:
+    desc: Deploy backend services to Fermyon Cloud
+    cmds:
+      - |
+        echo "🚀 Deploying to Fermyon Cloud..."
+        SPIN_DEPLOY_PLUGIN=cloud spin deploy
+
+  deploy:all:
+    desc: Deploy everything (Fermyon backend + Cloudflare frontend)
+    cmds:
+      - task deploy:fermyon
+      - task build:frontend
+      - task deploy:cloudflare
+
+  test:fermyon:
+    desc: Test Fermyon Cloud deployment
+    cmds:
+      - |
+        echo "🧪 Testing Fermyon Cloud deployment..."
+        FERMYON_URL=$(spin cloud apps info $FERMYON_APP_NAME 2>/dev/null | grep "URL:" | awk '{print $2}' || echo "")
+        if [ -z "$FERMYON_URL" ]; then
+          echo "❌ Could not get Fermyon app URL"
+          exit 1
+        fi
+        echo "   Testing: $FERMYON_URL"
+        
+        # Test root
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$FERMYON_URL" 2>/dev/null || echo "000")
+        echo "   Root: HTTP $STATUS"
+        
+        # Test API
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$FERMYON_URL/api/" 2>/dev/null || echo "000")
+        echo "   API:  HTTP $STATUS"
+        
+        if [ "$STATUS" = "200" ] || [ "$STATUS" = "404" ]; then
+          echo "✅ Fermyon Cloud is responding"
+        else
+          echo "❌ Fermyon Cloud not responding (HTTP $STATUS)"
+        fi
+
+  test:cloudflare:
+    desc: Test Cloudflare Pages deployment (NOTE: may fail due to network issues)
+    deps: [check:env]
+    cmds:
+      - |
+        echo "🧪 Testing Cloudflare Pages deployment..."
+        
+        # Get deployment URL
+        DEPLOYMENT_URL=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME" \
+          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" 2>/dev/null | grep -o '"url": "[^"]*"' | head -1 | cut -d'"' -f4)
+        
+        if [ -z "$DEPLOYMENT_URL" ]; then
+          echo "❌ Could not get Cloudflare Pages URL"
+          exit 1
+        fi
+        
+        echo "   Testing: $DEPLOYMENT_URL"
+        
+        # Test with verbose output
+        echo "   Attempting connection (this may fail due to network/firewall issues)..."
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$DEPLOYMENT_URL" 2>/dev/null || echo "000")
+        echo "   Status: HTTP $STATUS"
+        
+        if [ "$STATUS" = "200" ]; then
+          echo "✅ Cloudflare Pages is responding"
+        else
+          echo "❌ Cloudflare Pages not responding (HTTP $STATUS)"
+          echo "⚠️  This may be a network/firewall issue on your machine, not a deployment issue"
+          echo "   Try opening the URL in your browser directly"
+        fi
+        
+        echo "   Testing: $DEPLOYMENT_URL"
+        
+        # Test root with verbose output for debugging
+        echo "   Attempting connection..."
+        curl -sv --max-time 15 "$DEPLOYMENT_URL" 2>&1 | head -30
+        
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$DEPLOYMENT_URL" 2>/dev/null || echo "000")
+        echo "   Status: HTTP $STATUS"
+        
+        if [ "$STATUS" = "200" ]; then
+          echo "✅ Cloudflare Pages is responding"
+        else
+          echo "❌ Cloudflare Pages not responding (HTTP $STATUS)"
+        fi
+
+  test:all:
+    desc: Test all deployments
+    cmds:
+      - task test:fermyon
+      - task test:cloudflare
+
+  status:
+    desc: Show deployment status
+    cmds:
+      - |
+        echo "📊 Deployment Status"
+        echo "===================="
+        echo ""
+        
+        echo "Fermyon Cloud:"
+        if spin cloud apps info $FERMYON_APP_NAME 2>/dev/null | grep "URL:" > /dev/null; then
+          spin cloud apps info $FERMYON_APP_NAME 2>/dev/null
+        else
+          echo "   ❌ Not found"
+        fi
+        
+        echo ""
+        echo "Cloudflare Pages:"
+        curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME" \
+          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" 2>/dev/null | grep -o '"url": "[^"]*"' | head -1 | cut -d'"' -f4 || echo "   ❌ Not found"

@@ -34,14 +34,51 @@ redis_connection_timeout = { default = "5" }
 redis_default_ttl = { default = "3600" }
 encryption_key = { required = true }
 security_rate_limit_requests = { default = "100" }
+mqtt_broker_host = { default = "4daf0d9c7c5f4112a62ec2f01b94518d.s1.eu.hivemq.cloud" }
+mqtt_broker_port = { default = "8883" }
+mqtt_username = { default = "alberguecarrascalejo_hive" }
+mqtt_password = { default = "" }
 
 [[trigger.http]]
 route = "/api/..."
 component = "gateway"
 
-[[trigger.http]]
-route = "/..."
-component = "frontend"
+# Frontend deployed separately to Cloudflare Pages
+# [[trigger.http]]
+# route = "/..."
+# component = "frontend"
+
+# [component.frontend]
+# source = "spin:fileserver"
+# files = [{ source = "frontend/dist", destination = "/" }]
+
+# [component.frontend.build]
+# command = "cd frontend && pnpm install --frozen-lockfile && pnpm build"
+
+[component.gateway]
+source = "backend/target/wasm32-wasip2/release/api_gateway.wasm"
+allowed_outbound_hosts = [
+  "https://accounts.google.com",
+  "https://www.googleapis.com",
+  "https://oauth2.googleapis.com",
+  "https://openidconnect.googleapis.com",
+  "mqtt://4daf0d9c7c5f4112a62ec2f01b94518d.s1.eu.hivemq.cloud:8883",
+  "redis://redis-19061.c339.eu-west-3-1.ec2.cloud.redislabs.com:19061",
+  "redis://localhost:6379",
+]
+key_value_stores = ["default"]
+files = [{ source = "gateway/api-gateway/config", destination = "/config" }]
+
+[component.gateway.build]
+command = "echo 'Skipping build - prebuilt'"
+
+[component.gateway.variables]
+gateway_config_path = "{{ gateway_config_path }}"
+redis_address = "{{ redis_address }}"
+mqtt_broker_host = "{{ mqtt_broker_host }}"
+mqtt_broker_port = "{{ mqtt_broker_port }}"
+mqtt_username = "{{ mqtt_username }}"
+mqtt_password = "{{ mqtt_password }}"
 
 [[trigger.http]]
 route = { private = true }
@@ -51,21 +88,48 @@ component = "auth-service"
 route = { private = true }
 component = "booking-service"
 
-[[trigger.http]]
-route = { private = true }
-component = "document-validation-service"
+# document-validation-service - not built yet, commenting out
+# [[trigger.http]]
+# route = { private = true }
+# component = "document-validation-service"
+
+# [component.document-validation-service]
+# source = "backend/target/wasm32-wasip2/release/document_validation_service.wasm"
+# allowed_outbound_hosts = ["https://*.amazonaws.com", "https://*.neon.tech"]
+# key_value_stores = ["default"]
+# # sqlite_databases = ["default"]
+# [component.document-validation-service.build]
+# command = "echo 'Skipping build - prebuilt'"
+# [component.document-validation-service.variables]
+# database_url = "{{ database_url }}"
+# tesseract_data_path = "{{ tesseract_data_path }}"
+# lambda_ocr_url = "{{ lambda_ocr_url }}"
+# log_level = "{{ log_level }}"
 
 [[trigger.http]]
 route = { private = true }
 component = "info-on-arrival-service"
 
-[[trigger.http]]
-route = { private = true }
-component = "location-service"
+# location-service - not built yet, commenting out
+# [[trigger.http]]
+# route = { private = true }
+# component = "location-service"
 
 [[trigger.http]]
 route = { private = true }
 component = "notification-service"
+
+# [component.location-service]
+# source = "backend/target/wasm32-wasip2/release/location_service.wasm"
+# allowed_outbound_hosts = ["https://maps.googleapis.com", "https://api.mapbox.com", "redis://*"]
+# key_value_stores = ["default"]
+# [component.location-service.build]
+# command = "echo 'Skipping build - prebuilt'"
+# [component.location-service.variables]
+# redis_url = "{{ redis_url }}"
+# google_maps_api_key = "{{ google_maps_api_key }}"
+# mapbox_access_token = "{{ mapbox_access_token }}"
+# cache_ttl_seconds = "{{ cache_ttl_seconds }}"
 
 [[trigger.http]]
 route = { private = true }
@@ -79,106 +143,45 @@ component = "redis-service"
 route = { private = true }
 component = "reviews-service"
 
-[[trigger.http]]
-route = { private = true }
-component = "security-service"
+# security-service commented out - not built yet
+# [[trigger.http]]
+# route = { private = true }
+# component = "security-service"
 
-[[trigger.http]]
-route = { private = true }
-component = "mqtt-broker-service"
+# mqtt-broker-service removed - using external HiveMQ cloud broker
+# [[trigger.http]]
+# route = { private = true }
+# component = "mqtt-broker-service"
 
-[component.frontend]
-source = "spin:fileserver"
-files = [{ source = "frontend/dist", destination = "/" }]
-
-[component.frontend.build]
-command = "cd frontend && pnpm install --frozen-lockfile && pnpm build"
-
-[component.gateway]
-source = "gateway/target/wasm32-wasip1/release/api_gateway.wasm"
-allowed_outbound_hosts = [
-  "https://accounts.google.com",
-  "https://www.googleapis.com",
-  "https://oauth2.googleapis.com",
-  "https://openidconnect.googleapis.com",
-  "http://*.spin.internal",
-  "redis://redis-19061.c339.eu-west-3-1.ec2.cloud.redislabs.com:19061",
-  "redis://localhost:6379",
-]
-key_value_stores = ["default"]
-files = [{ source = "gateway/api-gateway/config", destination = "/config" }]
-
-[component.gateway.build]
-command = "cd gateway && cargo build -p api-gateway --target wasm32-wasip1 --release"
-
-[component.gateway.variables]
-gateway_config_path = "{{ gateway_config_path }}"
-redis_address = "{{ redis_address }}"
-
-[component.auth-service]
-source = "backend/auth-service/target/wasm32-wasip1/release/auth.wasm"
-allowed_outbound_hosts = ["https://*.logto.app", "https://*.zitadel.cloud"]
-[component.auth-service.build]
-command = "cd backend/auth-service && cargo build --target wasm32-wasip1 --release"
-
-[component.booking-service]
-source = "backend/booking-service/target/wasm32-wasip1/release/booking_service.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
-key_value_stores = ["default"]
-sqlite_databases = ["default"]
-[component.booking-service.build]
-command = "cd backend/booking-service && cargo build --target wasm32-wasip1 --release"
-[component.booking-service.variables]
-database_url = "{{ database_url }}"
-neon_database_url = "{{ neon_database_url }}"
-booking_timeout_hours = "{{ booking_timeout_hours }}"
-log_level = "{{ log_level }}"
-
-[component.document-validation-service]
-source = "backend/document-validation-service/target/wasm32-wasip1/release/document_validation_service.wasm"
-allowed_outbound_hosts = ["https://*.amazonaws.com", "https://*.neon.tech"]
-key_value_stores = ["default"]
-sqlite_databases = ["default"]
-[component.document-validation-service.build]
-command = "cd backend/document-validation-service && cargo build --target wasm32-wasip1 --release"
-[component.document-validation-service.variables]
-database_url = "{{ database_url }}"
-tesseract_data_path = "{{ tesseract_data_path }}"
-lambda_ocr_url = "{{ lambda_ocr_url }}"
-log_level = "{{ log_level }}"
+# [component.mqtt-broker-service]
+# source = "backend/target/wasm32-wasip2/release/mqtt_broker.wasm"
+# allowed_outbound_hosts = ["redis://*", "http://*.spin.internal"]
+# key_value_stores = ["default"]
+# [component.mqtt-broker-service.build]
+# command = "echo 'Skipping build - prebuilt'"
+# [component.mqtt-broker-service.variables]
+# redis_url = "{{ redis_url }}"
+# log_level = "{{ log_level }}"
 
 [component.info-on-arrival-service]
-source = "backend/info-on-arrival-service/target/wasm32-wasip1/release/info_on_arrival_service.wasm"
+source = "backend/target/wasm32-wasip2/release/info_on_arrival_service.wasm"
 allowed_outbound_hosts = [
   "https://maps.googleapis.com",
   "https://turismomerida.org",
   "https://radiotaximerida.es",
   "https://*.neon.tech",
-  "http://mqtt-broker-service.spin.internal",
 ]
-sqlite_databases = ["default"]
+# sqlite_databases = ["default"]
 [component.info-on-arrival-service.build]
-command = "cd backend/info-on-arrival-service && cargo build --target wasm32-wasip1 --release"
+command = "echo 'Skipping build - prebuilt'"
 [component.info-on-arrival-service.variables]
 database_url = "{{ database_url }}"
 neon_database_url = "{{ neon_database_url }}"
 google_places_api_key = "{{ google_places_api_key }}"
 log_level = "{{ log_level }}"
 
-[component.location-service]
-source = "backend/location-service/target/wasm32-wasip1/release/location_service.wasm"
-allowed_outbound_hosts = ["https://maps.googleapis.com", "https://api.mapbox.com", "redis://*"]
-key_value_stores = ["default"]
-[component.location-service.build]
-command = "cd backend/location-service && cargo build --target wasm32-wasip1 --release"
-[component.location-service.variables]
-redis_url = "{{ redis_url }}"
-google_maps_api_key = "{{ google_maps_api_key }}"
-mapbox_access_token = "{{ mapbox_access_token }}"
-cache_ttl_seconds = "{{ cache_ttl_seconds }}"
-
 [component.notification-service]
-source = "backend/notification-service/target/wasm32-wasip1/release/notification_service.wasm"
+source = "backend/target/wasm32-wasip2/release/notification_service.wasm"
 allowed_outbound_hosts = [
   "https://graph.facebook.com",
   "https://api.telegram.org",
@@ -186,9 +189,9 @@ allowed_outbound_hosts = [
   "https://*.neon.tech",
 ]
 key_value_stores = ["default"]
-sqlite_databases = ["default"]
+# sqlite_databases = ["default"]
 [component.notification-service.build]
-command = "cd backend/notification-service && cargo build --target wasm32-wasip1 --release"
+command = "echo 'Skipping build - prebuilt'"
 [component.notification-service.variables]
 database_url = "{{ database_url }}"
 neon_database_url = "{{ neon_database_url }}"
@@ -203,22 +206,22 @@ smtp_pass = "{{ smtp_pass }}"
 log_level = "{{ log_level }}"
 
 [component.rate-limiter-service]
-source = "backend/rate-limiter-service/target/wasm32-wasip1/release/rate_limiter_service.wasm"
+source = "backend/target/wasm32-wasip2/release/rate_limiter_service.wasm"
 allowed_outbound_hosts = []
 key_value_stores = ["default"]
 [component.rate-limiter-service.build]
-command = "cd backend/rate-limiter-service && cargo build --target wasm32-wasip1 --release"
+command = "echo 'Skipping build - prebuilt'"
 [component.rate-limiter-service.variables]
 rate_limit_requests = "{{ rate_limit_requests }}"
 rate_limit_window = "{{ rate_limit_window }}"
 log_level = "{{ log_level }}"
 
 [component.redis-service]
-source = "backend/redis-service/target/wasm32-wasip1/release/redis_service.wasm"
+source = "backend/target/wasm32-wasip2/release/redis_service.wasm"
 allowed_outbound_hosts = ["redis://*"]
 key_value_stores = ["default"]
 [component.redis-service.build]
-command = "cd backend/redis-service && cargo build --target wasm32-wasip1 --release"
+command = "echo 'Skipping build - prebuilt'"
 [component.redis-service.variables]
 redis_url = "{{ redis_url }}"
 redis_max_connections = "{{ redis_max_connections }}"
@@ -226,36 +229,27 @@ redis_connection_timeout = "{{ redis_connection_timeout }}"
 redis_default_ttl = "{{ redis_default_ttl }}"
 
 [component.reviews-service]
-source = "backend/reviews-service/target/wasm32-wasip1/release/reviews_service.wasm"
+source = "backend/target/wasm32-wasip2/release/reviews_service.wasm"
 allowed_outbound_hosts = ["https://*.neon.tech", "https://*.postgres.com"]
-sqlite_databases = ["default"]
+# sqlite_databases = ["default"]
 [component.reviews-service.build]
-command = "cd backend/reviews-service && cargo build --target wasm32-wasip1 --release"
+command = "echo 'Skipping build - prebuilt'"
 [component.reviews-service.variables]
 database_url = "{{ database_url }}"
 neon_database_url = "{{ neon_database_url }}"
 log_level = "{{ log_level }}"
 
-[component.security-service]
-source = "backend/security-service/target/wasm32-wasip1/release/security_service.wasm"
-allowed_outbound_hosts = ["https://*.neon.tech"]
-key_value_stores = ["default"]
-sqlite_databases = ["default"]
-[component.security-service.build]
-command = "cd backend/security-service && cargo build --target wasm32-wasip1 --release"
-[component.security-service.variables]
-database_url = "{{ database_url }}"
-rate_limit_requests = "{{ security_rate_limit_requests }}"
-encryption_key = "{{ encryption_key }}"
-log_level = "{{ log_level }}"
-
-[component.mqtt-broker-service]
-source = "backend/mqtt-broker-service/target/wasm32-wasip1/release/mqtt_broker_service.wasm"
-allowed_outbound_hosts = ["redis://*", "http://*.spin.internal"]
-key_value_stores = ["default"]
-[component.mqtt-broker-service.build]
-command = "cd backend/mqtt-broker-service && cargo build --target wasm32-wasip1 --release"
-[component.mqtt-broker-service.variables]
-redis_url = "{{ redis_url }}"
-log_level = "{{ log_level }}"
+# SECURITY SERVICE - NOT YET BUILT - commenting out for deployment
+# [component.security-service]
+# source = "backend/target/wasm32-wasip2/release/security_service.wasm"
+# allowed_outbound_hosts = ["https://*.neon.tech"]
+# key_value_stores = ["default"]
+# # sqlite_databases = ["default"]
+# [component.security-service.build]
+# command = "echo 'Skipping build - prebuilt'"
+# [component.security-service.variables]
+# database_url = "{{ database_url }}"
+# rate_limit_requests = "{{ security_rate_limit_requests }}"
+# encryption_key = "{{ encryption_key }}"
+# log_level = "{{ log_level }}"
 
