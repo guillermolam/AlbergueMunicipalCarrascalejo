@@ -20,6 +20,7 @@ export interface Props {
 }
 
 const {
+  class: className = '',
   size = 'md',
   icon,
   iconPosition = 'left',
@@ -33,54 +34,53 @@ const {
   children,
 } = Astro.props;
 
-const iconElement = icon ? (
-  <span
-    class={`text-${size === 'sm' ? 'base' : size === 'xl' ? '2xl' : 'lg'} ${iconPosition === 'right' ? 'order-2 ml-2' : 'mr-2'}`}
-  >
-    {icon}
-  </span>
-) : null;
-
-const loadingSpinner = loading ? (
-  <svg
-    class={`animate-spin h-5 w-5 ${iconPosition === 'right' ? 'order-2 ml-2' : 'mr-2'}`}
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-  >
-    <circle
-      class="opacity-25"
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="currentColor"
-      stroke-width="4"
-    ></circle>
-    <path
-      class="opacity-75"
-      fill="currentColor"
-      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-    ></path>
-  </svg>
-) : null;
-
-const content = (
-  <>
-    {loading && loadingSpinner}
-    {!loading && icon && iconElement}
-    <span class="relative z-10">{children}</span>
-  </>
-);
+const buttonClasses = `gorgeous-button ${className}`.trim();
+const iconClasses = `text-${size === 'sm' ? 'base' : size === 'xl' ? '2xl' : 'lg'} ${iconPosition === 'right' ? 'order-2 ml-2' : 'mr-2'}`;
+const loadingClasses = `animate-spin h-5 w-5 ${iconPosition === 'right' ? 'order-2 ml-2' : 'mr-2'}`;
 ---
 
 {
   href ? (
-    <a href={href} target={target} rel={rel} aria-disabled={disabled || loading} role="button">
-      {content}
+    <a
+      href={href}
+      target={target}
+      rel={rel}
+      class={buttonClasses}
+      aria-disabled={disabled || loading}
+      role="button"
+    >
+      {loading && (
+        <svg class={loadingClasses} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+      )}
+      {!loading && icon && <span class={iconClasses}>{icon}</span>}
+      <span class="relative z-10">{children}</span>
     </a>
   ) : (
-    <button type={type} disabled={disabled || loading} onclick={onClick}>
-      {content}
+    <button
+      type={type}
+      class={buttonClasses}
+      disabled={disabled || loading}
+      onclick={onClick}
+    >
+      {loading && (
+        <svg class={loadingClasses} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+      )}
+      {!loading && icon && <span class={iconClasses}>{icon}</span>}
+      <span class="relative z-10">{children}</span>
     </button>
   )
 }

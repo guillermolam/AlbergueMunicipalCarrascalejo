@@ -320,7 +320,11 @@ export class PerformanceMonitor {
 
     return () => {
       const endTime = performance.now();
-      return endTime - startTime;
+      const duration = endTime - startTime;
+      if (import.meta.env.DEV) {
+        console.log(`[Performance] island ${islandName}: ${duration.toFixed(2)}ms`);
+      }
+      return duration;
     };
   }
 
@@ -332,7 +336,7 @@ export class PerformanceMonitor {
       const duration = endTime - startTime;
 
       // Log for development
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log(`[Performance] ${componentName} hydration: ${duration.toFixed(2)}ms`);
       }
 
@@ -351,7 +355,7 @@ export class PerformanceMonitor {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log(`[Performance] ${operationName}: ${duration.toFixed(2)}ms`);
       }
 
@@ -360,7 +364,7 @@ export class PerformanceMonitor {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.error(
           `[Performance] ${operationName} failed after ${duration.toFixed(2)}ms:`,
           error
@@ -376,7 +380,7 @@ export class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 
 // Auto-start monitoring in production
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+if (typeof window !== 'undefined' && import.meta.env.PROD) {
   performanceMonitor.startMonitoring();
 }
 

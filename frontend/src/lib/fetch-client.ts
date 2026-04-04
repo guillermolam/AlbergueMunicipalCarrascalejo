@@ -45,7 +45,7 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      const response = await this.fetchWithRetry<T>(
+      const response = await this.fetchWithRetry(
         url,
         {
           ...fetchOptions,
@@ -78,7 +78,7 @@ class ApiClient {
     }
   }
 
-  private async fetchWithRetry<T>(
+  private async fetchWithRetry(
     url: string,
     options: RequestInit,
     retries: number,

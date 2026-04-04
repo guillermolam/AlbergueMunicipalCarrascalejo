@@ -3,7 +3,7 @@ version: "3"
 vars:
   CLOUDFLARE_ACCOUNT_ID: "798e36259a38e6217cc9987ce0bf1316"
   FERMYON_APP_NAME: "albergue-carrascalejo"
-  CLOUDFLARE_PROJECT_NAME: "albergue-carrascalejo"
+  CLOUDFLARE_WORKER_NAME: "albergue-carrascalejo"
 
 tasks:
   check:env:
@@ -20,17 +20,14 @@ tasks:
         echo "   Account ID: $CLOUDFLARE_ACCOUNT_ID"
 
   cloudflare:project:create:
-    desc: Create Cloudflare Pages project
+    desc: Verify Cloudflare Worker access
     cmds:
       - |
-        echo "📦 Creating Cloudflare Pages project '$CLOUDFLARE_PROJECT_NAME'..."
-        wrangler pages project create $CLOUDFLARE_PROJECT_NAME \
-          --production-branch=main \
-          --account-id=$CLOUDFLARE_ACCOUNT_ID \
-          2>&1 || echo "Project may already exist, continuing..."
+        echo "📦 Verifying access to Cloudflare Worker '$CLOUDFLARE_WORKER_NAME'..."
+        cd frontend && pnpm exec wrangler whoami
 
   build:frontend:
-    desc: Build frontend with correct API URL
+    desc: Build frontend for the Astro Cloudflare adapter
     cmds:
       - |
         echo "🏗️ Building frontend..."
@@ -45,15 +42,12 @@ tasks:
         cd frontend && pnpm build
 
   deploy:cloudflare:
-    desc: Deploy frontend to Cloudflare Pages
+    desc: Deploy frontend to Cloudflare Workers
     deps: [check:env, build:frontend]
     cmds:
       - |
-        echo "🚀 Deploying frontend to Cloudflare Pages..."
-        CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN wrangler pages deploy frontend/dist \
-          --project-name=$CLOUDFLARE_PROJECT_NAME \
-          --account-id=$CLOUDFLARE_ACCOUNT_ID \
-          2>&1
+        echo "🚀 Deploying frontend to Cloudflare Workers..."
+        cd frontend && CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN pnpm exec wrangler deploy
 
   deploy:vercel:
     desc: Deploy frontend to Vercel (alternative)
@@ -118,50 +112,12 @@ tasks:
         fi
 
   test:cloudflare:
-    desc: Test Cloudflare Pages deployment
+    desc: Inspect the latest Cloudflare Worker deployment
     deps: [check:env]
     cmds:
       - |
-        echo "🧪 Testing Cloudflare Pages deployment..."
-        
-        # Get deployment URL
-        DEPLOYMENT_URL=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME" \
-          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" 2>/dev/null | grep -o '"url": "[^"]*"' | head -1 | cut -d'"' -f4)
-        
-        if [ -z "$DEPLOYMENT_URL" ]; then
-          echo "❌ Could not get Cloudflare Pages URL"
-          exit 1
-        fi
-        
-        echo "   Testing: $DEPLOYMENT_URL"
-        
-        # Test with verbose output
-        echo "   Attempting connection (this may fail due to network/firewall issues)..."
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$DEPLOYMENT_URL" 2>/dev/null || echo "000")
-        echo "   Status: HTTP $STATUS"
-        
-        if [ "$STATUS" = "200" ]; then
-          echo "✅ Cloudflare Pages is responding"
-        else
-          echo "❌ Cloudflare Pages not responding (HTTP $STATUS)"
-          echo "⚠️  This may be a network/firewall issue on your machine, not a deployment issue"
-          echo "   Try opening the URL in your browser directly"
-        fi
-        
-        echo "   Testing: $DEPLOYMENT_URL"
-        
-        # Test root with verbose output for debugging
-        echo "   Attempting connection..."
-        curl -sv --max-time 15 "$DEPLOYMENT_URL" 2>&1 | head -30
-        
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$DEPLOYMENT_URL" 2>/dev/null || echo "000")
-        echo "   Status: HTTP $STATUS"
-        
-        if [ "$STATUS" = "200" ]; then
-          echo "✅ Cloudflare Pages is responding"
-        else
-          echo "❌ Cloudflare Pages not responding (HTTP $STATUS)"
-        fi
+        echo "🧪 Inspecting Cloudflare Worker deployments..."
+        cd frontend && CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN pnpm exec wrangler deployments list
 
   test:all:
     desc: Test all deployments
@@ -185,6 +141,5 @@ tasks:
         fi
         
         echo ""
-        echo "Cloudflare Pages:"
-        curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME" \
-          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" 2>/dev/null | grep -o '"url": "[^"]*"' | head -1 | cut -d'"' -f4 || echo "   ❌ Not found"
+        echo "Cloudflare Worker Deployments:"
+        cd frontend && CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN pnpm exec wrangler deployments list || echo "   ❌ Not found"

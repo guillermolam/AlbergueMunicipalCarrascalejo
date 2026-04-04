@@ -4,6 +4,8 @@
 **/dist/
 **/build/
 **/.astro/
+frontend/worker-configuration.d.ts
+frontend/.wrangler/
 **/.vite/
 **/.cache/
 **/.next/
@@ -181,4 +183,3 @@ runtime-config.toml
 **/override.tf.json
 **/*_override.tf
 **/*_override.tf.json
-

@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Cloudflare
 
 on:
   push:
@@ -7,16 +7,17 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: "cloudflare"
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -24,37 +25,25 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10.29.3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
-          cache: 'pnpm'
+          node-version: 24
+          cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: cd frontend && pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: |
-          cd frontend
-          PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://albergue-carrascalejo-v99ew1nt.fermyon.app/api' }} pnpm build
+        run: PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://albergue-carrascalejo-v99ew1nt.fermyon.app/api' }} pnpm build
         env:
           PUBLIC_API_URL: https://albergue-carrascalejo-v99ew1nt.fermyon.app/api
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: frontend/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Deploy
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || '798e36259a38e6217cc9987ce0bf1316' }}

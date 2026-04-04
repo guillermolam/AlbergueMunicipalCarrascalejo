@@ -1,8 +1,11 @@
 import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
-  // Static site generation (FSR: file system routing)
-  output: 'static',
+  adapter: cloudflare({
+    prerenderEnvironment: 'node',
+  }),
+  output: 'server',
 
   // Site configuration
   site: 'https://albergue-carrascalejo.com',

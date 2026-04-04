@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // SSR-safe environment check
 const isServer = typeof window === 'undefined';
+const getServerEnv = (name: string): string | undefined =>
+  import.meta.env.SSR ? process.env[name] : undefined;
 
 // Configuration interface
 export interface AppConfig {
@@ -112,9 +114,9 @@ let supabaseClient: ReturnType<typeof createClient> | null = null;
  */
 function getSupabaseClient() {
   if (!supabaseClient && isServer) {
-    const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL;
+    const supabaseUrl = getServerEnv('SUPABASE_URL') || import.meta.env.PUBLIC_SUPABASE_URL;
     const supabaseAnonKey =
-      process.env.SUPABASE_ANON_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+      getServerEnv('SUPABASE_ANON_KEY') || import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
     if (supabaseUrl && supabaseAnonKey) {
       supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
@@ -180,7 +182,7 @@ async function loadConfigFromSupabase(): Promise<Partial<AppConfig>> {
  */
 export function getEnvironment(): 'development' | 'staging' | 'production' {
   if (isServer) {
-    return (process.env.NODE_ENV || process.env.ENVIRONMENT || 'development') as any;
+    return (getServerEnv('NODE_ENV') || getServerEnv('ENVIRONMENT') || 'development') as any;
   }
   return (import.meta.env.MODE || 'development') as any;
 }
@@ -211,15 +213,15 @@ export async function loadConfiguration(): Promise<AppConfig> {
   let mergedConfig: AppConfig = {
     ...DEFAULT_CONFIG,
     supabase: {
-      url: process.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL || '',
-      anonKey: process.env.SUPABASE_ANON_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '',
-      serviceKey: process.env.SUPABASE_SERVICE_KEY,
+      url: getServerEnv('SUPABASE_URL') || import.meta.env.PUBLIC_SUPABASE_URL || '',
+      anonKey: getServerEnv('SUPABASE_ANON_KEY') || import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '',
+      serviceKey: getServerEnv('SUPABASE_SERVICE_KEY'),
     },
     security: {
       jwtSecret:
-        process.env.JWT_SECRET || import.meta.env.PUBLIC_JWT_SECRET || 'fallback-secret-key',
+        getServerEnv('JWT_SECRET') || import.meta.env.PUBLIC_JWT_SECRET || 'fallback-secret-key',
       encryptionKey:
-        process.env.ENCRYPTION_KEY ||
+        getServerEnv('ENCRYPTION_KEY') ||
         import.meta.env.PUBLIC_ENCRYPTION_KEY ||
         'fallback-encryption-key',
       sessionTimeout: DEFAULT_CONFIG.security?.sessionTimeout || 24 * 60 * 60 * 1000,
@@ -227,18 +229,18 @@ export async function loadConfiguration(): Promise<AppConfig> {
     },
     services: {
       redis: {
-        url: process.env.REDIS_URL || import.meta.env.PUBLIC_REDIS_URL || 'redis://localhost:6379',
-        password: process.env.REDIS_PASSWORD || import.meta.env.PUBLIC_REDIS_PASSWORD,
+        url: getServerEnv('REDIS_URL') || import.meta.env.PUBLIC_REDIS_URL || 'redis://localhost:6379',
+        password: getServerEnv('REDIS_PASSWORD') || import.meta.env.PUBLIC_REDIS_PASSWORD,
       },
       email: {
-        provider: process.env.EMAIL_PROVIDER || 'smtp',
-        apiKey: process.env.EMAIL_API_KEY || '',
-        fromAddress: process.env.EMAIL_FROM || 'noreply@alberguecarrascalejo.es',
+        provider: getServerEnv('EMAIL_PROVIDER') || 'smtp',
+        apiKey: getServerEnv('EMAIL_API_KEY') || '',
+        fromAddress: getServerEnv('EMAIL_FROM') || 'noreply@alberguecarrascalejo.es',
       },
       sms: {
-        provider: process.env.SMS_PROVIDER || 'twilio',
-        apiKey: process.env.SMS_API_KEY || '',
-        fromNumber: process.env.SMS_FROM || '+1234567890',
+        provider: getServerEnv('SMS_PROVIDER') || 'twilio',
+        apiKey: getServerEnv('SMS_API_KEY') || '',
+        fromNumber: getServerEnv('SMS_FROM') || '+1234567890',
       },
     },
   } as AppConfig;

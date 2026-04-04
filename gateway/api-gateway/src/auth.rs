@@ -26,7 +26,7 @@ pub async fn authenticate_and_authorize(
     let mut parts = auth_header.split_whitespace();
     let scheme = parts.next().unwrap_or("");
     let token = parts.next().unwrap_or("");
-    if scheme.to_ascii_lowercase() != "bearer" || token.is_empty() {
+    if !scheme.eq_ignore_ascii_case("bearer") || token.is_empty() {
         return Err(GatewayRejection::Unauthorized {
             message: "Missing or invalid Authorization header".to_string(),
         });
@@ -42,8 +42,7 @@ pub async fn authenticate_and_authorize(
         if auth_ctx
             .issuer
             .as_ref()
-            .map(|v| v != required_issuer)
-            .unwrap_or(true)
+            .is_none_or(|v| v != required_issuer)
         {
             return Err(GatewayRejection::Forbidden {
                 message: "Issuer not allowed".to_string(),
@@ -59,7 +58,7 @@ pub async fn authenticate_and_authorize(
         }
     }
 
-    for required in ctx.policy.auth.required_scopes.iter() {
+    for required in &ctx.policy.auth.required_scopes {
         if !auth_ctx.scopes.iter().any(|s| s == required) {
             return Err(GatewayRejection::Forbidden {
                 message: "Missing required scope".to_string(),
@@ -67,7 +66,7 @@ pub async fn authenticate_and_authorize(
         }
     }
 
-    for required in ctx.policy.auth.required_roles.iter() {
+    for required in &ctx.policy.auth.required_roles {
         if !auth_ctx.roles.iter().any(|r| r == required) {
             return Err(GatewayRejection::Forbidden {
                 message: "Missing required role".to_string(),
@@ -91,7 +90,7 @@ pub async fn authenticate_and_authorize(
 }
 
 async fn validate_jwt(token: &str, ctx: &RequestContext, oidc_url: &str) -> Result<AuthContext> {
-    let cache_key = format!("jwks:{}", oidc_url);
+    let cache_key = format!("jwks:{oidc_url}");
 
     if let Ok(address) = variables::get(REDIS_ADDRESS_VAR) {
         if let Ok(conn) = spin_sdk::redis::Connection::open(&address) {
@@ -105,7 +104,7 @@ async fn validate_jwt(token: &str, ctx: &RequestContext, oidc_url: &str) -> Resu
         }
     }
 
-    let config_url = format!("{}/.well-known/openid-configuration", oidc_url);
+    let config_url = format!("{oidc_url}/.well-known/openid-configuration");
     let req = spin_sdk::http::Request::new(Method::Get, config_url);
     let response: spin_sdk::http::Response = spin_sdk::http::send(req).await?;
     let config: OpenIdConfiguration = serde_json::from_slice(response.body())?;
@@ -146,7 +145,7 @@ async fn verify_with_jwks(
 
     let jwt = key_store
         .verify(token)
-        .map_err(|e| anyhow::anyhow!("JWT verification failed: {:?}", e))?;
+        .map_err(|e| anyhow::anyhow!("JWT verification failed: {e:?}"))?;
 
     event!(
         Level::INFO,
@@ -156,8 +155,8 @@ async fn verify_with_jwks(
     );
 
     let mut claims_for_headers = HashMap::new();
-    let subject = jwt.payload().sub().map(|s| s.to_string());
-    let issuer = jwt.payload().iss().map(|s| s.to_string());
+    let subject = jwt.payload().sub().map(ToString::to_string);
+    let issuer = jwt.payload().iss().map(ToString::to_string);
     let mut audiences = Vec::new();
 
     if let Some(sub) = jwt.payload().sub() {
@@ -193,7 +192,7 @@ async fn verify_with_jwks(
 
     let mut scopes = Vec::new();
     if let Some(scope) = jwt.payload().get_str("scope") {
-        scopes.extend(scope.split_whitespace().map(|s| s.to_string()));
+        scopes.extend(scope.split_whitespace().map(ToString::to_string));
     } else if let Some(arr) = jwt.payload().get_array("scp") {
         for v in arr {
             if let Some(s) = v.as_str() {

@@ -1,10 +1,12 @@
 // SSR-safe gateway configuration system
 // Supports fake routes, mocked gateway, and real gateway integration
 
-import { getConfig, type AppConfig } from './config-ssr';
+import { getConfig } from './config-ssr';
 
 // SSR-safe environment check
 const isServer = typeof window === 'undefined';
+const getServerEnv = (name: string): string | undefined =>
+  import.meta.env.SSR ? process.env[name] : undefined;
 
 // Gateway configuration modes
 export type GatewayMode = 'fake' | 'mock' | 'real' | 'spin';
@@ -195,7 +197,7 @@ const fakeResponses = {
   },
 
   // Booking endpoints
-  '/api/bookings/availability': async (params: any) => {
+  '/api/bookings/availability': async (_params: any) => {
     await delay(300);
     return {
       success: true,
@@ -287,8 +289,9 @@ export async function getGatewayMode(): Promise<GatewayMode> {
   const config = await getConfig();
 
   // Check environment variables first
-  if (process.env.GATEWAY_MODE) {
-    return process.env.GATEWAY_MODE as GatewayMode;
+  const gatewayMode = getServerEnv('GATEWAY_MODE');
+  if (gatewayMode) {
+    return gatewayMode as GatewayMode;
   }
 
   // Check configuration
@@ -307,9 +310,9 @@ export async function getGatewayBaseUrl(): Promise<string> {
     case 'mock':
       return '/api'; // Use mock API routes
     case 'real':
-      return process.env.GATEWAY_URL || 'http://localhost:8080';
+      return getServerEnv('GATEWAY_URL') || 'http://localhost:8080';
     case 'spin':
-      return process.env.SPIN_GATEWAY_URL || 'http://localhost:3000';
+      return getServerEnv('SPIN_GATEWAY_URL') || 'http://localhost:3000';
     default:
       return '/api';
   }

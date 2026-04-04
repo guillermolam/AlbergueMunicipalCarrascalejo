@@ -74,9 +74,6 @@ impl NotificationService {
         self.send_bulk(vec![email_notification]).await
     }
 
-    pub async fn process_queue(&self, queue: Vec<Notification>) -> Result<Vec<Notification>> {
-        self.send_bulk(queue).await
-    }
 }
 
 pub fn create_booking_template(

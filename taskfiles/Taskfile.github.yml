@@ -2,8 +2,7 @@ version: "3"
 
 vars:
   GITHUB_REPO: "guillermolam/AlbergueMunicipalCarrascalejo"
-  GITHUB_PAGES_URL:
-    sh: echo "https://guillermolam.github.io/AlbergueMunicipalCarrascalejo"
+  CLOUDFLARE_WORKER_NAME: "albergue-carrascalejo"
   FERMYON_APP_NAME: "albergue-carrascalejo"
 
 tasks:
@@ -15,8 +14,8 @@ tasks:
         echo "===================="
         echo ""
         
-        echo "GitHub Pages:"
-        echo "   URL: https://guillermolam.github.io/AlbergueMunicipalCarrascalejo"
+        echo "Cloudflare:"
+        echo "   Worker: $CLOUDFLARE_WORKER_NAME"
         echo "   Status: Check at https://github.com/$GITHUB_REPO/actions"
         
         echo ""
@@ -24,33 +23,20 @@ tasks:
         spin cloud apps info $FERMYON_APP_NAME 2>/dev/null || echo "   ❌ Not found"
 
   deploy:github:
-    desc: Trigger GitHub Pages deployment (push to main)
+    desc: Trigger Cloudflare deployment (push to main)
     cmds:
       - |
-        echo "🚀 GitHub Pages deployment triggered by pushing to main"
+        echo "🚀 Cloudflare deployment triggered by pushing to main"
         echo "   Push to main branch to trigger deployment"
         echo "   Workflow: .github/workflows/deploy.yml"
-        echo ""
-        echo "   URL will be: https://guillermolam.github.io/AlbergueMunicipalCarrascalejo"
 
   test:github:
-    desc: Test GitHub Pages deployment
+    desc: Inspect Cloudflare deployment workflow
     cmds:
       - |
-        echo "🧪 Testing GitHub Pages deployment..."
-        
-        # Test the main URL
-        echo "   Testing: https://guillermolam.github.io/AlbergueMunicipalCarrascalejo"
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "https://guillermolam.github.io/AlbergueMunicipalCarrascalejo" 2>/dev/null || echo "000")
-        echo "   Status: HTTP $STATUS"
-        
-        if [ "$STATUS" = "200" ]; then
-          echo "✅ GitHub Pages is responding"
-        else
-          echo "❌ GitHub Pages not responding (HTTP $STATUS)"
-          echo "   The deployment may still be in progress"
-          echo "   Check: https://github.com/$GITHUB_REPO/actions"
-        fi
+        echo "🧪 Cloudflare deployment is handled by GitHub Actions and Wrangler"
+        echo "   Worker: $CLOUDFLARE_WORKER_NAME"
+        echo "   Check: https://github.com/$GITHUB_REPO/actions"
 
   test:all:
     desc: Test all deployments
@@ -72,4 +58,3 @@ tasks:
       - |
         STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "https://albergue-carrascalejo-v99ew1nt.fermyon.app/api/" 2>/dev/null || echo "000")
         echo "   API: HTTP $STATUS"
-

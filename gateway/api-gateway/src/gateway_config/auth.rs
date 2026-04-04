@@ -21,7 +21,10 @@ pub struct AuthPolicy {
 pub struct AuthPolicyOverride {
     pub enabled: Option<bool>,
     pub oidc_url: Option<String>,
+    // None = don't override; Some(None) = explicitly clear the value
+    #[allow(clippy::option_option)]
     pub required_issuer: Option<Option<String>>,
+    #[allow(clippy::option_option)]
     pub required_audience: Option<Option<String>>,
     pub required_scopes: Option<Vec<String>>,
     pub required_roles: Option<Vec<String>>,

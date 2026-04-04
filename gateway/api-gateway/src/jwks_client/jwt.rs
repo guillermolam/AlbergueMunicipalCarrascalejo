@@ -44,8 +44,8 @@ macro_rules! impl_segment {
         }
 
         pub fn into<T: DeserializeOwned>(&self) -> Result<T, Error> {
-            Ok(serde_json::from_value::<T>(self.json.clone())
-                .or(Err(err_inv("Failed to deserialize segment")))?)
+            serde_json::from_value::<T>(self.json.clone())
+                .map_err(|_| err_inv("Failed to deserialize segment"))
         }
     };
 }
@@ -91,16 +91,22 @@ impl Payload {
         self.get_str("aud")
     }
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn exp(&self) -> Option<u64> {
-        self.get_f64("exp").map(|f| f as u64)
+        self.get_u64("exp")
+            .or_else(|| self.get_f64("exp").map(|f| f as u64))
     }
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn nbf(&self) -> Option<u64> {
-        self.get_f64("nbf").map(|f| f as u64)
+        self.get_u64("nbf")
+            .or_else(|| self.get_f64("nbf").map(|f| f as u64))
     }
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn iat(&self) -> Option<u64> {
-        self.get_f64("iat").map(|f| f as u64)
+        self.get_u64("iat")
+            .or_else(|| self.get_f64("iat").map(|f| f as u64))
     }
 
     pub fn expiry(&self) -> Option<SystemTime> {
@@ -113,7 +119,7 @@ impl Payload {
             .map(|time| SystemTime::UNIX_EPOCH.add(Duration::new(time, 0)))
     }
 
-    pub fn has_claim(&self, key: String) -> bool {
+    pub fn has_claim(&self, key: &str) -> bool {
         self.json.get(key).is_some()
     }
 }

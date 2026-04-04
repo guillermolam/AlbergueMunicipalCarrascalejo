@@ -15,9 +15,6 @@ import type {
 
 import type {
   CreatePilgrimProfileDto,
-  UpdatePilgrimProfileDto,
-  CreatePilgrimageDto,
-  CreateBookingDto,
 } from '@/types/pilgrim-operations';
 
 /**

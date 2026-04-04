@@ -1,6 +1,8 @@
 import { createClient } from 'redis';
 
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const redisUrl = import.meta.env.SSR
+  ? process.env.REDIS_URL || 'redis://localhost:6379'
+  : 'redis://localhost:6379';
 
 let redisClient: ReturnType<typeof createClient> | null = null;
 

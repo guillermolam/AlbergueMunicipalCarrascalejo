@@ -102,7 +102,7 @@ pub async fn try_cache_store(
         "EXPIRE",
         &[
             spin_sdk::redis::RedisParameter::Binary(key.as_bytes().to_vec()),
-            spin_sdk::redis::RedisParameter::Int64(ctx.policy.cache.ttl_seconds as i64),
+            spin_sdk::redis::RedisParameter::Int64(ctx.policy.cache.ttl_seconds.cast_signed()),
         ],
     );
 
@@ -116,7 +116,7 @@ fn cache_key(
 ) -> String {
     let query = req.query();
     let query = if query.is_empty() {
-        "".to_string()
+        String::new()
     } else {
         format!("?{query}")
     };

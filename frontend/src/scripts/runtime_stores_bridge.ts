@@ -1,4 +1,3 @@
-import { subscribe } from 'nanostores';
 import {
   dailyGoalKm,
   currentStageProgress,
@@ -58,8 +57,8 @@ function onActionClick(e: Event) {
 
 export function initStoresBridge() {
   render();
-  unsubs.push(subscribe(dailyGoalKm, render));
-  unsubs.push(subscribe(currentStageProgress, render));
-  unsubs.push(subscribe(remainingDays, render));
+  unsubs.push(dailyGoalKm.listen(() => render()));
+  unsubs.push(currentStageProgress.listen(() => render()));
+  unsubs.push(remainingDays.listen(() => render()));
   document.addEventListener('click', onActionClick, { passive: true });
 }
