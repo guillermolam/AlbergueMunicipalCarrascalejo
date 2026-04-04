@@ -7,16 +7,32 @@ terraform {
     }
   }
 
-  required_version = ">= 1.0"
+  required_version = ">= 1.5"
 
   required_providers {
     github = {
       source  = "integrations/github"
-      version = "~> 6.0"
+      version = "~> 6.11"
     }
     tfe = {
       source  = "hashicorp/tfe"
-      version = "~> 0.57"
+      version = "~> 0.76"
+    }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.18"
+    }
+    neon = {
+      source  = "terraform-community-providers/neon"
+      version = "~> 0.1.12"
+    }
+    turso = {
+      source  = "celest-dev/turso"
+      version = "~> 0.2.3"
+    }
+    rediscloud = {
+      source  = "RedisLabs/rediscloud"
+      version = "~> 2.14"
     }
   }
 }

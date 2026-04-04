@@ -73,6 +73,12 @@ includes:
     dir: .
     optional: false
 
+  # Security scanning
+  security:
+    taskfile: ./taskfiles/Taskfile.security.yml
+    dir: .
+    optional: false
+
 env:
   RUST_BACKTRACE: "1"
   RUST_LOG: debug
