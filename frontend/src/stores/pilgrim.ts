@@ -1,7 +1,7 @@
 // Secure and efficient stores for pilgrim management
 // SSR-compatible nanostores with encryption and validation
 
-import { atom, map, computed } from 'nanostores';
+import { map, computed } from 'nanostores';
 import { persistentMap } from '@nanostores/persistent';
 import type {
   PilgrimProfile,
@@ -12,7 +12,6 @@ import type {
   SocialProfile,
   UserAuth,
   ValidationResult,
-  ApiResponse,
 } from '@/types/pilgrim';
 import type { CreatePilgrimProfileDto, UpdatePilgrimProfileDto } from '@/types/pilgrim-operations';
 
@@ -274,7 +273,7 @@ export const userAuthStore = persistentMap<{
  * UI State Store
  * Manages UI-related state
  */
-export const uiStateStore = atom({
+export const uiStateStore = map({
   isLoading: false,
   error: null as string | null,
   success: null as string | null,
@@ -303,7 +302,7 @@ export const isPilgrimageActive = computed(currentPilgrimageStore, (state) => st
 // Progress percentage
 export const pilgrimageProgress = computed(currentPilgrimageStore, (state) => {
   if (!state.pilgrimage || !state.progress) return 0;
-  return Math.round((state.progress.completedDistance / state.pilgrimage.totalDistance) * 100);
+  return Math.round((state.progress.totalDistanceWalked / state.pilgrimage.totalDistance) * 100);
 });
 
 // Upcoming bookings
@@ -529,6 +528,7 @@ export const pilgrimageActions = {
  * Helper functions (these would be implemented with actual API calls)
  */
 async function validatePilgrimProfile(data: CreatePilgrimProfileDto): Promise<ValidationResult> {
+  void data;
   // Implement validation logic
   return {
     isValid: true,
@@ -570,6 +570,9 @@ async function updatePilgrimProfileOnServer(
   return {
     ...currentProfile,
     ...updates,
+    personalInfo: updates.personalInfo
+      ? { ...currentProfile.personalInfo, ...updates.personalInfo }
+      : currentProfile.personalInfo,
     updatedAt: new Date(),
     version: currentProfile.version + 1,
   };
@@ -581,21 +584,26 @@ async function deletePilgrimProfileOnServer(profileId: string): Promise<void> {
 }
 
 async function loadPilgrimProfileFromServer(profileId: string): Promise<PilgrimProfile> {
+  void profileId;
   // Implement API call to load profile
   throw new Error('Not implemented');
 }
 
 async function createPilgrimageOnServer(data: any): Promise<any> {
+  void data;
   // Implement API call to create pilgrimage
   throw new Error('Not implemented');
 }
 
 async function initializeProgressTracking(pilgrimageId: string): Promise<any> {
+  void pilgrimageId;
   // Implement API call to initialize progress
   throw new Error('Not implemented');
 }
 
 async function updateProgressOnServer(pilgrimageId: string, progressData: any): Promise<any> {
+  void pilgrimageId;
+  void progressData;
   // Implement API call to update progress
   throw new Error('Not implemented');
 }
@@ -604,6 +612,8 @@ async function completePilgrimageOnServer(
   pilgrimageId: string,
   completionData: any
 ): Promise<void> {
+  void pilgrimageId;
+  void completionData;
   // Implement API call to complete pilgrimage
   throw new Error('Not implemented');
 }

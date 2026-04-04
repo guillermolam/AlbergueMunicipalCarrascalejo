@@ -20,9 +20,9 @@ pub async fn enforce_rate_limit(
     };
 
     let window = ctx.policy.rate_limit.window_seconds;
-    let now = chrono::Utc::now().timestamp() as u64;
+    let now = chrono::Utc::now().timestamp().cast_unsigned();
     let window_start = now - (now % window);
-    let key = format!("rl:{}:{}:{}", ctx.service, identity, window_start);
+    let key = format!("rl:{}:{}:{window_start}", ctx.service, identity);
 
     let conn = spin_sdk::redis::Connection::open(redis_address)
         .context("rate_limit_redis_open_failed")
@@ -39,7 +39,7 @@ pub async fn enforce_rate_limit(
                 spin_sdk::redis::RedisParameter::Binary(script.as_bytes().to_vec()),
                 spin_sdk::redis::RedisParameter::Binary(b"1".to_vec()),
                 spin_sdk::redis::RedisParameter::Binary(key.as_bytes().to_vec()),
-                spin_sdk::redis::RedisParameter::Int64(window as i64),
+                spin_sdk::redis::RedisParameter::Int64(window.cast_signed()),
             ],
         )
         .context("rate_limit_redis_eval_failed")
@@ -48,7 +48,7 @@ pub async fn enforce_rate_limit(
         })?;
 
     let current = parse_redis_int(&res).unwrap_or(0);
-    if current > ctx.policy.rate_limit.max_requests as i64 {
+    if current > ctx.policy.rate_limit.max_requests.cast_signed() {
         event!(
             Level::WARN,
             correlation_id = ctx.correlation_id,

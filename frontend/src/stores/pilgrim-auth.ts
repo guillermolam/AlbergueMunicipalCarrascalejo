@@ -1,11 +1,10 @@
 // Secure authentication and authorization for pilgrim system
 // SSR-compatible authentication with JWT, 2FA, and role-based access control
 
-import { atom, map } from 'nanostores';
+import { map } from 'nanostores';
 import { persistentMap } from '@nanostores/persistent';
 import { jwtDecode } from 'jwt-decode';
 import type { UserAuth, UserRole, Permission, Session, ApiResponse } from '@/types/pilgrim';
-import type { IPilgrimService } from '@/types/pilgrim-operations';
 
 // SSR-safe environment check
 const isServer = typeof window === 'undefined';
@@ -159,14 +158,16 @@ export const authStore = persistentMap<{
 /**
  * Permissions Store
  */
-export const permissionsStore = atom<{
+export const permissionsStore = map<{
   permissions: Permission[];
   roles: UserRole[];
+  isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 }>({
   permissions: [],
   roles: [],
+  isAuthenticated: false,
   isLoading: false,
   error: null,
 });
@@ -174,7 +175,7 @@ export const permissionsStore = atom<{
 /**
  * Session Store
  */
-export const sessionStore = atom<{
+export const sessionStore = map<{
   sessions: Session[];
   currentSession: Session | null;
   isLoading: boolean;
@@ -199,7 +200,7 @@ export const authActions = {
   async login(
     email: string,
     password: string,
-    rememberMe: boolean = false
+    _rememberMe: boolean = false
   ): Promise<ApiResponse<UserAuth>> {
     authStore.setKey('isLoading', true);
     authStore.setKey('error', null);
@@ -342,6 +343,7 @@ export const authActions = {
       permissionsStore.set({
         permissions: [],
         roles: [],
+        isAuthenticated: false,
         isLoading: false,
         error: null,
       });
@@ -486,6 +488,7 @@ export const authActions = {
         permissionsStore.set({
           permissions: response.data.permissions || [],
           roles: response.data.roles || [],
+          isAuthenticated: true,
           isLoading: false,
           error: null,
         });
@@ -497,6 +500,7 @@ export const authActions = {
       permissionsStore.set({
         permissions: [],
         roles: [],
+        isAuthenticated: false,
         isLoading: false,
         error: errorMessage,
       });
@@ -620,10 +624,11 @@ async function simulateLogin(
         emailVerified: true,
         phoneNumber: '+1234567890',
         phoneVerified: true,
+        passwordHash: 'hashed-password-placeholder',
         twoFactorEnabled: false,
         lastLoginAt: new Date(),
         loginAttempts: 0,
-        lockedUntil: null,
+        lockedUntil: undefined,
         roles: [
           {
             id: 'role-123',
@@ -639,6 +644,7 @@ async function simulateLogin(
         createdAt: new Date(),
         updatedAt: new Date(),
         version: 1,
+        isActive: true,
       },
       tokens: {
         accessToken:
@@ -672,10 +678,11 @@ async function simulateRegister(userData: any): Promise<ApiResponse<UserAuth>> {
       emailVerified: false,
       phoneNumber: userData.phoneNumber,
       phoneVerified: false,
+      passwordHash: 'hashed-password-placeholder',
       twoFactorEnabled: false,
-      lastLoginAt: null,
+      lastLoginAt: undefined,
       loginAttempts: 0,
-      lockedUntil: null,
+      lockedUntil: undefined,
       roles: [],
       permissions: [],
       sessions: [],
@@ -683,6 +690,7 @@ async function simulateRegister(userData: any): Promise<ApiResponse<UserAuth>> {
       createdAt: new Date(),
       updatedAt: new Date(),
       version: 1,
+      isActive: true,
     },
   };
 }
@@ -690,6 +698,7 @@ async function simulateRegister(userData: any): Promise<ApiResponse<UserAuth>> {
 async function simulateEnableTwoFactor(
   userId: string
 ): Promise<ApiResponse<{ secret: string; qrCode: string }>> {
+  void userId;
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -707,6 +716,7 @@ async function simulateVerifyTwoFactor(
   userId: string,
   code: string
 ): Promise<ApiResponse<boolean>> {
+  void userId;
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -747,6 +757,7 @@ async function simulateRefreshToken(
 async function simulateLoadUserPermissions(
   userId: string
 ): Promise<ApiResponse<{ permissions: Permission[]; roles: UserRole[] }>> {
+  void userId;
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -764,7 +775,7 @@ async function simulateLoadUserPermissions(
           id: 'perm-456',
           name: 'profile.write',
           resource: 'pilgrim_profiles',
-          action: 'write',
+          action: 'update',
         },
       ],
       roles: [
@@ -785,6 +796,7 @@ async function simulateCreateSession(
   ipAddress: string | null,
   userAgent: string | null
 ): Promise<ApiResponse<Session>> {
+  void userId;
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -794,8 +806,8 @@ async function simulateCreateSession(
       id: 'session-123',
       token: 'session-token-123',
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      ipAddress: ipAddress,
-      userAgent: userAgent,
+      ipAddress: ipAddress ?? undefined,
+      userAgent: userAgent ?? undefined,
       isActive: true,
       lastActivityAt: new Date(),
     },
@@ -803,6 +815,7 @@ async function simulateCreateSession(
 }
 
 async function revokeSession(sessionId: string): Promise<ApiResponse<boolean>> {
+  void sessionId;
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500));
 

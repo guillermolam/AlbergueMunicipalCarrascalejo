@@ -5,8 +5,10 @@ use serde_json::Value;
 use spin_sdk::http;
 use std::time::SystemTime;
 
-use crate::jwks_client::error::*;
-use crate::jwks_client::jwt::*;
+use crate::jwks_client::error::{
+    err_cer, err_con, err_exp, err_hea, err_inv, err_key, err_nbf, err_pay, err_sig, Error,
+};
+use crate::jwks_client::jwt::{Header, Jwt, Payload};
 
 type HeaderBody = String;
 pub type Signature = String;
@@ -73,10 +75,7 @@ impl KeyStore {
         self.keys.iter().find(|key| key.kid == kid)
     }
 
-    fn decode_segments(
-        &self,
-        token: &str,
-    ) -> Result<(Header, Payload, Signature, HeaderBody), Error> {
+    fn decode_segments(token: &str) -> Result<(Header, Payload, Signature, HeaderBody), Error> {
         let raw_segments: Vec<&str> = token.split('.').collect();
         if raw_segments.len() != 3 {
             return Err(err_inv("JWT does not have 3 segments"));
@@ -95,13 +94,13 @@ impl KeyStore {
                 .map_err(|_| err_pay("Failed to decode payload"))?,
         );
 
-        let body = format!("{}.{}", header_segment, payload_segment);
+        let body = format!("{header_segment}.{payload_segment}");
 
         Ok((header, payload, signature_segment, body))
     }
 
     pub fn verify_time(&self, token: &str, time: SystemTime) -> Result<Jwt, Error> {
-        let (header, payload, signature, body) = self.decode_segments(token)?;
+        let (header, payload, signature, body) = Self::decode_segments(token)?;
 
         if header.alg() != Some("RS256") {
             return Err(err_inv("Unsupported algorithm"));

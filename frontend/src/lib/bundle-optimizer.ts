@@ -339,7 +339,8 @@ export function generateOptimizationRecommendations(
   // Check for duplicate modules
   const moduleCounts = new Map<string, number>();
   analysis.chunks.forEach((chunk) => {
-    (chunk.modules as any[]).forEach((module: any) => {
+    const modules = Array.isArray(chunk.modules) ? chunk.modules : [];
+    modules.forEach((module: any) => {
       moduleCounts.set(module, (moduleCounts.get(module) || 0) + 1);
     });
   });

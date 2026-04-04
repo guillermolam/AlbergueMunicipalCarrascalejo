@@ -2,13 +2,30 @@
 // Type-safe operations with validation and error handling
 
 import type {
+  AccommodationPreference,
   PilgrimProfile,
   Pilgrimage,
   Booking,
   ProgressTracking,
   HealthSafety,
   SocialProfile,
-  UserAuth,
+  PersonalInfo,
+  EmergencyContact,
+  MedicalInfo,
+  CaminoExperience,
+  SocialLinks,
+  CaminoRoute,
+  BudgetRange,
+  TravelStyle,
+  Companion,
+  Equipment,
+  GeoLocation,
+  BookingStatus,
+  DailyDistance,
+  Achievement,
+  PilgrimageStatistics,
+  Incident,
+  CompanionPreferences,
   ValidationResult,
   ApiResponse,
   PaginatedResponse,
@@ -18,7 +35,6 @@ import type {
   SearchQuery,
   ExportConfig,
   ImportConfig,
-  AuditLog,
 } from './pilgrim';
 
 /**

@@ -1,4 +1,4 @@
-import { atom, map } from 'nanostores';
+import { map } from 'nanostores';
 
 // Booking state types
 export interface BookingState {

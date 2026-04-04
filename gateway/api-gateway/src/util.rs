@@ -1,5 +1,5 @@
 ﻿pub fn parse_redis_int(res: &[spin_sdk::redis::RedisResult]) -> Option<i64> {
-    match res.get(0)? {
+    match res.first()? {
         spin_sdk::redis::RedisResult::Int64(v) => Some(*v),
         spin_sdk::redis::RedisResult::Status(s) => s.parse::<i64>().ok(),
         spin_sdk::redis::RedisResult::Binary(v) => {

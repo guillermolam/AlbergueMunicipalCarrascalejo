@@ -68,14 +68,12 @@ pub fn build_request_context(req: &spin_sdk::http::Request) -> Result<RequestCon
     let correlation_id = req
         .header(CORRELATION_ID_HEADER)
         .and_then(|h| h.as_str())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| Uuid::new_v4().to_string());
+        .map_or_else(|| Uuid::new_v4().to_string(), ToString::to_string);
 
     let trace_id = req
         .header(TRACE_ID_HEADER)
         .and_then(|h| h.as_str())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| Uuid::new_v4().to_string());
+        .map_or_else(|| Uuid::new_v4().to_string(), ToString::to_string);
 
     let service = extract_service_name(req.path());
     let cfg = get_config()?;

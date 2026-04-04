@@ -248,9 +248,7 @@ export const healthCheckEndpoints = {
   },
 
   async checkAPIGateway(): Promise<HealthCheckResponse> {
-    const start = Date.now();
     // Mock API Gateway check (simulating timeout)
-    const responseTime = Date.now() - start;
 
     return {
       service: 'API Gateway',

@@ -42,15 +42,11 @@ variable "github_owner" {
   default     = "guillermolam"
 }
 
-variable "cloudflare_api_key" {
-  description = "Cloudflare Global API Key"
+variable "cloudflare_api_token" {
+  description = "Cloudflare API Token (scoped, created at dash.cloudflare.com/profile/api-tokens)"
   type        = string
   sensitive   = true
-}
-
-variable "cloudflare_email" {
-  description = "Cloudflare account email"
-  type        = string
+  default     = ""
 }
 
 variable "cloudflare_account_id" {

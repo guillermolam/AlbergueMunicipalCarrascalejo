@@ -2,7 +2,9 @@
 #![allow(
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    // spin_sdk::http_component macro generates Vec::from_raw_parts with same len/capacity
+    clippy::same_length_and_capacity
 )]
 
 use anyhow::Result;
@@ -44,6 +46,7 @@ pub struct ServiceRegistration {
 }
 
 #[http_component]
+#[allow(clippy::unnecessary_wraps, clippy::same_length_and_capacity)]
 fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
     telemetry::init_tracing();
     let mut router = Router::new();
@@ -60,6 +63,7 @@ fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
     Ok(router.handle(req))
 }
 
+#[allow(clippy::needless_pass_by_value, clippy::invisible_characters)]
 fn handle_camino_languages(req: Request, _params: Params) -> Result<impl IntoResponse> {
     let ctx = build_request_context(&req)?;
     let mut resp = ResponseBuilder::new(200)
@@ -89,6 +93,7 @@ fn handle_camino_languages(req: Request, _params: Params) -> Result<impl IntoRes
     Ok(apply_security_headers(resp, &ctx.policy))
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn handle_health(req: Request, _params: Params) -> Result<impl IntoResponse> {
     let ctx = build_request_context(&req)?;
     let mut resp = ResponseBuilder::new(200)
@@ -119,7 +124,7 @@ async fn handle_list_services(req: Request, _params: Params) -> Result<Response>
 
     let cfg = get_config()?;
     let mut services = Vec::new();
-    for (name, svc) in cfg.services.iter() {
+    for (name, svc) in &cfg.services {
         services.push(serde_json::json!({ "name": name, "url": svc.url }));
     }
 
@@ -230,14 +235,11 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
         }
     }
 
-    let mut response = match forward_to_service(&req, &ctx, auth_ctx.as_ref()).await {
-        Ok(r) => r,
-        Err(_) => {
-            return Ok(GatewayRejection::BadGateway {
-                message: "Upstream request failed".to_string(),
-            }
-            .into_response(&ctx))
+    let Ok(mut response) = forward_to_service(&req, &ctx, auth_ctx.as_ref()).await else {
+        return Ok(GatewayRejection::BadGateway {
+            message: "Upstream request failed".to_string(),
         }
+        .into_response(&ctx));
     };
 
     if ctx.policy.circuit_breaker.enabled {
@@ -268,20 +270,19 @@ async fn forward_to_service(
     ctx: &RequestContext,
     auth_ctx: Option<&AuthContext>,
 ) -> Result<Response> {
-    let service_url = match resolve_service_url(&ctx.service) {
-        Ok(u) => u,
-        Err(_) => return Ok(GatewayRejection::UnknownService.into_response(ctx)),
+    let Ok(service_url) = resolve_service_url(&ctx.service) else {
+        return Ok(GatewayRejection::UnknownService.into_response(ctx));
     };
 
     let upstream_path = rewrite_upstream_path(req.path(), &ctx.service);
     let upstream_path_and_query = match req.query() {
-        q if !q.is_empty() => format!("{}?{}", upstream_path, q),
+        q if !q.is_empty() => format!("{upstream_path}?{q}"),
         _ => upstream_path,
     };
 
     let mut forward_req = spin_sdk::http::Request::new(
         req.method().clone(),
-        format!("{}{}", service_url, upstream_path_and_query),
+        format!("{service_url}{upstream_path_and_query}"),
     );
     *forward_req.body_mut() = req.body().to_vec();
 

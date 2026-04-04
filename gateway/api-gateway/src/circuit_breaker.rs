@@ -23,7 +23,7 @@ pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Optio
             .and_then(|s| s.parse::<u64>().ok())
             .unwrap_or(0);
 
-        let now = chrono::Utc::now().timestamp() as u64;
+        let now = chrono::Utc::now().timestamp().cast_unsigned();
         if now < opened_at.saturating_add(ctx.policy.circuit_breaker.open_seconds) {
             let resp = ResponseBuilder::new(503)
                 .header("content-type", "application/json")
@@ -45,7 +45,7 @@ pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Optio
         }
 
         let _ = conn.set(&state_key, b"half_open");
-        let _ = conn.del(&[probe_key.clone()]);
+        let _ = conn.del(std::slice::from_ref(&probe_key));
     }
 
     let state = conn
@@ -105,16 +105,19 @@ pub async fn record(redis_address: &str, ctx: &RequestContext, status: u16) -> R
 
     if status >= 500 {
         if state == b"half_open" {
-            let now = chrono::Utc::now().timestamp() as u64;
+            let now = chrono::Utc::now().timestamp().cast_unsigned();
             let _ = conn.set(&state_key, b"open");
             let _ = conn.set(&opened_at_key, now.to_string().as_bytes());
             let _ = conn.del(&[failures_key, probe_key]);
             return Ok(());
         }
 
-        let failures = conn.incr(&failures_key).context("cb_incr_failed")? as u64;
+        let failures = conn
+            .incr(&failures_key)
+            .context("cb_incr_failed")?
+            .cast_unsigned();
         if failures >= ctx.policy.circuit_breaker.failure_threshold {
-            let now = chrono::Utc::now().timestamp() as u64;
+            let now = chrono::Utc::now().timestamp().cast_unsigned();
             let _ = conn.set(&state_key, b"open");
             let _ = conn.set(&opened_at_key, now.to_string().as_bytes());
             let _ = conn.del(&[probe_key]);

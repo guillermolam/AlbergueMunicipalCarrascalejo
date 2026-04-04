@@ -46,7 +46,8 @@ pub fn extract_events_from_response(response: &Response) -> Vec<serde_json::Valu
     events
 }
 
-/// Publish events to external MQTT broker (HiveMQ Cloud) using Spin MQTT API
+/// Publish events to external MQTT broker (`HiveMQ` Cloud) using Spin MQTT API
+#[allow(clippy::manual_let_else)]
 pub fn publish_events_async(events: Vec<serde_json::Value>) {
     if events.is_empty() {
         return;
@@ -59,12 +60,12 @@ pub fn publish_events_async(events: Vec<serde_json::Value>) {
         variables::get("mqtt_username").unwrap_or_else(|_| "alberguecarrascalejo_hive".to_string());
     let mqtt_password = variables::get("mqtt_password").unwrap_or_default();
 
-    let mqtt_address = format!("{}:{}", mqtt_host, mqtt_port);
+    let mqtt_address = format!("{mqtt_host}:{mqtt_port}");
 
     let connection = match Connection::open(&mqtt_address, &mqtt_username, &mqtt_password, 60) {
         Ok(conn) => conn,
         Err(e) => {
-            eprintln!("Failed to open MQTT connection: {:?}", e);
+            eprintln!("Failed to open MQTT connection: {e:?}");
             return;
         }
     };

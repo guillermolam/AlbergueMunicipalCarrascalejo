@@ -1,7 +1,7 @@
 version: "3"
 tasks:
   frontend:
-    desc: Build frontend (if using Spin static assets)
+    desc: Build frontend for Astro Cloudflare runtime deployment
     cmds:
       - cd frontend && ../scripts/pnpm.sh install --frozen-lockfile && ../scripts/pnpm.sh run build
 
