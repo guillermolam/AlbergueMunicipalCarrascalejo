@@ -60,6 +60,14 @@ includes:
     taskfile: ./taskfiles/Taskfile.deploy.yml
     dir: .
     optional: false
+  cloudflare:
+    taskfile: ./taskfiles/Taskfile.pages.yml
+    dir: .
+    optional: true
+  github:
+    taskfile: ./taskfiles/Taskfile.github.yml
+    dir: .
+    optional: true
   arch:
     taskfile: ./taskfiles/Taskfile.arch.yml
     dir: .
