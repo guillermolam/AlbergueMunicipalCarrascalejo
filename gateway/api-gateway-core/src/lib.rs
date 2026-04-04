@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use serde::Deserialize;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, serde::Deserialize)]
