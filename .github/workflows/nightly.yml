@@ -1,0 +1,180 @@
+name: Nightly Release Pipeline
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 3 AM
+  workflow_dispatch:
+
+jobs:
+  # Check for pending dependabot PRs
+  check-dependabot:
+    name: Check Dependabot PRs
+    runs-on: ubuntu-latest
+    outputs:
+      pr_count: ${{ steps.count.outputs.count }}
+    steps:
+      - name: Get Dependabot PRs
+        id: count
+        run: |
+          count=$(gh pr list --state open --label "dependencies" --json number --jq 'length')
+          echo "count=$count" >> $GITHUB_OUTPUT
+
+  # Validate dependencies (test build)
+  validate:
+    name: Validate Dependencies
+    runs-on: ubuntu-latest
+    needs: check-dependabot
+    if: needs.check-dependabot.outputs.pr_count > 0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm run build
+
+      - name: Type check
+        run: |
+          cd frontend
+          pnpm run type-check
+
+  # Auto-merge approved Dependabot PRs
+  auto-merge:
+    name: Auto-Merge Dependabot PRs
+    runs-on: ubuntu-latest
+    needs: [validate]
+    if: needs.validate.outputs.conclusion == 'success'
+    steps:
+      - name: Auto-merge PRs
+        run: |
+          for pr in $(gh pr list --state open --label "dependencies" --json number --jq '.[].number'); do
+            echo "Merging PR #$pr"
+            gh pr merge $pr --auto --squash || echo "Could not merge PR #$pr"
+          done
+
+  # Create nightly release
+  nightly-release:
+    name: Create Nightly Release
+    runs-on: ubuntu-latest
+    needs: [check-dependabot, auto-merge]
+    if: needs.check-dependabot.outputs.pr_count > 0 && needs.auto-merge.outputs.result == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          DATE=$(date +%Y%m%d)
+          HOUR=$(date +%H%M)
+          VERSION="nightly-$DATE-$HOUR"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Nightly Release ${{ steps.version.outputs.version }}
+          body: |
+            ## Nightly Release
+            Built from latest main branch including dependency updates.
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Deploy to Fermyon
+  deploy-fermyon:
+    name: Deploy to Fermyon
+    runs-on: ubuntu-latest
+    needs: nightly-release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm run build
+
+      - name: Setup Spin
+        run: |
+          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+          echo "$HOME/.spin/bin" >> $GITHUB_PATH
+
+      - name: Deploy to Fermyon
+        run: |
+          echo "${{ secrets.FERMYON_CLOUD_TOKEN }}" | spin cloud login --token
+          spin cloud deploy --link kv:default=default
+        env:
+          FERMYON_CLOUD_TOKEN: ${{ secrets.FERMYON_CLOUD_TOKEN }}
+
+  # Deploy to GitHub Pages
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: nightly-release
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/dist
