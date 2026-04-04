@@ -25,7 +25,8 @@ pub enum Type {
     Connection,
     Header,
     Payload,
-    Signature,}
+    Signature,
+}
 
 pub(crate) fn err(msg: &'static str, typ: Type) -> Error {
     Error { msg, typ }
