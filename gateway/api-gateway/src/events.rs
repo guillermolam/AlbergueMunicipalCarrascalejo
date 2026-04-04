@@ -108,7 +108,7 @@ mod tests {
         let response = Response::builder()
             .status(200)
             .header("X-CloudEvents", events_json)
-            .body(b"{\"status\":\"ok\"}")
+            .body(r#"{"status":"ok"}"#)
             .build();
 
         let extracted = extract_events_from_response(&response);
@@ -118,10 +118,7 @@ mod tests {
     #[test]
     fn test_extract_events_from_body() {
         let body = r#"{"data":{"id":"123"},"events":[{"type":"albergue.v1.booking.reserved"}]}"#;
-        let response = Response::builder()
-            .status(200)
-            .body(body.as_bytes())
-            .build();
+        let response = Response::builder().status(200).body(body).build();
 
         let extracted = extract_events_from_response(&response);
         assert_eq!(extracted.len(), 1);
@@ -131,7 +128,7 @@ mod tests {
     fn test_no_events() {
         let response = Response::builder()
             .status(200)
-            .body(b"{\"status\":\"ok\"}")
+            .body(r#"{"status":"ok"}"#)
             .build();
 
         let extracted = extract_events_from_response(&response);
