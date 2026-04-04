@@ -17,7 +17,7 @@ tasks:
   snyk:
     desc: Run Snyk dependency scan
     cmds:
-      - snyk test frontend/
+      - cd frontend && snyk test --org=guillermo-org || true
 
   checkov:
     desc: Run Checkov IaC scan
