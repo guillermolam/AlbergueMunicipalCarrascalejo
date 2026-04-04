@@ -1,4 +1,5 @@
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use spin_sdk::http::{Request, Response};
 
 pub async fn handle(req: &Request) -> Result<Response> {
@@ -6,35 +7,26 @@ pub async fn handle(req: &Request) -> Result<Response> {
     let method = req.method().as_str();
 
     match (method, path) {
-        ("GET", path) if path.starts_with("/api/location/search") => {
-            let response_body = serde_json::json!({
-                "locations": [
-                    {
-                        "name": "Mérida Historic Center",
-                        "latitude": 38.9165,
-                        "longitude": -6.3363,
-                        "distance": "0.5km"
-                    },
-                    {
-                        "name": "Roman Theatre",
-                        "latitude": 38.9156,
-                        "longitude": -6.3356,
-                        "distance": "0.8km"
-                    }
-                ]
-            })
-            .to_string();
-
+        ("GET", p) if p.starts_with("/api/countries/") => get_country_info(req).await,
+        ("GET", p) if p.starts_with("/api/location/search") => handle_location_search(req).await,
+        ("OPTIONS", _) => {
             Ok(Response::builder()
                 .status(200)
-                .header("Content-Type", "application/json")
-                .body(response_body)
-                .build())
+                .header("Access-Control-Allow-Origin", "*")
+                .header(
+                    "Access-Control-Allow-Methods",
+                    "GET, POST, PUT, DELETE, OPTIONS",
+                )
+                .header(
+                    "Access-Control-Allow-Headers",
+                    "Content-Type, Authorization",
+                )
+                .body(None)?)
         }
         _ => {
             let error_body = serde_json::json!({
                 "error": "Not Found",
-                "message": "Location endpoint not found"
+                "message": "Location/Country endpoint not found"
             })
             .to_string();
 
@@ -47,10 +39,31 @@ pub async fn handle(req: &Request) -> Result<Response> {
     }
 }
 
-use anyhow::Result;
-use serde::{Deserialize, Serialize};
-use spin_sdk::http::{Request, Response};
-use std::collections::HashMap;
+async fn handle_location_search(_req: &Request) -> Result<Response> {
+    let response_body = serde_json::json!({
+        "locations": [
+            {
+                "name": "Mérida Historic Center",
+                "latitude": 38.9165,
+                "longitude": -6.3363,
+                "distance": "0.5km"
+            },
+            {
+                "name": "Roman Theatre",
+                "latitude": 38.9156,
+                "longitude": -6.3356,
+                "distance": "0.8km"
+            }
+        ]
+    })
+    .to_string();
+
+    Ok(Response::builder()
+        .status(200)
+        .header("Content-Type", "application/json")
+        .body(response_body)
+        .build())
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CountryResponse {
@@ -69,37 +82,6 @@ pub struct CountryInfo {
     pub flag: String,
 }
 
-pub async fn handle(req: &Request) -> Result<Response> {
-    let path = req.uri().path();
-    let method = req.method().as_str();
-
-    match (method, path) {
-        ("GET", path) if path.starts_with("/api/countries/") => get_country_info(req).await,
-        ("OPTIONS", _) => {
-            // Handle CORS preflight
-            Ok(Response::builder()
-                .status(200)
-                .header("Access-Control-Allow-Origin", "*")
-                .header(
-                    "Access-Control-Allow-Methods",
-                    "GET, POST, PUT, DELETE, OPTIONS",
-                )
-                .header(
-                    "Access-Control-Allow-Headers",
-                    "Content-Type, Authorization",
-                )
-                .body(None)?)
-        }
-        _ => Ok(Response::builder()
-            .status(404)
-            .header("Content-Type", "application/json")
-            .body(Some(serde_json::to_vec(&serde_json::json!({
-                "error": "Not Found",
-                "message": "Country service endpoint not found"
-            }))?))?),
-    }
-}
-
 async fn get_country_info(req: &Request) -> Result<Response> {
     let path = req.uri().path();
     let country_code = path.trim_start_matches("/api/countries/");
@@ -114,8 +96,6 @@ async fn get_country_info(req: &Request) -> Result<Response> {
             }))?))?);
     }
 
-    // For now, return mock data as the actual country cache service integration
-    // would require proper service discovery and HTTP client setup
     let country_info = CountryResponse {
         code: country_code.to_uppercase(),
         name: get_country_name(country_code),

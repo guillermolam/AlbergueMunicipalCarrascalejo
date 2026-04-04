@@ -1,4 +1,4 @@
-﻿use anyhow::{Context, Result};
+use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
@@ -42,5 +42,3 @@ pub fn rewrite_upstream_path_for_test(path: &str, service: &str) -> String {
 
     path.to_string()
 }
-
-

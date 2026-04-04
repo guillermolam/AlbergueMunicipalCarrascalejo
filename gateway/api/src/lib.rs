@@ -24,15 +24,6 @@ const INFO_URL: &str = "/info";
 const VALIDATION_URL: &str = "/validation";
 
 #[derive(Serialize, Deserialize)]
-struct ServiceCompositionResult {
-    rate_limit_passed: bool,
-    security_scan_passed: bool,
-    auth_verified: bool,
-    business_logic_result: Option<serde_json::Value>,
-    error: Option<String>,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct MiddlewareContext {
     client_id: String,
     endpoint: String,
@@ -61,7 +52,7 @@ pub fn create_cors_headers() -> Vec<(&'static str, &'static str)> {
 }
 
 // Stateless pure function for response building
-pub fn build_response_with_cors(status: u16, content_type: &str, body: String) -> Response {
+pub fn build_response_with_cors(status: u16, _content_type: &str, body: String) -> Response {
     Response::new(status, body)
 }
 

@@ -28,16 +28,6 @@ mod security_headers;
 mod telemetry;
 mod util;
 
-pub fn rewrite_upstream_path_for_test(path: &str, service: &str) -> String {
-    rewrite_upstream_path(path, service)
-}
-
-pub fn gateway_config_for_test(bytes: &[u8]) -> anyhow::Result<gateway_config::GatewayConfig> {
-    let text = std::str::from_utf8(bytes)?;
-    let cfg: gateway_config::GatewayConfig = toml::from_str(text)?;
-    Ok(cfg)
-}
-
 use context::{
     build_request_context, get_config, resolve_service_url, AuthContext, RequestContext,
     CORRELATION_ID_HEADER, REDIS_ADDRESS_VAR, SERVICE_REGISTRY_STORE, TRACE_ID_HEADER,
