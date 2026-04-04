@@ -31,7 +31,7 @@
     "@nanostores/persistent": "^1.2.0",
     "@supabase/supabase-js": "^2.49.1",
     "alpinejs": "^3.14.0",
-    "astro": "^5.16.6",
+    "astro": "^5.17.3",
     "clsx": "^2.1.1",
     "nanostores": "^0.11.3",
     "redis": "^5.10.0",
