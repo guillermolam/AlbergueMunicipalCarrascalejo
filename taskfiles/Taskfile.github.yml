@@ -59,4 +59,17 @@ tasks:
       
       - echo ""
       - echo "Fermyon Cloud:"
-      - curl -s -o /dev/null -w "   API: HTTP %{http_code}\n" --max-time 10 "https://albergue-carrascalejo-v99ew1nt.fermyon.app/api/" 2>/dev/null || echo "   API: Failed"
+      - echo "Fermyon Cloud:"
+      - echo "Testing..."
+      - |
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "https://albergue-carrascalejo-v99ew1nt.fermyon.app/api/" 2>/dev/null || echo "000")
+        echo "   API: HTTP $STATUS"
+
+  test:fermyon:
+    desc: Test Fermyon deployment
+    cmds:
+      - echo "Testing Fermyon..."
+      - |
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "https://albergue-carrascalejo-v99ew1nt.fermyon.app/api/" 2>/dev/null || echo "000")
+        echo "   API: HTTP $STATUS"
+

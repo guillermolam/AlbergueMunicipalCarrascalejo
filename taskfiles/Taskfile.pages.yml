@@ -118,7 +118,7 @@ tasks:
         fi
 
   test:cloudflare:
-    desc: Test Cloudflare Pages deployment (NOTE: may fail due to network issues)
+    desc: Test Cloudflare Pages deployment
     deps: [check:env]
     cmds:
       - |

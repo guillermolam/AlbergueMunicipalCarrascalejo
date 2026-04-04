@@ -1,0 +1,186 @@
+# Snyk Configuration File
+# https://docs.snyk.io/scan-with-snyk/snyk-cli/snyk-cli-options
+# =============================================================================
+version: v1
+
+# Organization settings
+org: a870f42d-30fc-4ed4-872e-1878a8f512ca
+
+# =============================================================================
+# Exclude paths from all scans
+# =============================================================================
+exclude:
+  # Build artifacts
+  - '**/node_modules/**'
+  - '**/target/**'
+  - '**/dist/**'
+  - '**/.astro/**'
+  - '**/.cache/**'
+  - '**/.vite/**'
+  - '**/.next/**'
+  - '**/.nuxt/**'
+  - '**/.output/**'
+
+  # Rust specific
+  - '**/*.rs.bk'
+  - '**/*.rlib'
+  - '**/*.rmeta'
+  - '**/*.d'
+  - '**/*.o'
+  - '**/*.so'
+  - '**/*.dll'
+  - '**/*.dylib'
+
+  # Environment and secrets
+  - '**/.env*'
+  - '**/*.pem'
+  - '**/*.key'
+  - '**/*.crt'
+  - '**/secrets/**'
+  - '**/*secret*'
+  - '**/*token*'
+
+  # Compiled binaries
+  - '**/*.wasm'
+  - '**/*.wat'
+  - '**/*.bin'
+
+  # Test directories
+  - '**/tests/**'
+  - '**/__tests__/**'
+  - '**/test/**'
+  - '**/fixtures/**'
+  - '**/mocks/**'
+
+  # Scripts and CI
+  - '**/scripts/**'
+  - '**/.github/**'
+  - '**/.trunk/**'
+  - '**/.qlty/**'
+
+  # Documentation
+  - '**/docs/**'
+  - '**/README*'
+  - '**/LICENSE*'
+
+  # IDE and OS
+  - '**/.vscode/**'
+  - '**/.idea/**'
+  - '**/.DS_Store'
+
+# =============================================================================
+# Language-specific settings
+# =============================================================================
+
+# JavaScript/TypeScript (npm/pnpm)
+# Scanned via: snyk test frontend/
+nodejs:
+  # Timeout in ms (default: 180000)
+  # timeout: 300000
+
+  # Number of retry attempts
+  # retries: 5
+
+  # Gradle: use maven or gradle to resolve dependencies
+  # packageManager: npm
+
+# Rust (Cargo)
+# Scanned via: snyk test --language=cargo backend/
+cargo:
+  # Timeout in ms
+  # timeout: 300000
+
+# =============================================================================
+# Terraform/IaC scanning
+# =============================================================================
+# Note: Terraform scanning via 'snyk iac test' instead of 'snyk test'
+# Separate configuration for IaC:
+#   - snyk iac test infra/ --org=a870f42d-30fc-4ed4-872e-1878a8f512ca
+#
+# Terraform-specific exclusions
+# terraform:
+#   exclude:
+#     - '**/.terraform/**'
+#     - '**/tfplan'
+
+# =============================================================================
+# Maven/Gradle (if used in future)
+# =============================================================================
+# maven:
+#   # Uses maven to resolve dependencies
+#   packageManager: maven
+
+# gradle:
+#   packageManager: gradle
+
+# =============================================================================
+# Docker scanning
+# =============================================================================
+# docker:
+#   # Don't fail on Docker file creation
+#   # dontFailOnDockerfileCreation: false
+#
+#   # Image scanning
+#   # imageScanning: true
+#
+#   # Dockerfile paths to scan
+#   # dockerfilePaths:
+#   #   - Dockerfile
+#   #   - Dockerfile.dev
+
+# =============================================================================
+# IAC (Infrastructure as Code) Settings
+# =============================================================================
+iac:
+  # Terraform, CloudFormation, K8s, etc.
+  # scanned via 'snyk iac test'
+
+  # Exclude paths
+  exclude:
+    - '**/.terraform/**'
+    - '**/tfplan'
+    - '**/*.tfstate'
+    - '**/*.tfstate.*'
+
+# =============================================================================
+# Severity thresholds
+# =============================================================================
+# Severity of issues to fail on (in CI)
+# By default: critical, high
+# Options: critical, high, medium, low
+severity-threshold: critical
+
+# =============================================================================
+# Additional options
+# =============================================================================
+# Skip remote CI/CD builds when testing locally
+# skipWhenScannedInCI: true
+
+# Group by package in output
+# group-issues: true
+
+# Show all transitive dependencies
+# show-transitive-deps: true
+
+# Don't scan dev dependencies
+# npm:
+#   # Exclude dev dependencies
+#   pruneDeps: true
+
+# Use lockfile for resolution
+# useLockfile: true
+# usenpm: true
+
+# =============================================================================
+# File-based ignore rules
+# =============================================================================
+# ignore:
+#   # Ignore specific vulnerabilities
+#   - '*':
+#       - '*'
+#         reason: 'Ignore all vulnerabilities in this file'
+#         expires: '2024-12-31'
+#   # Ignore specific CVE
+#   - 'SNYK-JS-LODASH-1040724':
+#       - '*'
+#         reason: 'False positive'

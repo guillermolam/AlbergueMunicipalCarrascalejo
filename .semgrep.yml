@@ -1,0 +1,109 @@
+version: '1.0'
+
+# =============================================================================
+# Semgrep Configuration - Multi-language Security Scanning
+# =============================================================================
+# Supports: JavaScript/TypeScript, Rust, Terraform, and more
+
+# Define rules to run
+rules:
+  - auto              # Auto-detect best rules from Semgrep Registry
+  - p/javascript      # JavaScript/TypeScript best practices
+  - p/typescript      # TypeScript specific rules
+  - p/rust            # Rust security best practices
+  - p/terraform       # Terraform security best practices
+
+# =============================================================================
+# Scan Targets
+# =============================================================================
+# Scan these directories
+paths:
+  - frontend
+  - backend
+  - gateway
+  - infra
+
+# =============================================================================
+# Exclusions
+# =============================================================================
+# Patterns to exclude from scanning
+exclude:
+  # Build artifacts
+  - '**/node_modules/**'
+  - '**/target/**'
+  - '**/dist/**'
+  - '**/.astro/**'
+  - '**/.cache/**'
+  - '**/.vite/**'
+  - '**/.next/**'
+  
+  # Environment and secrets
+  - '**/.env*'
+  - '**/*.pem'
+  - '**/*.key'
+  - '**/*.crt'
+  - '**/*.crt.*'
+  
+  # Compiled binaries
+  - '**/*.wasm'
+  - '**/*.wat'
+  - '**/*.bin'
+  - '**/*.rlib'
+  - '**/*.rmeta'
+  
+  # Test and mock directories
+  - '**/tests/**'
+  - '**/__tests__/**'
+  - '**/test/**'
+  - '**/mocks/**'
+  - '**/fixtures/**'
+  
+  # Scripts and CI
+  - '**/scripts/**'
+  - '**/.github/**'
+  - '**/.gitlab-ci.yml'
+  
+  # Documentation
+  - '**/docs/**'
+  - '**/README*'
+  - '**/LICENSE*'
+  
+  # Third-party / vendored
+  - '**/vendor/**'
+  - '**/third_party/**'
+  - '**/.trunk/**'
+  - '**/.qlty/**'
+  
+  # IDE and OS
+  - '**/.vscode/**'
+  - '**/.idea/**'
+  - '**/.DS_Store'
+  - '**/Thumbs.db'
+
+# =============================================================================
+# Options
+# =============================================================================
+# Performance and output options
+options:
+  # Maximum memory in MB
+  max_memory_mb: 4096
+  
+  # Enable verbose output (use in CI)
+  # verbose: true
+  
+  # Enable JSON output for CI
+  # json: true
+  
+  # Auto-fix where possible
+  # autofix: false  # Disabled by default to prevent data loss
+
+# =============================================================================
+# Severity thresholds
+# =============================================================================
+# Blocking issues (fail CI if found)
+# ERROR and CRITICAL are always blocking
+# Uncomment to also block warnings:
+# blocking:
+#   - WARNING
+#   - ERROR
+#   - CRITICAL
