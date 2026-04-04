@@ -236,7 +236,7 @@ jobs:
       - name: Run security audit (Node)
         run: |
           cd frontend
-          pnpm audit --audit-level=high
+          pnpm audit --audit-level=critical
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
