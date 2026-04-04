@@ -17,9 +17,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,10 +34,11 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: cd frontend && pnpm install --frozen-lockfile
 
       - name: Build
         run: |
+          cd frontend
           PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://albergue-carrascalejo-v99ew1nt.fermyon.app/api' }} pnpm build
         env:
           PUBLIC_API_URL: https://albergue-carrascalejo-v99ew1nt.fermyon.app/api
@@ -48,7 +46,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: frontend/dist
 
   deploy:
     needs: build
