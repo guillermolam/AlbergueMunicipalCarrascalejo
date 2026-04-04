@@ -15,7 +15,7 @@ dependencies:
     specifier: ^3.14.0
     version: 3.15.3
   astro:
-    specifier: ^5.18.1
+    specifier: ^5.17.3
     version: 5.18.1(typescript@5.9.3)
   clsx:
     specifier: ^2.1.1
