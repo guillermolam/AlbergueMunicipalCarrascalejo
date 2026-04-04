@@ -1,0 +1,51 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    reviewers:
+      - "guillermolam"
+    automerged-by:
+      - "dependabot[bot]"
+    versioning-strategy: increase
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "rust"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    reviewers:
+      - "guillermolam"
+    versioning-strategy: increase
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
