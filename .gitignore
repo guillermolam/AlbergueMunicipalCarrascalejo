@@ -183,3 +183,6 @@ runtime-config.toml
 **/override.tf.json
 **/*_override.tf
 **/*_override.tf.json
+
+# === FIRECRAWL CACHE ===
+**/.firecrawl/
