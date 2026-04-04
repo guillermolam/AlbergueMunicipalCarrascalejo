@@ -1,14 +1,8 @@
-variable "github_token" {
-  description = "GitHub personal access token"
-  type        = string
-  sensitive   = true
-}
-
 provider "tfe" {
-  token = var.github_token
+  token = var.tfe_token
 }
 
 provider "github" {
-  owner = "guillermolam"
+  owner = var.github_owner
   token = var.github_token
 }
