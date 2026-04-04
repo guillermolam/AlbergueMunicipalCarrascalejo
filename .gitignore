@@ -168,3 +168,17 @@ runtime-config.toml
 
 # === CUSTOM ===
 .copilot-patches/api-gateway-rfc7807.patch
+
+# === TERRAFORM ===
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+**/tfplan
+**/.tfrc
+**/crash.log
+**/override.tf
+**/override.tf.json
+**/*_override.tf
+**/*_override.tf.json
+
