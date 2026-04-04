@@ -10,7 +10,8 @@ crate-type = ["cdylib"]
 anyhow = "1.0.100"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.134"
-spin-sdk = "5.1.1"
+spin-sdk = "5.2.0"
+http = "1.4"
 chrono = { version = "0.4.43", features = ["serde"] }
 
 

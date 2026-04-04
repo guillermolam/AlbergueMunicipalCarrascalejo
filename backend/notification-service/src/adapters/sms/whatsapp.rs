@@ -58,7 +58,7 @@ impl WhatsAppAdapter {
              AlbergueError::ExternalServiceError(format!("WhatsApp request failed: {}", e))
         })?;
 
-        if response.status() == 200 || response.status() == 201 {
+        if *response.status() == 200 || *response.status() == 201 {
             let body_bytes = response.body();
             let result: serde_json::Value = serde_json::from_slice(body_bytes).map_err(|e| 
                 AlbergueError::ExternalServiceError(format!("Failed to parse WhatsApp response: {}", e))

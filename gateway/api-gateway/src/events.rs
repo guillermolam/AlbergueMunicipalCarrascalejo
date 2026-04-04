@@ -1,8 +1,10 @@
 // Event interception middleware for API Gateway
-// Extracts CloudEvents from service responses and publishes to mqtt-broker-service
+// Extracts CloudEvents from service responses and publishes to external MQTT broker
 
 use serde::Deserialize;
-use spin_sdk::http::{Request, Response};
+use spin_sdk::http::Response;
+use spin_sdk::mqtt::Connection;
+use spin_sdk::variables;
 
 /// Response envelope that may contain events
 #[derive(Debug, Deserialize)]
@@ -44,42 +46,41 @@ pub fn extract_events_from_response(response: &Response) -> Vec<serde_json::Valu
     events
 }
 
-/// Publish events to mqtt-broker-service (fire-and-forget)
+/// Publish events to external MQTT broker (HiveMQ Cloud) using Spin MQTT API
 pub fn publish_events_async(events: Vec<serde_json::Value>) {
     if events.is_empty() {
         return;
     }
 
-    let broker_url = "http://mqtt-broker-service.spin.internal";
+    let mqtt_host = variables::get("mqtt_broker_host")
+        .unwrap_or_else(|_| "4daf0d9c7c5f4112a62ec2f01b94518d.s1.eu.hivemq.cloud".to_string());
+    let mqtt_port = variables::get("mqtt_broker_port").unwrap_or_else(|_| "8883".to_string());
+    let mqtt_username =
+        variables::get("mqtt_username").unwrap_or_else(|_| "alberguecarrascalejo_hive".to_string());
+    let mqtt_password = variables::get("mqtt_password").unwrap_or_default();
+
+    let mqtt_address = format!("{}:{}", mqtt_host, mqtt_port);
+
+    let connection = match Connection::open(&mqtt_address, &mqtt_username, &mqtt_password, 60) {
+        Ok(conn) => conn,
+        Err(e) => {
+            eprintln!("Failed to open MQTT connection: {:?}", e);
+            return;
+        }
+    };
 
     for event in events {
-        // Extract topic from event type
         let topic = event
             .get("type")
             .and_then(|t| t.as_str())
             .unwrap_or("albergue.v1.unknown");
 
-        // Serialize full CloudEvent
-        let payload = match serde_json::to_string(&event) {
+        let payload = match serde_json::to_vec(&event) {
             Ok(p) => p,
             Err(_) => continue,
         };
 
-        let publish_body = serde_json::json!({
-            "topic": topic,
-            "payload": payload,
-            "qos": 0,
-            "retain": false
-        });
-
-        let publish_url = format!("{}/api/mqtt/publish", broker_url);
-
-        // Build request and fire-and-forget
-        let request = Request::post(&publish_url, serde_json::to_vec(&publish_body).unwrap_or_default())
-            .header("Content-Type", "application/json")
-            .build();
-
-        let _ = spin_sdk::http::send::<Request, Response>(request);
+        let _ = connection.publish(topic, &payload, spin_sdk::mqtt::Qos::AtLeastOnce);
     }
 }
 

@@ -1,0 +1,6 @@
+name = "albergue-carrascalejo"
+compatibility_date = "2024-01-01"
+account_id = "798e36259a38e6217cc9987ce0bf1316"
+
+[site]
+bucket = "./dist"

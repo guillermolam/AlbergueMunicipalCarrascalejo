@@ -3,6 +3,9 @@ name = "redis-service"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
 # Core dependencies
 anyhow = "1.0"
@@ -24,7 +27,7 @@ futures = "0.3"
 
 
 # Spin SDK
-spin-sdk = { version = "5.1.1" }
+spin-sdk = { version = "5.2.0" }
 wit-bindgen = "0.51.0"
 
 # HTTP

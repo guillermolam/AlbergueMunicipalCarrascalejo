@@ -58,7 +58,7 @@ impl TwilioAdapter {
              AlbergueError::ExternalServiceError(format!("Twilio request failed: {}", e))
         })?;
 
-        if response.status() == 200 || response.status() == 201 {
+        if *response.status() == 200 || *response.status() == 201 {
             let body_bytes = response.body();
             let json: serde_json::Value = serde_json::from_slice(body_bytes).map_err(|e| 
                 AlbergueError::ExternalServiceError(format!("Failed to parse Twilio response: {}", e))
@@ -110,7 +110,7 @@ impl SmsPort for TwilioAdapter {
             .build();
 
         match spin_sdk::http::send(req).await {
-            Ok(response) => Ok(response.status() == 200),
+            Ok(response) => Ok(*response.status() == 200),
             Err(_) => Ok(false),
         }
     }
