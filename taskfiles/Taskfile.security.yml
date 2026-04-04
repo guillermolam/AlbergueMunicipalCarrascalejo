@@ -1,0 +1,35 @@
+version: '3'
+
+tasks:
+  all:
+    desc: Run all security scans
+    cmds:
+      - task: semgrep
+      - task: snyk
+      - task: checkov
+
+  semgrep:
+    desc: Run Semgrep security scan
+    cmds:
+      - semgrep --config p/terraform infra/
+      - semgrep --config p/javascript frontend/
+
+  snyk:
+    desc: Run Snyk dependency scan
+    cmds:
+      - snyk test frontend/
+
+  checkov:
+    desc: Run Checkov IaC scan
+    cmds:
+      - checkov -d infra/ --skip-check CKV_AWS_41,CKV_TF_1,CKV_TF_2,CKV_GIT_1,CKV_GIT_3,CKV_GIT_4,CKV_GIT_5,CKV_GIT_6
+
+  kics:
+    desc: Run KICS
+    cmds:
+      - echo Run docker run checkmarx/kics scan -p infra/ -t Terraform
+
+  fix:
+    desc: Fix security issues
+    cmds:
+      - echo Run snyk wizard
