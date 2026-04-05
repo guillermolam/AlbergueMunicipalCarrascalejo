@@ -1,14 +1,11 @@
-﻿use crate::gateway_config::{load_from_file, GatewayConfig, Policy, ServiceConfig};
+use crate::gateway_config::{load_from_file, GatewayConfig, Policy, ServiceConfig};
 use anyhow::Result;
 use once_cell::sync::OnceCell;
-use spin_sdk::{key_value::Store, variables};
 use uuid::Uuid;
 
-pub const SERVICE_REGISTRY_STORE: &str = "default";
 pub const CORRELATION_ID_HEADER: &str = "x-correlation-id";
 pub const TRACE_ID_HEADER: &str = "x-trace-id";
 pub const DEFAULT_CONFIG_PATH: &str = "/config/gateway.toml";
-pub const REDIS_ADDRESS_VAR: &str = "redis_address";
 
 #[derive(Clone, Debug)]
 pub struct RequestContext {
@@ -19,6 +16,7 @@ pub struct RequestContext {
 }
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub struct AuthContext {
     pub claims_for_headers: std::collections::HashMap<String, String>,
     pub subject: Option<String>,
@@ -32,7 +30,7 @@ static CONFIG: OnceCell<GatewayConfig> = OnceCell::new();
 
 pub fn get_config() -> Result<&'static GatewayConfig> {
     CONFIG.get_or_try_init(|| {
-        let path = variables::get("gateway_config_path")
+        let path = std::env::var("GATEWAY_CONFIG_PATH")
             .unwrap_or_else(|_| DEFAULT_CONFIG_PATH.to_string());
         load_from_file(&path)
     })
@@ -51,7 +49,6 @@ pub fn extract_service_name(path: &str) -> String {
     match second {
         "auth" => "auth-service".to_string(),
         "countries" => "location-service".to_string(),
-        "redis" => "redis-service".to_string(),
         "rate-limit" => "rate-limiter-service".to_string(),
         "security" => "security-service".to_string(),
         "reviews" => "reviews-service".to_string(),
@@ -64,18 +61,22 @@ pub fn extract_service_name(path: &str) -> String {
     }
 }
 
-pub fn build_request_context(req: &spin_sdk::http::Request) -> Result<RequestContext> {
-    let correlation_id = req
-        .header(CORRELATION_ID_HEADER)
-        .and_then(|h| h.as_str())
-        .map_or_else(|| Uuid::new_v4().to_string(), ToString::to_string);
+pub fn build_request_context(req: &worker::Request) -> Result<RequestContext> {
+    let headers = req.headers();
 
-    let trace_id = req
-        .header(TRACE_ID_HEADER)
-        .and_then(|h| h.as_str())
-        .map_or_else(|| Uuid::new_v4().to_string(), ToString::to_string);
+    let correlation_id = headers
+        .get(CORRELATION_ID_HEADER)
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
 
-    let service = extract_service_name(req.path());
+    let trace_id = headers
+        .get(TRACE_ID_HEADER)
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
+
+    let service = extract_service_name(&req.path());
     let cfg = get_config()?;
     let service_cfg = cfg.services.get(&service);
     let policy = match service_cfg {
@@ -95,13 +96,6 @@ pub fn resolve_service_url(service: &str) -> Result<String> {
     let cfg = get_config()?;
     if let Some(ServiceConfig { url, .. }) = cfg.services.get(service) {
         return Ok(url.clone());
-    }
-
-    let store = Store::open(SERVICE_REGISTRY_STORE)?;
-    let service_key = format!("service:{service}");
-    if let Ok(Some(data)) = store.get(&service_key) {
-        let registration: crate::ServiceRegistration = serde_json::from_slice(&data)?;
-        return Ok(registration.url);
     }
 
     Err(anyhow::anyhow!("unknown_service"))

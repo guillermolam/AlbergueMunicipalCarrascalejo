@@ -1,0 +1,17 @@
+name = "rate-limiter-service"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-12-01"
+
+[build]
+command = "cargo install worker-build && worker-build --release"
+
+[vars]
+ENVIRONMENT = "production"
+
+# KV for rate limiting state
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "" # Set after `wrangler kv namespace create RATE_LIMIT`
+
+[placement]
+mode = "smart"

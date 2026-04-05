@@ -1,42 +1,24 @@
 use anyhow::Result;
-use serde::{de::DeserializeOwned, Serialize};
-use spin_sdk::http::{Request as SpinRequest, Response as SpinResponse};
-use std::str::FromStr;
+use serde::de::DeserializeOwned;
 
 const BACKEND_BASE_URL: &str = "http://localhost:3000";
 
+/// Make a GET request to a backend service using the Cloudflare Workers Fetch API.
 pub async fn get<T: DeserializeOwned>(path: &str) -> Result<T> {
-    let url = format!("{}{}", BACKEND_BASE_URL, path);
-    let req = SpinRequest::get(&url);
-    send_request::<(), T>(req, None).await
-}
+    let url = format!("{BACKEND_BASE_URL}{path}");
+    let parsed_url = worker::Url::parse(&url)?;
 
-pub async fn post<T: DeserializeOwned, U: Serialize>(path: &str, body: &U) -> Result<T> {
-    let url = format!("{}{}", BACKEND_BASE_URL, path);
-    let req = SpinRequest::post(&url, body);
-    send_request(req, Some(body)).await
-}
+    let mut response = worker::Fetch::Url(parsed_url)
+        .send()
+        .await
+        .map_err(|e| anyhow::anyhow!("Fetch failed: {e}"))?;
 
-async fn send_request<T: Serialize, U: DeserializeOwned>(
-    req: SpinRequest,
-    body: Option<&T>,
-) -> Result<U> {
-    let mut req = req;
+    let body = response
+        .text()
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to read response: {e}"))?;
 
-    if let Some(body) = body {
-        let body_bytes = serde_json::to_vec(body)?;
-        req = req.body(body_bytes);
-    }
-
-    let res = spin_sdk::http::send(req).await?;
-
-    if !res.status().is_success() {
-        anyhow::bail!("Request failed with status: {}", res.status());
-    }
-
-    let body = res.body().as_deref().unwrap_or_default();
-    let parsed: U = serde_json::from_slice(body)?;
-
+    let parsed: T = serde_json::from_str(&body)?;
     Ok(parsed)
 }
 

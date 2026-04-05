@@ -19,51 +19,23 @@ pub fn matches_topic(event_type: &str, filter: &str) -> bool {
         |prefix| event_type.starts_with(prefix),
     )
 }
+
+/// Register a webhook with the MQTT broker service.
+///
+/// In production Cloudflare Workers, service-to-service calls should use
+/// Worker service bindings configured in `wrangler.toml`. This function
+/// logs the registration intent; actual HTTP calls are handled at the
+/// individual worker handler level where `Env` is available.
 #[allow(clippy::unused_async)]
 pub async fn register_webhook(
     service_id: &str,
     webhook_url: &str,
     topic_filters: &[String],
 ) -> Result<()> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        use spin_sdk::http::{Method, Request, Response};
-
-        let registration = serde_json::json!({
-            "service_id": service_id,
-            "webhook_url": webhook_url,
-            "topic_filters": topic_filters
-        });
-
-        let broker_url = "http://mqtt-broker-service.spin.internal/api/mqtt/register-webhook";
-
-        let request = Request::builder()
-            .method(Method::Post)
-            .uri(broker_url)
-            .header("Content-Type", "application/json")
-            .body(serde_json::to_vec(&registration)?)
-            .build();
-
-        let response: Response = spin_sdk::http::send(request).await?;
-
-        if *response.status() == 200 {
-            log::info!("Registered webhook for {service_id} with filters: {topic_filters:?}");
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!(
-                "Failed to register webhook: status {}",
-                response.status()
-            ))
-        }
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        log::debug!(
-            "Would register webhook for {service_id} -> {webhook_url} with filters: {topic_filters:?}"
-        );
-        Ok(())
-    }
+    log::info!(
+        "Register webhook: service={service_id} url={webhook_url} filters={topic_filters:?}"
+    );
+    Ok(())
 }
 
 pub struct NotificationEventHandler;

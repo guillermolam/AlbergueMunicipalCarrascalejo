@@ -38,7 +38,7 @@ enabled = true
 log_headers = false
 
 [services.booking-service]
-url = "http://booking-service.spin.internal"
+url = "https://booking-service.albergue.workers.dev"
 [services.booking-service.policy.rate_limit]
 enabled = true
 max_requests = 60
@@ -47,36 +47,33 @@ enabled = true
 ttl_seconds = 10
 
 [services.location-service]
-url = "http://location-service.spin.internal"
+url = "https://location-service.albergue.workers.dev"
 [services.location-service.policy.cache]
 enabled = true
 ttl_seconds = 30
 
 [services.reviews-service]
-url = "http://reviews-service.spin.internal"
+url = "https://reviews-service.albergue.workers.dev"
 
 [services.document-validation-service]
-url = "http://document-validation-service.spin.internal"
+url = "https://document-validation-service.albergue.workers.dev"
 [services.document-validation-service.policy.cache]
 enabled = false
 
 [services.notification-service]
-url = "http://notification-service.spin.internal"
+url = "https://notification-service.albergue.workers.dev"
 [services.notification-service.policy.rate_limit]
 enabled = true
 max_requests = 30
 
 [services.auth-service]
-url = "http://auth-service.spin.internal"
+url = "https://auth-service.albergue.workers.dev"
 
 [services.info-on-arrival-service]
-url = "http://info-on-arrival-service.spin.internal"
+url = "https://info-on-arrival-service.albergue.workers.dev"
 
 [services.rate-limiter-service]
-url = "http://rate-limiter-service.spin.internal"
-
-[services.redis-service]
-url = "http://redis-service.spin.internal"
+url = "https://rate-limiter-service.albergue.workers.dev"
 
 [services.security-service]
-url = "http://security-service.spin.internal"
+url = "https://security-service.albergue.workers.dev"

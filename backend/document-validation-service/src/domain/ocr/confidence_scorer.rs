@@ -1,4 +1,3 @@
-use shared::AlbergueResult;
 use std::collections::HashMap;
 
 pub struct ConfidenceScorer;
@@ -12,7 +11,7 @@ impl ConfidenceScorer {
         &self,
         field_name: &str,
         extracted_value: &str,
-        context: &str,
+        _context: &str,
     ) -> f32 {
         match field_name {
             "document_number" => self.score_document_number(extracted_value),
@@ -141,9 +140,7 @@ impl ConfidenceScorer {
 
     fn validate_date_logic(&self, date_str: &str) -> f32 {
         // Extract day, month, year and validate logical ranges
-        let parts: Vec<&str> = date_str
-            .split(|c| c == '/' || c == '-' || c == '.')
-            .collect();
+        let parts: Vec<&str> = date_str.split(['/', '-', '.']).collect();
 
         if parts.len() != 3 {
             return 0.2;

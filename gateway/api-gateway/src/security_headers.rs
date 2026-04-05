@@ -1,34 +1,35 @@
-﻿use crate::gateway_config::Policy;
-use spin_sdk::http::Response;
+use crate::gateway_config::Policy;
+use worker::Response;
 
 pub fn apply_security_headers(mut response: Response, policy: &Policy) -> Response {
     if !policy.security_headers.enabled {
         return response;
     }
 
-    response.set_header("x-content-type-options", "nosniff");
-    response.set_header("x-frame-options", "DENY");
-    response.set_header("referrer-policy", "strict-origin-when-cross-origin");
+    let headers = response.headers_mut();
+    let _ = headers.set("x-content-type-options", "nosniff");
+    let _ = headers.set("x-frame-options", "DENY");
+    let _ = headers.set("referrer-policy", "strict-origin-when-cross-origin");
 
-    response.set_header(
+    let _ = headers.set(
         "access-control-allow-origin",
-        policy.security_headers.cors_allow_origin.clone(),
+        &policy.security_headers.cors_allow_origin,
     );
-    response.set_header(
+    let _ = headers.set(
         "access-control-allow-methods",
-        policy.security_headers.cors_allow_methods.clone(),
+        &policy.security_headers.cors_allow_methods,
     );
-    response.set_header(
+    let _ = headers.set(
         "access-control-allow-headers",
-        policy.security_headers.cors_allow_headers.clone(),
+        &policy.security_headers.cors_allow_headers,
     );
     if policy.security_headers.cors_allow_credentials {
-        response.set_header("access-control-allow-credentials", "true");
+        let _ = headers.set("access-control-allow-credentials", "true");
     }
     if policy.security_headers.hsts_seconds > 0 {
-        response.set_header(
+        let _ = headers.set(
             "strict-transport-security",
-            format!("max-age={}", policy.security_headers.hsts_seconds),
+            &format!("max-age={}", policy.security_headers.hsts_seconds),
         );
     }
 

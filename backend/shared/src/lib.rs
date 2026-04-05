@@ -16,6 +16,7 @@ pub mod dto;
 pub mod error;
 pub mod event_publisher;
 pub mod events;
+pub mod response;
 pub mod webhook_handler;
 
 use serde::{Deserialize, Serialize};
@@ -25,6 +26,15 @@ pub use serde_json::{json, Value as JsonValue};
 
 // Re-export error types
 pub use error::{AlbergueError, AlbergueResult};
+
+// Re-export response types
+pub use response::{ApiResponse, ErrorResponse, Status};
+
+// Re-export DTO types at root for convenience
+pub use dto::{
+    BedType, BookingDto, BookingStatus, CountryInfo, DocumentType, ExtractedData, SecurityEvent,
+    SecurityEventType, ValidationRequest, ValidationResponse,
+};
 
 // Common error types for all services
 #[derive(Debug, Serialize, Deserialize, Clone)]

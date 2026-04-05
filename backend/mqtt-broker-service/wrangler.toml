@@ -1,0 +1,28 @@
+name = "mqtt-broker-service"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-12-01"
+
+[build]
+command = "cargo install worker-build && worker-build --release"
+
+[vars]
+ENVIRONMENT = "production"
+
+# Primary: Cloudflare Queues for internal pub/sub
+[[queues.producers]]
+queue = "mqtt-events"
+binding = "MQTT_EVENTS"
+
+[[queues.consumers]]
+queue = "mqtt-events"
+max_batch_size = 10
+max_batch_timeout = 30
+
+# Fallback: HiveMQ Cloud for external MQTT clients
+HIVEMQ_HOST = "" # Set your HiveMQ Cloud host
+HIVEMQ_PORT = "8883"
+HIVEMQ_USERNAME = ""
+HIVEMQ_PASSWORD = ""
+
+[placement]
+mode = "smart"

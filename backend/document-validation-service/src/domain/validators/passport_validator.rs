@@ -1,6 +1,7 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use regex::Regex;
-use shared::{AlbergueResult, ExtractedData};
+use shared::dto::ExtractedData;
+use shared::AlbergueResult;
 
 pub struct PassportValidator;
 

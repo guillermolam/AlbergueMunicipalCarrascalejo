@@ -1,0 +1,12 @@
+name = "auth-service"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-12-01"
+
+[build]
+command = "cargo install worker-build && worker-build --release"
+
+[vars]
+ENVIRONMENT = "production"
+
+[placement]
+mode = "smart"

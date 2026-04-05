@@ -5,20 +5,14 @@
     clippy::must_use_candidate,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::same_length_and_capacity,
-    clippy::future_not_send,
     clippy::unused_async,
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss
 )]
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use spin_sdk::{
-    http::{Request, Response},
-    http_component,
-};
 use std::collections::HashMap;
+use worker::{event, Context, Env, Method, Request, Response, Result};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Review {
@@ -46,44 +40,50 @@ pub struct ErrorResponse {
     pub message: String,
 }
 
-#[http_component]
-async fn handle_request(req: Request) -> Result<Response, anyhow::Error> {
-    let _uri = req.uri().to_string();
-    let path = req.uri();
+#[event(fetch)]
+async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
+    let path = req.path();
 
-    // Enable CORS
-    let mut response_builder = Response::builder();
-    response_builder
-        .header("Access-Control-Allow-Origin", "*")
-        .header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        .header(
-            "Access-Control-Allow-Headers",
-            "Content-Type, Authorization",
-        );
-
-    if req.method().to_string() == "OPTIONS" {
-        return Ok(response_builder.status(200).body(()).build());
+    // Handle OPTIONS for CORS
+    if req.method() == Method::Options {
+        let mut response = Response::ok("")?;
+        add_cors_headers(&mut response)?;
+        return Ok(response);
     }
 
-    let response = match path {
-        "/reviews/google" => handle_google_reviews().await?,
-        "/reviews/booking" => handle_booking_reviews().await?,
-        "/reviews/all" => handle_all_reviews().await?,
-        "/reviews/stats" => handle_review_stats().await?,
-        _ => Response::builder()
-            .status(404)
-            .header("Content-Type", "application/json")
-            .body(serde_json::to_string(&ErrorResponse {
+    let mut response = match path.as_str() {
+        "/reviews/google" => handle_google_reviews()?,
+        "/reviews/booking" => handle_booking_reviews()?,
+        "/reviews/all" => handle_all_reviews()?,
+        "/reviews/stats" => handle_review_stats()?,
+        _ => {
+            let err = ErrorResponse {
                 error: "Not Found".to_string(),
                 message: "Reviews endpoint not found".to_string(),
-            })?)
-            .build(),
+            };
+            let json = serde_json::to_string(&err).unwrap_or_default();
+            let mut resp = Response::ok(json)?;
+            resp.headers_mut().set("Content-Type", "application/json")?;
+            resp.with_status(404)
+        }
     };
 
+    add_cors_headers(&mut response)?;
     Ok(response)
 }
 
-async fn handle_google_reviews() -> Result<Response> {
+fn add_cors_headers(response: &mut Response) -> Result<()> {
+    let headers = response.headers_mut();
+    headers.set("Access-Control-Allow-Origin", "*")?;
+    headers.set("Access-Control-Allow-Methods", "GET, OPTIONS")?;
+    headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization",
+    )?;
+    Ok(())
+}
+
+fn handle_google_reviews() -> Result<Response> {
     let google_reviews = vec![
         Review {
             id: "google_1".to_string(),
@@ -124,14 +124,10 @@ async fn handle_google_reviews() -> Result<Response> {
         source_breakdown: create_source_breakdown(&google_reviews),
     };
 
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&response)?)
-        .build())
+    json_response(200, &response)
 }
 
-async fn handle_booking_reviews() -> Result<Response> {
+fn handle_booking_reviews() -> Result<Response> {
     let booking_reviews = vec![
         Review {
             id: "booking_1".to_string(),
@@ -172,18 +168,12 @@ async fn handle_booking_reviews() -> Result<Response> {
         source_breakdown: create_source_breakdown(&booking_reviews),
     };
 
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&response)?)
-        .build())
+    json_response(200, &response)
 }
 
-async fn handle_all_reviews() -> Result<Response> {
-    // Combine Google and Booking.com reviews
+fn handle_all_reviews() -> Result<Response> {
     let mut all_reviews = Vec::new();
 
-    // Add Google reviews
     let google_reviews = vec![
         Review {
             id: "google_1".to_string(),
@@ -217,7 +207,6 @@ async fn handle_all_reviews() -> Result<Response> {
         }
     ];
 
-    // Add Booking.com reviews
     let booking_reviews = vec![
         Review {
             id: "booking_1".to_string(),
@@ -264,14 +253,10 @@ async fn handle_all_reviews() -> Result<Response> {
         source_breakdown: create_source_breakdown(&all_reviews),
     };
 
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&response)?)
-        .build())
+    json_response(200, &response)
 }
 
-async fn handle_review_stats() -> Result<Response> {
+fn handle_review_stats() -> Result<Response> {
     let stats = serde_json::json!({
         "total_reviews": 6,
         "average_rating": 4.7,
@@ -290,11 +275,16 @@ async fn handle_review_stats() -> Result<Response> {
         "recent_reviews": 3
     });
 
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(stats.to_string())
-        .build())
+    json_response(200, &stats)
+}
+
+fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
+    let json = serde_json::to_string(body).map_err(|e| worker::Error::RustError(e.to_string()))?;
+    let mut response = Response::ok(json)?;
+    response
+        .headers_mut()
+        .set("Content-Type", "application/json")?;
+    Ok(response.with_status(status))
 }
 
 fn calculate_average_rating(reviews: &[Review]) -> f32 {

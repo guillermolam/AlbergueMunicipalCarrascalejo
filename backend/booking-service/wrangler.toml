@@ -1,0 +1,28 @@
+name = "booking-service"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-12-01"
+
+[build]
+command = "cargo install worker-build && worker-build --release"
+
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "albergue-bookings"
+database_id = "" # Set after `wrangler d1 create albergue-bookings`
+
+# KV for caching
+[[kv_namespaces]]
+binding = "CACHE"
+id = "" # Set after `wrangler kv namespace create CACHE`
+
+# Queue for booking events
+[[queues.producers]]
+queue = "booking-events"
+binding = "BOOKING_EVENTS"
+
+[placement]
+mode = "smart"

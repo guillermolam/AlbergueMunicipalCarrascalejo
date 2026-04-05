@@ -12,6 +12,10 @@ impl EventPublisher {
         Self { broker_url }
     }
 
+    /// Publish a `CloudEvent` to the MQTT broker service via HTTP.
+    ///
+    /// In Cloudflare Workers (WASM), uses the Worker Fetch API.
+    /// In native builds, logs the publish intent.
     #[allow(clippy::unused_async, clippy::future_not_send)]
     pub async fn publish<T: Serialize>(&self, event: &CloudEvent<T>) -> AlbergueResult<()> {
         let topic = &event.event_type;
@@ -24,8 +28,6 @@ impl EventPublisher {
 
         #[cfg(target_arch = "wasm32")]
         {
-            use spin_sdk::http::{Method, Request, Response};
-
             let body = serde_json::json!({
                 "topic": topic,
                 "payload": payload,
@@ -33,14 +35,25 @@ impl EventPublisher {
                 "retain": false
             });
 
-            let request = Request::builder()
-                .method(Method::Post)
-                .uri(&publish_url)
-                .header("Content-Type", "application/json")
-                .body(serde_json::to_vec(&body).unwrap_or_default())
-                .build();
+            let body_str = serde_json::to_string(&body).map_err(|e| AlbergueError::Internal {
+                message: e.to_string(),
+            })?;
 
-            let _ = spin_sdk::http::send::<_, Response>(request).await;
+            let mut headers = worker::Headers::new();
+            headers.set("Content-Type", "application/json").ok();
+
+            let mut init = worker::RequestInit::new();
+            init.with_method(worker::Method::Post)
+                .with_headers(headers)
+                .with_body(Some(worker::wasm_bindgen::JsValue::from_str(&body_str)));
+
+            match worker::Request::new_with_init(&publish_url, &init) {
+                Ok(request) => match worker::Fetch::Request(request).send().await {
+                    Ok(_) => log::info!("Published to {publish_url}: topic={topic}"),
+                    Err(e) => log::warn!("Failed to publish to {publish_url}: {e}"),
+                },
+                Err(e) => log::warn!("Failed to create request for {publish_url}: {e}"),
+            }
         }
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -65,7 +78,8 @@ impl EventPublisher {
 
 #[must_use]
 pub fn create_publisher() -> EventPublisher {
-    EventPublisher::new("http://mqtt-broker-service.spin.internal".to_string())
+    // For Cloudflare Workers, use the mqtt-broker-service worker URL
+    EventPublisher::new("https://mqtt-broker-service.albergue.workers.dev".to_string())
 }
 
 #[cfg(test)]
@@ -77,7 +91,7 @@ mod tests {
         let publisher = create_publisher();
         assert_eq!(
             publisher.broker_url,
-            "http://mqtt-broker-service.spin.internal"
+            "https://mqtt-broker-service.albergue.workers.dev"
         );
     }
 }

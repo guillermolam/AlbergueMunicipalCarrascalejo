@@ -1,7 +1,5 @@
 use chrono::{DateTime, Utc};
-use futures::future::try_join_all;
-use shared::{DocumentType, ExtractedData};
-use tokio::task;
+use shared::dto::{DocumentType, ExtractedData};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -26,7 +24,7 @@ impl Document {
             document_number: extracted_data.document_number.unwrap_or_default(),
             holder_name: extracted_data.name.unwrap_or_default(),
             holder_surname: extracted_data.surname.unwrap_or_default(),
-            birth_date: extracted_data.birth_date.unwrap_or_else(|| Utc::now()),
+            birth_date: extracted_data.birth_date.unwrap_or_else(Utc::now),
             nationality: extracted_data.nationality.unwrap_or_default(),
             expiry_date: extracted_data.expiry_date,
             is_valid,
@@ -41,29 +39,15 @@ impl Document {
         }
     }
 
-    // Async method for comprehensive validation using tokio
+    // Async method for comprehensive validation
     pub async fn validate_comprehensive(
         &self,
     ) -> Result<DocumentValidationResult, Box<dyn std::error::Error + Send + Sync>> {
-        let validation_tasks = match self.document_type {
+        let validation_result = match self.document_type {
             DocumentType::DNI => {
-                let checksum_task = task::spawn({
-                    let doc_num = self.document_number.clone();
-                    async move { validate_dni_checksum_async(&doc_num).await }
-                });
-
-                let format_task = task::spawn({
-                    let doc_num = self.document_number.clone();
-                    async move { validate_dni_format_async(&doc_num).await }
-                });
-
-                let expiry_task = task::spawn(async {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
-                    true // DNI doesn't typically expire
-                });
-
-                let (checksum_valid, format_valid, expiry_valid) =
-                    tokio::try_join!(checksum_task, format_task, expiry_task)?;
+                let checksum_valid = validate_dni_checksum_async(&self.document_number).await;
+                let format_valid = validate_dni_format_async(&self.document_number).await;
+                let expiry_valid = true; // DNI doesn't typically expire
 
                 DocumentValidationResult {
                     is_valid: checksum_valid && format_valid && expiry_valid,
@@ -79,17 +63,8 @@ impl Document {
                 }
             }
             DocumentType::NIE => {
-                let checksum_task = task::spawn({
-                    let doc_num = self.document_number.clone();
-                    async move { validate_nie_checksum_async(&doc_num).await }
-                });
-
-                let format_task = task::spawn({
-                    let doc_num = self.document_number.clone();
-                    async move { validate_nie_format_async(&doc_num).await }
-                });
-
-                let (checksum_valid, format_valid) = tokio::try_join!(checksum_task, format_task)?;
+                let checksum_valid = validate_nie_checksum_async(&self.document_number).await;
+                let format_valid = validate_nie_format_async(&self.document_number).await;
 
                 DocumentValidationResult {
                     is_valid: checksum_valid && format_valid,
@@ -105,17 +80,8 @@ impl Document {
                 }
             }
             DocumentType::Passport => {
-                let mrz_task = task::spawn(async {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(20)).await;
-                    true // Simplified passport validation
-                });
-
-                let expiry_task = task::spawn({
-                    let is_expired = self.is_expired();
-                    async move { !is_expired }
-                });
-
-                let (mrz_valid, expiry_valid) = tokio::try_join!(mrz_task, expiry_task)?;
+                let mrz_valid = true; // Simplified passport validation
+                let expiry_valid = !self.is_expired();
 
                 DocumentValidationResult {
                     is_valid: mrz_valid && expiry_valid,
@@ -128,7 +94,7 @@ impl Document {
             }
         };
 
-        Ok(validation_tasks)
+        Ok(validation_result)
     }
 
     pub fn validate_checksum(&self) -> bool {
@@ -172,7 +138,7 @@ fn validate_dni_checksum_sync(dni: &str) -> bool {
         let expected_letter = letters.chars().nth((number % 23) as usize);
 
         if let Some(expected) = expected_letter {
-            return letter_part.chars().next() == Some(expected);
+            return letter_part.starts_with(expected);
         }
     }
 
@@ -181,14 +147,11 @@ fn validate_dni_checksum_sync(dni: &str) -> bool {
 
 // Async stateless function for DNI checksum validation
 async fn validate_dni_checksum_async(dni: &str) -> bool {
-    tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
     validate_dni_checksum_sync(dni)
 }
 
 // Async stateless function for DNI format validation
 async fn validate_dni_format_async(dni: &str) -> bool {
-    tokio::time::sleep(tokio::time::Duration::from_millis(3)).await;
-
     if dni.len() != 9 {
         return false;
     }
@@ -225,7 +188,7 @@ fn validate_nie_checksum_sync(nie: &str) -> bool {
         let expected_letter = letters.chars().nth((number % 23) as usize);
 
         if let Some(expected) = expected_letter {
-            return letter_part.chars().next() == Some(expected);
+            return letter_part.starts_with(expected);
         }
     }
 
@@ -234,14 +197,11 @@ fn validate_nie_checksum_sync(nie: &str) -> bool {
 
 // Async stateless function for NIE checksum validation
 async fn validate_nie_checksum_async(nie: &str) -> bool {
-    tokio::time::sleep(tokio::time::Duration::from_millis(8)).await;
     validate_nie_checksum_sync(nie)
 }
 
 // Async stateless function for NIE format validation
 async fn validate_nie_format_async(nie: &str) -> bool {
-    tokio::time::sleep(tokio::time::Duration::from_millis(4)).await;
-
     if nie.len() != 9 {
         return false;
     }
@@ -250,15 +210,13 @@ async fn validate_nie_format_async(nie: &str) -> bool {
     matches!(first_char, 'X' | 'Y' | 'Z')
 }
 
-// Async stateless function for concurrent document validations
+// Async stateless function for sequential document validations
 pub async fn validate_multiple_documents(
     documents: Vec<Document>,
 ) -> Result<Vec<DocumentValidationResult>, Box<dyn std::error::Error + Send + Sync>> {
-    let validation_tasks: Vec<_> = documents
-        .into_iter()
-        .map(|doc| task::spawn(async move { doc.validate_comprehensive().await }))
-        .collect();
-
-    let results = try_join_all(validation_tasks).await?;
-    Ok(results.into_iter().collect::<Result<Vec<_>, _>>()?)
+    let mut results = Vec::with_capacity(documents.len());
+    for doc in &documents {
+        results.push(doc.validate_comprehensive().await?);
+    }
+    Ok(results)
 }

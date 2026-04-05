@@ -1,10 +1,9 @@
 use crate::{
-    context::{AuthContext, RequestContext, REDIS_ADDRESS_VAR},
+    context::{AuthContext, RequestContext},
     rejection::GatewayRejection,
 };
 use anyhow::{Context as AnyhowContext, Result};
 use serde::Deserialize;
-use spin_sdk::{http::Method, variables};
 use std::collections::HashMap;
 use tracing::{event, Level};
 
@@ -16,13 +15,16 @@ struct OpenIdConfiguration {
 }
 
 pub async fn authenticate_and_authorize(
-    req: &spin_sdk::http::Request,
+    req: &worker::Request,
     ctx: &RequestContext,
 ) -> std::result::Result<AuthContext, GatewayRejection> {
     let auth_header = req
-        .header("Authorization")
-        .and_then(|h| h.as_str())
-        .unwrap_or("");
+        .headers()
+        .get("Authorization")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+
     let mut parts = auth_header.split_whitespace();
     let scheme = parts.next().unwrap_or("");
     let token = parts.next().unwrap_or("");
@@ -90,24 +92,23 @@ pub async fn authenticate_and_authorize(
 }
 
 async fn validate_jwt(token: &str, ctx: &RequestContext, oidc_url: &str) -> Result<AuthContext> {
-    let cache_key = format!("jwks:{oidc_url}");
-
-    if let Ok(address) = variables::get(REDIS_ADDRESS_VAR) {
-        if let Ok(conn) = spin_sdk::redis::Connection::open(&address) {
-            if let Ok(Some(cached_jwks_uri)) = conn.get(&cache_key) {
-                if !cached_jwks_uri.is_empty() {
-                    if let Ok(text) = String::from_utf8(cached_jwks_uri) {
-                        return verify_with_jwks(&text, token, ctx).await;
-                    }
-                }
-            }
-        }
-    }
-
+    // Fetch OIDC discovery document using worker Fetch API
     let config_url = format!("{oidc_url}/.well-known/openid-configuration");
-    let req = spin_sdk::http::Request::new(Method::Get, config_url);
-    let response: spin_sdk::http::Response = spin_sdk::http::send(req).await?;
-    let config: OpenIdConfiguration = serde_json::from_slice(response.body())?;
+    let url = worker::Url::parse(&config_url)
+        .with_context(|| format!("Failed to parse OIDC URL: {config_url}"))?;
+
+    let mut response = worker::Fetch::Url(url)
+        .send()
+        .await
+        .with_context(|| "Failed to fetch OIDC configuration")?;
+
+    let body = response
+        .text()
+        .await
+        .with_context(|| "Failed to read OIDC response")?;
+
+    let config: OpenIdConfiguration =
+        serde_json::from_str(&body).with_context(|| "Failed to parse OIDC configuration")?;
 
     event!(
         Level::INFO,
@@ -117,19 +118,6 @@ async fn validate_jwt(token: &str, ctx: &RequestContext, oidc_url: &str) -> Resu
         oidc_url = oidc_url,
         jwks_uri = config.jwks_uri
     );
-
-    if let Ok(address) = variables::get(REDIS_ADDRESS_VAR) {
-        if let Ok(conn) = spin_sdk::redis::Connection::open(&address) {
-            let _ = conn.set(&cache_key, config.jwks_uri.as_bytes());
-            let _ = conn.execute(
-                "EXPIRE",
-                &[
-                    spin_sdk::redis::RedisParameter::Binary(cache_key.as_bytes().to_vec()),
-                    spin_sdk::redis::RedisParameter::Int64(3600),
-                ],
-            );
-        }
-    }
 
     verify_with_jwks(&config.jwks_uri, token, ctx).await
 }

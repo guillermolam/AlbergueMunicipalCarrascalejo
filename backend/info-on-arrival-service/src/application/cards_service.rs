@@ -2,9 +2,10 @@ use crate::domain::{
     CardType, DifficultyLevel, InfoCard, InfoLink, LinkType, RouteMapData, Waypoint,
 };
 use crate::ports::{ScraperPort, StoragePort};
-use futures::future::BoxFuture;
 use serde_json;
 use shared::{AlbergueError, AlbergueResult};
+use std::future::Future;
+use std::pin::Pin;
 
 pub struct CardsServiceImpl {
     storage: Box<crate::adapters::storage::PostgresCardsRepository>,
@@ -498,7 +499,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         let mut all_cards = Vec::new();
 
         // Get all card types - including new ones
-        let card_methods: Vec<BoxFuture<'_, AlbergueResult<String>>> = vec![
+        let card_methods: Vec<Pin<Box<dyn Future<Output = AlbergueResult<String>> + '_>>> = vec![
             Box::pin(self.get_merida_attractions()),
             Box::pin(self.get_carrascalejo_info()),
             Box::pin(self.get_emergency_contacts()),

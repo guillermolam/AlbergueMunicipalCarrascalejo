@@ -1,16 +1,4 @@
-use location_service::handlers::RequestHandler;
 use location_service::{CacheConfig, LocationService};
-use std::sync::Arc;
-
-/// Helper to create a test handler with in-memory cache
-fn test_handler() -> RequestHandler {
-    RequestHandler::with_service(Arc::new(tokio::sync::Mutex::new(
-        LocationService::with_memory_cache(Some(CacheConfig {
-            enabled: true,
-            ttl: std::time::Duration::from_secs(60),
-        })),
-    )))
-}
 
 #[cfg(test)]
 mod integration_tests {
@@ -18,119 +6,74 @@ mod integration_tests {
 
     #[tokio::test]
     async fn test_get_country_known() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Get,
-            "/api/countries/ES".to_string(),
-        );
-        let resp = handler.handle_request(&req).await.unwrap();
-        let body = String::from_utf8_lossy(resp.body());
-        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json["success"].as_bool().unwrap());
-        assert_eq!(json["data"]["code"], "ES");
-        assert_eq!(json["data"]["name"], "Spain");
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let result = service.get_country_data("ES").await.unwrap();
+        assert!(result.is_some());
+        let country = result.unwrap();
+        assert_eq!(country.code, "ES");
+        assert_eq!(country.name, "Spain");
     }
 
     #[tokio::test]
     async fn test_get_country_unknown() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Get,
-            "/api/countries/INVALID".to_string(),
-        );
-        let resp = handler.handle_request(&req).await.unwrap();
-        let body = String::from_utf8_lossy(resp.body());
-        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(!json["success"].as_bool().unwrap());
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let result = service.get_country_data("INVALID").await.unwrap();
+        assert!(result.is_none());
     }
 
     #[tokio::test]
-    async fn test_list_countries() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Get,
-            "/api/countries".to_string(),
-        );
-        let resp = handler.handle_request(&req).await.unwrap();
-        let body = String::from_utf8_lossy(resp.body());
-        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json["success"].as_bool().unwrap());
-        assert!(json["data"].is_array());
+    async fn test_warm_cache() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let codes = ["ES", "FR", "PT"];
+        service.warm_cache(&codes).await.unwrap();
+        assert!(service.is_cached("ES"));
+        assert!(service.is_cached("FR"));
+        assert!(service.is_cached("PT"));
     }
 
     #[tokio::test]
-    async fn test_warm_cache_endpoint() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Post,
-            "/api/countries/warm-cache".to_string(),
-        );
-        let resp = handler.handle_request(&req).await.unwrap();
-        let body = String::from_utf8_lossy(resp.body());
-        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json["success"].as_bool().unwrap());
+    async fn test_clear_cache() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let _ = service.get_country_data("ES").await;
+        assert!(service.cache_size() > 0);
+        service.clear_cache().await.unwrap();
+        assert_eq!(service.cache_size(), 0);
     }
 
     #[tokio::test]
-    async fn test_clear_cache_endpoint() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Delete,
-            "/api/countries/cache".to_string(),
-        );
-        let resp = handler.handle_request(&req).await.unwrap();
-        let body = String::from_utf8_lossy(resp.body());
-        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json["success"].as_bool().unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_cors_preflight() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Other("OPTIONS".to_string()),
-            "/api/countries/ES".to_string(),
-        );
-        let _resp = handler.handle_request(&req).await.unwrap();
-        // CORS preflight should not panic
-    }
-
-    #[tokio::test]
-    async fn test_not_found_endpoint() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Get,
-            "/api/unknown".to_string(),
-        );
-        let resp = handler.handle_request(&req).await.unwrap();
-        let body = String::from_utf8_lossy(resp.body());
-        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(!json["success"].as_bool().unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_empty_country_code() {
-        let handler = test_handler();
-        let req = spin_sdk::http::Request::new(
-            spin_sdk::http::Method::Get,
-            "/api/countries/".to_string(),
-        );
-        let _resp = handler.handle_request(&req).await.unwrap();
-        // Should handle gracefully without panic
+    async fn test_clear_country_cache() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let _ = service.get_country_data("ES").await;
+        assert!(service.is_cached("ES"));
+        service.clear_country_cache("ES").await.unwrap();
+        assert!(!service.is_cached("ES"));
     }
 
     #[tokio::test]
     async fn test_multiple_requests_same_country() {
-        let handler = test_handler();
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
         for _ in 0..3 {
-            let req = spin_sdk::http::Request::new(
-                spin_sdk::http::Method::Get,
-                "/api/countries/ES".to_string(),
-            );
-            let resp = handler.handle_request(&req).await.unwrap();
-            let body = String::from_utf8_lossy(resp.body());
-            let json: serde_json::Value = serde_json::from_str(&body).unwrap();
-            assert_eq!(json["data"]["code"], "ES");
+            let result = service.get_country_data("ES").await.unwrap();
+            assert!(result.is_some());
+            assert_eq!(result.unwrap().code, "ES");
         }
     }
 
@@ -138,15 +81,14 @@ mod integration_tests {
     async fn test_performance_multiple_requests() {
         use std::time::Instant;
 
-        let handler = test_handler();
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
         let start = Instant::now();
 
         for _ in 0..10 {
-            let req = spin_sdk::http::Request::new(
-                spin_sdk::http::Method::Get,
-                "/api/countries/ES".to_string(),
-            );
-            let _resp = handler.handle_request(&req).await.unwrap();
+            let _ = service.get_country_data("ES").await.unwrap();
         }
 
         let duration = start.elapsed();

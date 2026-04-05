@@ -1,131 +1,27 @@
+//! Circuit breaker module.
+//!
+//! Previously backed by Redis. Now a stub awaiting Cloudflare KV integration.
+//! The gateway's `handle_protected_route` skips circuit breaker calls when
+//! the KV namespace is not bound.
+
 use crate::context::RequestContext;
-use anyhow::{Context, Result};
-use spin_sdk::{http::Response, http::ResponseBuilder};
+use anyhow::Result;
+use worker::Response;
 
+/// Check if the circuit is open for the target service.
+/// Returns `Ok(None)` to allow the request through (circuit closed).
 #[allow(clippy::unused_async)]
-pub async fn precheck(redis_address: &str, ctx: &RequestContext) -> Result<Option<Response>> {
-    let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
-
-    let state_key = format!("cb:{}:state", ctx.service);
-    let opened_at_key = format!("cb:{}:opened_at", ctx.service);
-    let probe_key = format!("cb:{}:probe", ctx.service);
-
-    let state = conn
-        .get(&state_key)
-        .context("cb_state_get_failed")?
-        .unwrap_or_default();
-
-    if state == b"open" {
-        let opened_at = conn
-            .get(&opened_at_key)
-            .context("cb_opened_at_get_failed")?
-            .and_then(|v| String::from_utf8(v).ok())
-            .and_then(|s| s.parse::<u64>().ok())
-            .unwrap_or(0);
-
-        let now = chrono::Utc::now().timestamp().cast_unsigned();
-        if now < opened_at.saturating_add(ctx.policy.circuit_breaker.open_seconds) {
-            let resp = ResponseBuilder::new(503)
-                .header("content-type", "application/json")
-                .header(
-                    "retry-after",
-                    ctx.policy.circuit_breaker.open_seconds.to_string(),
-                )
-                .body(
-                    serde_json::json!({
-                        "error": "Service Unavailable",
-                        "message": "Circuit open",
-                        "service": ctx.service,
-                        "correlation_id": ctx.correlation_id
-                    })
-                    .to_string(),
-                )
-                .build();
-            return Ok(Some(resp));
-        }
-
-        let _ = conn.set(&state_key, b"half_open");
-        let _ = conn.del(std::slice::from_ref(&probe_key));
-    }
-
-    let state = conn
-        .get(&state_key)
-        .context("cb_state_get_failed")?
-        .unwrap_or_default();
-
-    if state == b"half_open" {
-        let script = r"local ok=redis.call('SET', KEYS[1], '1', 'NX', 'EX', ARGV[1]); if ok then return 1 else return 0 end";
-        let res = conn
-            .execute(
-                "EVAL",
-                &[
-                    spin_sdk::redis::RedisParameter::Binary(script.as_bytes().to_vec()),
-                    spin_sdk::redis::RedisParameter::Binary(b"1".to_vec()),
-                    spin_sdk::redis::RedisParameter::Binary(probe_key.as_bytes().to_vec()),
-                    spin_sdk::redis::RedisParameter::Binary(b"5".to_vec()),
-                ],
-            )
-            .context("cb_probe_eval_failed")?;
-
-        let acquired = crate::util::parse_redis_int(&res).unwrap_or(0);
-        if acquired == 0 {
-            let resp = ResponseBuilder::new(503)
-                .header("content-type", "application/json")
-                .header("retry-after", "5")
-                .body(
-                    serde_json::json!({
-                        "error": "Service Unavailable",
-                        "message": "Circuit half-open",
-                        "service": ctx.service,
-                        "correlation_id": ctx.correlation_id
-                    })
-                    .to_string(),
-                )
-                .build();
-            return Ok(Some(resp));
-        }
-    }
-
+pub async fn precheck(_ctx: &RequestContext) -> Result<Option<Response>> {
+    // TODO: Implement with Cloudflare KV namespace binding
+    // let kv = env.kv("CIRCUIT_BREAKER")?;
+    // let state_key = format!("cb:{}:state", ctx.service);
+    // ...
     Ok(None)
 }
 
+/// Record a response status for circuit breaker state tracking.
 #[allow(clippy::unused_async)]
-pub async fn record(redis_address: &str, ctx: &RequestContext, status: u16) -> Result<()> {
-    let conn = spin_sdk::redis::Connection::open(redis_address).context("redis_open_failed")?;
-
-    let failures_key = format!("cb:{}:failures", ctx.service);
-    let state_key = format!("cb:{}:state", ctx.service);
-    let opened_at_key = format!("cb:{}:opened_at", ctx.service);
-    let probe_key = format!("cb:{}:probe", ctx.service);
-
-    let state = conn
-        .get(&state_key)
-        .context("cb_state_get_failed")?
-        .unwrap_or_default();
-
-    if status >= 500 {
-        if state == b"half_open" {
-            let now = chrono::Utc::now().timestamp().cast_unsigned();
-            let _ = conn.set(&state_key, b"open");
-            let _ = conn.set(&opened_at_key, now.to_string().as_bytes());
-            let _ = conn.del(&[failures_key, probe_key]);
-            return Ok(());
-        }
-
-        let failures = conn
-            .incr(&failures_key)
-            .context("cb_incr_failed")?
-            .cast_unsigned();
-        if failures >= ctx.policy.circuit_breaker.failure_threshold {
-            let now = chrono::Utc::now().timestamp().cast_unsigned();
-            let _ = conn.set(&state_key, b"open");
-            let _ = conn.set(&opened_at_key, now.to_string().as_bytes());
-            let _ = conn.del(&[probe_key]);
-        }
-    } else {
-        let _ = conn.del(&[failures_key, opened_at_key, probe_key]);
-        let _ = conn.set(&state_key, b"closed");
-    }
-
+pub async fn record(_ctx: &RequestContext, _status: u16) -> Result<()> {
+    // TODO: Implement with Cloudflare KV namespace binding
     Ok(())
 }

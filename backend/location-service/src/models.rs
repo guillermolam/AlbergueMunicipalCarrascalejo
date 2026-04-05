@@ -4,8 +4,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LocationServiceError {
-    #[error("Redis error: {0}")]
-    Redis(String),
     #[error("Cache error: {0}")]
     Cache(String),
     #[error("Invalid request: {0}")]

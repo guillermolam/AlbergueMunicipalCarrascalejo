@@ -44,26 +44,36 @@ impl IdentityProvider for LogtoProvider {
             .append_pair("client_secret", self.client_secret.secret())
             .finish();
 
-        let req = http::Request::builder()
-            .method(http::Method::POST)
-            .uri(token_url.to_string())
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body_str.into_bytes())
-            .unwrap();
+        let headers = worker::Headers::new();
+        headers
+            .set("Content-Type", "application/x-www-form-urlencoded")
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
 
-        let resp: http::Response<Vec<u8>> = spin_sdk::http::send(req)
+        let mut init = worker::RequestInit::new();
+        init.with_method(worker::Method::Post);
+        init.with_headers(headers);
+        init.with_body(Some(worker::wasm_bindgen::JsValue::from_str(&body_str)));
+
+        let request = worker::Request::new_with_init(token_url.as_ref(), &init)
+            .map_err(|e| anyhow::anyhow!("Failed to create request: {e}"))?;
+
+        let mut resp = worker::Fetch::Request(request)
+            .send()
             .await
-            .map_err(|e| anyhow::anyhow!("Spin HTTP error: {e:?}"))?;
+            .map_err(|e| anyhow::anyhow!("Workers Fetch error: {e:?}"))?;
 
-        if resp.status() != 200 {
+        if resp.status_code() != 200 {
             return Err(anyhow::anyhow!(
                 "Token exchange failed with status: {}",
-                resp.status()
+                resp.status_code()
             ));
         }
 
-        let body = resp.body();
-        let token_resp: TokenResponse = serde_json::from_slice(body)?;
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to read body: {e}"))?;
+        let token_resp: TokenResponse = serde_json::from_str(&text)?;
 
         Ok(token_resp)
     }
@@ -83,26 +93,36 @@ impl IdentityProvider for LogtoProvider {
             .append_pair("client_secret", self.client_secret.secret())
             .finish();
 
-        let req = http::Request::builder()
-            .method(http::Method::POST)
-            .uri(token_url.to_string())
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body_str.into_bytes())
-            .unwrap();
+        let headers = worker::Headers::new();
+        headers
+            .set("Content-Type", "application/x-www-form-urlencoded")
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
 
-        let resp: http::Response<Vec<u8>> = spin_sdk::http::send(req)
+        let mut init = worker::RequestInit::new();
+        init.with_method(worker::Method::Post);
+        init.with_headers(headers);
+        init.with_body(Some(worker::wasm_bindgen::JsValue::from_str(&body_str)));
+
+        let request = worker::Request::new_with_init(token_url.as_ref(), &init)
+            .map_err(|e| anyhow::anyhow!("Failed to create request: {e}"))?;
+
+        let mut resp = worker::Fetch::Request(request)
+            .send()
             .await
-            .map_err(|e| anyhow::anyhow!("Spin HTTP error: {e:?}"))?;
+            .map_err(|e| anyhow::anyhow!("Workers Fetch error: {e:?}"))?;
 
-        if resp.status() != 200 {
+        if resp.status_code() != 200 {
             return Err(anyhow::anyhow!(
                 "Token refresh failed with status: {}",
-                resp.status()
+                resp.status_code()
             ));
         }
 
-        let body = resp.body();
-        let token_resp: TokenResponse = serde_json::from_slice(body)?;
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to read body: {e}"))?;
+        let token_resp: TokenResponse = serde_json::from_str(&text)?;
 
         Ok(token_resp)
     }

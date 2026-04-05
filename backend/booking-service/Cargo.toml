@@ -3,9 +3,6 @@ name = "booking-service"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [package.metadata.env]
 # Database Configuration
 DATABASE_URL = { required = true, description = "PostgreSQL connection string" }
@@ -24,12 +21,10 @@ BOOKING_TIMEOUT_HOURS = { default = "2", description = "Booking timeout in hours
 LOG_LEVEL = { default = "info", description = "Application log level" }
 
 [dependencies]
-# Spin SDK for WASM components
-spin-sdk = "5.1.1"
-wit-bindgen = "0.51.0"
+# Cloudflare Workers SDK
+worker = "0.7.5"
 
-# HTTP and web
-http = "1.2.0"
+# Serialization
 serde = { version = "1.0.216", features = ["derive"] }
 serde_json = "1.0.134"
 

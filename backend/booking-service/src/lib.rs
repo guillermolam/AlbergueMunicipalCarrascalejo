@@ -7,17 +7,12 @@
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
     clippy::cast_precision_loss,
-    // Spin's http component executor is not Send; allow this lint for WASM components.
-    clippy::future_not_send,
-    // Spin SDK macro generates Vec::from_raw_parts with same length and capacity.
-    clippy::same_length_and_capacity,
-    // Spin handler signature requires owned Request.
-    clippy::needless_pass_by_value
+    clippy::needless_pass_by_value,
+    clippy::future_not_send
 )]
 
 use serde::{Deserialize, Serialize};
-use spin_sdk::http::{Method, Request, Response, ResponseBuilder};
-use spin_sdk::http_component;
+use worker::{console_log, event, Context, Env, Method, Request, Response, Result};
 
 #[derive(Serialize, Deserialize)]
 pub struct Booking {
@@ -64,33 +59,49 @@ pub struct Pricing {
     pub dormitory: i32,
 }
 
-#[http_component]
-fn handle_request(req: Request) -> Response {
+#[event(fetch)]
+async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     let method = req.method();
-    let path = req.uri();
+    let path = req.path();
 
-    match (method, path) {
-        (&Method::Get, "/bookings") => get_bookings(),
-        (&Method::Post, "/bookings") => create_booking(req),
-        (&Method::Get, "/rooms") => get_rooms(),
-        (&Method::Get, "/dashboard/stats") => get_dashboard_stats(),
-        (&Method::Get, "/pricing") => get_pricing(),
+    let mut response = match (method, path.as_str()) {
+        (Method::Get, "/bookings") => get_bookings(),
+        (Method::Post, "/bookings") => create_booking(&mut req).await,
+        (Method::Get, "/rooms") => get_rooms(),
+        (Method::Get, "/dashboard/stats") => get_dashboard_stats(),
+        (Method::Get, "/pricing") => get_pricing(),
         _ => error_response(404, "Not found"),
-    }
+    }?;
+
+    add_cors_headers(&mut response)?;
+    Ok(response)
+}
+
+fn add_cors_headers(response: &mut Response) -> Result<()> {
+    let headers = response.headers_mut();
+    headers.set("Access-Control-Allow-Origin", "*")?;
+    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")?;
+    headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization",
+    )?;
+    Ok(())
 }
 
 use serde_json::Value;
-use std::env;
 
 fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
     // Placeholder: Implement WhatsApp API call to register client
-    println!("Registering WhatsApp client {client_phone} with business phone {business_phone}");
+    console_log!(
+        "Registering WhatsApp client {} with business phone {}",
+        client_phone,
+        business_phone
+    );
 }
 
-fn create_booking(req: Request) -> Response {
-    // Parse request body with error handling
-    let body_bytes = req.body();
-    let body_json: Value = match serde_json::from_slice(body_bytes) {
+async fn create_booking(req: &mut Request) -> Result<Response> {
+    let body_text = req.text().await?;
+    let body_json: Value = match serde_json::from_str(&body_text) {
         Ok(json) => json,
         Err(err) => return error_response(400, &format!("Invalid JSON: {err}")),
     };
@@ -100,8 +111,8 @@ fn create_booking(req: Request) -> Response {
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
-    // Read WhatsApp business phone number from env
-    let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
+    // Read WhatsApp business phone number from env (not available in Workers, use empty default)
+    let whatsapp_business_phone = String::new();
 
     if !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
         register_whatsapp_client(guest_phone, &whatsapp_business_phone);
@@ -155,7 +166,7 @@ fn create_booking(req: Request) -> Response {
     json_response(201, &new_booking)
 }
 
-fn get_dashboard_stats() -> Response {
+fn get_dashboard_stats() -> Result<Response> {
     let stats = DashboardStats {
         occupancy: OccupancyStats {
             available: 24,
@@ -169,13 +180,13 @@ fn get_dashboard_stats() -> Response {
     json_response(200, &stats)
 }
 
-fn get_pricing() -> Response {
+fn get_pricing() -> Result<Response> {
     let pricing = Pricing { dormitory: 15 };
 
     json_response(200, &pricing)
 }
 
-fn get_rooms() -> Response {
+fn get_rooms() -> Result<Response> {
     let rooms = vec![
         Room {
             id: "dorm-a".to_string(),
@@ -234,7 +245,7 @@ fn get_rooms() -> Response {
     json_response(200, &rooms)
 }
 
-fn get_bookings() -> Response {
+fn get_bookings() -> Result<Response> {
     let bookings = vec![Booking {
         id: "1".to_string(),
         guest_name: "Juan Pérez".to_string(),
@@ -252,16 +263,20 @@ fn get_bookings() -> Response {
     json_response(200, &bookings)
 }
 
-fn json_response<T: Serialize>(status: u16, body: &T) -> Response {
+fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
     match serde_json::to_string(body) {
-        Ok(json) => ResponseBuilder::new(status)
-            .header("content-type", "application/json")
-            .body(json)
-            .build(),
+        Ok(json) => {
+            let mut response = Response::ok(json)?;
+            response
+                .headers_mut()
+                .set("content-type", "application/json")?;
+            let response = response.with_status(status);
+            Ok(response)
+        }
         Err(err) => error_response(500, &format!("Failed to serialize response body: {err}")),
     }
 }
 
-fn error_response(status: u16, message: &str) -> Response {
+fn error_response(status: u16, message: &str) -> Result<Response> {
     json_response(status, &serde_json::json!({ "error": message }))
 }

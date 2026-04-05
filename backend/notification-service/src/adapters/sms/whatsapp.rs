@@ -1,8 +1,6 @@
 use crate::domain::Notification;
 use crate::ports::SmsPort;
-use anyhow::Result;
 use async_trait::async_trait;
-use spin_sdk::http::{Request, Response, Method};
 use shared::{AlbergueError, AlbergueResult};
 use std::env;
 
@@ -26,8 +24,6 @@ impl WhatsAppAdapter {
     }
 
     async fn send_message(&self, to: &str, body: &str) -> AlbergueResult<String> {
-        // Implement WhatsApp API call here
-        // This is a placeholder example, adjust according to WhatsApp API documentation
         let url = format!(
             "https://graph.facebook.com/v15.0/{}/messages",
             self.business_account_id
@@ -39,28 +35,40 @@ impl WhatsAppAdapter {
             "type": "text",
             "text": {"body": body}
         });
-        
-        let body_bytes = serde_json::to_vec(&payload).map_err(|e|
+
+        let body_str = serde_json::to_string(&payload).map_err(|e|
              AlbergueError::ExternalServiceError(format!("Failed to serialize payload: {}", e))
         )?;
 
         let auth_header = format!("Bearer {}", self.app_id);
 
-        let req = Request::builder()
-            .method(Method::Post)
-            .uri(url)
-            .header("Authorization", auth_header)
-            .header("Content-Type", "application/json")
-            .body(body_bytes)
-            .build();
+        let mut headers = worker::Headers::new();
+        headers.set("Authorization", &auth_header).map_err(|e|
+            AlbergueError::ExternalServiceError(format!("Failed to set header: {}", e))
+        )?;
+        headers.set("Content-Type", "application/json").map_err(|e|
+            AlbergueError::ExternalServiceError(format!("Failed to set header: {}", e))
+        )?;
 
-        let response: Response = spin_sdk::http::send(req).await.map_err(|e| {
-             AlbergueError::ExternalServiceError(format!("WhatsApp request failed: {}", e))
-        })?;
+        let mut init = worker::RequestInit::new();
+        init.with_method(worker::Method::Post);
+        init.with_headers(headers);
+        init.with_body(Some(worker::wasm_bindgen::JsValue::from_str(&body_str)));
 
-        if *response.status() == 200 || *response.status() == 201 {
-            let body_bytes = response.body();
-            let result: serde_json::Value = serde_json::from_slice(body_bytes).map_err(|e| 
+        let request = worker::Request::new_with_init(&url, &init).map_err(|e|
+            AlbergueError::ExternalServiceError(format!("Failed to create request: {}", e))
+        )?;
+
+        let mut response = worker::Fetch::Request(request).send().await.map_err(|e|
+            AlbergueError::ExternalServiceError(format!("WhatsApp request failed: {}", e))
+        )?;
+
+        let status = response.status_code();
+        if status == 200 || status == 201 {
+            let text = response.text().await.map_err(|e|
+                AlbergueError::ExternalServiceError(format!("Failed to read WhatsApp response: {}", e))
+            )?;
+            let result: serde_json::Value = serde_json::from_str(&text).map_err(|e|
                 AlbergueError::ExternalServiceError(format!("Failed to parse WhatsApp response: {}", e))
             )?;
             Ok(result["messages"][0]["id"]
@@ -68,16 +76,15 @@ impl WhatsAppAdapter {
                 .unwrap_or("unknown")
                 .to_string())
         } else {
-             let body_str = String::from_utf8_lossy(response.body());
-             Err(AlbergueError::ExternalServiceError(format!("WhatsApp error: {}", body_str)))
+            let body_str = response.text().await.unwrap_or_default();
+            Err(AlbergueError::ExternalServiceError(format!("WhatsApp error: {}", body_str)))
         }
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl SmsPort for WhatsAppAdapter {
-    async fn send_sms(&self, notification: &Notification) -> AlbergueResult<String> {
-        // For SMS, we can fallback to sending a WhatsApp message or return an error
+    async fn send_sms(&self, _notification: &Notification) -> AlbergueResult<String> {
         Err(AlbergueError::ExternalServiceError(
             "Direct SMS not supported by WhatsAppAdapter".to_string(),
         ))

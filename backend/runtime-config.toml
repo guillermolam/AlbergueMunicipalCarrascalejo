@@ -1,41 +1,16 @@
+# Runtime configuration for Cloudflare Workers services
+# This file defines KV namespaces and their purposes
 
-# Runtime configuration for Spin services
-# This file defines KV store labels and their purposes
+[kv_namespaces]
 
-[key_value_stores]
+[kv_namespaces.cache]
+binding = "CACHE"
+description = "KV namespace for general caching (location data, reviews, etc.)"
 
-[key_value_stores.config]
-type = "spin"
-description = "Key-value store for sensitive configuration data like database URLs"
+[kv_namespaces.rate_limit]
+binding = "RATE_LIMIT"
+description = "KV namespace for rate limiting counters and client tracking"
 
-[key_value_stores.booking-kv]
-type = "spin"
-description = "Key-value store for booking data caching and session management"
-
-[key_value_stores.notification-kv]
-type = "spin"
-description = "Key-value store for notification queues and delivery tracking"
-
-[key_value_stores.reviews-kv]
-type = "spin"
-description = "Key-value store for review caching and moderation flags"
-
-[key_value_stores.security-kv]
-type = "spin"
-description = "Key-value store for security tokens and rate limiting counters"
-
-[key_value_stores.validation-kv]
-type = "spin"
-description = "Key-value store for OCR results caching and validation history"
-
-[key_value_stores.info-kv]
-type = "spin"
-description = "Key-value store for scraped content caching and update timestamps"
-
-[key_value_stores.location-kv]
-type = "spin"
-description = "Key-value store for location data and geocoding results"
-
-[key_value_stores.rate-limiter-kv]
-type = "spin"
-description = "Key-value store for rate limiting counters and client tracking"
+[kv_namespaces.security]
+binding = "SECURITY"
+description = "KV namespace for security tokens and session data"

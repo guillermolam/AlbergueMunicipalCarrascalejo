@@ -1,7 +1,6 @@
 use crate::domain::Notification;
 use crate::ports::SmsPort;
 use async_trait::async_trait;
-use spin_sdk::http::{Request, Response, Method};
 use shared::{AlbergueError, AlbergueResult};
 use std::collections::HashMap;
 use base64::Engine;
@@ -39,39 +38,51 @@ impl TwilioAdapter {
         params.insert("From", from);
         params.insert("Body", body);
 
-        let body_content = serde_urlencoded::to_string(&params).map_err(|e| 
+        let body_content = serde_urlencoded::to_string(&params).map_err(|e|
              AlbergueError::ExternalServiceError(format!("Failed to encode params: {}", e))
         )?;
 
         let auth = format!("{}:{}", self.account_sid, self.auth_token);
         let auth_header = format!("Basic {}", base64::engine::general_purpose::STANDARD.encode(auth));
 
-        let req = Request::builder()
-            .method(Method::Post)
-            .uri(url)
-            .header("Authorization", auth_header)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(body_content.into_bytes())
-            .build();
+        let mut headers = worker::Headers::new();
+        headers.set("Authorization", &auth_header).map_err(|e|
+            AlbergueError::ExternalServiceError(format!("Failed to set header: {}", e))
+        )?;
+        headers.set("Content-Type", "application/x-www-form-urlencoded").map_err(|e|
+            AlbergueError::ExternalServiceError(format!("Failed to set header: {}", e))
+        )?;
 
-        let response: Response = spin_sdk::http::send(req).await.map_err(|e| {
-             AlbergueError::ExternalServiceError(format!("Twilio request failed: {}", e))
-        })?;
+        let mut init = worker::RequestInit::new();
+        init.with_method(worker::Method::Post);
+        init.with_headers(headers);
+        init.with_body(Some(worker::wasm_bindgen::JsValue::from_str(&body_content)));
 
-        if *response.status() == 200 || *response.status() == 201 {
-            let body_bytes = response.body();
-            let json: serde_json::Value = serde_json::from_slice(body_bytes).map_err(|e| 
+        let request = worker::Request::new_with_init(&url, &init).map_err(|e|
+            AlbergueError::ExternalServiceError(format!("Failed to create request: {}", e))
+        )?;
+
+        let mut response = worker::Fetch::Request(request).send().await.map_err(|e|
+            AlbergueError::ExternalServiceError(format!("Twilio request failed: {}", e))
+        )?;
+
+        let status = response.status_code();
+        if status == 200 || status == 201 {
+            let text = response.text().await.map_err(|e|
+                AlbergueError::ExternalServiceError(format!("Failed to read Twilio response: {}", e))
+            )?;
+            let json: serde_json::Value = serde_json::from_str(&text).map_err(|e|
                 AlbergueError::ExternalServiceError(format!("Failed to parse Twilio response: {}", e))
             )?;
             Ok(json["sid"].as_str().unwrap_or("unknown").to_string())
         } else {
-             let body_str = String::from_utf8_lossy(response.body());
-             Err(AlbergueError::ExternalServiceError(format!("Twilio error: {}", body_str)))
+            let body_str = response.text().await.unwrap_or_default();
+            Err(AlbergueError::ExternalServiceError(format!("Twilio error: {}", body_str)))
         }
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl SmsPort for TwilioAdapter {
     async fn send_sms(&self, notification: &Notification) -> AlbergueResult<String> {
         self.send_message(
@@ -98,19 +109,24 @@ impl SmsPort for TwilioAdapter {
             "https://api.twilio.com/2010-04-01/Accounts/{}.json",
             self.account_sid
         );
-        
+
         let auth = format!("{}:{}", self.account_sid, self.auth_token);
         let auth_header = format!("Basic {}", base64::engine::general_purpose::STANDARD.encode(auth));
 
-        let req = Request::builder()
-            .method(Method::Get)
-            .uri(url)
-            .header("Authorization", auth_header)
-            .body(vec![])
-            .build();
+        let mut headers = worker::Headers::new();
+        let _ = headers.set("Authorization", &auth_header);
 
-        match spin_sdk::http::send(req).await {
-            Ok(response) => Ok(*response.status() == 200),
+        let mut init = worker::RequestInit::new();
+        init.with_method(worker::Method::Get);
+        init.with_headers(headers);
+
+        let request = match worker::Request::new_with_init(&url, &init) {
+            Ok(r) => r,
+            Err(_) => return Ok(false),
+        };
+
+        match worker::Fetch::Request(request).send().await {
+            Ok(response) => Ok(response.status_code() == 200),
             Err(_) => Ok(false),
         }
     }

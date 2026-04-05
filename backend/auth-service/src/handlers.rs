@@ -1,40 +1,31 @@
 use chrono::Utc;
-use http::StatusCode;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde_json::json;
-use spin_sdk::http::{Request, Response};
 use std::collections::HashMap;
+use worker::{Request, Response, Result};
 
 use crate::config::{AppConfig, Claims};
 
-pub async fn login_handler(_req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
+pub async fn login_handler(_req: &Request, cfg: &AppConfig) -> Result<Response> {
     let state = uuid::Uuid::new_v4().to_string();
     if let Some(provider) = cfg.providers.first() {
         let url = provider.authorization_url(&state);
 
-        Ok(Response::builder()
-            .status(StatusCode::TEMPORARY_REDIRECT)
-            .header("Location", url)
-            .body(vec![])
-            .build())
+        let mut resp = Response::ok("")?;
+        resp.headers_mut().set("Location", &url)?;
+        Ok(resp.with_status(307))
     } else {
-        Ok(Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body("No auth providers configured")
-            .build())
+        Response::error("No auth providers configured", 500)
     }
 }
 
-pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
-    let uri = req.uri();
-    let query = uri.split_once('?').map_or("", |(_, q)| q);
+pub async fn callback_handler(req: &Request, cfg: &AppConfig) -> Result<Response> {
+    let url = req.url()?;
+    let query = url.query().unwrap_or("");
     let params: HashMap<String, String> = serde_urlencoded::from_str(query).unwrap_or_default();
 
     let Some(code) = params.get("code") else {
-        return Ok(Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body("Missing code")
-            .build());
+        return Response::error("Missing code", 400);
     };
 
     let mut token = None;
@@ -53,10 +44,7 @@ pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<R
     }
 
     let Some(token) = token else {
-        return Ok(Response::builder()
-            .status(StatusCode::UNAUTHORIZED)
-            .body(format!("Auth failed: {last_error}"))
-            .build());
+        return Response::error(format!("Auth failed: {last_error}"), 401);
     };
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -64,16 +52,13 @@ pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<R
         sub: token.access_token.clone(),
         exp: (Utc::now() + cfg.token_ttl).timestamp() as usize,
         aud: cfg.client_id.clone(),
-        iss: "spin-auth-service".into(),
+        iss: "workers-auth-service".into(),
     };
     let header = Header::new(Algorithm::HS256);
     let jwt = match encode(&header, &claims, &EncodingKey::from_secret(&cfg.jwt_secret)) {
         Ok(t) => t,
         Err(e) => {
-            return Ok(Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(e.to_string())
-                .build());
+            return Response::error(e.to_string(), 500);
         }
     };
 
@@ -82,30 +67,21 @@ pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<R
         "refresh_token": token.refresh_token,
     });
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_vec(&body)?)
-        .build())
+    Response::from_json(&body)
 }
 
-pub async fn logout_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Result<Response> {
-    Ok(Response::builder()
-        .status(StatusCode::TEMPORARY_REDIRECT)
-        .header("Location", "/")
-        .body(vec![])
-        .build())
+pub async fn logout_handler(_req: &Request, _cfg: &AppConfig) -> Result<Response> {
+    let mut resp = Response::ok("")?;
+    resp.headers_mut().set("Location", "/")?;
+    Ok(resp.with_status(307))
 }
 
-pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
-    let body = req.into_body();
-    let payload: HashMap<String, String> = serde_json::from_slice(&body).unwrap_or_default();
+pub async fn refresh_handler(req: &mut Request, cfg: &AppConfig) -> Result<Response> {
+    let body = req.text().await?;
+    let payload: HashMap<String, String> = serde_json::from_str(&body).unwrap_or_default();
 
     let Some(refresh) = payload.get("refresh_token") else {
-        return Ok(Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body("Missing refresh_token")
-            .build());
+        return Response::error("Missing refresh_token", 400);
     };
 
     let mut token = None;
@@ -124,10 +100,7 @@ pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Re
     }
 
     let Some(token) = token else {
-        return Ok(Response::builder()
-            .status(StatusCode::UNAUTHORIZED)
-            .body(format!("Refresh failed: {last_error}"))
-            .build());
+        return Response::error(format!("Refresh failed: {last_error}"), 401);
     };
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -135,7 +108,7 @@ pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Re
         sub: token.access_token.clone(),
         exp: (Utc::now() + cfg.token_ttl).timestamp() as usize,
         aud: cfg.client_id.clone(),
-        iss: "spin-auth-service".into(),
+        iss: "workers-auth-service".into(),
     };
     let jwt = match encode(
         &Header::new(Algorithm::HS256),
@@ -144,23 +117,16 @@ pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Re
     ) {
         Ok(t) => t,
         Err(e) => {
-            return Ok(Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(e.to_string())
-                .build());
+            return Response::error(e.to_string(), 500);
         }
     };
 
     let body = json!({ "jwt": jwt });
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_vec(&body)?)
-        .build())
+    Response::from_json(&body)
 }
 
-pub async fn well_known_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Result<Response> {
-    let issuer = "https://alberguecarrascalejo.fermyon.app/api/auth";
+pub async fn well_known_handler(_req: &Request, _cfg: &AppConfig) -> Result<Response> {
+    let issuer = "https://alberguecarrascalejo.workers.dev/api/auth";
     let config = json!({
         "issuer": issuer,
         "authorization_endpoint": format!("{}/login", issuer),
@@ -171,9 +137,5 @@ pub async fn well_known_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Resu
         "id_token_signing_alg_values_supported": ["RS256", "HS256"],
     });
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_vec(&config)?)
-        .build())
+    Response::from_json(&config)
 }

@@ -1,10 +1,7 @@
-﻿pub fn parse_redis_int(res: &[spin_sdk::redis::RedisResult]) -> Option<i64> {
-    match res.first()? {
-        spin_sdk::redis::RedisResult::Int64(v) => Some(*v),
-        spin_sdk::redis::RedisResult::Status(s) => s.parse::<i64>().ok(),
-        spin_sdk::redis::RedisResult::Binary(v) => {
-            String::from_utf8(v.clone()).ok()?.parse::<i64>().ok()
-        }
-        spin_sdk::redis::RedisResult::Nil => None,
-    }
+// Redis has been removed. This module now contains general gateway utilities.
+
+/// Parse a string as an i64, returning None if parsing fails.
+#[must_use]
+pub fn parse_int(s: &str) -> Option<i64> {
+    s.parse::<i64>().ok()
 }

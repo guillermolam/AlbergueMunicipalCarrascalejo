@@ -3,20 +3,16 @@
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::same_length_and_capacity,
     clippy::option_if_let_else,
     clippy::implicit_hasher,
+    clippy::must_use_candidate,
     clippy::future_not_send
 )]
 
-use anyhow::Result;
-use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use spin_sdk::http::{Method, Request, Response};
-use spin_sdk::http_component;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::task;
+use worker::{event, Context, Env, Method, Request, Response, Result};
 
 // --- Test-facing exports ----------------------------------------------------
 pub use crate::calculate_rate_limit as calculate_rate_limit_for_test;
@@ -82,33 +78,27 @@ pub fn calculate_rate_limit(
 }
 
 pub fn extract_client_id(req: &Request) -> String {
-    let headers: Vec<_> = req.headers().collect();
+    let headers = req.headers();
 
     // Check x-forwarded-for
-    if let Some((_, v)) = headers
-        .iter()
-        .find(|(k, _)| k.to_lowercase() == "x-forwarded-for")
-    {
-        return String::from_utf8_lossy(v.as_bytes()).to_string();
+    if let Ok(Some(val)) = headers.get("x-forwarded-for") {
+        return val;
     }
 
     // Check x-real-ip
-    if let Some((_, v)) = headers
-        .iter()
-        .find(|(k, _)| k.to_lowercase() == "x-real-ip")
-    {
-        return String::from_utf8_lossy(v.as_bytes()).to_string();
+    if let Ok(Some(val)) = headers.get("x-real-ip") {
+        return val;
     }
 
     "unknown".to_string()
 }
 
-pub async fn perform_rate_limit_check(
+pub fn perform_rate_limit_check(
     req: &Request,
-    config: HashMap<String, (u32, u32)>,
-) -> Result<RateLimitResponse> {
+    config: &HashMap<String, (u32, u32)>,
+) -> RateLimitResponse {
     let _client_id = extract_client_id(req);
-    let path = req.uri();
+    let path = req.path();
     let method = match req.method() {
         Method::Get => "GET",
         Method::Post => "POST",
@@ -125,148 +115,132 @@ pub async fn perform_rate_limit_check(
     if let Some(&(window_seconds, max_requests)) = config.get(&endpoint_key) {
         let current_time = get_current_timestamp();
 
-        let storage_task = task::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-            None::<RateLimitEntry>
-        });
-
-        let entry = storage_task.await?;
+        // Inline: no external storage, just compute with no prior entry
+        let entry = None::<RateLimitEntry>;
         let (allowed, new_entry, remaining) =
             calculate_rate_limit(entry, current_time, window_seconds, max_requests);
 
-        let _save_task = task::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
-            Ok::<(), anyhow::Error>(())
-        });
-
-        Ok(RateLimitResponse {
+        RateLimitResponse {
             allowed,
             remaining,
             reset_time: new_entry.window_start + u64::from(window_seconds),
             retry_after: if allowed { None } else { Some(window_seconds) },
-        })
+        }
     } else {
-        Ok(RateLimitResponse {
+        RateLimitResponse {
             allowed: true,
             remaining: 100,
             reset_time: get_current_timestamp() + 60,
             retry_after: None,
-        })
+        }
     }
 }
 
-fn build_rate_limit_response(status: StatusCode, response: &RateLimitResponse) -> Result<Response> {
-    let mut builder = Response::builder();
-    builder.status(status);
-    builder.header("content-type", "application/json");
-    builder.header("Access-Control-Allow-Origin", "*");
-    builder.header("X-RateLimit-Remaining", response.remaining.to_string());
-    builder.header("X-RateLimit-Reset", response.reset_time.to_string());
+fn build_rate_limit_response(status: u16, response: &RateLimitResponse) -> Result<Response> {
+    let json =
+        serde_json::to_string(response).map_err(|e| worker::Error::RustError(e.to_string()))?;
+    let mut resp = Response::ok(json)?;
+    resp.headers_mut().set("content-type", "application/json")?;
+    resp.headers_mut().set("Access-Control-Allow-Origin", "*")?;
+    resp.headers_mut()
+        .set("X-RateLimit-Remaining", &response.remaining.to_string())?;
+    resp.headers_mut()
+        .set("X-RateLimit-Reset", &response.reset_time.to_string())?;
 
     if let Some(retry_after) = response.retry_after {
-        builder.header("Retry-After", retry_after.to_string());
+        resp.headers_mut()
+            .set("Retry-After", &retry_after.to_string())?;
     }
 
-    Ok(builder.body(serde_json::to_vec(response)?).build())
+    Ok(resp.with_status(status))
 }
 
-#[http_component]
-async fn handle_request(req: Request) -> Result<Response> {
+#[event(fetch)]
+async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     let method = req.method();
-    let path = req.uri();
+    let path = req.path();
 
     let mut config = HashMap::new();
     config.insert("POST:/booking".to_string(), (60, 10));
     config.insert("POST:/validation".to_string(), (60, 20));
     config.insert("GET:/reviews".to_string(), (60, 100));
 
-    match (method, path) {
-        (&Method::Post, "/rate-limit/check") => handle_rate_limit_check(req, config).await,
-        (&Method::Get, "/rate-limit/status") => handle_rate_limit_status(req).await,
-        (&Method::Post, "/rate-limit/reset") => handle_rate_limit_reset(req).await,
-        _ => Ok(Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(r#"{"error":"Rate limit endpoint not found"}"#.as_bytes().to_vec())
-            .build()),
+    match (method, path.as_str()) {
+        (Method::Post, "/rate-limit/check") => handle_rate_limit_check(&req, &config),
+        (Method::Get, "/rate-limit/status") => handle_rate_limit_status(&req),
+        (Method::Post, "/rate-limit/reset") => handle_rate_limit_reset(&mut req).await,
+        _ => {
+            let mut resp = Response::ok(r#"{"error":"Rate limit endpoint not found"}"#)?;
+            resp.headers_mut().set("content-type", "application/json")?;
+            Ok(resp.with_status(404))
+        }
     }
 }
 
-async fn handle_rate_limit_check(
-    req: Request,
-    config: HashMap<String, (u32, u32)>,
+fn handle_rate_limit_check(
+    req: &Request,
+    config: &HashMap<String, (u32, u32)>,
 ) -> Result<Response> {
-    let result = perform_rate_limit_check(&req, config).await?;
+    let result = perform_rate_limit_check(req, config);
 
-    let status = if result.allowed {
-        StatusCode::OK
-    } else {
-        StatusCode::TOO_MANY_REQUESTS
-    };
+    let status = if result.allowed { 200 } else { 429 };
 
     build_rate_limit_response(status, &result)
 }
 
-async fn handle_rate_limit_status(req: Request) -> Result<Response> {
-    let client_id = extract_client_id(&req);
+fn handle_rate_limit_status(req: &Request) -> Result<Response> {
+    let client_id = extract_client_id(req);
 
-    let status_task = task::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_millis(15)).await;
-
-        serde_json::json!({
-            "client_id": client_id,
-            "global_limit": {
-                "requests_per_minute": 1000,
-                "current_usage": 45,
-                "remaining": 955
+    let status = serde_json::json!({
+        "client_id": client_id,
+        "global_limit": {
+            "requests_per_minute": 1000,
+            "current_usage": 45,
+            "remaining": 955
+        },
+        "endpoint_limits": {
+            "POST:/booking": {
+                "limit": 10,
+                "used": 3,
+                "remaining": 7,
+                "reset_time": get_current_timestamp() + 45
             },
-            "endpoint_limits": {
-                "POST:/booking": {
-                    "limit": 10,
-                    "used": 3,
-                    "remaining": 7,
-                    "reset_time": get_current_timestamp() + 45
-                },
-                "POST:/validation": {
-                    "limit": 20,
-                    "used": 8,
-                    "remaining": 12,
-                    "reset_time": get_current_timestamp() + 35
-                }
+            "POST:/validation": {
+                "limit": 20,
+                "used": 8,
+                "remaining": 12,
+                "reset_time": get_current_timestamp() + 35
             }
-        })
+        }
     });
 
-    let status = status_task.await?;
-
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .body(serde_json::to_vec(&status)?)
-        .build())
+    let json =
+        serde_json::to_string(&status).map_err(|e| worker::Error::RustError(e.to_string()))?;
+    let mut resp = Response::ok(json)?;
+    resp.headers_mut().set("content-type", "application/json")?;
+    resp.headers_mut().set("Access-Control-Allow-Origin", "*")?;
+    Ok(resp.with_status(200))
 }
 
-async fn handle_rate_limit_reset(req: Request) -> Result<Response> {
-    let body = req.body();
-    let body_str = std::str::from_utf8(body)?;
-    let reset_req: serde_json::Value = serde_json::from_str(body_str)?;
+async fn handle_rate_limit_reset(req: &mut Request) -> Result<Response> {
+    let body = req.text().await?;
+    let reset_req: serde_json::Value =
+        serde_json::from_str(&body).map_err(|e| worker::Error::RustError(e.to_string()))?;
     let client_id = reset_req["client_id"]
         .as_str()
         .unwrap_or("unknown")
         .to_string();
 
-    let reset_task = task::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_millis(20)).await;
-
-        serde_json::json!({
-            "success": true,
-            "message": format!("Rate limits reset for client: {client_id}"),
-            "timestamp": get_current_timestamp()
-        })
+    let result = serde_json::json!({
+        "success": true,
+        "message": format!("Rate limits reset for client: {client_id}"),
+        "timestamp": get_current_timestamp()
     });
 
-    let result = reset_task.await?;
-
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .body(serde_json::to_vec(&result)?)
-        .build())
+    let json =
+        serde_json::to_string(&result).map_err(|e| worker::Error::RustError(e.to_string()))?;
+    let mut resp = Response::ok(json)?;
+    resp.headers_mut().set("content-type", "application/json")?;
+    resp.headers_mut().set("Access-Control-Allow-Origin", "*")?;
+    Ok(resp.with_status(200))
 }

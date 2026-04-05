@@ -1,78 +1,43 @@
-#[cfg(target_arch = "wasm32")]
-use spin_sdk::key_value::Store;
+//! Configuration service using environment variables.
+//!
+//! In Cloudflare Workers, secrets and environment variables are set via
+//! `wrangler secret put` or in `wrangler.toml` `[vars]`. They are accessed
+//! through the `Env` object in the handler, which should pass values into
+//! service constructors. This module provides a fallback for native builds
+//! using `std::env`.
 
-/// Configuration service using Spin KV store for sensitive data
-#[cfg(target_arch = "wasm32")]
-pub struct ConfigService {
-    store: Store,
+/// Retrieve a configuration value from environment variables.
+#[must_use]
+pub fn get(key: &str) -> Option<String> {
+    std::env::var(key).ok()
 }
 
-#[cfg(target_arch = "wasm32")]
-impl ConfigService {
-    /// Open the configuration store
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let store = Store::open("config")?;
-        Ok(Self { store })
-    }
-
-    /// Get a configuration value by key
-    pub fn get(&self, key: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        match self.store.get(key) {
-            Ok(Some(data)) => {
-                let value = String::from_utf8(data)?;
-                Ok(Some(value))
-            }
-            Ok(None) => Ok(None),
-            Err(_) => Ok(None),
-        }
-    }
-
-    /// Set a configuration value
-    pub fn set(&self, key: &str, value: &str) -> Result<(), Box<dyn std::error::Error>> {
-        self.store.set(key, value.as_bytes())?;
-        Ok(())
-    }
-
-    /// Get database URL from KV store or environment fallback
-    pub fn get_database_url(&self) -> Result<String, Box<dyn std::error::Error>> {
-        // Try KV store first
-        if let Some(url) = self.get("DATABASE_URL")? {
-            return Ok(url);
-        }
-
-        // Fallback to environment variable
-        std::env::var("DATABASE_URL")
-            .or_else(|_| std::env::var("NEON_DATABASE_URL"))
-            .map_err(|_| "No database URL found in KV store or environment".into())
-    }
-
-    /// Get all configuration keys
-    pub fn get_all_keys(&self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-        Ok(self.store.get_keys()?)
-    }
-
-    /// Delete a configuration key
-    pub fn delete(&self, key: &str) -> Result<(), Box<dyn std::error::Error>> {
-        self.store.delete(key)?;
-        Ok(())
-    }
+/// Retrieve the database URL from known environment variable names.
+///
+/// Checks `DATABASE_URL` first, then `NEON_DATABASE_URL`.
+pub fn get_database_url() -> Result<String, String> {
+    std::env::var("DATABASE_URL")
+        .or_else(|_| std::env::var("NEON_DATABASE_URL"))
+        .map_err(|_| {
+            "No database URL found in environment (DATABASE_URL or NEON_DATABASE_URL)".to_string()
+        })
 }
 
-/// Get database URL from configuration
-#[cfg(target_arch = "wasm32")]
-pub fn get_database_url() -> Result<String, Box<dyn std::error::Error>> {
-    let config = ConfigService::new()?;
-    config.get_database_url()
-}
-
-#[cfg(all(test, target_arch = "wasm32"))]
+#[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_config_service_creation() {
-        // This test would require Spin runtime
-        // For now, just test that the struct can be created
-        // In a real test environment with Spin, we would test the KV operations
+    fn test_get_database_url_from_env() {
+        std::env::set_var("DATABASE_URL", "postgresql://localhost/test");
+        let url = get_database_url().unwrap();
+        assert!(url.contains("postgresql://"));
+        std::env::remove_var("DATABASE_URL");
+    }
+
+    #[test]
+    fn test_get_returns_none_for_missing() {
+        std::env::remove_var("NONEXISTENT_KEY_12345");
+        assert!(get("NONEXISTENT_KEY_12345").is_none());
     }
 }

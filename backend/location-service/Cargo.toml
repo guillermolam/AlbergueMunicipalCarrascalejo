@@ -3,9 +3,6 @@ name = "location-service"
 version = "0.2.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
 # Core dependencies
 anyhow = "1.0.100"
@@ -15,23 +12,11 @@ uuid = { version = "1.19.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.43", features = ["serde"] }
 thiserror = "2.0.17"
 
-# Async runtime (wasm-compatible features only)
-tokio = { version = "1.49.0", features = ["sync", "macros", "time"] }
-futures = "0.3"
-
-# Spin SDK
-spin-sdk = "5.1.1"
-wit-bindgen = "0.51.0"
+# Cloudflare Workers SDK
+worker = "0.7.5"
 
 # Logging
 log = "0.4"
-
-# HTTP
-http = "1.1"
-
-
-# Redis
-redis-service = { path = "../redis-service" }
 
 # Shared
 shared = { path = "../shared" }

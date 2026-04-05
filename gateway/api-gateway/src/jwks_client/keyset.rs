@@ -2,7 +2,6 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use ring::signature::{RsaPublicKeyComponents, RSA_PKCS1_2048_8192_SHA256};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
-use spin_sdk::http;
 use std::time::SystemTime;
 
 use crate::jwks_client::error::{
@@ -30,15 +29,15 @@ pub struct KeyStore {
 }
 
 impl KeyStore {
-    pub fn new() -> KeyStore {
-        KeyStore {
+    pub fn new() -> Self {
+        Self {
             key_url: String::new(),
             keys: Vec::new(),
         }
     }
 
-    pub async fn new_from(jwks_url: String) -> Result<KeyStore, Error> {
-        let mut keystore = KeyStore::new();
+    pub async fn new_from(jwks_url: String) -> Result<Self, Error> {
+        let mut keystore = Self::new();
         keystore.load_keys_from(jwks_url).await?;
         Ok(keystore)
     }
@@ -54,18 +53,22 @@ impl KeyStore {
             pub keys: Vec<JwtKey>,
         }
 
-        let req = http::Request::builder()
-            .method(http::Method::Get)
-            .uri(&self.key_url)
-            .body(())
-            .build();
+        // Use worker::Fetch for outbound HTTP in Cloudflare Workers
+        let url =
+            worker::Url::parse(&self.key_url).map_err(|_| err_con("Failed to parse JWKS URL"))?;
 
-        let response: http::Response = http::send(req)
+        let mut response = worker::Fetch::Url(url)
+            .send()
             .await
             .map_err(|_| err_con("Failed to fetch keys"))?;
 
+        let body = response
+            .text()
+            .await
+            .map_err(|_| err_con("Failed to read JWKS response body"))?;
+
         let jwt_keys: JwtKeys =
-            serde_json::from_slice(response.body()).map_err(|_| err_con("Failed to parse keys"))?;
+            serde_json::from_str(&body).map_err(|_| err_con("Failed to parse keys"))?;
 
         self.keys = jwt_keys.keys;
         Ok(())

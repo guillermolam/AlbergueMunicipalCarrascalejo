@@ -3,9 +3,6 @@ name = "rate-limiter-service"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [package.metadata.env]
 # Rate Limiting Configuration
 RATE_LIMIT_REQUESTS = { default = "100", description = "Requests per minute limit" }
@@ -19,12 +16,10 @@ REDIS_URL = { required = false, description = "Redis connection string for rate 
 LOG_LEVEL = { default = "info", description = "Application log level" }
 
 [dependencies]
-# Spin SDK for WASM components
-spin-sdk = "5.1.1"
-wit-bindgen = "0.51.0"
+# Cloudflare Workers SDK
+worker = "0.7.5"
 
-# HTTP and web
-http = "1.1"
+# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
@@ -38,18 +33,8 @@ thiserror = "2.0.17"
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
-# Async runtime
-tokio = { version = "1.0", features = ["rt", "macros", "time"] }
-futures = "0.3"
-
 [dev-dependencies]
-tokio = { version = "1.0", features = ["rt", "macros", "time", "test-util"] }
 serde_json = "1.0"
-http-body-util = "0.1"
-tower = "0.5.3"
-tower-service = "0.3"
-hyper = "1.0"
-hyper-util = "0.1"
 
 [[test]]
 name = "integration_tests"

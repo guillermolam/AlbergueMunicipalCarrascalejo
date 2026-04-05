@@ -44,9 +44,8 @@ impl ImageProcessor {
         for (x, y, pixel) in img.enumerate_pixels() {
             let gray_value = pixel[0];
             // Apply simple contrast stretching
-            let enhanced_value = ((gray_value as f32 - 128.0) * 1.2 + 128.0)
-                .max(0.0)
-                .min(255.0) as u8;
+            let enhanced_value =
+                ((gray_value as f32 - 128.0) * 1.2 + 128.0).clamp(0.0, 255.0) as u8;
             enhanced.put_pixel(x, y, image::Luma([enhanced_value]));
         }
 

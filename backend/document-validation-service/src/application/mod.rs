@@ -1,1 +1,1 @@
-pub mod document_validation_service;
+pub mod validation_service;

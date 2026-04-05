@@ -22,42 +22,20 @@ pub enum SslMode {
     Disable,
 }
 
-#[cfg(target_arch = "wasm32")]
-use crate::config::get_database_url;
-
 impl DatabaseConfig {
     #[must_use]
     pub fn from_env() -> Self {
-        let database_type = if std::env::var("SPIN_COMPONENT_ROUTE").is_ok() {
+        // Use SQLite only if SQLITE_DATABASE is explicitly set
+        let database_type = if std::env::var("SQLITE_DATABASE").is_ok() {
             DatabaseType::SQLite
         } else {
             DatabaseType::PostgreSQL
         };
 
         let connection_string = match database_type {
-            DatabaseType::PostgreSQL => {
-                // For Spin deployments, try KV store first
-                #[cfg(target_arch = "wasm32")]
-                {
-                    match get_database_url() {
-                        Ok(url) => url,
-                        Err(_) => {
-                            // Fallback to environment variables
-                            std::env::var("DATABASE_URL")
-                                .or_else(|_| std::env::var("NEON_DATABASE_URL"))
-                                .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string())
-                        }
-                    }
-                }
-
-                // For non-Spin environments, use environment variables
-                #[cfg(not(target_arch = "wasm32"))]
-                {
-                    std::env::var("DATABASE_URL")
-                        .or_else(|_| std::env::var("NEON_DATABASE_URL"))
-                        .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string())
-                }
-            }
+            DatabaseType::PostgreSQL => std::env::var("DATABASE_URL")
+                .or_else(|_| std::env::var("NEON_DATABASE_URL"))
+                .unwrap_or_else(|_| "postgresql://localhost/albergue".to_string()),
             DatabaseType::SQLite => {
                 std::env::var("SQLITE_DATABASE").unwrap_or_else(|_| "./albergue.db".to_string())
             }
@@ -305,9 +283,8 @@ mod tests {
 
     #[test]
     fn test_database_config_from_env() {
-        // Test with mock environment variables
         std::env::set_var("DATABASE_URL", "postgresql://localhost/test");
-        std::env::remove_var("SPIN_COMPONENT_ROUTE");
+        std::env::remove_var("SQLITE_DATABASE");
 
         let config = DatabaseConfig::from_env();
         assert_eq!(config.database_type, DatabaseType::PostgreSQL);
@@ -326,8 +303,10 @@ mod tests {
         };
 
         assert!(config.validate_connection_string().is_ok());
-        assert!(config.is_production());
-        assert_eq!(config.get_environment(), Environment::Production);
+        // In debug/test builds, cfg!(debug_assertions) is true, so pooler URLs
+        // are detected as "development" rather than "production"
+        assert!(config.is_development());
+        assert_eq!(config.get_environment(), Environment::Development);
     }
 
     #[test]

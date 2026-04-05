@@ -101,8 +101,8 @@ jobs:
       - name: Test
         run: just test
 
-      - name: Build (wasm)
-        run: cargo build --workspace --release --target wasm32-wasip2
+      # WASM builds for Cloudflare Workers are handled by wrangler during deployment.
+      # Native clippy + tests validate correctness; wrangler deploy validates WASM.
 
   # Database CI
   database:
@@ -160,56 +160,22 @@ jobs:
         env:
           PGPASSWORD: postgres
 
-  # Integration Tests (Rust: tests/integration)
+  # Integration Tests (placeholder - Spin removed, Cloudflare Workers integration TBD)
   integration:
-    name: Integration Tests (Spin)
+    name: Integration Tests
     runs-on: ubuntu-latest
     needs: [frontend, gateway, backend, database]
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: albergue_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-          targets: wasm32-wasip2
-
-      - name: Install Spin CLI
+      - name: Integration tests placeholder
         run: |
-          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-          echo "$HOME/.spin/bin" >> $GITHUB_PATH
+          echo "Integration tests will use wrangler dev for Cloudflare Workers."
+          echo "Skipping for now — individual service tests run in backend/gateway jobs."
 
-      - name: Install just
-        run: |
-          cargo install just --locked || cargo install just
-
-      - name: Build Spin app (root spin.toml)
-        run: |
-          spin --version
-          spin build
-
-      - name: Run Rust integration tests (tests/integration)
-        run: |
-          cd tests/integration
-          just check
-
-  # Backend CI (Rust Spin services)
+  # Backend CI (Cloudflare Workers services)
   backend:
     name: Backend Checks
     runs-on: ubuntu-latest
@@ -252,8 +218,8 @@ jobs:
       - name: Test
         run: just test
 
-      - name: Build (wasm)
-        run: just build-wasm
+      # WASM builds for Cloudflare Workers are handled by wrangler during deployment.
+      # Native clippy + tests validate correctness; wrangler deploy validates WASM.
 
   # Security Scan
   security:

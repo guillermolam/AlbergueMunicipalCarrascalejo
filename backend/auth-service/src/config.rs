@@ -58,7 +58,7 @@ pub async fn load_config() -> anyhow::Result<AppConfig> {
     let ttl_secs: i64 = env::var("TOKEN_TTL")
         .unwrap_or_else(|_| "3600".into())
         .parse()?;
-    let app_client_id = env::var("LOGTO_APP_ID").unwrap_or_else(|_| "spin-auth".into());
+    let app_client_id = env::var("LOGTO_APP_ID").unwrap_or_else(|_| "workers-auth".into());
 
     if let (Ok(issuer), Ok(client_id), Ok(client_secret)) = (
         env::var("LOGTO_ISSUER_ENDPOINT"),
@@ -113,36 +113,50 @@ pub async fn load_config() -> anyhow::Result<AppConfig> {
 
 async fn discover_oidc(issuer: &str) -> anyhow::Result<CoreProviderMetadata> {
     let http = |req: openidconnect::HttpRequest| async move {
-        let mut builder = http::Request::builder().method(req.method()).uri(req.uri());
-
-        for (key, value) in req.headers() {
-            builder = builder.header(key.as_str(), value.as_bytes());
-        }
-
-        let body = if req.body().is_empty() {
-            vec![]
-        } else {
-            req.body().clone()
+        let method = match *req.method() {
+            http::Method::POST => worker::Method::Post,
+            http::Method::PUT => worker::Method::Put,
+            http::Method::DELETE => worker::Method::Delete,
+            _ => worker::Method::Get,
         };
 
-        let request = builder.body(body).map_err(std::io::Error::other)?;
+        let url = req.uri().to_string();
 
-        let response: http::Response<Vec<u8>> = spin_sdk::http::send(request)
-            .await
-            .map_err(|e| std::io::Error::other(e.to_string()))?;
-
-        let status_code = openidconnect::http::StatusCode::from_u16(response.status().as_u16())
-            .map_err(std::io::Error::other)?;
-
-        let mut builder02 = openidconnect::http::Response::builder().status(status_code);
-
-        for (key, value) in response.headers() {
-            builder02 = builder02.header(key.as_str(), value.as_bytes());
+        let headers = worker::Headers::new();
+        for (key, value) in req.headers() {
+            let _ = headers.set(key.as_str(), value.to_str().unwrap_or(""));
         }
 
-        let body_bytes = response.body().clone();
+        let mut init = worker::RequestInit::new();
+        init.with_method(method);
+        init.with_headers(headers);
 
-        builder02.body(body_bytes).map_err(std::io::Error::other)
+        if !req.body().is_empty() {
+            let body_str = String::from_utf8_lossy(req.body()).to_string();
+            init.with_body(Some(worker::wasm_bindgen::JsValue::from_str(&body_str)));
+        }
+
+        let worker_req = worker::Request::new_with_init(&url, &init)
+            .map_err(|e| std::io::Error::other(format!("Failed to create request: {e}")))?;
+
+        let mut response = worker::Fetch::Request(worker_req)
+            .send()
+            .await
+            .map_err(|e| std::io::Error::other(format!("Fetch failed: {e}")))?;
+
+        let status_code = openidconnect::http::StatusCode::from_u16(response.status_code())
+            .map_err(std::io::Error::other)?;
+
+        let builder = openidconnect::http::Response::builder().status(status_code);
+
+        let body_bytes = response
+            .bytes()
+            .await
+            .map_err(|e| std::io::Error::other(format!("Failed to read body: {e}")))?;
+
+        builder
+            .body(body_bytes.clone())
+            .map_err(std::io::Error::other)
     };
 
     let meta =

@@ -2,37 +2,33 @@
 #![allow(
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
-    // spin_sdk::http_component macro generates Vec::from_raw_parts with same len/capacity
-    clippy::same_length_and_capacity
+    clippy::missing_panics_doc
 )]
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use spin_sdk::{
-    http::{IntoResponse, Method, Params, Request, Response, ResponseBuilder, Router},
-    http_component,
-    key_value::Store,
-    variables,
-};
-use tracing::{event, Level};
+use worker::{event, Context, Env, Method, Request, Response};
 
 mod auth;
+#[allow(dead_code)]
 mod cache;
+#[allow(dead_code)]
 mod circuit_breaker;
 mod context;
 mod events;
 mod gateway_config;
 mod jwks_client;
+#[allow(dead_code)]
 mod rate_limit;
 mod rejection;
 mod security_headers;
 mod telemetry;
+#[allow(dead_code)]
 mod util;
 
 use context::{
     build_request_context, get_config, resolve_service_url, AuthContext, RequestContext,
-    CORRELATION_ID_HEADER, REDIS_ADDRESS_VAR, SERVICE_REGISTRY_STORE, TRACE_ID_HEADER,
+    CORRELATION_ID_HEADER, TRACE_ID_HEADER,
 };
 use rejection::GatewayRejection;
 use security_headers::apply_security_headers;
@@ -45,79 +41,72 @@ pub struct ServiceRegistration {
     pub registered_at: String,
 }
 
-#[http_component]
-#[allow(clippy::unnecessary_wraps, clippy::same_length_and_capacity)]
-fn handle_gateway(req: Request) -> Result<impl IntoResponse> {
+#[event(fetch)]
+async fn fetch(req: Request, _env: Env, _ctx: Context) -> worker::Result<Response> {
     telemetry::init_tracing();
-    let mut router = Router::new();
 
-    router.get("/health", handle_health);
-    router.get("/api/health", handle_health);
-    router.get("/api/gateway/camino-languages", handle_camino_languages);
+    let path = req.path();
+    let method = req.method();
 
-    router.get_async("/api/services", handle_list_services);
-    router.post_async("/api/services/register", handle_register_service);
+    let result = match (method, path.as_str()) {
+        (Method::Get, "/health" | "/api/health") => handle_health(&req),
+        (Method::Get, "/api/gateway/camino-languages") => handle_camino_languages(&req),
+        (Method::Get, "/api/services") => handle_list_services(&req).await,
+        _ => handle_protected_route(req).await,
+    };
 
-    router.any_async("/api/*", handle_protected_route);
-
-    Ok(router.handle(req))
+    result.map_err(|e| worker::Error::RustError(e.to_string()))
 }
 
-#[allow(clippy::needless_pass_by_value, clippy::invisible_characters)]
-fn handle_camino_languages(req: Request, _params: Params) -> Result<impl IntoResponse> {
-    let ctx = build_request_context(&req)?;
-    let mut resp = ResponseBuilder::new(200)
-        .header("content-type", "application/json")
-        .body(
-            serde_json::json!([
-                { "code": "es", "name": "EspaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±ol" },
-                { "code": "en", "name": "English" },
-                { "code": "fr", "name": "FranÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ais" },
-                { "code": "de", "name": "Deutsch" },
-                { "code": "it", "name": "Italiano" },
-                { "code": "pt", "name": "PortuguÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs" },
-                { "code": "nl", "name": "Nederlands" },
-                { "code": "pl", "name": "Polski" },
-                { "code": "ja", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂªÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾" },
-                { "code": "ko", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂªÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂµÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´" },
-                { "code": "zh", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡" },
-                { "code": "ru", "name": "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹" }
-            ])
-            .to_string(),
-        )
-        .build();
+fn handle_health(req: &Request) -> Result<Response> {
+    let ctx = build_request_context(req)?;
+    let mut resp = Response::ok(
+        serde_json::json!({
+            "status": "healthy",
+            "service": "api-gateway",
+            "version": env!("CARGO_PKG_VERSION")
+        })
+        .to_string(),
+    )?;
 
-    resp.set_header(CORRELATION_ID_HEADER, ctx.correlation_id.clone());
-    resp.set_header(TRACE_ID_HEADER, ctx.trace_id.clone());
+    resp.headers_mut()
+        .set(CORRELATION_ID_HEADER, &ctx.correlation_id)?;
+    resp.headers_mut().set(TRACE_ID_HEADER, &ctx.trace_id)?;
 
     Ok(apply_security_headers(resp, &ctx.policy))
 }
 
-#[allow(clippy::needless_pass_by_value)]
-fn handle_health(req: Request, _params: Params) -> Result<impl IntoResponse> {
-    let ctx = build_request_context(&req)?;
-    let mut resp = ResponseBuilder::new(200)
-        .header("content-type", "application/json")
-        .body(
-            serde_json::json!({
-                "status": "healthy",
-                "service": "api-gateway",
-                "version": env!("CARGO_PKG_VERSION")
-            })
-            .to_string(),
-        )
-        .build();
+fn handle_camino_languages(req: &Request) -> Result<Response> {
+    let ctx = build_request_context(req)?;
+    let mut resp = Response::ok(
+        serde_json::json!([
+            { "code": "es", "name": "Español" },
+            { "code": "en", "name": "English" },
+            { "code": "fr", "name": "Français" },
+            { "code": "de", "name": "Deutsch" },
+            { "code": "it", "name": "Italiano" },
+            { "code": "pt", "name": "Português" },
+            { "code": "nl", "name": "Nederlands" },
+            { "code": "pl", "name": "Polski" },
+            { "code": "ja", "name": "日本語" },
+            { "code": "ko", "name": "한국어" },
+            { "code": "zh", "name": "中文" },
+            { "code": "ru", "name": "Русский" }
+        ])
+        .to_string(),
+    )?;
 
-    resp.set_header(CORRELATION_ID_HEADER, ctx.correlation_id.clone());
-    resp.set_header(TRACE_ID_HEADER, ctx.trace_id.clone());
+    resp.headers_mut()
+        .set(CORRELATION_ID_HEADER, &ctx.correlation_id)?;
+    resp.headers_mut().set(TRACE_ID_HEADER, &ctx.trace_id)?;
 
     Ok(apply_security_headers(resp, &ctx.policy))
 }
 
-async fn handle_list_services(req: Request, _params: Params) -> Result<Response> {
-    let ctx = build_request_context(&req)?;
+async fn handle_list_services(req: &Request) -> Result<Response> {
+    let ctx = build_request_context(req)?;
     if ctx.policy.auth.enabled {
-        if let Err(rej) = auth::authenticate_and_authorize(&req, &ctx).await {
+        if let Err(rej) = auth::authenticate_and_authorize(req, &ctx).await {
             return Ok(rej.into_response(&ctx));
         }
     }
@@ -128,47 +117,11 @@ async fn handle_list_services(req: Request, _params: Params) -> Result<Response>
         services.push(serde_json::json!({ "name": name, "url": svc.url }));
     }
 
-    let resp = ResponseBuilder::new(200)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&services)?)
-        .build();
-
+    let resp = Response::ok(serde_json::to_string(&services)?)?;
     Ok(apply_security_headers(resp, &ctx.policy))
 }
 
-async fn handle_register_service(req: Request, _params: Params) -> Result<Response> {
-    let ctx = build_request_context(&req)?;
-    if ctx.policy.auth.enabled {
-        if let Err(rej) = auth::authenticate_and_authorize(&req, &ctx).await {
-            return Ok(rej.into_response(&ctx));
-        }
-    }
-
-    let registration: ServiceRegistration = serde_json::from_slice(req.body())?;
-
-    let store = Store::open(SERVICE_REGISTRY_STORE)?;
-    let key = format!("service:{}", registration.name);
-    store.set(&key, &serde_json::to_vec(&registration)?)?;
-
-    event!(
-        Level::INFO,
-        correlation_id = ctx.correlation_id,
-        trace_id = ctx.trace_id,
-        service = ctx.service,
-        action = "register_service",
-        registered_name = registration.name,
-        registered_url = registration.url
-    );
-
-    let resp = ResponseBuilder::new(201)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&registration)?)
-        .build();
-
-    Ok(apply_security_headers(resp, &ctx.policy))
-}
-
-async fn handle_protected_route(req: Request, _params: Params) -> Result<Response> {
+async fn handle_protected_route(mut req: Request) -> Result<Response> {
     let ctx = build_request_context(&req)?;
 
     let span = tracing::info_span!(
@@ -181,22 +134,10 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
     );
     let _enter = span.enter();
 
-    if *req.method() == Method::Options {
-        return Ok(apply_security_headers(
-            ResponseBuilder::new(204).body(Vec::new()).build(),
-            &ctx.policy,
-        ));
+    if req.method() == Method::Options {
+        let resp = Response::empty()?.with_status(204);
+        return Ok(apply_security_headers(resp, &ctx.policy));
     }
-
-    event!(
-        Level::INFO,
-        correlation_id = ctx.correlation_id,
-        trace_id = ctx.trace_id,
-        method = %req.method(),
-        path = %req.path(),
-        service = ctx.service,
-        action = "request"
-    );
 
     let auth_ctx: Option<AuthContext> = if ctx.policy.auth.enabled {
         match auth::authenticate_and_authorize(&req, &ctx).await {
@@ -207,123 +148,47 @@ async fn handle_protected_route(req: Request, _params: Params) -> Result<Respons
         None
     };
 
-    if ctx.policy.rate_limit.enabled {
-        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            if let Err(rej) =
-                rate_limit::enforce_rate_limit(&redis_address, &ctx, auth_ctx.as_ref()).await
-            {
-                return Ok(rej.into_response(&ctx));
-            }
-        }
-    }
+    let mut response = forward_to_service(&mut req, &ctx, auth_ctx.as_ref()).await?;
 
-    if ctx.policy.cache.enabled {
-        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            if let Ok(Some(hit)) =
-                cache::try_cache_hit(&redis_address, &req, &ctx, auth_ctx.as_ref()).await
-            {
-                return Ok(apply_security_headers(hit, &ctx.policy));
-            }
-        }
-    }
+    response
+        .headers_mut()
+        .set(CORRELATION_ID_HEADER, &ctx.correlation_id)?;
+    response.headers_mut().set(TRACE_ID_HEADER, &ctx.trace_id)?;
 
-    if ctx.policy.circuit_breaker.enabled {
-        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            if let Some(resp) = circuit_breaker::precheck(&redis_address, &ctx).await? {
-                return Ok(apply_security_headers(resp, &ctx.policy));
-            }
-        }
-    }
-
-    let Ok(mut response) = forward_to_service(&req, &ctx, auth_ctx.as_ref()).await else {
-        return Ok(GatewayRejection::BadGateway {
-            message: "Upstream request failed".to_string(),
-        }
-        .into_response(&ctx));
-    };
-
-    if ctx.policy.circuit_breaker.enabled {
-        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            let _ = circuit_breaker::record(&redis_address, &ctx, *response.status()).await;
-        }
-    }
-
-    if ctx.policy.cache.enabled {
-        if let Ok(redis_address) = variables::get(REDIS_ADDRESS_VAR) {
-            let _ =
-                cache::try_cache_store(&redis_address, &req, &response, &ctx, auth_ctx.as_ref())
-                    .await;
-        }
-    }
-
-    response.set_header(CORRELATION_ID_HEADER, ctx.correlation_id.clone());
-    response.set_header(TRACE_ID_HEADER, ctx.trace_id.clone());
-
-    // Intercept and publish domain events (fire-and-forget)
     let response = events::intercept_and_publish_events(response);
 
     Ok(apply_security_headers(response, &ctx.policy))
 }
 
 async fn forward_to_service(
-    req: &Request,
+    req: &mut Request,
     ctx: &RequestContext,
-    auth_ctx: Option<&AuthContext>,
+    _auth_ctx: Option<&AuthContext>,
 ) -> Result<Response> {
     let Ok(service_url) = resolve_service_url(&ctx.service) else {
         return Ok(GatewayRejection::UnknownService.into_response(ctx));
     };
 
-    let upstream_path = rewrite_upstream_path(req.path(), &ctx.service);
-    let upstream_path_and_query = match req.query() {
-        q if !q.is_empty() => format!("{upstream_path}?{q}"),
-        _ => upstream_path,
-    };
+    let upstream_path = rewrite_upstream_path(&req.path(), &ctx.service);
+    let target_url = format!("{service_url}{upstream_path}");
 
-    let mut forward_req = spin_sdk::http::Request::new(
-        req.method().clone(),
-        format!("{service_url}{upstream_path_and_query}"),
-    );
-    *forward_req.body_mut() = req.body().to_vec();
+    let url = worker::Url::parse(&target_url).map_err(|e| anyhow::anyhow!("Invalid URL: {e}"))?;
 
+    let mut forward_req = Request::new_with_init(
+        url.as_str(),
+        worker::RequestInit::new().with_method(req.method()),
+    )?;
+
+    // Copy relevant headers
     for (name, value) in req.headers() {
-        if name.starts_with("spin-") || name == "host" {
+        if name.starts_with("cf-") || name == "host" {
             continue;
         }
-        if let Some(v) = value.as_str() {
-            forward_req.set_header(name, v);
-        }
+        let _ = forward_req.headers_mut().unwrap().set(&name, &value);
     }
 
-    forward_req.set_header(CORRELATION_ID_HEADER, ctx.correlation_id.clone());
-    forward_req.set_header(TRACE_ID_HEADER, ctx.trace_id.clone());
-
-    if let Some(auth) = auth_ctx {
-        forward_req.set_header(
-            "x-user-claims",
-            serde_json::to_string(&auth.claims_for_headers)?,
-        );
-        if let Some(sub) = auth.subject.as_ref() {
-            forward_req.set_header("x-user-sub", sub.clone());
-        }
-    }
-
-    match spin_sdk::http::send::<_, Response>(forward_req).await {
-        Ok(mut response) => {
-            event!(
-                Level::INFO,
-                correlation_id = ctx.correlation_id,
-                trace_id = ctx.trace_id,
-                service = ctx.service,
-                action = "upstream_response",
-                status = *response.status()
-            );
-
-            response.set_header(CORRELATION_ID_HEADER, ctx.correlation_id.clone());
-            response.set_header(TRACE_ID_HEADER, ctx.trace_id.clone());
-
-            Ok(response)
-        }
+    match worker::Fetch::Request(forward_req).send().await {
+        Ok(response) => Ok(response),
         Err(_) => Ok(GatewayRejection::BadGateway {
             message: "Service unavailable".to_string(),
         }
@@ -350,7 +215,6 @@ fn rewrite_upstream_path(path: &str, service: &str) -> String {
     match service {
         "auth-service" if second == "auth" => format!("/api/auth{rest_path}"),
         "location-service" if second == "countries" => format!("/api/countries{rest_path}"),
-        "redis-service" if second == "redis" => format!("/api/redis{rest_path}"),
         "rate-limiter-service"
         | "security-service"
         | "reviews-service"

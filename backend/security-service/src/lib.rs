@@ -4,21 +4,16 @@
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
-    clippy::same_length_and_capacity,
     clippy::unused_async,
     clippy::implicit_hasher,
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss
 )]
 
-use anyhow::Result;
 use base64::Engine;
-use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use spin_sdk::http::{Method, Request, Response};
-use spin_sdk::http_component;
 use std::collections::HashMap;
-use tokio::task;
+use worker::{event, Context, Env, Method, Request, Response, Result};
 
 #[derive(Serialize, Deserialize)]
 struct SecurityScanRequest {
@@ -148,39 +143,11 @@ fn detect_malware_signatures(content: &str) -> Vec<ThreatDetail> {
     threats
 }
 
-async fn perform_comprehensive_scan(
-    content: String,
-    _scan_type: String,
-) -> Result<SecurityScanResult> {
-    let start_time = std::time::Instant::now();
-
-    let content_arc = std::sync::Arc::new(content);
-
-    let xss_task = task::spawn({
-        let c = content_arc.clone();
-        async move { detect_xss_patterns(c.as_str()) }
-    });
-
-    let sql_task = task::spawn({
-        let c = content_arc.clone();
-        async move { detect_sql_injection(c.as_str()) }
-    });
-
-    let malware_task = task::spawn({
-        let c = content_arc.clone();
-        async move { detect_malware_signatures(c.as_str()) }
-    });
-
-    let entropy_task = task::spawn({
-        let c = content_arc.clone();
-        async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-            calculate_entropy(c.as_str())
-        }
-    });
-
-    let (xss_threats, sql_threats, malware_threats, entropy_score) =
-        tokio::try_join!(xss_task, sql_task, malware_task, entropy_task)?;
+fn perform_comprehensive_scan(content: &str, _scan_type: &str) -> SecurityScanResult {
+    let xss_threats = detect_xss_patterns(content);
+    let sql_threats = detect_sql_injection(content);
+    let malware_threats = detect_malware_signatures(content);
+    let entropy_score = calculate_entropy(content);
 
     let mut all_threats = Vec::new();
     all_threats.extend(xss_threats);
@@ -199,9 +166,9 @@ async fn perform_comprehensive_scan(
 
     let threats_count = all_threats.len() as u32;
     let risk_level = determine_risk_level(&all_threats);
-    let confidence_score = calculate_confidence_score(&all_threats, content_arc.as_str());
+    let confidence_score = calculate_confidence_score(&all_threats, content);
 
-    Ok(SecurityScanResult {
+    SecurityScanResult {
         status: if threats_count > 0 {
             "threats_detected"
         } else {
@@ -211,9 +178,9 @@ async fn perform_comprehensive_scan(
         threats_detected: threats_count,
         risk_level,
         details: all_threats,
-        scan_duration_ms: start_time.elapsed().as_millis() as u64,
+        scan_duration_ms: 0,
         confidence_score,
-    })
+    }
 }
 
 fn calculate_entropy(content: &str) -> f64 {
@@ -271,148 +238,131 @@ fn calculate_confidence_score(threats: &[ThreatDetail], content: &str) -> f64 {
     (base_confidence + content_length_factor * 0.1 + threat_diversity * 0.05).min(0.99)
 }
 
-async fn perform_encryption(data: String, key_id: Option<String>) -> Result<EncryptionResult> {
+fn perform_encryption(data: &str, key_id: Option<String>) -> EncryptionResult {
     let actual_key_id = key_id.unwrap_or_else(|| "default-key-2024".to_string());
 
-    let encryption_task = task::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_millis(25)).await;
+    let encrypted = base64::engine::general_purpose::STANDARD.encode(format!("encrypted:{data}"));
 
-        let encrypted =
-            base64::engine::general_purpose::STANDARD.encode(format!("encrypted:{data}"));
-
-        EncryptionResult {
-            encrypted_data: encrypted,
-            key_id: actual_key_id,
-            algorithm: "AES-256-GCM".to_string(),
-            timestamp: {
-                let dur = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_else(|_| std::time::Duration::from_secs(0));
-                dur.as_secs()
-            },
-        }
-    });
-
-    encryption_task.await.map_err(std::convert::Into::into)
-}
-
-#[http_component]
-async fn handle_request(req: Request) -> Result<Response> {
-    let method = req.method();
-    let path = req.uri();
-
-    match (method, path) {
-        (&Method::Post, "/security/scan") => handle_security_scan(req).await,
-        (&Method::Post, "/security/encrypt") => handle_encryption(req).await,
-        (&Method::Post, "/security/validate") => handle_validation(req).await,
-        (&Method::Get, "/security/status") => handle_security_status().await,
-        _ => Ok(Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .header("content-type", "application/json")
-            .body(r#"{"error":"Security endpoint not found"}"#.as_bytes().to_vec())
-            .build()),
+    EncryptionResult {
+        encrypted_data: encrypted,
+        key_id: actual_key_id,
+        algorithm: "AES-256-GCM".to_string(),
+        timestamp: {
+            let dur = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_else(|_| std::time::Duration::from_secs(0));
+            dur.as_secs()
+        },
     }
 }
 
-async fn handle_security_scan(req: Request) -> Result<Response> {
-    let body_bytes = req.into_body();
-    let body = std::str::from_utf8(&body_bytes)?;
+#[event(fetch)]
+async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
+    let method = req.method();
+    let path = req.path();
+
+    let mut response = match (method, path.as_str()) {
+        (Method::Post, "/security/scan") => handle_security_scan(&mut req).await,
+        (Method::Post, "/security/encrypt") => handle_encryption(&mut req).await,
+        (Method::Post, "/security/validate") => handle_validation(&mut req).await,
+        (Method::Get, "/security/status") => handle_security_status(),
+        _ => {
+            let mut resp = Response::ok(r#"{"error":"Security endpoint not found"}"#)?;
+            resp.headers_mut().set("content-type", "application/json")?;
+            Ok(resp.with_status(404))
+        }
+    }?;
+
+    add_cors_headers(&mut response)?;
+    Ok(response)
+}
+
+fn add_cors_headers(response: &mut Response) -> Result<()> {
+    let headers = response.headers_mut();
+    headers.set("Access-Control-Allow-Origin", "*")?;
+    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")?;
+    headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization",
+    )?;
+    Ok(())
+}
+
+async fn handle_security_scan(req: &mut Request) -> Result<Response> {
+    let body = req.text().await?;
     let scan_req: SecurityScanRequest =
-        serde_json::from_str(body).unwrap_or_else(|_| SecurityScanRequest {
+        serde_json::from_str(&body).unwrap_or_else(|_| SecurityScanRequest {
             content: String::new(),
             scan_type: "comprehensive".to_string(),
             metadata: None,
         });
 
-    let result = perform_comprehensive_scan(scan_req.content, scan_req.scan_type).await?;
+    let result = perform_comprehensive_scan(&scan_req.content, &scan_req.scan_type);
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/json")
-        .header("Access-Control-Allow-Origin", "*")
-        .body(serde_json::to_vec(&result)?)
-        .build())
+    json_response(200, &result)
 }
 
-async fn handle_encryption(req: Request) -> Result<Response> {
-    let body_bytes = req.into_body();
-    let body = std::str::from_utf8(&body_bytes)?;
-    let enc_req: EncryptionRequest = serde_json::from_str(body)?;
+async fn handle_encryption(req: &mut Request) -> Result<Response> {
+    let body = req.text().await?;
+    let enc_req: EncryptionRequest =
+        serde_json::from_str(&body).map_err(|e| worker::Error::RustError(e.to_string()))?;
 
-    let result = perform_encryption(enc_req.data, enc_req.key_id).await?;
+    let result = perform_encryption(&enc_req.data, enc_req.key_id);
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/json")
-        .header("Access-Control-Allow-Origin", "*")
-        .body(serde_json::to_vec(&result)?)
-        .build())
+    json_response(200, &result)
 }
 
-async fn handle_validation(req: Request) -> Result<Response> {
-    let body_bytes = req.into_body();
-    let body = std::str::from_utf8(&body_bytes)?;
-    let _validation_data: serde_json::Value = serde_json::from_str(body)?;
+async fn handle_validation(req: &mut Request) -> Result<Response> {
+    let body = req.text().await?;
+    let _validation_data: serde_json::Value =
+        serde_json::from_str(&body).map_err(|e| worker::Error::RustError(e.to_string()))?;
 
-    let validation_task = task::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_millis(15)).await;
-
-        serde_json::json!({
-            "valid": true,
-            "checks_passed": [
-                "input_sanitization",
-                "csrf_token",
-                "rate_limiting",
-                "authentication"
-            ],
-            "security_score": 95,
-            "recommendations": []
-        })
+    let result = serde_json::json!({
+        "valid": true,
+        "checks_passed": [
+            "input_sanitization",
+            "csrf_token",
+            "rate_limiting",
+            "authentication"
+        ],
+        "security_score": 95,
+        "recommendations": []
     });
 
-    let result = validation_task.await?;
-
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/json")
-        .header("Access-Control-Allow-Origin", "*")
-        .body(serde_json::to_vec(&result)?)
-        .build())
+    json_response(200, &result)
 }
 
-async fn handle_security_status() -> Result<Response> {
-    let status_task = task::spawn(async {
-        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-
-        serde_json::json!({
-            "service_status": "healthy",
-            "security_level": "high",
-            "active_protections": [
-                "xss_detection",
-                "sql_injection_prevention",
-                "malware_scanning",
-                "entropy_analysis",
-                "rate_limiting"
-            ],
-            "threat_intelligence": {
-                "last_update": "2024-01-20T10:00:00Z",
-                "signatures_count": 15420,
-                "false_positive_rate": 0.02
-            },
-            "performance_metrics": {
-                "avg_scan_time_ms": 45,
-                "throughput_rps": 1250,
-                "uptime_percentage": 99.98
-            }
-        })
+fn handle_security_status() -> Result<Response> {
+    let status = serde_json::json!({
+        "service_status": "healthy",
+        "security_level": "high",
+        "active_protections": [
+            "xss_detection",
+            "sql_injection_prevention",
+            "malware_scanning",
+            "entropy_analysis",
+            "rate_limiting"
+        ],
+        "threat_intelligence": {
+            "last_update": "2024-01-20T10:00:00Z",
+            "signatures_count": 15420,
+            "false_positive_rate": 0.02
+        },
+        "performance_metrics": {
+            "avg_scan_time_ms": 45,
+            "throughput_rps": 1250,
+            "uptime_percentage": 99.98
+        }
     });
 
-    let status = status_task.await?;
+    json_response(200, &status)
+}
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/json")
-        .header("Access-Control-Allow-Origin", "*")
-        .body(serde_json::to_vec(&status)?)
-        .build())
+fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
+    let json = serde_json::to_string(body).map_err(|e| worker::Error::RustError(e.to_string()))?;
+    let mut response = Response::ok(json)?;
+    response
+        .headers_mut()
+        .set("content-type", "application/json")?;
+    Ok(response.with_status(status))
 }

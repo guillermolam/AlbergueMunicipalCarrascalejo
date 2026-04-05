@@ -5,9 +5,6 @@ description = "OIDC and OAuth2 Service"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
 anyhow = "1"
 async-trait = "0.1"
@@ -15,20 +12,13 @@ chrono = { version = "0.4", features = ["serde"] }
 openidconnect = "4.0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-spin-sdk = { workspace = true }
+# Cloudflare Workers SDK
+worker = "0.7.5"
 bytes = "1"
 serde_urlencoded = "0.7"
 http = "1.0"
 url = "2"
 uuid = { version = "1", features = ["v4"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies.tokio]
-version = "1.0"
-features = ["full"]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies.tokio]
-version = "1.0"
-features = ["sync", "macros", "io-util", "rt", "time"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 reqwest = { version = "0.11", features = ["json"] }
@@ -36,6 +26,7 @@ ring = "0.17"
 rsa = "0.9"
 ed25519-dalek = "2.0"
 jsonwebtoken = { version = "10", features = ["use_pem"] }
+tokio = { version = "1.0", features = ["full"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 jsonwebtoken = { version = "10", default-features = false, features = ["use_pem", "rust_crypto"] }

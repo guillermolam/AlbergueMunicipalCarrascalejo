@@ -5,34 +5,32 @@ use crate::domain::validators::mrz_validator::MrzValidator;
 use crate::domain::validators::nie_validator::NieValidator;
 use crate::domain::validators::passport_validator::PassportValidator;
 use crate::ports::ocr_client::OCRClient;
-use shared::{
-    AlbergueError, AlbergueResult, DocumentType, ExtractedData, ValidationRequest,
-    ValidationResponse,
-};
-use std::collections::HashMap;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
+use shared::dto::{DocumentType, ExtractedData, ValidationRequest, ValidationResponse};
+use shared::{AlbergueError, AlbergueResult};
 
 pub struct DocumentValidationService {
     ocr_client: TesseractOCR,
-    image_processor: ImageProcessor,
-    text_extractor: TextExtractor,
-    confidence_scorer: ConfidenceScorer,
-    dni_validator: DniValidator,
-    nie_validator: NieValidator,
-    passport_validator: PassportValidator,
-    mrz_validator: MrzValidator,
+    _image_processor: ImageProcessor,
+    _text_extractor: TextExtractor,
+    _confidence_scorer: ConfidenceScorer,
+    _dni_validator: DniValidator,
+    _nie_validator: NieValidator,
+    _passport_validator: PassportValidator,
+    _mrz_validator: MrzValidator,
 }
 
 impl DocumentValidationService {
     pub fn new() -> Self {
         Self {
             ocr_client: TesseractOCR::new(),
-            image_processor: ImageProcessor::new(),
-            text_extractor: TextExtractor::new(),
-            confidence_scorer: ConfidenceScorer::new(),
-            dni_validator: DniValidator::new(),
-            nie_validator: NieValidator::new(),
-            passport_validator: PassportValidator::new(),
-            mrz_validator: MrzValidator::new(),
+            _image_processor: ImageProcessor::new(),
+            _text_extractor: TextExtractor::new(),
+            _confidence_scorer: ConfidenceScorer::new(),
+            _dni_validator: DniValidator::new(),
+            _nie_validator: NieValidator::new(),
+            _passport_validator: PassportValidator::new(),
+            _mrz_validator: MrzValidator::new(),
         }
     }
 
@@ -42,15 +40,19 @@ impl DocumentValidationService {
     ) -> AlbergueResult<ValidationResponse> {
         // Decode base64 images
         let front_image =
-            base64::decode(&request.front_image).map_err(|e| AlbergueError::Validation {
-                message: format!("Invalid front image encoding: {}", e),
-            })?;
+            STANDARD
+                .decode(&request.front_image)
+                .map_err(|e| AlbergueError::Validation {
+                    message: format!("Invalid front image encoding: {}", e),
+                })?;
 
         let back_image = if let Some(back_b64) = &request.back_image {
             Some(
-                base64::decode(back_b64).map_err(|e| AlbergueError::Validation {
-                    message: format!("Invalid back image encoding: {}", e),
-                })?,
+                STANDARD
+                    .decode(back_b64)
+                    .map_err(|e| AlbergueError::Validation {
+                        message: format!("Invalid back image encoding: {}", e),
+                    })?,
             )
         } else {
             None

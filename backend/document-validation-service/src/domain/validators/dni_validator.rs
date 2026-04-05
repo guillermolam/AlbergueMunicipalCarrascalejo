@@ -1,6 +1,7 @@
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::NaiveDate;
 use regex::Regex;
-use shared::{AlbergueError, AlbergueResult, ExtractedData};
+use shared::dto::ExtractedData;
+use shared::AlbergueResult;
 
 pub struct DniValidator;
 
@@ -29,7 +30,7 @@ impl DniValidator {
             let expected_letter = letters.chars().nth((number % 23) as usize);
 
             if let Some(expected) = expected_letter {
-                return letter_part.chars().next() == Some(expected);
+                return letter_part.starts_with(expected);
             }
         }
 

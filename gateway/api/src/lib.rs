@@ -1,18 +1,20 @@
-﻿#![warn(clippy::all, clippy::pedantic)]
+#![warn(clippy::all, clippy::pedantic)]
+#![allow(
+    clippy::module_name_repetitions,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::unused_async,
+    dead_code
+)]
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use spin_sdk::{
-    http::{IntoResponse, Request, Response},
-    http_component,
-};
+use worker::{event, Context, Env, Method, Request, Response};
 
-// Import our auth verification module
 mod auth_verify;
 use auth_verify::verify_token;
 
-// Service URLs - using relative paths for Fermyon Cloud deployment
-// All services are deployed in the same Spin application
+// Service URLs - in Cloudflare Workers, these are service bindings or worker URLs
 const RATE_LIMITER_URL: &str = "/rate-limiter";
 const SECURITY_URL: &str = "/security";
 const AUTH_URL: &str = "/auth";
@@ -32,7 +34,6 @@ pub struct MiddlewareContext {
     permissions: Vec<String>,
 }
 
-// Stateless pure function for CORS headers
 pub fn create_cors_headers() -> Vec<(&'static str, &'static str)> {
     vec![
         ("Access-Control-Allow-Origin", "*"),
@@ -51,140 +52,24 @@ pub fn create_cors_headers() -> Vec<(&'static str, &'static str)> {
     ]
 }
 
-// Stateless pure function for response building
 pub fn build_response_with_cors(status: u16, _content_type: &str, body: String) -> Response {
-    Response::new(status, body)
+    Response::ok(body)
+        .unwrap_or_else(|_| Response::error("Internal Error", 500).unwrap())
+        .with_status(status)
 }
 
-// Async stateless function for rate limiting middleware
-pub async fn apply_rate_limiting(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
-    // Forward request to rate limiter service
-    let url = format!("{}/check", RATE_LIMITER_URL);
-
-    match forward_request(&url, req).await {
-        Ok(response) => {
-            let status_code: u16 = (*response.status()).into();
-            Ok(status_code == 200)
-        }
-        Err(_) => Ok(false),
-    }
-}
-
-// Async stateless function for security scanning middleware
-pub async fn apply_security_scanning(
-    req: &Request,
-    context: &mut MiddlewareContext,
-) -> Result<bool> {
-    // Forward request to security service
-    let url = format!("{}/scan", SECURITY_URL);
-
-    match forward_request(&url, req).await {
-        Ok(response) => {
-            let status_code: u16 = (*response.status()).into();
-            Ok(status_code == 200)
-        }
-        Err(_) => Ok(false),
-    }
-}
-
-// Async stateless function for OAuth2/OpenID Connect authentication
-pub async fn apply_authentication(req: &Request, context: &mut MiddlewareContext) -> Result<bool> {
-    // Verify the token with our auth service
-    match verify_token(req).await {
-        Ok(valid) if valid => {
-            // In a real implementation, you would extract user info from the token
-            // For now, we'll just set some default values
-            context.user_id = Some("user_123".to_string());
-            context.permissions = vec!["read".to_string(), "write".to_string()];
-            Ok(true)
-        }
-        _ => Ok(false),
-    }
-}
-
-// Async stateless function for service composition pipeline
-pub async fn compose_services(req: Request) -> Result<Response> {
-    let path = req.uri().to_string();
-    let method = format!("{:?}", req.method());
-
-    // Create middleware context
-    let mut context = MiddlewareContext {
-        client_id: extract_client_id(&req),
-        endpoint: path.clone(),
-        method: method.clone(),
-        user_id: None,
-        permissions: Vec::new(),
-    };
-
-    // Step 1: Rate Limiting (always first)
-    let rate_limit_passed = apply_rate_limiting(&req, &mut context).await?;
-    if !rate_limit_passed {
-        let error_body = serde_json::json!({
-            "error": "Rate Limit Exceeded",
-            "message": "Too many requests. Please try again later.",
-            "retry_after": 60
-        })
-        .to_string();
-        return Ok(build_response_with_cors(
-            429,
-            "application/json",
-            error_body,
-        ));
-    }
-
-    // Step 2: Security Scanning (second layer of defense)
-    let security_passed = apply_security_scanning(&req, &mut context).await?;
-    if !security_passed {
-        let error_body = serde_json::json!({
-            "error": "Security Threat Detected",
-            "message": "Request blocked due to security policy violation.",
-            "details": "Contact support if you believe this is an error"
-        })
-        .to_string();
-        return Ok(build_response_with_cors(
-            403,
-            "application/json",
-            error_body,
-        ));
-    }
-
-    // Step 3: Authentication/Authorization (for protected routes)
-    let auth_verified = apply_authentication(&req, &mut context).await?;
-    if !auth_verified && requires_authentication(&path) {
-        let error_body = serde_json::json!({
-            "error": "Authentication Required",
-            "message": "Valid authentication token required for this endpoint.",
-            "auth_url": "/api/auth/login"
-        })
-        .to_string();
-        return Ok(build_response_with_cors(
-            401,
-            "application/json",
-            error_body,
-        ));
-    }
-
-    // Step 4: Route to appropriate business service
-    let business_result = route_to_business_service(&req, &context).await?;
-    Ok(business_result)
-}
-
-// Stateless pure function for client ID extraction
 pub fn extract_client_id(req: &Request) -> String {
-    // Try to get client IP from headers
-    for (key, value) in req.headers() {
-        if key == "x-forwarded-for" || key == "x-real-ip" {
-            if let Some(val_str) = value.as_str() {
-                return val_str.to_string();
-            }
-        }
+    if let Ok(Some(val)) = req.headers().get("x-forwarded-for") {
+        return val;
+    }
+    if let Ok(Some(val)) = req.headers().get("x-real-ip") {
+        return val;
     }
     "unknown".to_string()
 }
 
-// Stateless pure function for authentication requirement check
 pub fn requires_authentication(path: &str) -> bool {
-    let protected_endpoints = vec![
+    let protected_endpoints = [
         "/api/booking/",
         "/api/admin/",
         "/api/notifications/create",
@@ -196,70 +81,6 @@ pub fn requires_authentication(path: &str) -> bool {
         .any(|endpoint| path.starts_with(endpoint))
 }
 
-// Helper function to forward requests to backend microservices
-async fn forward_request(url: &str, original_req: &Request) -> Result<Response> {
-    // Create a new request with the target URL
-    let new_req = Request::new(original_req.method().clone(), url);
-
-    // Send request using Spin's HTTP client
-    match spin_sdk::http::send(new_req).await {
-        Ok(response) => Ok(response),
-        Err(e) => {
-            anyhow::bail!("Failed to forward request: {:?}", e)
-        }
-    }
-}
-
-// Async stateless function for business service routing
-async fn route_to_business_service(
-    req: &Request,
-    _context: &MiddlewareContext,
-) -> Result<Response> {
-    let path = req.uri().to_string();
-
-    let (service_url, service_path) = match path.as_str() {
-        p if p.starts_with("/api/health") => return handle_health_check().await,
-        p if p.starts_with("/api/gateway/camino-languages") => return handle_camino_languages(req).await,
-        p if p.starts_with("/api/auth/") => (AUTH_URL, p),
-        p if p.starts_with("/api/booking/") => (BOOKING_URL, p),
-        p if p.starts_with("/api/reviews/") => (REVIEWS_URL, p),
-        p if p.starts_with("/api/notifications/") => (NOTIFICATION_URL, p),
-        p if p.starts_with("/api/location/") => (LOCATION_URL, p),
-        p if p.starts_with("/api/info/") => (INFO_URL, p),
-        p if p.starts_with("/api/validation/") => (VALIDATION_URL, p),
-        p if p.starts_with("/api/countries/") => (LOCATION_URL, p),
-        _ => {
-            let error_body = serde_json::json!({
-                "error": "Not Found",
-                "message": "API endpoint not found",
-                "available_endpoints": [
-                    "/api/health",
-                    "/api/gateway/camino-languages",
-                    "/api/auth/*",
-                    "/api/booking/*",
-                    "/api/reviews/*",
-                    "/api/notifications/*",
-                    "/api/location/*",
-                    "/api/info/*",
-                    "/api/validation/*",
-                    "/api/countries/*"
-                ]
-            })
-            .to_string();
-            return Ok(build_response_with_cors(
-                404,
-                "application/json",
-                error_body,
-            ));
-        }
-    };
-
-    // Forward to the appropriate service
-    let url = format!("{}{}", service_url, service_path);
-    forward_request(&url, req).await
-}
-
-// Async stateless function for health check
 pub async fn handle_health_check() -> Result<Response> {
     let health = serde_json::json!({
         "status": "healthy",
@@ -269,22 +90,6 @@ pub async fn handle_health_check() -> Result<Response> {
             "rate_limiting": "active",
             "security_scanning": "active",
             "authentication": "active"
-        },
-        "services": {
-            "rate_limiter": "healthy",
-            "security": "healthy",
-            "auth": "healthy",
-            "booking": "healthy",
-            "reviews": "healthy",
-            "notifications": "healthy",
-            "location": "healthy",
-            "info": "healthy",
-            "validation": "healthy"
-        },
-        "service_composition": {
-            "pipeline": ["rate_limiter", "security", "auth", "business_logic"],
-            "oauth2_flows": ["authorization_code", "client_credentials"],
-            "openid_connect": "enabled"
         }
     });
 
@@ -295,29 +100,20 @@ pub async fn handle_health_check() -> Result<Response> {
     ))
 }
 
-// Async stateless function for camino languages endpoint
-pub async fn handle_camino_languages(_req: &Request) -> Result<Response> {
+pub async fn handle_camino_languages() -> Result<Response> {
     let languages = serde_json::json!([
-        { "code": "es", "name": "EspaÃ±ol", "flag": "ðŸ‡ªðŸ‡¸" },
-        { "code": "en", "name": "English", "flag": "ðŸ‡¬ðŸ‡§" },
-        { "code": "fr", "name": "FranÃ§ais", "flag": "ðŸ‡«ðŸ‡·" },
-        { "code": "de", "name": "Deutsch", "flag": "ðŸ‡©ðŸ‡ª" },
-        { "code": "it", "name": "Italiano", "flag": "ðŸ‡®ðŸ‡¹" },
-        { "code": "pt", "name": "PortuguÃªs", "flag": "ðŸ‡µðŸ‡¹" },
-        { "code": "nl", "name": "Nederlands", "flag": "ðŸ‡³ðŸ‡±" },
-        { "code": "pl", "name": "Polski", "flag": "ðŸ‡µðŸ‡±" },
-        { "code": "ko", "name": "í•œêµ­ì–´", "flag": "ðŸ‡°ðŸ‡·" },
-        { "code": "ja", "name": "æ—¥æœ¬èªž", "flag": "ðŸ‡¯ðŸ‡µ" },
-        { "code": "zh", "name": "ä¸­æ–‡", "flag": "ðŸ‡¨ðŸ‡³" },
-        { "code": "ru", "name": "Ð ÑƒÑÑÐºÐ¸Ð¹", "flag": "ðŸ‡·ðŸ‡º" },
-        { "code": "cs", "name": "ÄŒeÅ¡tina", "flag": "ðŸ‡¨ðŸ‡¿" },
-        { "code": "sk", "name": "SlovenÄina", "flag": "ðŸ‡¸ðŸ‡°" },
-        { "code": "hu", "name": "Magyar", "flag": "ðŸ‡­ðŸ‡º" },
-        { "code": "ca", "name": "CatalÃ ", "flag": "ðŸ´" },
-        { "code": "eu", "name": "Euskara", "flag": "ðŸ´" },
-        { "code": "gl", "name": "Galego", "flag": "ðŸ´" },
-        { "code": "oc", "name": "Occitan (AranÃ©s)", "flag": "ðŸ´" },
-        { "code": "Gode", "name": "Gothic", "flag": "ðŸ´" }
+        { "code": "es", "name": "Español" },
+        { "code": "en", "name": "English" },
+        { "code": "fr", "name": "Français" },
+        { "code": "de", "name": "Deutsch" },
+        { "code": "it", "name": "Italiano" },
+        { "code": "pt", "name": "Português" },
+        { "code": "nl", "name": "Nederlands" },
+        { "code": "pl", "name": "Polski" },
+        { "code": "ja", "name": "日本語" },
+        { "code": "ko", "name": "한국어" },
+        { "code": "zh", "name": "中文" },
+        { "code": "ru", "name": "Русский" }
     ]);
 
     Ok(build_response_with_cors(
@@ -327,16 +123,29 @@ pub async fn handle_camino_languages(_req: &Request) -> Result<Response> {
     ))
 }
 
-#[http_component]
-pub async fn handle_request(req: Request) -> Result<impl IntoResponse> {
-    let method_str = format!("{:?}", req.method());
+#[event(fetch)]
+async fn fetch(req: Request, _env: Env, _ctx: Context) -> worker::Result<Response> {
+    let path = req.path();
+    let method = req.method();
 
     // Handle OPTIONS preflight requests for CORS
-    if method_str == "OPTIONS" {
-        return Ok(build_response_with_cors(200, "text/plain", "".to_string()));
+    if method == Method::Options {
+        return Ok(build_response_with_cors(200, "text/plain", String::new()));
     }
 
-    // Apply service composition pipeline
-    compose_services(req).await
-}
+    let result = match (method, path.as_str()) {
+        (Method::Get, "/api/health") => handle_health_check().await,
+        (Method::Get, "/api/gateway/camino-languages") => handle_camino_languages().await,
+        _ => {
+            let error_body = serde_json::json!({
+                "error": "Not Found",
+                "message": "API endpoint not found",
+                "path": path
+            })
+            .to_string();
+            Ok(build_response_with_cors(404, "application/json", error_body))
+        }
+    };
 
+    result.map_err(|e| worker::Error::RustError(e.to_string()))
+}

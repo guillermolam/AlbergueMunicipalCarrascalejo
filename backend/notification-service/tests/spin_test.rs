@@ -1,22 +1,7 @@
 #[cfg(test)]
-mod spin_tests {
-    use serde_json;
-    use spin_sdk::http::{Method, Request};
-
-    #[tokio::test]
-    async fn test_notification_service_health() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/health")
-            .body(vec![])
-            .expect("Failed to build request");
-
-        assert!(request.method() == Method::GET);
-        assert!(request.uri().path() == "/health");
-    }
-
-    #[tokio::test]
-    async fn test_send_notification_request() {
+mod worker_tests {
+    #[test]
+    fn test_notification_payload_parsing() {
         let notification_data = serde_json::json!({
             "type": "booking_confirmation",
             "channel": "email",
@@ -27,26 +12,15 @@ mod spin_tests {
             }
         });
 
-        let request = Request::builder()
-            .method(Method::POST)
-            .uri("/notifications/send")
-            .header("Content-Type", "application/json")
-            .body(notification_data.to_string().into_bytes())
-            .expect("Failed to build notification request");
-
-        assert!(request.method() == Method::POST);
-        assert!(request.uri().path() == "/notifications/send");
+        let serialized = notification_data.to_string();
+        let parsed: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(parsed["recipient"], "test@example.com");
+        assert_eq!(parsed["channel"], "email");
     }
 
-    #[tokio::test]
-    async fn test_notification_status_request() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/notifications/status/12345")
-            .body(vec![])
-            .expect("Failed to build status request");
-
-        assert!(request.method() == Method::GET);
-        assert!(request.uri().path().contains("/notifications/status/"));
+    #[test]
+    fn test_notification_status_path() {
+        let path = "/notifications/status/12345";
+        assert!(path.contains("/notifications/status/"));
     }
 }

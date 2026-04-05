@@ -9,12 +9,8 @@
     clippy::needless_continue
 )]
 
-use http::StatusCode;
-use spin_sdk::{
-    http::{Method, Request, Response},
-    http_component,
-};
 use std::collections::HashMap;
+use worker::{event, Context, Env, Method, Request, Response, Result};
 
 mod adapters;
 mod application;
@@ -27,18 +23,18 @@ use domain::notification::{
     Notification, NotificationChannel, NotificationStatus, NotificationType,
 };
 
-#[http_component]
-async fn handle_request(req: Request) -> anyhow::Result<Response> {
+#[event(fetch)]
+async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     let service = NotificationService::new();
     let method = req.method();
-    let path = req.uri();
+    let path = req.path();
 
-    match (method, path) {
-        (&Method::Post, "/send/email") => handle_send_email(req, &service).await,
-        (&Method::Post, "/send/booking-confirmation") => {
-            handle_booking_confirmation(req, &service).await
+    match (method, path.as_str()) {
+        (Method::Post, "/send/email") => handle_send_email(&mut req, &service).await,
+        (Method::Post, "/send/booking-confirmation") => {
+            handle_booking_confirmation(&mut req, &service).await
         }
-        _ => Ok(Response::new(StatusCode::NOT_FOUND, "Not Found")),
+        _ => Response::error("Not Found", 404),
     }
 }
 
@@ -49,12 +45,10 @@ struct SendRequest {
     content: String,
 }
 
-async fn handle_send_email(
-    req: Request,
-    service: &NotificationService,
-) -> anyhow::Result<Response> {
-    let body = req.into_body();
-    let payload: SendRequest = serde_json::from_slice(&body)?;
+async fn handle_send_email(req: &mut Request, service: &NotificationService) -> Result<Response> {
+    let body = req.text().await?;
+    let payload: SendRequest =
+        serde_json::from_str(&body).map_err(|e| worker::Error::RustError(e.to_string()))?;
 
     let notification = Notification {
         id: uuid::Uuid::new_v4(),
@@ -73,9 +67,10 @@ async fn handle_send_email(
 
     let result = service
         .send_with_fallback(notification, vec![NotificationChannel::Email])
-        .await?;
+        .await
+        .map_err(|e| worker::Error::RustError(e.to_string()))?;
 
-    Ok(Response::new(StatusCode::OK, serde_json::to_vec(&result)?))
+    Response::from_json(&result)
 }
 
 #[derive(serde::Deserialize)]
@@ -85,15 +80,17 @@ struct BookingConfirmationRequest {
 }
 
 async fn handle_booking_confirmation(
-    req: Request,
+    req: &mut Request,
     service: &NotificationService,
-) -> anyhow::Result<Response> {
-    let body = req.into_body();
-    let payload: BookingConfirmationRequest = serde_json::from_slice(&body)?;
+) -> Result<Response> {
+    let body = req.text().await?;
+    let payload: BookingConfirmationRequest =
+        serde_json::from_str(&body).map_err(|e| worker::Error::RustError(e.to_string()))?;
 
     let results = service
         .send_booking_confirmation(&payload.email, None, &payload.details)
-        .await?;
+        .await
+        .map_err(|e| worker::Error::RustError(e.to_string()))?;
 
-    Ok(Response::new(StatusCode::OK, serde_json::to_vec(&results)?))
+    Response::from_json(&results)
 }

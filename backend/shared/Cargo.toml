@@ -11,6 +11,7 @@ uuid = { version = "1.19.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.42", features = ["serde"] }
 thiserror = "2.0.17"
 futures = "0.3.31"
+log = "0.4.29"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.tokio]
 version = "1.49.0"
@@ -20,15 +21,11 @@ features = ["full"]
 version = "1.49.0"
 features = ["sync", "macros", "io-util", "rt", "time"]
 
-[target.'cfg(target_arch = "wasm32")'.dependencies.spin-sdk]
-workspace = true
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-log = "0.4.29"
+[target.'cfg(target_arch = "wasm32")'.dependencies.worker]
+version = "0.7.5"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 http = "1.4.0"
-log = "0.4.29"
 sqlx = { version = "0.8.6", features = ["postgres", "chrono", "uuid", "runtime-tokio-rustls"] }
 
 [dev-dependencies]
