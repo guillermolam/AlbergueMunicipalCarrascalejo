@@ -26,32 +26,7 @@ impl ScraperPort for CarrascalejoScraperAdapter {
         Ok(ScrapedContent {
             source_url: "https://www.carrascalejo.es/".to_string(),
             title: "El Carrascalejo - Información Local".to_string(),
-            content: r#"Carrascalejo es un pequeño municipio de la provincia de Cáceres, en Extremadura, con una población de aproximadamente 300 habitantes. Situado en plena Vía de la Plata, es un punto de referencia obligatorio para los peregrinos que se dirigen a Santiago de Compostela.
-
-**Historia y Patrimonio:**
-- Origen prerromano, con importantes restos arqueológicos
-- La iglesia parroquial de San Bartolomé data del siglo XVI
-- Antiguas casas señoriales con arquitectura tradicional extremeña
-- Calzada romana perfectamente conservada a la entrada del pueblo
-
-**Tradiciones y Cultura:**
-- Fiesta patronal de San Bartolomé (24 de agosto)
-- Matanza tradicional en los meses de invierno
-- Elaboración artesanal de embutidos ibéricos
-- Producción de aceite de oliva virgen extra
-
-**Servicios para Peregrinos:**
-- Albergue municipal con todas las comodidades
-- Bar-restaurante con menú del peregrino
-- Tienda de ultramarinos
-- Centro de salud (atención básica)
-
-**Gastronomía Local:**
-- Jamón ibérico de bellota
-- Queso de cabra artesanal
-- Migas extremeñas
-- Aceite de oliva virgen extra
-- Vino de la tierra"#.to_string(),
+            content: "Carrascalejo es un pequeño municipio de la provincia de Cáceres, en Extremadura, con una población de aproximadamente 300 habitantes. Situado en plena Vía de la Plata, es un punto de referencia obligatorio para los peregrinos que se dirigen a Santiago de Compostela.\n\n**Historia y Patrimonio:**\n- Origen prerromano, con importantes restos arqueológicos\n- La iglesia parroquial de San Bartolomé data del siglo XVI\n- Antiguas casas señoriales con arquitectura tradicional extremeña\n- Calzada romana perfectamente conservada a la entrada del pueblo\n\n**Tradiciones y Cultura:**\n- Fiesta patronal de San Bartolomé (24 de agosto)\n- Matanza tradicional en los meses de invierno\n- Elaboración artesanal de embutidos ibéricos\n- Producción de aceite de oliva virgen extra\n\n**Servicios para Peregrinos:**\n- Albergue municipal con todas las comodidades\n- Bar-restaurante con menú del peregrino\n- Tienda de ultramarinos\n- Centro de salud (atención básica)\n\n**Gastronomía Local:**\n- Jamón ibérico de bellota\n- Queso de cabra artesanal\n- Migas extremeñas\n- Aceite de oliva virgen extra\n- Vino de la tierra".to_string(),
             links: vec![
                 "https://www.aytocarrascalejo.es/".to_string(),
                 "https://www.turismoextremadura.com/".to_string(),
@@ -67,27 +42,10 @@ impl ScraperPort for CarrascalejoScraperAdapter {
         // Return realistic weather information for the region
         Ok(ScrapedContent {
             source_url: format!(
-                "https://www.aemet.es/es/eltiempo/prediccion/municipios/carrascalejo-{}",
-                location
+                "https://www.aemet.es/es/eltiempo/prediccion/municipios/carrascalejo-{location}"
             ),
-            title: format!("Previsión Meteorológica - {}", location),
-            content: r#"**Clima Continental Mediterráneo:**
-- Veranos calurosos y secos (máximas 35-40°C)
-- Inviernos suaves (mínimas 2-8°C)
-- Primavera y otoño ideales para el Camino
-- Precipitaciones concentradas en otoño e invierno
-
-**Recomendaciones para Peregrinos:**
-- Verano: Salir muy temprano, protección solar, abundante agua
-- Invierno: Ropa de abrigo, chubasquero
-- Primavera/Otoño: Época ideal, temperaturas moderadas
-- Viento del oeste frecuente en la meseta
-
-**Condiciones Actuales:**
-- Temperatura: 18°C (mañana), 28°C (tarde)
-- Viento: Moderado del oeste (15 km/h)
-- Humedad: 45%
-- Probabilidad de lluvia: 10%"#
+            title: format!("Previsión Meteorológica - {location}"),
+            content: "**Clima Continental Mediterráneo:**\n- Veranos calurosos y secos (máximas 35-40°C)\n- Inviernos suaves (mínimas 2-8°C)\n- Primavera y otoño ideales para el Camino\n- Precipitaciones concentradas en otoño e invierno\n\n**Recomendaciones para Peregrinos:**\n- Verano: Salir muy temprano, protección solar, abundante agua\n- Invierno: Ropa de abrigo, chubasquero\n- Primavera/Otoño: Época ideal, temperaturas moderadas\n- Viento del oeste frecuente en la meseta\n\n**Condiciones Actuales:**\n- Temperatura: 18°C (mañana), 28°C (tarde)\n- Viento: Moderado del oeste (15 km/h)\n- Humedad: 45%\n- Probabilidad de lluvia: 10%"
                 .to_string(),
             links: vec!["https://www.aemet.es/".to_string()],
             images: Vec::new(),
@@ -101,34 +59,7 @@ impl ScraperPort for CarrascalejoScraperAdapter {
         Ok(ScrapedContent {
             source_url: "https://www.carrascalejo.es/eventos".to_string(),
             title: "Eventos y Festividades Locales".to_string(),
-            content: r#"**Calendario de Eventos Anuales:**
-
-**Agosto:**
-- 24 de agosto: Fiesta de San Bartolomé (patrón del pueblo)
-- Verbenas populares, procesión, fuegos artificiales
-- Concursos gastronómicos tradicionales
-
-**Septiembre:**
-- Feria de productos ibéricos
-- Degustación de jamones y embutidos
-- Actividades culturales
-
-**Octubre:**
-- Jornadas micológicas (setas y hongos)
-- Rutas de senderismo por los alrededores
-- Recogida tradicional de aceitunas
-
-**Diciembre:**
-- Matanza tradicional del cerdo ibérico
-- Elaboración artesanal de embutidos
-- Mercadillo navideño
-
-**Eventos Especiales para Peregrinos:**
-- Abril-Mayo: Bendición de peregrinos en la iglesia
-- Junio: Jornada de puertas abiertas del albergue
-- Septiembre: Encuentro de antiguos peregrinos
-
-**Nota:** Las fechas pueden variar según el año. Consultar en el Ayuntamiento."#
+            content: "**Calendario de Eventos Anuales:**\n\n**Agosto:**\n- 24 de agosto: Fiesta de San Bartolomé (patrón del pueblo)\n- Verbenas populares, procesión, fuegos artificiales\n- Concursos gastronómicos tradicionales\n\n**Septiembre:**\n- Feria de productos ibéricos\n- Degustación de jamones y embutidos\n- Actividades culturales\n\n**Octubre:**\n- Jornadas micológicas (setas y hongos)\n- Rutas de senderismo por los alrededores\n- Recogida tradicional de aceitunas\n\n**Diciembre:**\n- Matanza tradicional del cerdo ibérico\n- Elaboración artesanal de embutidos\n- Mercadillo navideño\n\n**Eventos Especiales para Peregrinos:**\n- Abril-Mayo: Bendición de peregrinos en la iglesia\n- Junio: Jornada de puertas abiertas del albergue\n- Septiembre: Encuentro de antiguos peregrinos\n\n**Nota:** Las fechas pueden variar según el año. Consultar en el Ayuntamiento."
                 .to_string(),
             links: vec![
                 "tel:+34927123456".to_string(), // Ayuntamiento

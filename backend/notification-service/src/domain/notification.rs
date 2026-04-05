@@ -47,6 +47,7 @@ pub enum NotificationStatus {
     Bounced,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NotificationTemplate {
     pub id: String,
@@ -58,6 +59,7 @@ pub struct NotificationTemplate {
     pub variables: Vec<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookingNotificationData {
     pub booking_id: String,
@@ -72,6 +74,7 @@ pub struct BookingNotificationData {
     pub payment_method: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaymentNotificationData {
     pub booking_id: String,
@@ -83,6 +86,7 @@ pub struct PaymentNotificationData {
     pub receipt_url: Option<String>,
 }
 
+#[allow(dead_code)]
 impl Notification {
     pub fn new(
         notification_type: NotificationType,

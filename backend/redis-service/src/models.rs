@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct CacheEntry<T> {
     pub data: T,
     pub timestamp: u64,
@@ -35,7 +35,8 @@ pub struct RedisResponse<T> {
 }
 
 impl<T> RedisResponse<T> {
-    pub fn success(data: T) -> Self {
+    #[must_use]
+    pub const fn success(data: T) -> Self {
         Self {
             success: true,
             data: Some(data),
@@ -44,7 +45,8 @@ impl<T> RedisResponse<T> {
         }
     }
 
-    pub fn error(error: String) -> Self {
+    #[must_use]
+    pub const fn error(error: String) -> Self {
         Self {
             success: false,
             data: None,
@@ -53,7 +55,8 @@ impl<T> RedisResponse<T> {
         }
     }
 
-    pub fn message(message: String) -> Self {
+    #[must_use]
+    pub const fn message(message: String) -> Self {
         Self {
             success: true,
             data: None,

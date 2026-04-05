@@ -1,4 +1,4 @@
-use crate::domain::*;
+use crate::domain::{CardType, InfoCard};
 use async_trait::async_trait;
 use shared::AlbergueResult;
 use uuid::Uuid;

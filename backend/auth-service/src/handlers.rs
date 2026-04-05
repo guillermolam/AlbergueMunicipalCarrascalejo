@@ -1,17 +1,17 @@
-use spin_sdk::http::{Request, Response};
 use chrono::Utc;
+use http::StatusCode;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde_json::json;
+use spin_sdk::http::{Request, Response};
 use std::collections::HashMap;
-use http::StatusCode;
 
 use crate::config::{AppConfig, Claims};
 
 pub async fn login_handler(_req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
     let state = uuid::Uuid::new_v4().to_string();
-    if let Some(provider) = cfg.providers.first() {     
-        let url = provider.authorization_url(&state);   
-        
+    if let Some(provider) = cfg.providers.first() {
+        let url = provider.authorization_url(&state);
+
         Ok(Response::builder()
             .status(StatusCode::TEMPORARY_REDIRECT)
             .header("Location", url)
@@ -27,17 +27,14 @@ pub async fn login_handler(_req: Request, cfg: &AppConfig) -> anyhow::Result<Res
 
 pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
     let uri = req.uri();
-    let query = uri.split_once('?').map(|(_, q)| q).unwrap_or("");
+    let query = uri.split_once('?').map_or("", |(_, q)| q);
     let params: HashMap<String, String> = serde_urlencoded::from_str(query).unwrap_or_default();
-    
-    let code = match params.get("code") {
-        Some(c) => c,
-        None => {
-            return Ok(Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body("Missing code")
-                .build());
-        },
+
+    let Some(code) = params.get("code") else {
+        return Ok(Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .body("Missing code")
+            .build());
     };
 
     let mut token = None;
@@ -55,16 +52,14 @@ pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<R
         }
     }
 
-    let token = match token {
-        Some(t) => t,
-        None => {
-            return Ok(Response::builder()
-                .status(StatusCode::UNAUTHORIZED)
-                .body(format!("Auth failed: {}", last_error))
-                .build());
-        },
+    let Some(token) = token else {
+        return Ok(Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body(format!("Auth failed: {last_error}"))
+            .build());
     };
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let claims = Claims {
         sub: token.access_token.clone(),
         exp: (Utc::now() + cfg.token_ttl).timestamp() as usize,
@@ -75,11 +70,11 @@ pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<R
     let jwt = match encode(&header, &claims, &EncodingKey::from_secret(&cfg.jwt_secret)) {
         Ok(t) => t,
         Err(e) => {
-             return Ok(Response::builder()
+            return Ok(Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(e.to_string())
                 .build());
-        },
+        }
     };
 
     let body = json!({
@@ -94,7 +89,7 @@ pub async fn callback_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<R
         .build())
 }
 
-pub async fn logout_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Result<Response> {       
+pub async fn logout_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Result<Response> {
     Ok(Response::builder()
         .status(StatusCode::TEMPORARY_REDIRECT)
         .header("Location", "/")
@@ -106,21 +101,18 @@ pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Re
     let body = req.into_body();
     let payload: HashMap<String, String> = serde_json::from_slice(&body).unwrap_or_default();
 
-    let refresh = match payload.get("refresh_token") {     
-        Some(r) => r,
-        None => {
-            return Ok(Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body("Missing refresh_token")
-                .build());
-        },
+    let Some(refresh) = payload.get("refresh_token") else {
+        return Ok(Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .body("Missing refresh_token")
+            .build());
     };
 
     let mut token = None;
     let mut last_error = String::new();
 
     for provider in &cfg.providers {
-        match provider.refresh_token(refresh).await {   
+        match provider.refresh_token(refresh).await {
             Ok(t) => {
                 token = Some(t);
                 break;
@@ -131,16 +123,14 @@ pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Re
         }
     }
 
-    let token = match token {
-        Some(t) => t,
-        None => {
-            return Ok(Response::builder()
-                .status(StatusCode::UNAUTHORIZED)
-                .body(format!("Refresh failed: {}", last_error))
-                .build());
-        },
+    let Some(token) = token else {
+        return Ok(Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body(format!("Refresh failed: {last_error}"))
+            .build());
     };
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let claims = Claims {
         sub: token.access_token.clone(),
         exp: (Utc::now() + cfg.token_ttl).timestamp() as usize,
@@ -150,7 +140,7 @@ pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Re
     let jwt = match encode(
         &Header::new(Algorithm::HS256),
         &claims,
-        &EncodingKey::from_secret(&cfg.jwt_secret),     
+        &EncodingKey::from_secret(&cfg.jwt_secret),
     ) {
         Ok(t) => t,
         Err(e) => {
@@ -158,7 +148,7 @@ pub async fn refresh_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Re
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(e.to_string())
                 .build());
-        },
+        }
     };
 
     let body = json!({ "jwt": jwt });
@@ -174,7 +164,7 @@ pub async fn well_known_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Resu
     let config = json!({
         "issuer": issuer,
         "authorization_endpoint": format!("{}/login", issuer),
-        "token_endpoint": format!("{}/callback", issuer),  
+        "token_endpoint": format!("{}/callback", issuer),
         "jwks_uri": format!("{}/.well-known/jwks.json", issuer),
         "response_types_supported": ["code"],
         "subject_types_supported": ["public"],

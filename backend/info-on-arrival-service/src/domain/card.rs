@@ -160,7 +160,7 @@ impl InfoCard {
     }
 
     pub fn is_cache_expired(&self) -> bool {
-        let cache_duration = chrono::Duration::hours(self.cache_duration_hours as i64);
+        let cache_duration = chrono::Duration::hours(i64::from(self.cache_duration_hours));
         Utc::now() - self.last_updated > cache_duration
     }
 
