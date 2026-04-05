@@ -322,8 +322,10 @@ jobs:
 
       - name: Install SonarScanner CLI
         run: |
-          curl -o- https://raw.githubusercontent.com/SonarSource/sonarqube-cli/refs/heads/master/user-scripts/install.sh | bash
-          echo "$HOME/.sonarqube-cli/bin" >> $GITHUB_PATH
+          SONAR_SCANNER_VERSION="7.1.0.4889"
+          curl -sSLo sonar-scanner-cli.zip "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux-x64.zip"
+          unzip -q sonar-scanner-cli.zip
+          echo "${PWD}/sonar-scanner-${SONAR_SCANNER_VERSION}-linux-x64/bin" >> $GITHUB_PATH
 
       - name: Scan Frontend
         if: success()
