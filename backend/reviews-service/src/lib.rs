@@ -4,7 +4,12 @@
     clippy::module_name_repetitions,
     clippy::must_use_candidate,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    clippy::same_length_and_capacity,
+    clippy::future_not_send,
+    clippy::unused_async,
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss
 )]
 
 use anyhow::Result;
@@ -297,7 +302,7 @@ fn calculate_average_rating(reviews: &[Review]) -> f32 {
         return 0.0;
     }
 
-    let total: u32 = reviews.iter().map(|r| r.rating as u32).sum();
+    let total: u32 = reviews.iter().map(|r| u32::from(r.rating)).sum();
     total as f32 / reviews.len() as f32
 }
 

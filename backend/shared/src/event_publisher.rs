@@ -12,6 +12,7 @@ impl EventPublisher {
         Self { broker_url }
     }
 
+    #[allow(clippy::unused_async, clippy::future_not_send)]
     pub async fn publish<T: Serialize>(&self, event: &CloudEvent<T>) -> AlbergueResult<()> {
         let topic = &event.event_type;
 
@@ -50,7 +51,11 @@ impl EventPublisher {
         Ok(())
     }
 
-    pub async fn publish_batch<T: Serialize>(&self, events: &[CloudEvent<T>]) -> AlbergueResult<()> {
+    #[allow(clippy::future_not_send)]
+    pub async fn publish_batch<T: Serialize>(
+        &self,
+        events: &[CloudEvent<T>],
+    ) -> AlbergueResult<()> {
         for event in events {
             let _ = self.publish(event).await;
         }

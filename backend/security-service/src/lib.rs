@@ -3,14 +3,19 @@
 #![allow(
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    clippy::same_length_and_capacity,
+    clippy::unused_async,
+    clippy::implicit_hasher,
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss
 )]
 
 use anyhow::Result;
 use base64::Engine;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use spin_sdk::http::{Request, Response, Method};
+use spin_sdk::http::{Method, Request, Response};
 use spin_sdk::http_component;
 use std::collections::HashMap;
 use tokio::task;
@@ -70,9 +75,9 @@ fn detect_xss_patterns(content: &str) -> Vec<ThreatDetail> {
         if let Ok(regex) = regex::Regex::new(pattern) {
             if regex.is_match(&content.to_lowercase()) {
                 threats.push(ThreatDetail {
-                    threat_type: format!("XSS: {}", threat_type),
+                    threat_type: format!("XSS: {threat_type}"),
                     severity: severity.to_string(),
-                    description: format!("Detected potential XSS pattern: {}", threat_type),
+                    description: format!("Detected potential XSS pattern: {threat_type}"),
                     location: None,
                     recommendation: "Sanitize input and encode output".to_string(),
                 });
@@ -102,9 +107,9 @@ fn detect_sql_injection(content: &str) -> Vec<ThreatDetail> {
         if let Ok(regex) = regex::Regex::new(pattern) {
             if regex.is_match(content) {
                 threats.push(ThreatDetail {
-                    threat_type: format!("SQL Injection: {}", threat_type),
+                    threat_type: format!("SQL Injection: {threat_type}"),
                     severity: severity.to_string(),
-                    description: format!("Detected potential SQL injection: {}", threat_type),
+                    description: format!("Detected potential SQL injection: {threat_type}"),
                     location: None,
                     recommendation: "Use parameterized queries".to_string(),
                 });
@@ -130,9 +135,9 @@ fn detect_malware_signatures(content: &str) -> Vec<ThreatDetail> {
         if let Ok(regex) = regex::Regex::new(pattern) {
             if regex.is_match(content) {
                 threats.push(ThreatDetail {
-                    threat_type: format!("Malware: {}", threat_type),
+                    threat_type: format!("Malware: {threat_type}"),
                     severity: severity.to_string(),
-                    description: format!("Detected potential malware signature: {}", threat_type),
+                    description: format!("Detected potential malware signature: {threat_type}"),
                     location: None,
                     recommendation: "Quarantine and analyze further".to_string(),
                 });
@@ -225,7 +230,7 @@ fn calculate_entropy(content: &str) -> f64 {
     let mut entropy = 0.0;
 
     for count in char_counts.values() {
-        let frequency = *count as f64 / len;
+        let frequency = f64::from(*count) / len;
         entropy -= frequency * frequency.log2();
     }
 
@@ -272,7 +277,8 @@ async fn perform_encryption(data: String, key_id: Option<String>) -> Result<Encr
     let encryption_task = task::spawn(async move {
         tokio::time::sleep(tokio::time::Duration::from_millis(25)).await;
 
-        let encrypted = base64::engine::general_purpose::STANDARD.encode(format!("encrypted:{}", data));
+        let encrypted =
+            base64::engine::general_purpose::STANDARD.encode(format!("encrypted:{data}"));
 
         EncryptionResult {
             encrypted_data: encrypted,
@@ -287,7 +293,7 @@ async fn perform_encryption(data: String, key_id: Option<String>) -> Result<Encr
         }
     });
 
-    encryption_task.await.map_err(|e| e.into())
+    encryption_task.await.map_err(std::convert::Into::into)
 }
 
 #[http_component]
@@ -304,7 +310,7 @@ async fn handle_request(req: Request) -> Result<Response> {
             .status(StatusCode::NOT_FOUND)
             .header("content-type", "application/json")
             .body(r#"{"error":"Security endpoint not found"}"#.as_bytes().to_vec())
-            .build())
+            .build()),
     }
 }
 

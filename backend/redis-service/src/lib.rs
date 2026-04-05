@@ -1,5 +1,13 @@
 #![deny(warnings)]
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(
+    clippy::same_length_and_capacity,
+    clippy::unused_async,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::option_if_let_else,
+    clippy::future_not_send
+)]
 
 mod error;
 mod models;

@@ -3,7 +3,9 @@
 #![allow(
     clippy::module_name_repetitions,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    clippy::same_length_and_capacity,
+    clippy::future_not_send
 )]
 
 use anyhow::Result;
@@ -38,13 +40,11 @@ fn validate_dni_checksum(dni: &str) -> bool {
     let number_part = &dni[..8];
     let letter = dni.chars().nth(8).unwrap_or(' ');
 
-    if let Ok(number) = number_part.parse::<u32>() {
+    number_part.parse::<u32>().is_ok_and(|number| {
         let letters = "TRWAGMYFPDXBNJZSQVHLCKE";
         let expected_letter = letters.chars().nth((number % 23) as usize).unwrap_or(' ');
         letter == expected_letter
-    } else {
-        false
-    }
+    })
 }
 
 fn validate_nie_format(nie: &str) -> bool {
@@ -52,7 +52,7 @@ fn validate_nie_format(nie: &str) -> bool {
         return false;
     }
 
-    let first_char = nie.chars().nth(0).unwrap_or(' ');
+    let first_char = nie.chars().next().unwrap_or(' ');
     matches!(first_char, 'X' | 'Y' | 'Z')
 }
 
@@ -87,11 +87,9 @@ async fn validate_document_comprehensive(
                 async move { validate_dni_checksum(&doc_num) }
             });
 
-            let ocr_task = if let Some(image) = req_data.image_data {
-                Some(task::spawn(async move { process_ocr_document(&image).await }))
-            } else {
-                None
-            };
+            let ocr_task = req_data
+                .image_data
+                .map(|image| task::spawn(async move { process_ocr_document(&image).await }));
 
             let checksum_valid = checksum_task.await?;
             let extracted_data = if let Some(ocr) = ocr_task {
@@ -135,15 +133,13 @@ async fn validate_document_comprehensive(
             }
         }
         "passport" => {
-            let mrz_task = if let Some(image) = req_data.image_data {
-                Some(task::spawn(async move {
+            let mrz_task = req_data.image_data.map(|image| {
+                task::spawn(async move {
                     let ocr_result = process_ocr_document(&image).await?;
                     let mrz_text = ocr_result["mrz"].as_str().unwrap_or("");
                     Ok::<bool, anyhow::Error>(validate_passport_mrz(mrz_text))
-                }))
-            } else {
-                None
-            };
+                })
+            });
 
             let mrz_valid = if let Some(task) = mrz_task {
                 Some(task.await??)
@@ -198,7 +194,7 @@ async fn handle_request(req: Request) -> Result<Response> {
         _ => Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(r#"{"error":"Validation endpoint not found"}"#.as_bytes().to_vec())
-            .build())
+            .build()),
     }
 }
 
@@ -208,7 +204,7 @@ async fn handle_document_validation(req: Request) -> Result<Response> {
     let req_data: DocumentValidationRequest =
         serde_json::from_str(body).unwrap_or_else(|_| DocumentValidationRequest {
             document_type: "unknown".to_string(),
-            document_number: "".to_string(),
+            document_number: String::new(),
             image_data: None,
         });
 

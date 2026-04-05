@@ -19,6 +19,7 @@ pub fn matches_topic(event_type: &str, filter: &str) -> bool {
         |prefix| event_type.starts_with(prefix),
     )
 }
+#[allow(clippy::unused_async)]
 pub async fn register_webhook(
     service_id: &str,
     webhook_url: &str,

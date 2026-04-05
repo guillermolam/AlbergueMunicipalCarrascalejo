@@ -8,7 +8,11 @@
     clippy::cast_sign_loss,
     clippy::cast_precision_loss,
     // Spin's http component executor is not Send; allow this lint for WASM components.
-    clippy::future_not_send
+    clippy::future_not_send,
+    // Spin SDK macro generates Vec::from_raw_parts with same length and capacity.
+    clippy::same_length_and_capacity,
+    // Spin handler signature requires owned Request.
+    clippy::needless_pass_by_value
 )]
 
 use serde::{Deserialize, Serialize};

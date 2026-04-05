@@ -1,4 +1,4 @@
-use crate::domain::*;
+use crate::domain::{CardType, InfoCard, InfoLink};
 use crate::ports::StoragePort;
 use async_trait::async_trait;
 use shared::{AlbergueError, AlbergueResult};
@@ -31,7 +31,7 @@ impl PostgresCardsRepository {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn with_database(database_url: &str) -> AlbergueResult<Self> {
         let pool = PgPool::connect(database_url).await.map_err(|e| {
-            AlbergueError::DatabaseError(format!("Failed to connect to database: {}", e))
+            AlbergueError::DatabaseError(format!("Failed to connect to database: {e}"))
         })?;
 
         Ok(Self { pool: Some(pool) })
@@ -45,7 +45,7 @@ impl StoragePort for PostgresCardsRepository {
         {
             // In WASM, we'd use browser storage or send to the gateway
             // For now, just return the card as if it was saved
-            tracing::info!("WASM: Simulating card save for {}", card.title);
+            tracing::info!("WASM: Simulating card save for {t}", t = card.title);
             Ok(card)
         }
 
@@ -55,10 +55,9 @@ impl StoragePort for PostgresCardsRepository {
                 let card_type_str = serde_json::to_string(&card.card_type)?;
                 let links_json = serde_json::to_string(&card.links)?;
 
-                sqlx::query!(
-                    r#"
-                    INSERT INTO info_cards (
-                        id, card_type, title, content, markdown_content, 
+                sqlx::query(
+                    "INSERT INTO info_cards (
+                        id, card_type, title, content, markdown_content,
                         links, priority, is_active, language, last_updated,
                         source_url, cache_duration_hours
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -66,24 +65,23 @@ impl StoragePort for PostgresCardsRepository {
                         content = EXCLUDED.content,
                         markdown_content = EXCLUDED.markdown_content,
                         links = EXCLUDED.links,
-                        last_updated = EXCLUDED.last_updated
-                    "#,
-                    card.id,
-                    card_type_str,
-                    card.title,
-                    card.content,
-                    card.markdown_content,
-                    links_json,
-                    card.priority,
-                    card.is_active,
-                    card.language,
-                    card.last_updated,
-                    card.source_url,
-                    card.cache_duration_hours
+                        last_updated = EXCLUDED.last_updated",
                 )
+                .bind(card.id)
+                .bind(&card_type_str)
+                .bind(&card.title)
+                .bind(&card.content)
+                .bind(&card.markdown_content)
+                .bind(&links_json)
+                .bind(card.priority)
+                .bind(card.is_active)
+                .bind(&card.language)
+                .bind(card.last_updated)
+                .bind(&card.source_url)
+                .bind(card.cache_duration_hours)
                 .execute(pool)
                 .await
-                .map_err(|e| AlbergueError::DatabaseError(format!("Failed to save card: {}", e)))?;
+                .map_err(|e| AlbergueError::DatabaseError(format!("Failed to save card: {e}")))?;
 
                 Ok(card)
             } else {
@@ -99,20 +97,20 @@ impl StoragePort for PostgresCardsRepository {
         {
             // Simulate returning a card
             Err(AlbergueError::NotFound(format!(
-                "Card {} not found in WASM storage",
-                id
+                "Card {id} not found in WASM storage"
             )))
         }
 
         #[cfg(not(target_arch = "wasm32"))]
         {
             if let Some(pool) = &self.pool {
-                let row = sqlx::query!("SELECT * FROM info_cards WHERE id = $1", id)
+                let row = sqlx::query("SELECT * FROM info_cards WHERE id = $1")
+                    .bind(id)
                     .fetch_one(pool)
                     .await
-                    .map_err(|_| AlbergueError::NotFound(format!("Card {} not found", id)))?;
+                    .map_err(|_| AlbergueError::NotFound(format!("Card {id} not found")))?;
 
-                self.row_to_card(row)
+                self.row_to_card(&row)
             } else {
                 Err(AlbergueError::DatabaseError(
                     "No database connection".to_string(),
@@ -140,15 +138,15 @@ impl StoragePort for PostgresCardsRepository {
             if let Some(pool) = &self.pool {
                 let card_type_str = serde_json::to_string(&card_type)?;
 
-                let row = sqlx::query!(
+                let row = sqlx::query(
                     "SELECT * FROM info_cards WHERE card_type = $1 ORDER BY last_updated DESC LIMIT 1",
-                    card_type_str
                 )
+                .bind(&card_type_str)
                 .fetch_one(pool)
                 .await
                 .map_err(|_| AlbergueError::NotFound("Card type not found".to_string()))?;
 
-                self.row_to_card(row)
+                self.row_to_card(&row)
             } else {
                 Err(AlbergueError::DatabaseError(
                     "No database connection".to_string(),
@@ -167,16 +165,16 @@ impl StoragePort for PostgresCardsRepository {
         #[cfg(not(target_arch = "wasm32"))]
         {
             if let Some(pool) = &self.pool {
-                let rows = sqlx::query!(
-                    "SELECT * FROM info_cards WHERE is_active = true ORDER BY priority DESC, last_updated DESC"
+                let rows = sqlx::query(
+                    "SELECT * FROM info_cards WHERE is_active = true ORDER BY priority DESC, last_updated DESC",
                 )
                 .fetch_all(pool)
                 .await
-                .map_err(|e| AlbergueError::DatabaseError(format!("Failed to fetch cards: {}", e)))?;
+                .map_err(|e| AlbergueError::DatabaseError(format!("Failed to fetch cards: {e}")))?;
 
                 let mut cards = Vec::new();
                 for row in rows {
-                    if let Ok(card) = self.row_to_card(row) {
+                    if let Ok(card) = self.row_to_card(&row) {
                         cards.push(card);
                     }
                 }
@@ -192,18 +190,19 @@ impl StoragePort for PostgresCardsRepository {
     async fn delete_card(&self, id: Uuid) -> AlbergueResult<()> {
         #[cfg(target_arch = "wasm32")]
         {
-            tracing::info!("WASM: Simulating card deletion for {}", id);
+            tracing::info!("WASM: Simulating card deletion for {id}");
             Ok(())
         }
 
         #[cfg(not(target_arch = "wasm32"))]
         {
             if let Some(pool) = &self.pool {
-                sqlx::query!("DELETE FROM info_cards WHERE id = $1", id)
+                sqlx::query("DELETE FROM info_cards WHERE id = $1")
+                    .bind(id)
                     .execute(pool)
                     .await
                     .map_err(|e| {
-                        AlbergueError::DatabaseError(format!("Failed to delete card: {}", e))
+                        AlbergueError::DatabaseError(format!("Failed to delete card: {e}"))
                     })?;
                 Ok(())
             } else {
@@ -224,17 +223,17 @@ impl StoragePort for PostgresCardsRepository {
         #[cfg(not(target_arch = "wasm32"))]
         {
             if let Some(pool) = &self.pool {
-                let rows = sqlx::query!(
+                let rows = sqlx::query(
                     "SELECT * FROM info_cards WHERE language = $1 AND is_active = true ORDER BY priority DESC",
-                    language
                 )
+                .bind(language)
                 .fetch_all(pool)
                 .await
-                .map_err(|e| AlbergueError::DatabaseError(format!("Failed to fetch cards: {}", e)))?;
+                .map_err(|e| AlbergueError::DatabaseError(format!("Failed to fetch cards: {e}")))?;
 
                 let mut cards = Vec::new();
                 for row in rows {
-                    if let Ok(card) = self.row_to_card(row) {
+                    if let Ok(card) = self.row_to_card(&row) {
                         cards.push(card);
                     }
                 }
@@ -250,15 +249,16 @@ impl StoragePort for PostgresCardsRepository {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl PostgresCardsRepository {
-    fn row_to_card(&self, row: sqlx::postgres::PgRow) -> AlbergueResult<InfoCard> {
+    #[allow(clippy::unused_self)]
+    fn row_to_card(&self, row: &sqlx::postgres::PgRow) -> AlbergueResult<InfoCard> {
         let card_type: CardType = serde_json::from_str(
             &row.try_get::<String, _>("card_type")
-                .map_err(|e| AlbergueError::DatabaseError(format!("Invalid card_type: {}", e)))?,
+                .map_err(|e| AlbergueError::DatabaseError(format!("Invalid card_type: {e}")))?,
         )?;
 
         let links: Vec<InfoLink> = serde_json::from_str(
             &row.try_get::<String, _>("links")
-                .map_err(|e| AlbergueError::DatabaseError(format!("Invalid links: {}", e)))?,
+                .map_err(|e| AlbergueError::DatabaseError(format!("Invalid links: {e}")))?,
         )?;
 
         Ok(InfoCard {
