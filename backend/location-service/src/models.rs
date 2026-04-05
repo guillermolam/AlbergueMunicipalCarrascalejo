@@ -14,7 +14,7 @@ pub enum LocationServiceError {
     NotFound(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct CountryData {
     pub code: String,
     pub name: String,
@@ -28,15 +28,7 @@ pub struct CountryData {
     pub calling_code: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct CountryResponse {
-    pub country: String,
-    pub country_code: String,
-    pub calling_code: String,
-    pub flag: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct CacheEntry {
     pub data: CountryData,
     pub timestamp: u64,
@@ -50,7 +42,8 @@ pub struct ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
-    pub fn success(data: T) -> Self {
+    #[must_use]
+    pub const fn success(data: T) -> Self {
         Self {
             success: true,
             data: Some(data),
@@ -58,7 +51,8 @@ impl<T> ApiResponse<T> {
         }
     }
 
-    pub fn error(message: String) -> Self {
+    #[must_use]
+    pub const fn error(message: String) -> Self {
         Self {
             success: false,
             data: None,
