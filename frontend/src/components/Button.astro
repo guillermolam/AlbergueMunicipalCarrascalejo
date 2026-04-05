@@ -82,8 +82,20 @@ const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[s
       role="button"
     >
       {loading && (
-        <svg class={loadingClasses} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <svg
+          class={loadingClasses}
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
           <path
             class="opacity-75"
             fill="currentColor"
@@ -97,8 +109,20 @@ const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[s
   ) : (
     <button type={type} class={buttonClasses} disabled={disabled || loading} onclick={onClick}>
       {loading && (
-        <svg class={loadingClasses} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <svg
+          class={loadingClasses}
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
           <path
             class="opacity-75"
             fill="currentColor"

@@ -17,7 +17,7 @@ route = "/api/*"
 component = "security-service"
 
 [component.security-service]
-source = "target/wasm32-wasip1/release/security_service.wasm"
+source = "target/wasm32-wasip2/release/security_service.wasm"
 allowed_outbound_hosts = [
   "https://*.neon.tech",
   "http://mqtt-broker-service.spin.internal",
@@ -26,7 +26,7 @@ key_value_stores = ["default"]
 sqlite_databases = ["default"]
 
 [component.security-service.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.security-service.variables]
 database_url = "{{ database_url }}"

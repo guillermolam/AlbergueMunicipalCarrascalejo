@@ -82,11 +82,11 @@ fi
 
 # Check for wasm target
 if grep -q "wasm32-wasi[^p]" "$WORKFLOW_FILE"; then
-    echo "WARNING: Found 'wasm32-wasi' - should be 'wasm32-wasip1' for Spin"
+    echo "WARNING: Found 'wasm32-wasi' - should be 'wasm32-wasip2' for Spin"
 fi
 
-if ! grep -q "wasm32-wasip1" "$WORKFLOW_FILE"; then
-    echo "WARNING: No 'wasm32-wasip1' target found"
+if ! grep -q "wasm32-wasip2" "$WORKFLOW_FILE"; then
+    echo "WARNING: No 'wasm32-wasip2' target found"
 fi
 
 # List all jobs

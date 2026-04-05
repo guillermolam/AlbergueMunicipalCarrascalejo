@@ -65,7 +65,7 @@ test_gateway_test() {
 
 test_gateway_build_wasm() {
     cd "$PROJECT_ROOT/gateway"
-    cargo build --workspace --release --target wasm32-wasip1
+    cargo build --workspace --release --target wasm32-wasip2
 }
 
 test_backend_format() {

@@ -68,7 +68,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-          targets: wasm32-wasip1
+          targets: wasm32-wasip2
 
       - name: Install just
         run: |
@@ -102,7 +102,7 @@ jobs:
         run: just test
 
       - name: Build (wasm)
-        run: cargo build --workspace --release --target wasm32-wasip1
+        run: cargo build --workspace --release --target wasm32-wasip2
 
   # Database CI
   database:
@@ -188,7 +188,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-          targets: wasm32-wasip1
+          targets: wasm32-wasip2
 
       - name: Install Spin CLI
         run: |
@@ -225,7 +225,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-          targets: wasm32-wasip1
+          targets: wasm32-wasip2
 
       - name: Install just
         run: |

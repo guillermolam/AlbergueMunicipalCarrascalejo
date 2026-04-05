@@ -6,7 +6,7 @@ set -e
 
 SERVICE="${1:-all}"
 MODE="${2:-release}"
-TARGET="wasm32-wasip1"
+TARGET="wasm32-wasip2"
 
 echo " Building services: $SERVICE (mode: $MODE)"
 

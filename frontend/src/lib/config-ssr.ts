@@ -229,7 +229,8 @@ export async function loadConfiguration(): Promise<AppConfig> {
     },
     services: {
       redis: {
-        url: getServerEnv('REDIS_URL') || import.meta.env.PUBLIC_REDIS_URL || 'redis://localhost:6379',
+        url:
+          getServerEnv('REDIS_URL') || import.meta.env.PUBLIC_REDIS_URL || 'redis://localhost:6379',
         password: getServerEnv('REDIS_PASSWORD') || import.meta.env.PUBLIC_REDIS_PASSWORD,
       },
       email: {

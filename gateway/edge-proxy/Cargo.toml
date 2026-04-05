@@ -33,8 +33,8 @@ hyper-util = { version = "0.1.10", features = [
 http-body-util = "0.1.2"
 bytes = "1.11.0"
 
-rustls = "0.23.23"
-tokio-rustls = "0.26.1"
+rustls = { version = "0.23.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
+tokio-rustls = { version = "0.26.1", default-features = false, features = ["ring", "logging", "tls12"] }
 rustls-pemfile = "2.2.0"
 hyper-rustls = { version = "0.27.5", default-features = false, features = [
   "http2",

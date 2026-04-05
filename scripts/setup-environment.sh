@@ -46,7 +46,7 @@ install_rust() {
 	fi
 
 	rustup update
-	rustup target add wasm32-wasip1
+	rustup target add wasm32-wasip2
 
 	# Install useful cargo tools
 	cargo install cargo-watch 2>/dev/null || echo "cargo-watch already installed"

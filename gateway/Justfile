@@ -40,7 +40,7 @@ build-release:
 
 # Build wasm target commonly used by Spin
 build-wasm:
-  cargo build --workspace --release --target wasm32-wasi
+  cargo build --workspace --release --target wasm32-wasip2
 
 # Run the typical CI checks
 ci: fmt-check clippy test

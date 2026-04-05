@@ -3,6 +3,9 @@ name = "location-service"
 version = "0.2.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 # Core dependencies
 anyhow = "1.0.100"

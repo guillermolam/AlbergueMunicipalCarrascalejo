@@ -16,12 +16,12 @@ route = "/api/redis/*"
 component = "redis-service"
 
 [component.redis-service]
-source = "target/wasm32-wasip1/release/redis_service.wasm"
+source = "target/wasm32-wasip2/release/redis_service.wasm"
 allowed_outbound_hosts = ["redis://*"]
 key_value_stores = ["default"]
 
 [component.redis-service.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.redis-service.variables]
 redis_url = "{{ redis_url }}"

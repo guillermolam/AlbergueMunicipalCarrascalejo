@@ -13,9 +13,7 @@ import type {
   ValidationWarning,
 } from '@/types/pilgrim';
 
-import type {
-  CreatePilgrimProfileDto,
-} from '@/types/pilgrim-operations';
+import type { CreatePilgrimProfileDto } from '@/types/pilgrim-operations';
 
 /**
  * Base validator class with common validation utilities

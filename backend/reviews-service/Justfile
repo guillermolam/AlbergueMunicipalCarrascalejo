@@ -34,7 +34,7 @@ build-release:
 	cargo build -p {{crate}} --release
 
 build-wasm:
-	cargo build -p {{crate}} --release --target wasm32-wasip1
+	cargo build -p {{crate}} --release --target wasm32-wasip2
 
 clean:
 	cargo clean -p {{crate}}

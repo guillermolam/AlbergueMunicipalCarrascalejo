@@ -16,12 +16,12 @@ route = "/api/*"
 component = "rate-limiter-service"
 
 [component.rate-limiter-service]
-source = "target/wasm32-wasip1/release/rate_limiter_service.wasm"
+source = "target/wasm32-wasip2/release/rate_limiter_service.wasm"
 allowed_outbound_hosts = []
 key_value_stores = ["default"]
 
 [component.rate-limiter-service.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.rate-limiter-service.variables]
 rate_limit_requests = "{{ rate_limit_requests }}"

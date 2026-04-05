@@ -17,7 +17,7 @@ route = "/api/countries/*"
 component = "location-service"
 
 [component.location-service]
-source = "target/wasm32-wasip1/release/location_service.wasm"
+source = "target/wasm32-wasip2/release/location_service.wasm"
 allowed_outbound_hosts = [
   "https://maps.googleapis.com",
   "https://api.mapbox.com",
@@ -26,7 +26,7 @@ allowed_outbound_hosts = [
 key_value_stores = ["default"]
 
 [component.location-service.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.location-service.variables]
 redis_url = "{{ redis_url }}"

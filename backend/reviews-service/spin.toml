@@ -16,7 +16,7 @@ route = "/api/*"
 component = "reviews-service"
 
 [component.reviews-service]
-source = "target/wasm32-wasip1/release/reviews_service.wasm"
+source = "target/wasm32-wasip2/release/reviews_service.wasm"
 allowed_outbound_hosts = [
   "https://*.neon.tech",
   "https://*.postgres.com",
@@ -24,7 +24,7 @@ allowed_outbound_hosts = [
 ]
 sqlite_databases = ["default"]
 [component.reviews-service.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.reviews-service.variables]
 database_url = "{{ database_url }}"

@@ -25,7 +25,7 @@ component = "notification-service"
 
 
 [component.notification-service]
-source = "target/wasm32-wasip1/release/notification_service.wasm"
+source = "target/wasm32-wasip2/release/notification_service.wasm"
 allowed_outbound_hosts = [
   "https://graph.facebook.com",
   "https://api.telegram.org",
@@ -37,7 +37,7 @@ key_value_stores = ["default"]
 sqlite_databases = ["default"]
 
 [component.notification-service.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.notification-service.variables]
 database_url = "{{ database_url }}"

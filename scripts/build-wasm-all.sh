@@ -7,8 +7,8 @@ set -e
 
 echo "Building all Rust services to WASM..."
 
-# Ensure wasm32-wasip1 target is installed
-rustup target add wasm32-wasip1
+# Ensure wasm32-wasip2 target is installed
+rustup target add wasm32-wasip2
 
 # Stop any running instances
 echo "Stopping any running services..."
@@ -55,7 +55,7 @@ for service in "${services[@]}"; do
 	echo "Building $service..."
 	if [ -d "$service" ]; then
 		cd "$service"
-		cargo build --target wasm32-wasip1 --release || {
+		cargo build --target wasm32-wasip2 --release || {
 			echo "ERROR: Failed to build $service"
 			cd ..
 			continue
@@ -70,4 +70,4 @@ done
 cd ..
 
 echo "All services built successfully!"
-echo "WASM files are located in: backend/*/target/wasm32-wasip1/release/"
+echo "WASM files are located in: backend/*/target/wasm32-wasip2/release/"

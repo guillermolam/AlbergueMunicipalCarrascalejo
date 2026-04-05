@@ -15,12 +15,12 @@ route = "/api/mqtt/*"
 component = "mqtt-broker-service"
 
 [component.mqtt-broker-service]
-source = "target/wasm32-wasip1/release/mqtt_broker_service.wasm"
+source = "target/wasm32-wasip2/release/mqtt_broker_service.wasm"
 allowed_outbound_hosts = ["redis://*", "http://*.spin.internal"]
 key_value_stores = ["default"]
 
 [component.mqtt-broker-service.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.mqtt-broker-service.variables]
 redis_url = "{{ redis_url }}"
