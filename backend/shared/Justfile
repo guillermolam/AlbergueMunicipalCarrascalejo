@@ -1,0 +1,32 @@
+# Justfile for shared library
+#
+# Usage:
+#   just fmt          # Check formatting
+#   just fmt-fix      # Fix formatting
+#   just clippy       # Run clippy with deny warnings
+#   just test         # Run tests
+#   just build        # Build (debug)
+
+set shell := ["sh", "-eu", "-c"]
+
+crate := "shared"
+
+default: fmt clippy
+
+fmt:
+	cargo fmt -p {{crate}} -- --check
+
+fmt-fix:
+	cargo fmt -p {{crate}}
+
+clippy:
+	cargo clippy -p {{crate}} -- -D warnings
+
+test:
+	cargo test -p {{crate}}
+
+build:
+	cargo build -p {{crate}}
+
+clean:
+	cargo clean -p {{crate}}

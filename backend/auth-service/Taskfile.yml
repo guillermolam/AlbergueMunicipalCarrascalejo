@@ -1,0 +1,47 @@
+version: "3"
+
+vars:
+  SERVICE_DIR: "{{.TASKFILE_DIR}}"
+
+tasks:
+  default:
+    desc: "Run fmt check + clippy for auth-service"
+    dir: "{{.SERVICE_DIR}}/.."
+    cmds:
+      - just -f {{.SERVICE_DIR}}/Justfile
+
+  fmt:
+    desc: "Check formatting for auth-service"
+    dir: "{{.SERVICE_DIR}}/.."
+    cmds:
+      - just -f {{.SERVICE_DIR}}/Justfile fmt
+
+  fmt-fix:
+    desc: "Fix formatting for auth-service"
+    dir: "{{.SERVICE_DIR}}/.."
+    cmds:
+      - just -f {{.SERVICE_DIR}}/Justfile fmt-fix
+
+  clippy:
+    desc: "Run clippy for auth-service"
+    dir: "{{.SERVICE_DIR}}/.."
+    cmds:
+      - just -f {{.SERVICE_DIR}}/Justfile clippy
+
+  test:
+    desc: "Run tests for auth-service"
+    dir: "{{.SERVICE_DIR}}/.."
+    cmds:
+      - just -f {{.SERVICE_DIR}}/Justfile test
+
+  build:
+    desc: "Build auth-service"
+    dir: "{{.SERVICE_DIR}}/.."
+    cmds:
+      - just -f {{.SERVICE_DIR}}/Justfile build
+
+  clean:
+    desc: "Clean auth-service build artifacts"
+    dir: "{{.SERVICE_DIR}}/.."
+    cmds:
+      - just -f {{.SERVICE_DIR}}/Justfile clean
