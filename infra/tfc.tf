@@ -72,41 +72,8 @@ resource "tfe_variable" "turso_api_token" {
   description  = "Turso database API token"
 }
 
-resource "tfe_variable" "cloudflare_api_key" {
-  key          = "cloudflare_api_key"
-  value        = var.cloudflare_api_key
-  category     = "terraform"
-  sensitive    = true
-  workspace_id = tfe_workspace.this.id
-  description  = "Cloudflare Global API Key"
-}
-
-resource "tfe_variable" "cloudflare_email" {
-  key          = "cloudflare_email"
-  value        = var.cloudflare_email
-  category     = "terraform"
-  sensitive    = false
-  workspace_id = tfe_workspace.this.id
-  description  = "Cloudflare account email"
-}
-
-resource "tfe_variable" "rediscloud_api_key" {
-  key          = "rediscloud_api_key"
-  value        = var.rediscloud_api_key
-  category     = "terraform"
-  sensitive    = true
-  workspace_id = tfe_workspace.this.id
-  description  = "Redis Cloud API key"
-}
-
-resource "tfe_variable" "rediscloud_secret_key" {
-  key          = "rediscloud_secret_key"
-  value        = var.rediscloud_secret_key
-  category     = "terraform"
-  sensitive    = true
-  workspace_id = tfe_workspace.this.id
-  description  = "Redis Cloud secret key"
-}
+# Cloudflare and Redis Cloud TFC variables are set manually
+# (providers disabled - CF needs scoped API token, Redis needs paid plan)
 
 resource "tfe_variable" "fermyon_cloud_token" {
   key          = "fermyon_cloud_token"
