@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    #[tokio::test]
-    async fn test_placeholder() {
-        assert!(true, "placeholder test passes");
+    #[test]
+    fn placeholder() {
+        // TODO: Add real tests once Cloudflare Workers test harness is set up
     }
 }

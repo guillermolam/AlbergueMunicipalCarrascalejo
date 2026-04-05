@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     #[test]
-    fn test_placeholder() {
-        assert!(true, "placeholder test passes");
+    fn placeholder() {
+        // TODO: Add real tests once Cloudflare Workers test harness is set up
     }
 }
