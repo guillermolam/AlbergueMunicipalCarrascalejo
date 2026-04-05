@@ -1,0 +1,88 @@
+version: "3"
+
+includes:
+  shared:
+    taskfile: ./shared/Taskfile.yml
+    dir: .
+  auth:
+    taskfile: ./auth-service/Taskfile.yml
+    dir: .
+  booking:
+    taskfile: ./booking-service/Taskfile.yml
+    dir: .
+  document-validation:
+    taskfile: ./document-validation-service/Taskfile.yml
+    dir: .
+  info-on-arrival:
+    taskfile: ./info-on-arrival-service/Taskfile.yml
+    dir: .
+  location:
+    taskfile: ./location-service/Taskfile.yml
+    dir: .
+  mqtt-broker:
+    taskfile: ./mqtt-broker-service/Taskfile.yml
+    dir: .
+  notification:
+    taskfile: ./notification-service/Taskfile.yml
+    dir: .
+  rate-limiter:
+    taskfile: ./rate-limiter-service/Taskfile.yml
+    dir: .
+  redis-cache:
+    taskfile: ./redis-cache-service/Taskfile.yml
+    dir: .
+  redis:
+    taskfile: ./redis-service/Taskfile.yml
+    dir: .
+  reviews:
+    taskfile: ./reviews-service/Taskfile.yml
+    dir: .
+  security:
+    taskfile: ./security-service/Taskfile.yml
+    dir: .
+
+tasks:
+  default:
+    desc: "Run fmt + clippy on all backend services"
+    cmds:
+      - just -f Justfile
+
+  fmt:
+    desc: "Check formatting for all backend services"
+    cmds:
+      - just -f Justfile fmt
+
+  fmt-fix:
+    desc: "Fix formatting for all backend services"
+    cmds:
+      - just -f Justfile fmt-fix
+
+  clippy:
+    desc: "Run clippy on all backend services"
+    cmds:
+      - just -f Justfile clippy
+
+  test:
+    desc: "Run tests for all backend services"
+    cmds:
+      - just -f Justfile test
+
+  build:
+    desc: "Build all backend services"
+    cmds:
+      - just -f Justfile build
+
+  build-wasm:
+    desc: "Build all backend services for WASM"
+    cmds:
+      - just -f Justfile build-wasm
+
+  clean:
+    desc: "Clean all backend build artifacts"
+    cmds:
+      - just -f Justfile clean
+
+  ci:
+    desc: "Run full CI pipeline (fmt + clippy + test)"
+    cmds:
+      - just -f Justfile

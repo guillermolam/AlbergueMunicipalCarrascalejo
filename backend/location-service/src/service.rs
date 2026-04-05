@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use redis_service::{RedisService, RedisServiceError};
+use redis_service::RedisService;
 
 use crate::models::{CacheConfig, CacheEntry, CountryData, LocationServiceError};
 
@@ -13,6 +13,7 @@ pub struct CountryCache {
 }
 
 impl CountryCache {
+    #[must_use]
     pub fn new(redis: RedisService, cache_ttl: Duration) -> Self {
         Self {
             redis: Arc::new(redis),
@@ -24,14 +25,10 @@ impl CountryCache {
         &self,
         country_code: &str,
     ) -> Result<Option<CountryData>, LocationServiceError> {
-        let key = format!("country:{}", country_code);
+        let key = format!("country:{country_code}");
 
-        match self.redis.get(&key).await {
-            Ok(Some(data)) => {
-                let entry: CacheEntry = serde_json::from_str(&data).map_err(|e| {
-                    LocationServiceError::Cache(format!("Failed to deserialize cache entry: {}", e))
-                })?;
-
+        match self.redis.get_with_expiry::<_, CacheEntry>(&key).await {
+            Ok(Some(entry)) => {
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|_| {
                     LocationServiceError::Cache("System time is before UNIX_EPOCH".to_string())
                 })?;
@@ -42,10 +39,10 @@ impl CountryCache {
                 // Cache entry expired, fall through to return None
             }
             Err(e) => {
-                log::warn!("Failed to get country from cache: {}", e);
+                log::warn!("Failed to get country from cache: {e}");
                 // Continue to return None on cache miss
             }
-            _ => {}
+            Ok(None) => {}
         }
 
         Ok(None)
@@ -56,7 +53,7 @@ impl CountryCache {
         country_code: &str,
         country: &CountryData,
     ) -> Result<(), LocationServiceError> {
-        let key = format!("country:{}", country_code);
+        let key = format!("country:{country_code}");
         let entry = CacheEntry {
             data: country.clone(),
             timestamp: SystemTime::now()
@@ -67,12 +64,8 @@ impl CountryCache {
                 .as_secs(),
         };
 
-        let serialized = serde_json::to_string(&entry).map_err(|e| {
-            LocationServiceError::Cache(format!("Failed to serialize cache entry: {}", e))
-        })?;
-
         self.redis
-            .set_with_ttl(&key, &serialized, self.cache_ttl.as_secs() as u64)
+            .set_with_expiry(&key, &entry, self.cache_ttl)
             .await
             .map_err(|e| LocationServiceError::Redis(e.to_string()))?;
 
@@ -83,9 +76,9 @@ impl CountryCache {
         &self,
         country_code: &str,
     ) -> Result<(), LocationServiceError> {
-        let key = format!("country:{}", country_code);
+        let key = format!("country:{country_code}");
         self.redis
-            .delete_key(&key)
+            .delete(&key)
             .await
             .map_err(|e| LocationServiceError::Redis(e.to_string()))?;
         Ok(())
@@ -98,8 +91,15 @@ pub struct LocationService {
     cache_config: CacheConfig,
 }
 
+impl Default for LocationService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LocationService {
-    /// Create a new LocationService with default configuration
+    /// Create a new `LocationService` with default configuration
+    #[must_use]
     pub fn new() -> Self {
         Self {
             memory_cache: HashMap::new(),
@@ -108,7 +108,8 @@ impl LocationService {
         }
     }
 
-    /// Create a new LocationService with Redis caching
+    /// Create a new `LocationService` with Redis caching
+    #[must_use]
     pub fn with_redis(redis: RedisService, cache_config: Option<CacheConfig>) -> Self {
         let config = cache_config.unwrap_or_default();
         Self {
@@ -118,7 +119,8 @@ impl LocationService {
         }
     }
 
-    /// Create a new LocationService with memory caching only
+    /// Create a new `LocationService` with memory caching only
+    #[must_use]
     pub fn with_memory_cache(cache_config: Option<CacheConfig>) -> Self {
         let config = cache_config.unwrap_or_default();
         Self {
@@ -139,8 +141,8 @@ impl LocationService {
         if let Some(redis_cache) = &self.redis_cache {
             match redis_cache.get_country(&code).await {
                 Ok(Some(cached)) => return Ok(Some(cached)),
-                Err(e) => log::warn!("Redis cache error: {}", e),
-                _ => {}
+                Err(e) => log::warn!("Redis cache error: {e}"),
+                Ok(None) => {}
             }
         }
 
@@ -162,7 +164,9 @@ impl LocationService {
         let country_data = self.get_country_from_source(&code).await?;
 
         // Update all caches with new data
-        self.update_caches(&code, &country_data).await?;
+        if let Some(ref data) = country_data {
+            self.update_caches(&code, data).await?;
+        }
 
         Ok(country_data)
     }
@@ -173,11 +177,11 @@ impl LocationService {
         code: &str,
     ) -> Result<Option<CountryData>, LocationServiceError> {
         // This is a simplified example - in a real application, you would fetch from a database or API
-        match code.as_str() {
+        match code {
             "ES" => Ok(Some(CountryData {
                 code: "ES".to_string(),
                 name: "Spain".to_string(),
-                flag: Some("🇪🇸".to_string()),
+                flag: Some("\u{1f1ea}\u{1f1f8}".to_string()),
                 phone_prefix: Some("+34".to_string()),
                 calling_code: Some("+34".to_string()),
                 continent: Some("Europe".to_string()),
@@ -209,12 +213,12 @@ impl LocationService {
         };
 
         // Update in-memory cache
-        self.memory_cache.insert(code.to_string(), entry.clone());
+        self.memory_cache.insert(code.to_string(), entry);
 
         // Update Redis cache if enabled
         if let Some(redis_cache) = &self.redis_cache {
             if let Err(e) = redis_cache.set_country(code, data).await {
-                log::error!("Failed to update Redis cache: {}", e);
+                log::error!("Failed to update Redis cache: {e}");
             }
         }
 
@@ -233,7 +237,7 @@ impl LocationService {
     pub async fn clear_cache(&mut self) -> Result<(), LocationServiceError> {
         self.memory_cache.clear();
 
-        if let Some(redis_cache) = &self.redis_cache {
+        if self.redis_cache.is_some() {
             // In a real implementation, you might want to clear all country keys
             // This is a simplified version that doesn't clear the entire Redis cache
             log::info!("Memory cache cleared. Note: Redis cache was not cleared to avoid affecting other services.");
@@ -246,7 +250,7 @@ impl LocationService {
 
     /// Clear cache for a specific country
     pub async fn clear_country_cache(
-        &self,
+        &mut self,
         country_code: &str,
     ) -> Result<(), LocationServiceError> {
         let code = country_code.to_uppercase();
@@ -263,28 +267,22 @@ impl LocationService {
     }
 
     /// Get the number of items in the in-memory cache
+    #[must_use]
     pub fn cache_size(&self) -> usize {
         self.memory_cache.len()
     }
 
     /// Check if a country is cached (in-memory only)
+    #[must_use]
     pub fn is_cached(&self, code: &str) -> bool {
-        if let Some(entry) = self.memory_cache.get(&code.to_uppercase()) {
-            let now = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .ok()
-                .map(|d| d.as_secs())
-                .unwrap_or(0);
-            now - entry.timestamp < self.cache_config.ttl.as_secs()
-        } else {
-            false
-        }
-    }
-}
-
-#[cfg(test)]
-impl Default for LocationService {
-    fn default() -> Self {
-        Self::new()
+        self.memory_cache
+            .get(&code.to_uppercase())
+            .is_some_and(|entry| {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .ok()
+                    .map_or(0, |d| d.as_secs());
+                now - entry.timestamp < self.cache_config.ttl.as_secs()
+            })
     }
 }
