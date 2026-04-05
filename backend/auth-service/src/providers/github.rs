@@ -14,6 +14,7 @@ impl IdentityProvider for GitHubProvider {
         "github"
     }
 
+    #[tracing::instrument(skip(self))]
     fn authorization_url(&self, state: &str) -> String {
         let mut url = url::Url::parse("https://github.com/login/oauth/authorize").unwrap();
         url.query_pairs_mut()
@@ -24,6 +25,7 @@ impl IdentityProvider for GitHubProvider {
         url.to_string()
     }
 
+    #[tracing::instrument(skip(self, code))]
     async fn exchange_code(&self, code: &str, redirect_uri: &str) -> anyhow::Result<TokenResponse> {
         let token_url = "https://github.com/login/oauth/access_token";
 
@@ -71,6 +73,7 @@ impl IdentityProvider for GitHubProvider {
         Ok(token_resp)
     }
 
+    #[tracing::instrument(skip(self, _refresh_token))]
     async fn refresh_token(&self, _refresh_token: &str) -> anyhow::Result<TokenResponse> {
         Err(anyhow::anyhow!("GitHub refresh token not implemented"))
     }

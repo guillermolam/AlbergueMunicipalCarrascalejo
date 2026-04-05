@@ -32,7 +32,7 @@ pub struct AppConfig {
 unsafe impl Send for AppConfig {}
 unsafe impl Sync for AppConfig {}
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 pub struct TokenResponse {
     pub access_token: String,
@@ -42,7 +42,7 @@ pub struct TokenResponse {
     pub token_type: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
@@ -50,6 +50,7 @@ pub struct Claims {
     pub iss: String,
 }
 
+#[tracing::instrument]
 pub async fn load_config() -> anyhow::Result<AppConfig> {
     let mut providers: Vec<Arc<dyn IdentityProvider>> = Vec::new();
 
@@ -111,6 +112,7 @@ pub async fn load_config() -> anyhow::Result<AppConfig> {
     })
 }
 
+#[tracing::instrument]
 async fn discover_oidc(issuer: &str) -> anyhow::Result<CoreProviderMetadata> {
     let http = |req: openidconnect::HttpRequest| async move {
         let method = match *req.method() {

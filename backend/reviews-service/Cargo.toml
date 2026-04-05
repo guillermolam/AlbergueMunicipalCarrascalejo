@@ -10,6 +10,7 @@ serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
+tracing = "0.1"
 
 # Cloudflare Workers SDK
 worker = "0.7.5"

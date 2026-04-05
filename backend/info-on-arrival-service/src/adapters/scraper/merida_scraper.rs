@@ -19,6 +19,7 @@ impl MeridaScraperAdapter {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn scrape_url(&self, url: &str) -> AlbergueResult<String> {
         #[cfg(target_arch = "wasm32")]
         {
@@ -70,6 +71,7 @@ impl MeridaScraperAdapter {
 
 #[async_trait]
 impl ScraperPort for MeridaScraperAdapter {
+    #[tracing::instrument(skip(self))]
     async fn scrape_merida_attractions(&self) -> AlbergueResult<ScrapedContent> {
         let url = "https://www.consorciomerida.org/";
 
@@ -105,6 +107,7 @@ impl ScraperPort for MeridaScraperAdapter {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn scrape_carrascalejo_info(&self) -> AlbergueResult<ScrapedContent> {
         // Static content for Carrascalejo since it's a small village with limited web presence
         Ok(ScrapedContent {
@@ -120,6 +123,7 @@ impl ScraperPort for MeridaScraperAdapter {
         })
     }
 
+    #[tracing::instrument(skip(self))]
     async fn scrape_weather_info(&self, location: &str) -> AlbergueResult<ScrapedContent> {
         let url = format!(
             "https://www.aemet.es/es/eltiempo/prediccion/municipios/{}",
@@ -141,6 +145,7 @@ impl ScraperPort for MeridaScraperAdapter {
         })
     }
 
+    #[tracing::instrument(skip(self))]
     async fn scrape_local_events(&self, location: &str) -> AlbergueResult<ScrapedContent> {
         // Mock local events data
         Ok(ScrapedContent {
@@ -155,6 +160,7 @@ impl ScraperPort for MeridaScraperAdapter {
         })
     }
 
+    #[tracing::instrument(skip(self))]
     async fn scrape_restaurants(&self) -> AlbergueResult<Vec<ScrapedContent>> {
         let url = "https://turismomerida.org/donde-comer/";
 
@@ -202,6 +208,7 @@ impl ScraperPort for MeridaScraperAdapter {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn scrape_taxi_services(&self) -> AlbergueResult<Vec<ScrapedContent>> {
         let urls = vec![
             "https://www.radiotaximerida.es/",
@@ -244,6 +251,7 @@ impl ScraperPort for MeridaScraperAdapter {
         Ok(services)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn scrape_car_rentals(&self) -> AlbergueResult<Vec<ScrapedContent>> {
         let rental_urls = vec![
             (

@@ -13,6 +13,7 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::info;
 use worker::{event, Context, Env, Method, Request, Response, Result};
 
 #[derive(Serialize, Deserialize)]
@@ -55,6 +56,7 @@ struct EncryptionResult {
     timestamp: u64,
 }
 
+#[tracing::instrument(skip(content), fields(content_len = content.len()))]
 fn detect_xss_patterns(content: &str) -> Vec<ThreatDetail> {
     let xss_patterns = [
         (r"<script[^>]*>", "Script injection", "high"),
@@ -83,6 +85,7 @@ fn detect_xss_patterns(content: &str) -> Vec<ThreatDetail> {
     threats
 }
 
+#[tracing::instrument(skip(content), fields(content_len = content.len()))]
 fn detect_sql_injection(content: &str) -> Vec<ThreatDetail> {
     let sql_patterns = [
         (r"(?i)union\s+select", "UNION SELECT injection", "high"),
@@ -115,6 +118,7 @@ fn detect_sql_injection(content: &str) -> Vec<ThreatDetail> {
     threats
 }
 
+#[tracing::instrument(skip(content), fields(content_len = content.len()))]
 fn detect_malware_signatures(content: &str) -> Vec<ThreatDetail> {
     let malware_patterns = [
         (r"(?i)cmd\.exe", "Command execution", "high"),
@@ -143,7 +147,9 @@ fn detect_malware_signatures(content: &str) -> Vec<ThreatDetail> {
     threats
 }
 
-fn perform_comprehensive_scan(content: &str, _scan_type: &str) -> SecurityScanResult {
+#[tracing::instrument(skip(content), fields(content_len = content.len()))]
+fn perform_comprehensive_scan(content: &str, scan_type: &str) -> SecurityScanResult {
+    let _ = scan_type;
     let xss_threats = detect_xss_patterns(content);
     let sql_threats = detect_sql_injection(content);
     let malware_threats = detect_malware_signatures(content);
@@ -183,6 +189,7 @@ fn perform_comprehensive_scan(content: &str, _scan_type: &str) -> SecurityScanRe
     }
 }
 
+#[tracing::instrument(skip(content), fields(content_len = content.len()))]
 fn calculate_entropy(content: &str) -> f64 {
     if content.is_empty() {
         return 0.0;
@@ -238,6 +245,7 @@ fn calculate_confidence_score(threats: &[ThreatDetail], content: &str) -> f64 {
     (base_confidence + content_length_factor * 0.1 + threat_diversity * 0.05).min(0.99)
 }
 
+#[tracing::instrument(skip(data))]
 fn perform_encryption(data: &str, key_id: Option<String>) -> EncryptionResult {
     let actual_key_id = key_id.unwrap_or_else(|| "default-key-2024".to_string());
 
@@ -260,6 +268,7 @@ fn perform_encryption(data: &str, key_id: Option<String>) -> EncryptionResult {
 async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     let method = req.method();
     let path = req.path();
+    info!(method = ?method, path = %path, "Incoming security request");
 
     let mut response = match (method, path.as_str()) {
         (Method::Post, "/security/scan") => handle_security_scan(&mut req).await,
@@ -365,4 +374,340 @@ fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
         .headers_mut()
         .set("content-type", "application/json")?;
     Ok(response.with_status(status))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── detect_xss_patterns ──────────────────────────────────────────
+
+    #[test]
+    fn xss_detects_script_tag() {
+        let threats = detect_xss_patterns("<script>alert('xss')</script>");
+        assert!(!threats.is_empty());
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("Script injection")));
+    }
+
+    #[test]
+    fn xss_detects_event_handler() {
+        let threats = detect_xss_patterns(r#"<img onerror="alert(1)">"#);
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("Event handler")));
+    }
+
+    #[test]
+    fn xss_detects_javascript_uri() {
+        let threats = detect_xss_patterns("javascript:alert(document.cookie)");
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("JavaScript URL")));
+    }
+
+    #[test]
+    fn xss_detects_iframe_injection() {
+        let threats = detect_xss_patterns(r#"<iframe src="evil.com"></iframe>"#);
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("Iframe injection")));
+    }
+
+    #[test]
+    fn xss_detects_eval() {
+        let threats = detect_xss_patterns("eval('malicious code')");
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("Eval function")));
+    }
+
+    #[test]
+    fn xss_clean_input_returns_empty() {
+        let threats = detect_xss_patterns("Hello, this is a perfectly clean string.");
+        assert!(threats.is_empty());
+    }
+
+    // ── detect_sql_injection ─────────────────────────────────────────
+
+    #[test]
+    fn sql_detects_union_select() {
+        let threats = detect_sql_injection("1 UNION SELECT * FROM users");
+        assert!(!threats.is_empty());
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("UNION SELECT")));
+    }
+
+    #[test]
+    fn sql_detects_boolean_injection() {
+        let threats = detect_sql_injection("' or '1'='1");
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("Boolean-based")));
+    }
+
+    #[test]
+    fn sql_detects_drop_table() {
+        let threats = detect_sql_injection("; DROP TABLE users");
+        assert!(threats.iter().any(|t| t.threat_type.contains("DROP TABLE")));
+    }
+
+    #[test]
+    fn sql_detects_load_file() {
+        let threats = detect_sql_injection("load_file('/etc/passwd')");
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("File disclosure")));
+    }
+
+    #[test]
+    fn sql_clean_input_returns_empty() {
+        let threats = detect_sql_injection("SELECT name FROM users WHERE id = 5");
+        assert!(threats.is_empty());
+    }
+
+    // ── detect_malware_signatures ────────────────────────────────────
+
+    #[test]
+    fn malware_detects_cmd_exe() {
+        let threats = detect_malware_signatures("run cmd.exe /c dir");
+        assert!(threats.iter().any(|t| t.threat_type.contains("Command")));
+    }
+
+    #[test]
+    fn malware_detects_powershell() {
+        let threats = detect_malware_signatures("powershell -encodedcommand abc");
+        assert!(threats.iter().any(|t| t.threat_type.contains("PowerShell")));
+    }
+
+    #[test]
+    fn malware_detects_shell_fn() {
+        let threats = detect_malware_signatures("shell_exec('rm -rf /')");
+        assert!(threats.iter().any(|t| t.threat_type.contains("Shell")));
+    }
+
+    #[test]
+    fn malware_detects_system_call() {
+        let threats = detect_malware_signatures("system('whoami')");
+        assert!(threats
+            .iter()
+            .any(|t| t.threat_type.contains("System command")));
+    }
+
+    #[test]
+    fn malware_clean_input_returns_empty() {
+        let threats = detect_malware_signatures("This is a normal document about cooking.");
+        assert!(threats.is_empty());
+    }
+
+    // ── perform_comprehensive_scan ───────────────────────────────────
+
+    #[test]
+    fn comprehensive_scan_detects_mixed_threats() {
+        let result = perform_comprehensive_scan(
+            "<script>alert(1)</script> UNION SELECT * FROM users; cmd.exe",
+            "comprehensive",
+        );
+        assert_eq!(result.status, "threats_detected");
+        assert!(result.threats_detected >= 3);
+        assert_ne!(result.risk_level, "clean");
+    }
+
+    #[test]
+    fn comprehensive_scan_clean_input() {
+        let result =
+            perform_comprehensive_scan("A perfectly normal paragraph of text.", "comprehensive");
+        assert_eq!(result.status, "clean");
+        assert_eq!(result.threats_detected, 0);
+        assert_eq!(result.risk_level, "clean");
+    }
+
+    #[test]
+    fn comprehensive_scan_empty_input() {
+        let result = perform_comprehensive_scan("", "comprehensive");
+        assert_eq!(result.status, "clean");
+        assert_eq!(result.threats_detected, 0);
+    }
+
+    // ── calculate_entropy ────────────────────────────────────────────
+
+    #[test]
+    fn entropy_empty_string_is_zero() {
+        let e = calculate_entropy("");
+        assert!((e - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn entropy_single_repeated_char_is_zero() {
+        let e = calculate_entropy("aaaaaaaaaa");
+        assert!((e - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn entropy_high_for_random_content() {
+        let e = calculate_entropy("aB3$xZ9!qW7@mN5&");
+        assert!(e > 3.0, "Expected high entropy, got {e}");
+    }
+
+    #[test]
+    fn entropy_moderate_for_normal_text() {
+        let e = calculate_entropy("hello world");
+        assert!(e > 0.0);
+        assert!(e < 5.0);
+    }
+
+    // ── determine_risk_level ─────────────────────────────────────────
+
+    #[test]
+    fn risk_level_critical_when_critical_threat() {
+        let threats = vec![ThreatDetail {
+            threat_type: "test".into(),
+            severity: "critical".into(),
+            description: "test".into(),
+            location: None,
+            recommendation: "test".into(),
+        }];
+        assert_eq!(determine_risk_level(&threats), "critical");
+    }
+
+    #[test]
+    fn risk_level_high_when_two_high_threats() {
+        let threats = vec![
+            ThreatDetail {
+                threat_type: "a".into(),
+                severity: "high".into(),
+                description: "a".into(),
+                location: None,
+                recommendation: "a".into(),
+            },
+            ThreatDetail {
+                threat_type: "b".into(),
+                severity: "high".into(),
+                description: "b".into(),
+                location: None,
+                recommendation: "b".into(),
+            },
+        ];
+        assert_eq!(determine_risk_level(&threats), "high");
+    }
+
+    #[test]
+    fn risk_level_medium_when_one_high_threat() {
+        let threats = vec![ThreatDetail {
+            threat_type: "a".into(),
+            severity: "high".into(),
+            description: "a".into(),
+            location: None,
+            recommendation: "a".into(),
+        }];
+        assert_eq!(determine_risk_level(&threats), "medium");
+    }
+
+    #[test]
+    fn risk_level_medium_when_three_medium_threats() {
+        let threats: Vec<ThreatDetail> = (0..3)
+            .map(|i| ThreatDetail {
+                threat_type: format!("t{i}"),
+                severity: "medium".into(),
+                description: "d".into(),
+                location: None,
+                recommendation: "r".into(),
+            })
+            .collect();
+        assert_eq!(determine_risk_level(&threats), "medium");
+    }
+
+    #[test]
+    fn risk_level_low_when_one_medium_threat() {
+        let threats = vec![ThreatDetail {
+            threat_type: "a".into(),
+            severity: "medium".into(),
+            description: "a".into(),
+            location: None,
+            recommendation: "a".into(),
+        }];
+        assert_eq!(determine_risk_level(&threats), "low");
+    }
+
+    #[test]
+    fn risk_level_clean_when_no_threats() {
+        let threats: Vec<ThreatDetail> = vec![];
+        assert_eq!(determine_risk_level(&threats), "clean");
+    }
+
+    // ── calculate_confidence_score ───────────────────────────────────
+
+    #[test]
+    fn confidence_high_when_no_threats() {
+        let score = calculate_confidence_score(&[], "some content");
+        assert!((score - 0.95).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_with_threats_above_base() {
+        let threats = vec![ThreatDetail {
+            threat_type: "XSS".into(),
+            severity: "high".into(),
+            description: "d".into(),
+            location: None,
+            recommendation: "r".into(),
+        }];
+        let score = calculate_confidence_score(&threats, "short");
+        assert!(score >= 0.8);
+        assert!(score <= 0.99);
+    }
+
+    #[test]
+    fn confidence_capped_at_099() {
+        let threats: Vec<ThreatDetail> = (0..20)
+            .map(|i| ThreatDetail {
+                threat_type: format!("type_{i}"),
+                severity: "high".into(),
+                description: "d".into(),
+                location: None,
+                recommendation: "r".into(),
+            })
+            .collect();
+        let long_content = "x".repeat(5000);
+        let score = calculate_confidence_score(&threats, &long_content);
+        assert!((score - 0.99).abs() < f64::EPSILON);
+    }
+
+    // ── perform_encryption ───────────────────────────────────────────
+
+    #[test]
+    fn encryption_returns_base64_encoded_data() {
+        let result = perform_encryption("hello", None);
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(&result.encrypted_data)
+            .expect("should be valid base64");
+        let decoded_str = String::from_utf8(decoded).expect("should be valid utf-8");
+        assert_eq!(decoded_str, "encrypted:hello");
+    }
+
+    #[test]
+    fn encryption_uses_default_key_id() {
+        let result = perform_encryption("data", None);
+        assert_eq!(result.key_id, "default-key-2024");
+    }
+
+    #[test]
+    fn encryption_uses_provided_key_id() {
+        let result = perform_encryption("data", Some("my-custom-key".to_string()));
+        assert_eq!(result.key_id, "my-custom-key");
+    }
+
+    #[test]
+    fn encryption_algorithm_is_aes256gcm() {
+        let result = perform_encryption("data", None);
+        assert_eq!(result.algorithm, "AES-256-GCM");
+    }
+
+    #[test]
+    fn encryption_timestamp_is_nonzero() {
+        let result = perform_encryption("data", None);
+        assert!(result.timestamp > 0);
+    }
 }

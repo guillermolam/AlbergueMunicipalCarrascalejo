@@ -8,6 +8,7 @@ impl NodemailerAdapter {
         Self
     }
 
+    #[tracing::instrument(skip(self, notification))]
     pub async fn send_email(&self, notification: &Notification) -> Result<(String, String)> {
         Ok((notification.id.to_string(), "sent".to_string()))
     }

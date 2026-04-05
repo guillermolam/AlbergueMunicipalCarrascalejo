@@ -99,6 +99,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "tokio",
+ "tracing",
  "url",
  "uuid",
  "worker",
@@ -163,12 +164,15 @@ name = "booking-service"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "chrono",
  "serde",
  "serde_json",
  "shared",
  "sqlx",
  "thiserror 2.0.18",
+ "tokio",
+ "tracing",
  "uuid",
  "worker",
 ]
@@ -488,6 +492,8 @@ dependencies = [
  "serde_json",
  "shared",
  "thiserror 2.0.18",
+ "tokio",
+ "tracing",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1696,6 +1702,8 @@ dependencies = [
  "chrono",
  "serde",
  "serde_json",
+ "tokio",
+ "tracing",
  "worker",
 ]
 
@@ -1741,6 +1749,7 @@ dependencies = [
  "shared",
  "thiserror 1.0.69",
  "tokio",
+ "tracing",
  "uuid",
  "worker",
 ]
@@ -2312,6 +2321,7 @@ dependencies = [
  "serde_json",
  "shared",
  "thiserror 2.0.18",
+ "tracing",
  "worker",
 ]
 
@@ -2473,6 +2483,7 @@ dependencies = [
  "serde_json",
  "shared",
  "thiserror 1.0.69",
+ "tracing",
  "uuid",
  "worker",
 ]
@@ -2724,6 +2735,7 @@ dependencies = [
  "serde_json",
  "shared",
  "thiserror 2.0.18",
+ "tracing",
  "uuid",
  "worker",
 ]
@@ -2897,6 +2909,7 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
  "uuid",
  "worker",
 ]

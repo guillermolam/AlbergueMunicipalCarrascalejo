@@ -45,28 +45,29 @@ pub mod domain;
 pub mod infrastructure;
 pub mod ports;
 
-#[derive(Serialize, Deserialize)]
-struct DocumentValidationResult {
-    status: String,
-    confidence: Option<f64>,
-    checksum_valid: Option<bool>,
-    mrz_valid: Option<bool>,
-    extracted_data: Option<serde_json::Value>,
-    errors: Vec<String>,
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct DocumentValidationResult {
+    pub status: String,
+    pub confidence: Option<f64>,
+    pub checksum_valid: Option<bool>,
+    pub mrz_valid: Option<bool>,
+    pub extracted_data: Option<serde_json::Value>,
+    pub errors: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    warning: Option<String>,
+    pub warning: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    stub: Option<bool>,
+    pub stub: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize)]
-struct DocumentValidationRequest {
-    document_type: String,
-    document_number: String,
-    image_data: Option<String>,
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct DocumentValidationRequest {
+    pub document_type: String,
+    pub document_number: String,
+    pub image_data: Option<String>,
 }
 
-fn validate_dni_checksum(dni: &str) -> bool {
+#[tracing::instrument(skip_all, fields(dni_len = dni.len()))]
+pub fn validate_dni_checksum(dni: &str) -> bool {
     if dni.len() != 9 {
         return false;
     }
@@ -81,7 +82,8 @@ fn validate_dni_checksum(dni: &str) -> bool {
     })
 }
 
-fn validate_nie_format(nie: &str) -> bool {
+#[tracing::instrument(skip_all, fields(nie_len = nie.len()))]
+pub fn validate_nie_format(nie: &str) -> bool {
     if nie.len() != 9 {
         return false;
     }
@@ -90,14 +92,15 @@ fn validate_nie_format(nie: &str) -> bool {
     matches!(first_char, 'X' | 'Y' | 'Z')
 }
 
-fn validate_passport_mrz(mrz: &str) -> bool {
+#[tracing::instrument(skip_all, fields(mrz_lines))]
+pub fn validate_passport_mrz(mrz: &str) -> bool {
     let lines: Vec<&str> = mrz.lines().collect();
     matches!(lines.len(), 2 | 3) && lines.iter().all(|line| line.len() >= 30)
 }
 
 // TODO: Implement real OCR processing via Cloudflare Workers AI or external API
 async fn process_ocr_document(_image_data: &str) -> Result<serde_json::Value> {
-    console_log!("[WARN] OCR processing is a stub - returning fixture data");
+    tracing::warn!("OCR processing is a stub - returning fixture data");
     Ok(serde_json::json!({
         "stub": true,
         "warning": "Stub implementation - OCR processing not performed",
@@ -110,6 +113,7 @@ async fn process_ocr_document(_image_data: &str) -> Result<serde_json::Value> {
     }))
 }
 
+#[tracing::instrument(skip_all, fields(doc_type = %req_data.document_type))]
 async fn validate_document_comprehensive(
     req_data: DocumentValidationRequest,
 ) -> Result<DocumentValidationResult> {
@@ -169,7 +173,9 @@ async fn validate_document_comprehensive(
                 None
             };
 
-            console_log!("[WARN] Passport comprehensive validation is a stub - returning hardcoded valid status");
+            tracing::warn!(
+                "Passport comprehensive validation is a stub - returning hardcoded valid status"
+            );
             DocumentValidationResult {
                 status: "valid".to_string(),
                 confidence: Some(0.88),
@@ -303,7 +309,7 @@ async fn handle_nie_validation(req: &mut Request) -> Result<Response> {
 async fn handle_passport_validation(req: &mut Request) -> Result<Response> {
     let _body = req.text().await?;
 
-    console_log!("[WARN] Passport validation is a stub - returning hardcoded valid result");
+    tracing::warn!("Passport validation is a stub - returning hardcoded valid result");
     let result = DocumentValidationResult {
         status: "valid".to_string(),
         confidence: Some(0.88),
@@ -316,4 +322,294 @@ async fn handle_passport_validation(req: &mut Request) -> Result<Response> {
     };
 
     build_validation_response(&result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- validate_dni_checksum tests ---
+
+    #[test]
+    fn test_dni_checksum_valid_12345678z() {
+        // 12345678 % 23 = 14 -> letter at index 14 is 'Z'
+        assert!(validate_dni_checksum("12345678Z"));
+    }
+
+    #[test]
+    fn test_dni_checksum_valid_00000000t() {
+        // 0 % 23 = 0 -> letter at index 0 is 'T'
+        assert!(validate_dni_checksum("00000000T"));
+    }
+
+    #[test]
+    fn test_dni_checksum_valid_00000023t() {
+        // 23 % 23 = 0 -> 'T'
+        assert!(validate_dni_checksum("00000023T"));
+    }
+
+    #[test]
+    fn test_dni_checksum_valid_99999999r() {
+        // 99999999 % 23 = 99999999 mod 23 = let's compute: 99999999/23=4347826 rem 1 -> index 1 = 'R'
+        assert!(validate_dni_checksum("99999999R"));
+    }
+
+    #[test]
+    fn test_dni_checksum_invalid_wrong_letter() {
+        // 12345678 -> Z is correct, A is wrong
+        assert!(!validate_dni_checksum("12345678A"));
+    }
+
+    #[test]
+    fn test_dni_checksum_too_short() {
+        assert!(!validate_dni_checksum("1234567Z"));
+    }
+
+    #[test]
+    fn test_dni_checksum_too_long() {
+        assert!(!validate_dni_checksum("123456789Z"));
+    }
+
+    #[test]
+    fn test_dni_checksum_empty() {
+        assert!(!validate_dni_checksum(""));
+    }
+
+    #[test]
+    fn test_dni_checksum_non_numeric_prefix() {
+        assert!(!validate_dni_checksum("ABCDEFGHZ"));
+    }
+
+    #[test]
+    fn test_dni_checksum_lowercase_letter() {
+        // lowercase 'z' should not match uppercase 'Z'
+        assert!(!validate_dni_checksum("12345678z"));
+    }
+
+    // --- validate_nie_format tests ---
+
+    #[test]
+    fn test_nie_format_valid_x() {
+        assert!(validate_nie_format("X1234567A"));
+    }
+
+    #[test]
+    fn test_nie_format_valid_y() {
+        assert!(validate_nie_format("Y1234567B"));
+    }
+
+    #[test]
+    fn test_nie_format_valid_z() {
+        assert!(validate_nie_format("Z1234567C"));
+    }
+
+    #[test]
+    fn test_nie_format_invalid_prefix_a() {
+        assert!(!validate_nie_format("A1234567Z"));
+    }
+
+    #[test]
+    fn test_nie_format_too_short() {
+        assert!(!validate_nie_format("X123456"));
+    }
+
+    #[test]
+    fn test_nie_format_too_long() {
+        assert!(!validate_nie_format("X123456789"));
+    }
+
+    #[test]
+    fn test_nie_format_empty() {
+        assert!(!validate_nie_format(""));
+    }
+
+    #[test]
+    fn test_nie_format_lowercase_prefix() {
+        assert!(!validate_nie_format("x1234567A"));
+    }
+
+    // --- validate_passport_mrz tests ---
+
+    #[test]
+    fn test_mrz_valid_two_lines() {
+        let mrz = "P<ESPGARCIA<<JUAN<<<<<<<<<<<<<<<<<<<<<<<<<<\n1234567890ESP9001011M3012315<<<<<<<<<<<<<<02";
+        assert!(validate_passport_mrz(mrz));
+    }
+
+    #[test]
+    fn test_mrz_valid_three_lines() {
+        let mrz = "I<ESP12345678901234<<<<<<<<<<<<\n9001011M3012315ESP<<<<<<<<<<<<0\nGARCIA<<JUAN<<<<<<<<<<<<<<<<<<";
+        assert!(validate_passport_mrz(mrz));
+    }
+
+    #[test]
+    fn test_mrz_invalid_single_line() {
+        assert!(!validate_passport_mrz(
+            "P<ESPGARCIA<<JUAN<<<<<<<<<<<<<<<<<<<<<<<<<<"
+        ));
+    }
+
+    #[test]
+    fn test_mrz_invalid_short_lines() {
+        let mrz = "SHORT\nLINES";
+        assert!(!validate_passport_mrz(mrz));
+    }
+
+    #[test]
+    fn test_mrz_empty() {
+        assert!(!validate_passport_mrz(""));
+    }
+
+    // --- DocumentValidationResult serialization tests ---
+
+    #[test]
+    fn test_result_serialization_full() {
+        let result = DocumentValidationResult {
+            status: "valid".to_string(),
+            confidence: Some(0.95),
+            checksum_valid: Some(true),
+            mrz_valid: Some(false),
+            extracted_data: None,
+            errors: vec![],
+            warning: Some("test warning".to_string()),
+            stub: Some(true),
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        let deserialized: DocumentValidationResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.status, "valid");
+        assert_eq!(deserialized.confidence, Some(0.95));
+        assert_eq!(deserialized.checksum_valid, Some(true));
+        assert_eq!(deserialized.warning, Some("test warning".to_string()));
+    }
+
+    #[test]
+    fn test_result_serialization_skip_none_warning() {
+        let result = DocumentValidationResult {
+            status: "valid".to_string(),
+            confidence: Some(0.95),
+            checksum_valid: Some(true),
+            mrz_valid: None,
+            extracted_data: None,
+            errors: vec![],
+            warning: None,
+            stub: None,
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(!json.contains("warning"));
+        assert!(!json.contains("stub"));
+    }
+
+    // --- DocumentValidationRequest deserialization tests ---
+
+    #[test]
+    fn test_request_deserialization() {
+        let json = r#"{"document_type":"dni","document_number":"12345678Z","image_data":null}"#;
+        let req: DocumentValidationRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(req.document_type, "dni");
+        assert_eq!(req.document_number, "12345678Z");
+        assert!(req.image_data.is_none());
+    }
+
+    #[test]
+    fn test_request_deserialization_with_image() {
+        let json =
+            r#"{"document_type":"nie","document_number":"X1234567A","image_data":"base64data"}"#;
+        let req: DocumentValidationRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(req.document_type, "nie");
+        assert_eq!(req.image_data, Some("base64data".to_string()));
+    }
+
+    #[test]
+    fn test_request_roundtrip() {
+        let original = DocumentValidationRequest {
+            document_type: "passport".to_string(),
+            document_number: "ABC123456".to_string(),
+            image_data: None,
+        };
+        let json = serde_json::to_string(&original).unwrap();
+        let deserialized: DocumentValidationRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(original, deserialized);
+    }
+
+    // --- validate_document_comprehensive tests (async, via tokio) ---
+
+    #[tokio::test]
+    async fn test_comprehensive_valid_dni() {
+        let req = DocumentValidationRequest {
+            document_type: "dni".to_string(),
+            document_number: "12345678Z".to_string(),
+            image_data: None,
+        };
+        let result = validate_document_comprehensive(req).await.unwrap();
+        assert_eq!(result.status, "valid");
+        assert_eq!(result.checksum_valid, Some(true));
+        assert!(result.errors.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_comprehensive_invalid_dni() {
+        let req = DocumentValidationRequest {
+            document_type: "dni".to_string(),
+            document_number: "12345678A".to_string(),
+            image_data: None,
+        };
+        let result = validate_document_comprehensive(req).await.unwrap();
+        assert_eq!(result.status, "invalid");
+        assert_eq!(result.checksum_valid, Some(false));
+        assert!(result.errors.contains(&"Invalid DNI checksum".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_comprehensive_valid_nie() {
+        let req = DocumentValidationRequest {
+            document_type: "nie".to_string(),
+            document_number: "X1234567A".to_string(),
+            image_data: None,
+        };
+        let result = validate_document_comprehensive(req).await.unwrap();
+        assert_eq!(result.status, "valid");
+        assert_eq!(result.checksum_valid, Some(true));
+    }
+
+    #[tokio::test]
+    async fn test_comprehensive_invalid_nie() {
+        let req = DocumentValidationRequest {
+            document_type: "nie".to_string(),
+            document_number: "A1234567Z".to_string(),
+            image_data: None,
+        };
+        let result = validate_document_comprehensive(req).await.unwrap();
+        assert_eq!(result.status, "invalid");
+        assert!(result.errors.contains(&"Invalid NIE format".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_comprehensive_passport_no_image() {
+        let req = DocumentValidationRequest {
+            document_type: "passport".to_string(),
+            document_number: "ABC123456".to_string(),
+            image_data: None,
+        };
+        let result = validate_document_comprehensive(req).await.unwrap();
+        assert_eq!(result.status, "valid");
+        assert_eq!(result.stub, Some(true));
+        assert!(result.warning.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_comprehensive_unsupported_type() {
+        let req = DocumentValidationRequest {
+            document_type: "driving_license".to_string(),
+            document_number: "DL12345".to_string(),
+            image_data: None,
+        };
+        let result = validate_document_comprehensive(req).await.unwrap();
+        assert_eq!(result.status, "invalid");
+        assert!(result
+            .errors
+            .contains(&"Unsupported document type".to_string()));
+        assert!(result.confidence.is_none());
+    }
 }

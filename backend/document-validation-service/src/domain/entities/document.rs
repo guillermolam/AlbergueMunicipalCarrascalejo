@@ -40,6 +40,7 @@ impl Document {
     }
 
     // Async method for comprehensive validation
+    #[tracing::instrument(skip(self), fields(doc_type = ?self.document_type, doc_number = %self.document_number))]
     pub async fn validate_comprehensive(
         &self,
     ) -> Result<DocumentValidationResult, Box<dyn std::error::Error + Send + Sync>> {
@@ -97,6 +98,7 @@ impl Document {
         Ok(validation_result)
     }
 
+    #[tracing::instrument(skip(self), fields(doc_type = ?self.document_type))]
     pub fn validate_checksum(&self) -> bool {
         match self.document_type {
             DocumentType::DNI => self.validate_dni_checksum(),
@@ -125,7 +127,7 @@ pub struct DocumentValidationResult {
 }
 
 // Stateless pure function for DNI checksum validation (sync)
-fn validate_dni_checksum_sync(dni: &str) -> bool {
+pub fn validate_dni_checksum_sync(dni: &str) -> bool {
     if dni.len() != 9 {
         return false;
     }
@@ -164,7 +166,7 @@ async fn validate_dni_format_async(dni: &str) -> bool {
 }
 
 // Stateless pure function for NIE checksum validation (sync)
-fn validate_nie_checksum_sync(nie: &str) -> bool {
+pub fn validate_nie_checksum_sync(nie: &str) -> bool {
     if nie.len() != 9 {
         return false;
     }
@@ -219,4 +221,180 @@ pub async fn validate_multiple_documents(
         results.push(doc.validate_comprehensive().await?);
     }
     Ok(results)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{Duration, Utc};
+
+    fn make_extracted_data(doc_number: &str) -> ExtractedData {
+        ExtractedData {
+            document_number: Some(doc_number.to_string()),
+            name: Some("Juan".to_string()),
+            surname: Some("Garcia".to_string()),
+            birth_date: Some(Utc::now()),
+            nationality: Some("ESP".to_string()),
+            expiry_date: None,
+        }
+    }
+
+    // --- Document::new tests ---
+
+    #[test]
+    fn test_document_new_sets_fields() {
+        let data = make_extracted_data("12345678Z");
+        let doc = Document::new(DocumentType::DNI, data, true);
+        assert_eq!(doc.document_number, "12345678Z");
+        assert_eq!(doc.holder_name, "Juan");
+        assert_eq!(doc.holder_surname, "Garcia");
+        assert!(doc.is_valid);
+    }
+
+    #[test]
+    fn test_document_new_defaults_for_missing_fields() {
+        let data = ExtractedData::default();
+        let doc = Document::new(DocumentType::NIE, data, false);
+        assert_eq!(doc.document_number, "");
+        assert_eq!(doc.holder_name, "");
+        assert!(!doc.is_valid);
+    }
+
+    // --- Document::is_expired tests ---
+
+    #[test]
+    fn test_document_not_expired_no_expiry() {
+        let data = make_extracted_data("12345678Z");
+        let doc = Document::new(DocumentType::DNI, data, true);
+        assert!(!doc.is_expired());
+    }
+
+    #[test]
+    fn test_document_not_expired_future_date() {
+        let mut data = make_extracted_data("12345678Z");
+        data.expiry_date = Some(Utc::now() + Duration::days(365));
+        let doc = Document::new(DocumentType::DNI, data, true);
+        assert!(!doc.is_expired());
+    }
+
+    #[test]
+    fn test_document_expired_past_date() {
+        let mut data = make_extracted_data("12345678Z");
+        data.expiry_date = Some(Utc::now() - Duration::days(1));
+        let doc = Document::new(DocumentType::DNI, data, true);
+        assert!(doc.is_expired());
+    }
+
+    // --- DNI checksum sync tests ---
+
+    #[test]
+    fn test_dni_checksum_sync_valid() {
+        // 12345678 % 23 = 14 -> 'Z'
+        assert!(validate_dni_checksum_sync("12345678Z"));
+    }
+
+    #[test]
+    fn test_dni_checksum_sync_valid_zero() {
+        // 0 % 23 = 0 -> 'T'
+        assert!(validate_dni_checksum_sync("00000000T"));
+    }
+
+    #[test]
+    fn test_dni_checksum_sync_invalid() {
+        assert!(!validate_dni_checksum_sync("12345678A"));
+    }
+
+    #[test]
+    fn test_dni_checksum_sync_too_short() {
+        assert!(!validate_dni_checksum_sync("12345Z"));
+    }
+
+    // --- NIE checksum sync tests ---
+
+    #[test]
+    fn test_nie_checksum_sync_valid_x() {
+        // X0000000T => prefix=0, number=0000000, full=00000000, 0%23=0 -> 'T'
+        assert!(validate_nie_checksum_sync("X0000000T"));
+    }
+
+    #[test]
+    fn test_nie_checksum_sync_valid_y() {
+        // Y0000000 => prefix=1, full number = 10000000, 10000000%23 = 10000000 mod 23
+        // 10000000 / 23 = 434782 rem 14 -> index 14 = 'Z'
+        assert!(validate_nie_checksum_sync("Y0000000Z"));
+    }
+
+    #[test]
+    fn test_nie_checksum_sync_invalid_wrong_letter() {
+        assert!(!validate_nie_checksum_sync("X0000000A"));
+    }
+
+    #[test]
+    fn test_nie_checksum_sync_invalid_z_prefix() {
+        // The sync validator only accepts X and Y (not Z)
+        assert!(!validate_nie_checksum_sync("Z0000000T"));
+    }
+
+    #[test]
+    fn test_nie_checksum_sync_too_short() {
+        assert!(!validate_nie_checksum_sync("X123"));
+    }
+
+    // --- validate_comprehensive async tests ---
+
+    #[tokio::test]
+    async fn test_validate_comprehensive_dni_valid() {
+        let data = make_extracted_data("12345678Z");
+        let doc = Document::new(DocumentType::DNI, data, true);
+        let result = doc.validate_comprehensive().await.unwrap();
+        assert!(result.is_valid);
+        assert_eq!(result.checksum_valid, Some(true));
+        assert_eq!(result.format_valid, Some(true));
+        assert!(result.errors.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_validate_comprehensive_dni_invalid_checksum() {
+        let data = make_extracted_data("12345678A");
+        let doc = Document::new(DocumentType::DNI, data, true);
+        let result = doc.validate_comprehensive().await.unwrap();
+        assert!(!result.is_valid);
+        assert_eq!(result.checksum_valid, Some(false));
+    }
+
+    #[tokio::test]
+    async fn test_validate_comprehensive_passport_not_expired() {
+        let mut data = make_extracted_data("ABC123456");
+        data.expiry_date = Some(Utc::now() + Duration::days(365));
+        let doc = Document::new(DocumentType::Passport, data, true);
+        let result = doc.validate_comprehensive().await.unwrap();
+        assert!(result.is_valid);
+        assert_eq!(result.expiry_valid, Some(true));
+    }
+
+    #[tokio::test]
+    async fn test_validate_comprehensive_passport_expired() {
+        let mut data = make_extracted_data("ABC123456");
+        data.expiry_date = Some(Utc::now() - Duration::days(1));
+        let doc = Document::new(DocumentType::Passport, data, true);
+        let result = doc.validate_comprehensive().await.unwrap();
+        assert!(!result.is_valid);
+        assert_eq!(result.expiry_valid, Some(false));
+    }
+
+    // --- validate_checksum method tests ---
+
+    #[test]
+    fn test_validate_checksum_dni() {
+        let data = make_extracted_data("12345678Z");
+        let doc = Document::new(DocumentType::DNI, data, true);
+        assert!(doc.validate_checksum());
+    }
+
+    #[test]
+    fn test_validate_checksum_passport_always_true() {
+        let data = make_extracted_data("ABC123456");
+        let doc = Document::new(DocumentType::Passport, data, true);
+        assert!(doc.validate_checksum());
+    }
 }

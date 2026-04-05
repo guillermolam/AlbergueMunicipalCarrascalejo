@@ -281,30 +281,87 @@ impl DatabaseConfig {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_database_config_from_env() {
-        std::env::set_var("DATABASE_URL", "postgresql://localhost/test");
-        std::env::remove_var("SQLITE_DATABASE");
-
-        let config = DatabaseConfig::from_env();
-        assert_eq!(config.database_type, DatabaseType::PostgreSQL);
-        assert!(config.connection_string.contains("postgresql://"));
-    }
-
-    #[test]
-    fn test_neondb_connection_string_validation() {
-        let config = DatabaseConfig {
+    fn neondb_config() -> DatabaseConfig {
+        DatabaseConfig {
             database_type: DatabaseType::PostgreSQL,
             connection_string: "postgresql://user:pass@ep-frosty-paper-a2rbivma-pooler.eu-central-1.aws.neon.tech/db?sslmode=require&channel_binding=require".to_string(),
             max_connections: 10,
             connection_timeout_seconds: 30,
             ssl_mode: SslMode::Require,
             channel_binding: true,
-        };
+        }
+    }
 
+    fn local_pg_config() -> DatabaseConfig {
+        DatabaseConfig {
+            database_type: DatabaseType::PostgreSQL,
+            connection_string: "postgresql://localhost/albergue".to_string(),
+            max_connections: 5,
+            connection_timeout_seconds: 30,
+            ssl_mode: SslMode::Disable,
+            channel_binding: false,
+        }
+    }
+
+    fn sqlite_config() -> DatabaseConfig {
+        DatabaseConfig {
+            database_type: DatabaseType::SQLite,
+            connection_string: "./albergue.db".to_string(),
+            max_connections: 5,
+            connection_timeout_seconds: 30,
+            ssl_mode: SslMode::Disable,
+            channel_binding: false,
+        }
+    }
+
+    // NOTE: Tests that mutate environment variables are combined to avoid race conditions.
+    #[test]
+    fn test_database_config_from_env_scenarios() {
+        // PostgreSQL scenario
+        std::env::set_var("DATABASE_URL", "postgresql://localhost/test");
+        std::env::remove_var("SQLITE_DATABASE");
+        let config = DatabaseConfig::from_env();
+        assert_eq!(config.database_type, DatabaseType::PostgreSQL);
+        assert!(config.connection_string.contains("postgresql://"));
+
+        // SQLite scenario
+        std::env::set_var("SQLITE_DATABASE", "./test.db");
+        let config = DatabaseConfig::from_env();
+        assert_eq!(config.database_type, DatabaseType::SQLite);
+        assert_eq!(config.connection_string, "./test.db");
+        assert_eq!(config.max_connections, 5);
+        std::env::remove_var("SQLITE_DATABASE");
+
+        // SSL mode = require
+        std::env::set_var(
+            "DATABASE_URL",
+            "postgresql://localhost/test?sslmode=require",
+        );
+        std::env::remove_var("SQLITE_DATABASE");
+        let config = DatabaseConfig::from_env();
+        assert_eq!(config.ssl_mode, SslMode::Require);
+
+        // SSL mode = prefer
+        std::env::set_var("DATABASE_URL", "postgresql://localhost/test?sslmode=prefer");
+        let config = DatabaseConfig::from_env();
+        assert_eq!(config.ssl_mode, SslMode::Prefer);
+
+        // Channel binding
+        std::env::set_var(
+            "DATABASE_URL",
+            "postgresql://localhost/test?channel_binding=require",
+        );
+        let config = DatabaseConfig::from_env();
+        assert!(config.channel_binding);
+
+        // Cleanup
+        std::env::remove_var("DATABASE_URL");
+    }
+
+    #[test]
+    fn test_neondb_connection_string_validation() {
+        let config = neondb_config();
         assert!(config.validate_connection_string().is_ok());
-        // In debug/test builds, cfg!(debug_assertions) is true, so pooler URLs
-        // are detected as "development" rather than "production"
         assert!(config.is_development());
         assert_eq!(config.get_environment(), Environment::Development);
     }
@@ -322,5 +379,252 @@ mod tests {
 
         assert!(config.validate_connection_string().is_ok());
         assert!(config.is_development());
+    }
+
+    #[test]
+    fn test_local_config_environment() {
+        let config = local_pg_config();
+        assert!(!config.is_production());
+        assert!(!config.is_development());
+        assert_eq!(config.get_environment(), Environment::Local);
+    }
+
+    #[test]
+    fn test_get_pool_config() {
+        let config = neondb_config();
+        let pool = config.get_pool_config();
+        assert_eq!(pool.max_connections, 10);
+        assert_eq!(pool.connection_timeout, std::time::Duration::from_secs(30));
+        assert_eq!(pool.ssl_mode, SslMode::Require);
+        assert!(pool.channel_binding);
+    }
+
+    #[test]
+    fn test_get_connection_string() {
+        let config = local_pg_config();
+        assert_eq!(
+            config.get_connection_string(),
+            "postgresql://localhost/albergue"
+        );
+    }
+
+    #[test]
+    fn test_get_pool_size_local() {
+        let config = local_pg_config();
+        assert_eq!(config.get_pool_size(), 3);
+    }
+
+    #[test]
+    fn test_get_pool_size_development() {
+        let config = neondb_config();
+        // In test builds (debug_assertions = true), pooler URL = development
+        assert_eq!(config.get_pool_size(), 5);
+    }
+
+    #[test]
+    fn test_get_connection_timeout_local() {
+        let config = local_pg_config();
+        assert_eq!(
+            config.get_connection_timeout(),
+            std::time::Duration::from_secs(30)
+        );
+    }
+
+    #[test]
+    fn test_get_ssl_config() {
+        let config = neondb_config();
+        let ssl = config.get_ssl_config();
+        assert_eq!(ssl.ssl_mode, SslMode::Require);
+        assert!(ssl.channel_binding);
+        assert!(ssl.verify_cert);
+    }
+
+    #[test]
+    fn test_get_ssl_config_disabled() {
+        let config = local_pg_config();
+        let ssl = config.get_ssl_config();
+        assert_eq!(ssl.ssl_mode, SslMode::Disable);
+        assert!(!ssl.channel_binding);
+        assert!(!ssl.verify_cert);
+    }
+
+    #[test]
+    fn test_get_database_name_postgresql() {
+        let config = local_pg_config();
+        assert_eq!(config.get_database_name(), "albergue");
+    }
+
+    #[test]
+    fn test_get_database_name_postgresql_with_params() {
+        let config = DatabaseConfig {
+            database_type: DatabaseType::PostgreSQL,
+            connection_string: "postgresql://host/mydb?sslmode=require".to_string(),
+            max_connections: 5,
+            connection_timeout_seconds: 30,
+            ssl_mode: SslMode::Require,
+            channel_binding: false,
+        };
+        assert_eq!(config.get_database_name(), "mydb");
+    }
+
+    #[test]
+    fn test_get_database_name_sqlite() {
+        let config = sqlite_config();
+        assert_eq!(config.get_database_name(), "albergue");
+    }
+
+    #[test]
+    fn test_health_check_query_postgresql() {
+        let config = local_pg_config();
+        assert_eq!(config.health_check_query(), "SELECT 1");
+    }
+
+    #[test]
+    fn test_health_check_query_sqlite() {
+        let config = sqlite_config();
+        assert_eq!(config.health_check_query(), "SELECT 1");
+    }
+
+    #[test]
+    fn test_get_health_check_timeout() {
+        let config = local_pg_config();
+        assert_eq!(
+            config.get_health_check_timeout(),
+            std::time::Duration::from_secs(5)
+        );
+    }
+
+    #[test]
+    fn test_validate_connection_string_empty() {
+        let config = DatabaseConfig {
+            database_type: DatabaseType::PostgreSQL,
+            connection_string: String::new(),
+            max_connections: 5,
+            connection_timeout_seconds: 30,
+            ssl_mode: SslMode::Disable,
+            channel_binding: false,
+        };
+        let result = config.validate_connection_string();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Connection string is empty");
+    }
+
+    #[test]
+    fn test_validate_connection_string_invalid_pg_prefix() {
+        let config = DatabaseConfig {
+            database_type: DatabaseType::PostgreSQL,
+            connection_string: "mysql://localhost/db".to_string(),
+            max_connections: 5,
+            connection_timeout_seconds: 30,
+            ssl_mode: SslMode::Disable,
+            channel_binding: false,
+        };
+        let result = config.validate_connection_string();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("postgresql://"));
+    }
+
+    #[test]
+    fn test_validate_neon_without_ssl() {
+        let config = DatabaseConfig {
+            database_type: DatabaseType::PostgreSQL,
+            connection_string: "postgresql://user:pass@ep-cool-paper-pooler.neon.tech/db"
+                .to_string(),
+            max_connections: 5,
+            connection_timeout_seconds: 30,
+            ssl_mode: SslMode::Disable,
+            channel_binding: false,
+        };
+        let result = config.validate_connection_string();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("sslmode=require"));
+    }
+
+    #[test]
+    fn test_validate_neon_without_pooler() {
+        let config = DatabaseConfig {
+            database_type: DatabaseType::PostgreSQL,
+            connection_string: "postgresql://user:pass@ep-cool-paper.neon.tech/db?sslmode=require"
+                .to_string(),
+            max_connections: 5,
+            connection_timeout_seconds: 30,
+            ssl_mode: SslMode::Require,
+            channel_binding: false,
+        };
+        let result = config.validate_connection_string();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("pooler"));
+    }
+
+    #[test]
+    fn test_validate_sqlite_valid() {
+        let config = sqlite_config();
+        assert!(config.validate_connection_string().is_ok());
+    }
+
+    #[test]
+    fn test_validate_sqlite_memory() {
+        let config = DatabaseConfig {
+            database_type: DatabaseType::SQLite,
+            connection_string: ":memory:".to_string(),
+            max_connections: 1,
+            connection_timeout_seconds: 5,
+            ssl_mode: SslMode::Disable,
+            channel_binding: false,
+        };
+        assert!(config.validate_connection_string().is_ok());
+    }
+
+    #[test]
+    fn test_validate_sqlite_invalid_extension() {
+        let config = DatabaseConfig {
+            database_type: DatabaseType::SQLite,
+            connection_string: "./data.txt".to_string(),
+            max_connections: 1,
+            connection_timeout_seconds: 5,
+            ssl_mode: SslMode::Disable,
+            channel_binding: false,
+        };
+        let result = config.validate_connection_string();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("SQLite"));
+    }
+
+    #[test]
+    fn test_environment_display() {
+        assert_eq!(format!("{}", Environment::Production), "production");
+        assert_eq!(format!("{}", Environment::Development), "development");
+        assert_eq!(format!("{}", Environment::Local), "local");
+    }
+
+    #[test]
+    fn test_environment_equality() {
+        assert_eq!(Environment::Production, Environment::Production);
+        assert_ne!(Environment::Production, Environment::Development);
+        assert_ne!(Environment::Development, Environment::Local);
+    }
+
+    #[test]
+    fn test_database_type_equality() {
+        assert_eq!(DatabaseType::PostgreSQL, DatabaseType::PostgreSQL);
+        assert_eq!(DatabaseType::SQLite, DatabaseType::SQLite);
+        assert_ne!(DatabaseType::PostgreSQL, DatabaseType::SQLite);
+    }
+
+    #[test]
+    fn test_ssl_mode_equality() {
+        assert_eq!(SslMode::Require, SslMode::Require);
+        assert_eq!(SslMode::Prefer, SslMode::Prefer);
+        assert_eq!(SslMode::Disable, SslMode::Disable);
+        assert_ne!(SslMode::Require, SslMode::Disable);
+    }
+
+    #[test]
+    fn test_database_config_clone() {
+        let config = neondb_config();
+        let cloned = config.clone();
+        assert_eq!(cloned.database_type, config.database_type);
+        assert_eq!(cloned.connection_string, config.connection_string);
+        assert_eq!(cloned.max_connections, config.max_connections);
     }
 }

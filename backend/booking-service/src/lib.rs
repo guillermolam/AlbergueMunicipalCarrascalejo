@@ -11,7 +11,26 @@
     clippy::future_not_send
 )]
 
+// Internal module tree (domain, ports, adapters, application layers)
+pub mod domain;
+pub mod infrastructure;
+pub mod ports;
+
+// adapters: console_notification_sender uses wasm_bindgen, gate it to wasm32.
+// memory_booking_repository compiles on all targets.
+#[cfg(target_arch = "wasm32")]
+pub mod adapters;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod adapters {
+    pub mod memory_booking_repository;
+}
+
+// application module compiles on all targets (console_notification_sender usage is cfg-gated)
+pub mod application;
+
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 use worker::{console_log, event, Context, Env, Method, Request, Response, Result};
 
 #[derive(Serialize, Deserialize)]
@@ -77,6 +96,7 @@ async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     Ok(response)
 }
 
+#[instrument(skip(response))]
 fn add_cors_headers(response: &mut Response) -> Result<()> {
     let headers = response.headers_mut();
     headers.set("Access-Control-Allow-Origin", "*")?;
@@ -90,6 +110,7 @@ fn add_cors_headers(response: &mut Response) -> Result<()> {
 
 use serde_json::Value;
 
+#[instrument]
 fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
     // Placeholder: Implement WhatsApp API call to register client
     console_log!(
@@ -99,6 +120,7 @@ fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
     );
 }
 
+#[instrument(skip(req))]
 async fn create_booking(req: &mut Request) -> Result<Response> {
     let body_text = req.text().await?;
     let body_json: Value = match serde_json::from_str(&body_text) {
@@ -166,6 +188,7 @@ async fn create_booking(req: &mut Request) -> Result<Response> {
     json_response(201, &new_booking)
 }
 
+#[instrument]
 fn get_dashboard_stats() -> Result<Response> {
     let stats = DashboardStats {
         occupancy: OccupancyStats {
@@ -180,12 +203,14 @@ fn get_dashboard_stats() -> Result<Response> {
     json_response(200, &stats)
 }
 
+#[instrument]
 fn get_pricing() -> Result<Response> {
     let pricing = Pricing { dormitory: 15 };
 
     json_response(200, &pricing)
 }
 
+#[instrument]
 fn get_rooms() -> Result<Response> {
     let rooms = vec![
         Room {
@@ -245,6 +270,7 @@ fn get_rooms() -> Result<Response> {
     json_response(200, &rooms)
 }
 
+#[instrument]
 fn get_bookings() -> Result<Response> {
     let bookings = vec![Booking {
         id: "1".to_string(),
@@ -263,6 +289,7 @@ fn get_bookings() -> Result<Response> {
     json_response(200, &bookings)
 }
 
+#[instrument(skip(body))]
 fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
     match serde_json::to_string(body) {
         Ok(json) => {
@@ -277,6 +304,204 @@ fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
     }
 }
 
+#[instrument]
 fn error_response(status: u16, message: &str) -> Result<Response> {
     json_response(status, &serde_json::json!({ "error": message }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- Booking struct tests ---
+
+    #[test]
+    fn test_booking_serialization() {
+        let booking = Booking {
+            id: "b-1".to_string(),
+            guest_name: "Ana Garcia".to_string(),
+            guest_email: "ana@example.com".to_string(),
+            guest_phone: Some("+34600111222".to_string()),
+            room_type: "dorm-a".to_string(),
+            check_in: "2024-03-01".to_string(),
+            check_out: "2024-03-03".to_string(),
+            num_guests: 2,
+            total_price: 3000,
+            status: "confirmed".to_string(),
+            payment_status: "paid".to_string(),
+        };
+        let json = serde_json::to_string(&booking).unwrap();
+        assert!(json.contains("\"guest_name\":\"Ana Garcia\""));
+        assert!(json.contains("\"total_price\":3000"));
+    }
+
+    #[test]
+    fn test_booking_deserialization() {
+        let json = r#"{
+            "id": "b-2",
+            "guest_name": "Pedro",
+            "guest_email": "pedro@mail.com",
+            "guest_phone": null,
+            "room_type": "private-1",
+            "check_in": "2024-04-01",
+            "check_out": "2024-04-02",
+            "num_guests": 1,
+            "total_price": 3500,
+            "status": "reserved",
+            "payment_status": "pending"
+        }"#;
+        let booking: Booking = serde_json::from_str(json).unwrap();
+        assert_eq!(booking.id, "b-2");
+        assert_eq!(booking.guest_name, "Pedro");
+        assert!(booking.guest_phone.is_none());
+        assert_eq!(booking.total_price, 3500);
+    }
+
+    #[test]
+    fn test_booking_roundtrip_serde() {
+        let booking = Booking {
+            id: "rt-1".to_string(),
+            guest_name: "Maria".to_string(),
+            guest_email: "maria@test.com".to_string(),
+            guest_phone: Some("+34600000000".to_string()),
+            room_type: "dorm-b".to_string(),
+            check_in: "2024-05-10".to_string(),
+            check_out: "2024-05-12".to_string(),
+            num_guests: 3,
+            total_price: 4500,
+            status: "confirmed".to_string(),
+            payment_status: "paid".to_string(),
+        };
+        let json = serde_json::to_string(&booking).unwrap();
+        let deserialized: Booking = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.id, booking.id);
+        assert_eq!(deserialized.guest_name, booking.guest_name);
+        assert_eq!(deserialized.num_guests, booking.num_guests);
+    }
+
+    #[test]
+    fn test_booking_phone_none_serialization() {
+        let booking = Booking {
+            id: "np-1".to_string(),
+            guest_name: "Guest".to_string(),
+            guest_email: "g@g.com".to_string(),
+            guest_phone: None,
+            room_type: "dorm-a".to_string(),
+            check_in: "2024-01-01".to_string(),
+            check_out: "2024-01-02".to_string(),
+            num_guests: 1,
+            total_price: 1500,
+            status: "reserved".to_string(),
+            payment_status: "pending".to_string(),
+        };
+        let json = serde_json::to_string(&booking).unwrap();
+        assert!(json.contains("\"guest_phone\":null"));
+    }
+
+    // --- Room struct tests ---
+
+    #[test]
+    fn test_room_serialization() {
+        let room = Room {
+            id: "dorm-a".to_string(),
+            name: "Dormitorio A".to_string(),
+            type_: "shared".to_string(),
+            capacity: 12,
+            price_per_night: 1500,
+            amenities: vec!["Taquillas".to_string(), "Enchufes".to_string()],
+            available: true,
+        };
+        let json = serde_json::to_string(&room).unwrap();
+        assert!(json.contains("\"capacity\":12"));
+        assert!(json.contains("\"available\":true"));
+    }
+
+    #[test]
+    fn test_room_deserialization() {
+        let json = r#"{
+            "id": "private-1",
+            "name": "Habitación Privada 1",
+            "type_": "private",
+            "capacity": 2,
+            "price_per_night": 3500,
+            "amenities": ["Baño privado", "TV"],
+            "available": false
+        }"#;
+        let room: Room = serde_json::from_str(json).unwrap();
+        assert_eq!(room.id, "private-1");
+        assert_eq!(room.capacity, 2);
+        assert!(!room.available);
+        assert_eq!(room.amenities.len(), 2);
+    }
+
+    // --- DashboardStats and OccupancyStats tests ---
+
+    #[test]
+    fn test_dashboard_stats_serialization() {
+        let stats = DashboardStats {
+            occupancy: OccupancyStats {
+                available: 20,
+                occupied: 4,
+                total: 24,
+            },
+            today_bookings: 5,
+            revenue: 7500,
+        };
+        let json = serde_json::to_string(&stats).unwrap();
+        assert!(json.contains("\"today_bookings\":5"));
+        assert!(json.contains("\"revenue\":7500"));
+        assert!(json.contains("\"available\":20"));
+    }
+
+    #[test]
+    fn test_dashboard_stats_deserialization() {
+        let json = r#"{
+            "occupancy": { "available": 10, "occupied": 14, "total": 24 },
+            "today_bookings": 8,
+            "revenue": 12000
+        }"#;
+        let stats: DashboardStats = serde_json::from_str(json).unwrap();
+        assert_eq!(stats.today_bookings, 8);
+        assert_eq!(stats.revenue, 12000);
+        assert_eq!(stats.occupancy.occupied, 14);
+        assert_eq!(stats.occupancy.total, 24);
+    }
+
+    #[test]
+    fn test_occupancy_stats_roundtrip() {
+        let stats = OccupancyStats {
+            available: 0,
+            occupied: 24,
+            total: 24,
+        };
+        let json = serde_json::to_string(&stats).unwrap();
+        let deserialized: OccupancyStats = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.available, 0);
+        assert_eq!(deserialized.occupied, 24);
+        assert_eq!(deserialized.total, 24);
+    }
+
+    // --- Pricing struct tests ---
+
+    #[test]
+    fn test_pricing_serialization() {
+        let pricing = Pricing { dormitory: 15 };
+        let json = serde_json::to_string(&pricing).unwrap();
+        assert!(json.contains("\"dormitory\":15"));
+    }
+
+    #[test]
+    fn test_pricing_deserialization() {
+        let json = r#"{"dormitory": 20}"#;
+        let pricing: Pricing = serde_json::from_str(json).unwrap();
+        assert_eq!(pricing.dormitory, 20);
+    }
+
+    #[test]
+    fn test_pricing_roundtrip() {
+        let pricing = Pricing { dormitory: 15 };
+        let json = serde_json::to_string(&pricing).unwrap();
+        let deserialized: Pricing = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.dormitory, pricing.dormitory);
+    }
 }

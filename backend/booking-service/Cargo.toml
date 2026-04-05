@@ -44,6 +44,15 @@ shared = { path = "../shared" }
 anyhow = "1.0.95"
 thiserror = "2.0.9"
 
+# Tracing
+tracing = "0.1"
+
 # UUID and time
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
+
+# Async trait
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["rt", "macros"] }

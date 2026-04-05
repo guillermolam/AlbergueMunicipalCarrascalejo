@@ -17,6 +17,7 @@ impl EventPublisher {
     /// In Cloudflare Workers (WASM), uses the Worker Fetch API.
     /// In native builds, logs the publish intent.
     #[allow(clippy::unused_async, clippy::future_not_send)]
+    #[tracing::instrument(skip(self, event), fields(topic = %event.event_type))]
     pub async fn publish<T: Serialize>(&self, event: &CloudEvent<T>) -> AlbergueResult<()> {
         let topic = &event.event_type;
 
@@ -49,22 +50,25 @@ impl EventPublisher {
 
             match worker::Request::new_with_init(&publish_url, &init) {
                 Ok(request) => match worker::Fetch::Request(request).send().await {
-                    Ok(_) => log::info!("Published to {publish_url}: topic={topic}"),
-                    Err(e) => log::warn!("Failed to publish to {publish_url}: {e}"),
+                    Ok(_) => tracing::info!("Published to {publish_url}: topic={topic}"),
+                    Err(e) => tracing::warn!("Failed to publish to {publish_url}: {e}"),
                 },
-                Err(e) => log::warn!("Failed to create request for {publish_url}: {e}"),
+                Err(e) => tracing::warn!("Failed to create request for {publish_url}: {e}"),
             }
         }
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            log::debug!("Would publish event to {publish_url}: topic={topic} payload={payload}");
+            tracing::debug!(
+                "Would publish event to {publish_url}: topic={topic} payload={payload}"
+            );
         }
 
         Ok(())
     }
 
     #[allow(clippy::future_not_send)]
+    #[tracing::instrument(skip(self, events), fields(count = events.len()))]
     pub async fn publish_batch<T: Serialize>(
         &self,
         events: &[CloudEvent<T>],
@@ -93,5 +97,50 @@ mod tests {
             publisher.broker_url,
             "https://mqtt-broker-service.albergue.workers.dev"
         );
+    }
+
+    #[test]
+    fn test_new_publisher_custom_url() {
+        let publisher = EventPublisher::new("https://custom.example.com".to_string());
+        assert_eq!(publisher.broker_url, "https://custom.example.com");
+    }
+
+    #[tokio::test]
+    async fn test_publish_single_event() {
+        let publisher = EventPublisher::new("https://test.example.com".to_string());
+        let event = CloudEvent::new(
+            "albergue.v1.booking.reserved".to_string(),
+            "test-service".to_string(),
+            serde_json::json!({"booking_id": "123"}),
+        );
+        let result = publisher.publish(&event).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_publish_batch_empty() {
+        let publisher = EventPublisher::new("https://test.example.com".to_string());
+        let events: Vec<CloudEvent<serde_json::Value>> = vec![];
+        let result = publisher.publish_batch(&events).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_publish_batch_multiple() {
+        let publisher = EventPublisher::new("https://test.example.com".to_string());
+        let events = vec![
+            CloudEvent::new(
+                "albergue.v1.booking.reserved".to_string(),
+                "test-service".to_string(),
+                serde_json::json!({"booking_id": "1"}),
+            ),
+            CloudEvent::new(
+                "albergue.v1.booking.confirmed".to_string(),
+                "test-service".to_string(),
+                serde_json::json!({"booking_id": "2"}),
+            ),
+        ];
+        let result = publisher.publish_batch(&events).await;
+        assert!(result.is_ok());
     }
 }

@@ -10,6 +10,7 @@ impl PassportValidator {
         Self
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn validate_passport(&self, passport_number: &str) -> AlbergueResult<bool> {
         // Spanish passport format: 3 letters + 6 digits
         let spanish_passport_regex = Regex::new(r"^[A-Z]{3}\d{6}$").unwrap();
@@ -21,6 +22,7 @@ impl PassportValidator {
             || international_passport_regex.is_match(passport_number))
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn extract_passport_data(&self, passport_text: &str) -> AlbergueResult<ExtractedData> {
         let mut extracted = ExtractedData::default();
 
@@ -149,5 +151,69 @@ impl PassportValidator {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn validator() -> PassportValidator {
+        PassportValidator::new()
+    }
+
+    // --- validate_passport tests ---
+
+    #[test]
+    fn test_valid_spanish_passport() {
+        assert!(validator().validate_passport("ABC123456").unwrap());
+    }
+
+    #[test]
+    fn test_valid_international_passport_alphanumeric() {
+        assert!(validator().validate_passport("AB1234567").unwrap());
+    }
+
+    #[test]
+    fn test_valid_international_passport_6_chars() {
+        assert!(validator().validate_passport("AB1234").unwrap());
+    }
+
+    #[test]
+    fn test_invalid_passport_too_short() {
+        assert!(!validator().validate_passport("AB12").unwrap());
+    }
+
+    #[test]
+    fn test_invalid_passport_lowercase() {
+        assert!(!validator().validate_passport("abc123456").unwrap());
+    }
+
+    #[test]
+    fn test_invalid_passport_special_chars() {
+        assert!(!validator().validate_passport("AB-12345").unwrap());
+    }
+
+    // --- extract_passport_data tests ---
+
+    #[test]
+    fn test_extract_passport_number() {
+        let text = "Passport: ABC123456 issued in Madrid";
+        let data = validator().extract_passport_data(text).unwrap();
+        assert_eq!(data.document_number, Some("ABC123456".to_string()));
+    }
+
+    #[test]
+    fn test_extract_passport_name() {
+        let text = "Given name: JUAN";
+        let data = validator().extract_passport_data(text).unwrap();
+        assert_eq!(data.name, Some("JUAN".to_string()));
+    }
+
+    #[test]
+    fn test_extract_passport_nationality() {
+        let text = "Nationality: ESPAÑOLA";
+        let data = validator().extract_passport_data(text).unwrap();
+        assert_eq!(data.nationality, Some("ESPAÑOLA".to_string()));
     }
 }

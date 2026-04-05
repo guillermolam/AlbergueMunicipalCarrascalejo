@@ -7,6 +7,7 @@ impl ConfidenceScorer {
         Self
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn calculate_field_confidence(
         &self,
         field_name: &str,
@@ -22,6 +23,7 @@ impl ConfidenceScorer {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn calculate_overall_confidence(&self, field_scores: &HashMap<String, f32>) -> f32 {
         if field_scores.is_empty() {
             return 0.0;
@@ -244,5 +246,145 @@ impl ConfidenceScorer {
         }
 
         suggestions
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scorer() -> ConfidenceScorer {
+        ConfidenceScorer::new()
+    }
+
+    // --- calculate_field_confidence tests ---
+
+    #[test]
+    fn test_confidence_valid_dni_number() {
+        let score = scorer().calculate_field_confidence("document_number", "12345678Z", "");
+        assert!(
+            score > 0.9,
+            "Valid DNI should have high confidence, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_confidence_invalid_dni_number() {
+        let score = scorer().calculate_field_confidence("document_number", "12345678A", "");
+        assert!(
+            score < 0.5,
+            "Invalid DNI checksum should have low confidence, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_confidence_nie_number() {
+        let score = scorer().calculate_field_confidence("document_number", "X1234567A", "");
+        assert!(
+            (score - 0.9).abs() < 0.01,
+            "NIE should get 0.9, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_confidence_passport_number() {
+        let score = scorer().calculate_field_confidence("document_number", "ABC123456", "");
+        assert!(
+            (score - 0.85).abs() < 0.01,
+            "Passport should get 0.85, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_confidence_name_field() {
+        let score = scorer().calculate_field_confidence("name", "JUAN", "");
+        assert!(
+            score >= 0.7,
+            "Name should have good confidence, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_confidence_empty_name() {
+        let score = scorer().calculate_field_confidence("name", "", "");
+        assert!((score - 0.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_confidence_date_field_valid() {
+        let score = scorer().calculate_field_confidence("birth_date", "15/06/1990", "");
+        assert!(
+            score > 0.8,
+            "Valid date should have high confidence, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_confidence_date_field_invalid_format() {
+        let score = scorer().calculate_field_confidence("birth_date", "not-a-date", "");
+        assert!(
+            score < 0.2,
+            "Invalid date should have low confidence, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_confidence_nationality_known() {
+        let score = scorer().calculate_field_confidence("nationality", "ESPAÑOLA", "");
+        assert!((score - 0.95).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_confidence_unknown_field() {
+        let score = scorer().calculate_field_confidence("unknown_field", "value", "");
+        assert!((score - 0.5).abs() < 0.01);
+    }
+
+    // --- calculate_overall_confidence tests ---
+
+    #[test]
+    fn test_overall_confidence_empty() {
+        let scores = HashMap::new();
+        assert!((scorer().calculate_overall_confidence(&scores) - 0.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_overall_confidence_with_bonus() {
+        let mut scores = HashMap::new();
+        scores.insert("document_number".to_string(), 0.95);
+        scores.insert("name".to_string(), 0.9);
+        scores.insert("surname".to_string(), 0.9);
+        let overall = scorer().calculate_overall_confidence(&scores);
+        // base = (0.95 + 0.9 + 0.9) / 3 = 0.9167, bonus = 0.15 => capped at 1.0
+        assert!(overall > 0.9);
+        assert!(overall <= 1.0);
+    }
+
+    // --- suggest_improvements tests ---
+
+    #[test]
+    fn test_suggest_improvements_low_confidence() {
+        let mut scores = HashMap::new();
+        scores.insert("document_number".to_string(), 0.2);
+        let suggestions = scorer().suggest_improvements(&scores);
+        assert!(!suggestions.is_empty());
+        assert!(suggestions[0].contains("unclear"));
+    }
+
+    #[test]
+    fn test_suggest_improvements_all_good() {
+        let mut scores = HashMap::new();
+        scores.insert("document_number".to_string(), 0.95);
+        scores.insert("name".to_string(), 0.9);
+        let suggestions = scorer().suggest_improvements(&scores);
+        assert_eq!(suggestions.len(), 1);
+        assert!(suggestions[0].contains("good confidence"));
     }
 }

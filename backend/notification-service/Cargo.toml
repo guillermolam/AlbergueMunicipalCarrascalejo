@@ -19,6 +19,9 @@ worker = "0.7.5"
 base64 = "0.21"
 serde_urlencoded = "0.7"
 
+# Tracing
+tracing = "0.1"
+
 # Async trait
 async-trait = "0.1"
 

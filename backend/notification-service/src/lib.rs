@@ -6,15 +6,21 @@
     clippy::struct_field_names,
     clippy::upper_case_acronyms,
     clippy::unnecessary_wraps,
-    clippy::needless_continue
+    clippy::needless_continue,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::must_use_candidate,
+    clippy::return_self_not_must_use,
+    clippy::new_without_default,
+    clippy::used_underscore_binding
 )]
 
 use std::collections::HashMap;
 use worker::{event, Context, Env, Method, Request, Response, Result};
 
 mod adapters;
-mod application;
-mod domain;
+pub mod application;
+pub mod domain;
 mod infrastructure;
 mod ports;
 

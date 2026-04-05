@@ -236,3 +236,361 @@ pub mod topics {
     // Bed events
     pub const BED_STATUS_CHANGED: &str = "albergue.v1.bed.status_changed";
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- CloudEvent ---
+
+    #[test]
+    fn test_cloud_event_new() {
+        let event = CloudEvent::new(
+            "albergue.v1.booking.reserved".to_string(),
+            "booking-service".to_string(),
+            serde_json::json!({"booking_id": "123"}),
+        );
+        assert_eq!(event.specversion, "1.0");
+        assert_eq!(event.event_type, "albergue.v1.booking.reserved");
+        assert_eq!(event.source, "booking-service");
+        assert_eq!(event.datacontenttype, "application/json");
+        assert!(!event.id.is_empty());
+    }
+
+    #[test]
+    fn test_cloud_event_serialize_deserialize() {
+        let event = CloudEvent::new(
+            "albergue.v1.test".to_string(),
+            "test-source".to_string(),
+            serde_json::json!({"key": "value"}),
+        );
+        let json = serde_json::to_string(&event).unwrap();
+        let back: CloudEvent<serde_json::Value> = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.event_type, "albergue.v1.test");
+        assert_eq!(back.source, "test-source");
+        assert_eq!(back.specversion, "1.0");
+    }
+
+    #[test]
+    fn test_cloud_event_defaults_on_deserialize() {
+        // specversion and datacontenttype should default when missing
+        let json = r#"{
+            "type": "test.event",
+            "source": "test",
+            "id": "abc",
+            "time": "2025-01-01T00:00:00Z",
+            "data": {"foo": "bar"}
+        }"#;
+        let event: CloudEvent<serde_json::Value> = serde_json::from_str(json).unwrap();
+        assert_eq!(event.specversion, "1.0");
+        assert_eq!(event.datacontenttype, "application/json");
+    }
+
+    #[test]
+    fn test_cloud_event_unique_ids() {
+        let e1 = CloudEvent::new("t".to_string(), "s".to_string(), ());
+        let e2 = CloudEvent::new("t".to_string(), "s".to_string(), ());
+        assert_ne!(e1.id, e2.id);
+    }
+
+    #[test]
+    fn test_cloud_event_clone() {
+        let event = CloudEvent::new(
+            "test".to_string(),
+            "source".to_string(),
+            "payload".to_string(),
+        );
+        let cloned = event.clone();
+        assert_eq!(cloned.event_type, event.event_type);
+        assert_eq!(cloned.source, event.source);
+        assert_eq!(cloned.id, event.id);
+    }
+
+    #[test]
+    fn test_cloud_event_with_struct_data() {
+        let data = PilgrimRegistered {
+            pilgrim_id: "p1".to_string(),
+            document_type: "DNI".to_string(),
+            document_number: "12345678A".to_string(),
+            full_name: "Juan Garcia".to_string(),
+            nationality_code: "ES".to_string(),
+            email: Some("juan@example.com".to_string()),
+            phone: None,
+        };
+        let event = CloudEvent::new(
+            topics::PILGRIM_REGISTERED.to_string(),
+            "test".to_string(),
+            data,
+        );
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("Juan Garcia"));
+    }
+
+    // --- Event Data Structs ---
+
+    #[test]
+    fn test_pilgrim_registered_roundtrip() {
+        let data = PilgrimRegistered {
+            pilgrim_id: "p1".to_string(),
+            document_type: "DNI".to_string(),
+            document_number: "12345678A".to_string(),
+            full_name: "Juan Garcia".to_string(),
+            nationality_code: "ES".to_string(),
+            email: Some("juan@test.com".to_string()),
+            phone: Some("+34600000000".to_string()),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: PilgrimRegistered = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.pilgrim_id, "p1");
+        assert_eq!(back.email, Some("juan@test.com".to_string()));
+    }
+
+    #[test]
+    fn test_pilgrim_updated_roundtrip() {
+        let data = PilgrimUpdated {
+            pilgrim_id: "p1".to_string(),
+            updated_fields: vec!["name".to_string(), "email".to_string()],
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: PilgrimUpdated = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.updated_fields.len(), 2);
+    }
+
+    #[test]
+    fn test_gdpr_consent_recorded_roundtrip() {
+        let data = GDPRConsentRecorded {
+            pilgrim_id: "p1".to_string(),
+            consent_marketing: false,
+            consent_data_processing: true,
+            data_retention_until: None,
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: GDPRConsentRecorded = serde_json::from_str(&json).unwrap();
+        assert!(!back.consent_marketing);
+        assert!(back.consent_data_processing);
+    }
+
+    #[test]
+    fn test_booking_reserved_roundtrip() {
+        let data = BookingReserved {
+            booking_id: "b1".to_string(),
+            pilgrim_id: "p1".to_string(),
+            check_in_date: "2025-06-15".to_string(),
+            check_out_date: "2025-06-17".to_string(),
+            nights: 2,
+            total_amount: 24.0,
+            expires_at: chrono::Utc::now(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: BookingReserved = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.nights, 2);
+        assert!((back.total_amount - 24.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_booking_bed_assigned_roundtrip() {
+        let data = BookingBedAssigned {
+            booking_id: "b1".to_string(),
+            bed_id: "bed-5".to_string(),
+            bed_number: 5,
+            room_type: "DormA".to_string(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: BookingBedAssigned = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.bed_number, 5);
+    }
+
+    #[test]
+    fn test_booking_confirmed_roundtrip() {
+        let data = BookingConfirmed {
+            booking_id: "b1".to_string(),
+            pilgrim_id: "p1".to_string(),
+            check_in_date: "2025-06-15".to_string(),
+            check_out_date: "2025-06-17".to_string(),
+            bed_id: Some("bed-3".to_string()),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: BookingConfirmed = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.bed_id, Some("bed-3".to_string()));
+    }
+
+    #[test]
+    fn test_booking_confirmed_no_bed() {
+        let data = BookingConfirmed {
+            booking_id: "b1".to_string(),
+            pilgrim_id: "p1".to_string(),
+            check_in_date: "2025-06-15".to_string(),
+            check_out_date: "2025-06-17".to_string(),
+            bed_id: None,
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: BookingConfirmed = serde_json::from_str(&json).unwrap();
+        assert!(back.bed_id.is_none());
+    }
+
+    #[test]
+    fn test_booking_cancelled_roundtrip() {
+        let data = BookingCancelled {
+            booking_id: "b1".to_string(),
+            pilgrim_id: "p1".to_string(),
+            reason: Some("guest request".to_string()),
+            cancelled_at: chrono::Utc::now(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: BookingCancelled = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.reason, Some("guest request".to_string()));
+    }
+
+    #[test]
+    fn test_booking_expired_roundtrip() {
+        let data = BookingExpired {
+            booking_id: "b1".to_string(),
+            pilgrim_id: "p1".to_string(),
+            expired_at: chrono::Utc::now(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: BookingExpired = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.booking_id, "b1");
+    }
+
+    #[test]
+    fn test_payment_recorded_roundtrip() {
+        let data = PaymentRecorded {
+            payment_id: "pay1".to_string(),
+            booking_id: "b1".to_string(),
+            amount: 12.0,
+            currency: "EUR".to_string(),
+            payment_method: "card".to_string(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: PaymentRecorded = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.currency, "EUR");
+    }
+
+    #[test]
+    fn test_payment_completed_roundtrip() {
+        let data = PaymentCompleted {
+            payment_id: "pay1".to_string(),
+            booking_id: "b1".to_string(),
+            amount: 12.0,
+            currency: "EUR".to_string(),
+            provider_transaction_id: Some("txn_abc".to_string()),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: PaymentCompleted = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.provider_transaction_id, Some("txn_abc".to_string()));
+    }
+
+    #[test]
+    fn test_government_submission_queued_roundtrip() {
+        let data = GovernmentSubmissionQueued {
+            submission_id: "sub1".to_string(),
+            booking_id: "b1".to_string(),
+            submission_type: "hospedaje".to_string(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: GovernmentSubmissionQueued = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.submission_type, "hospedaje");
+    }
+
+    #[test]
+    fn test_government_submission_succeeded_roundtrip() {
+        let data = GovernmentSubmissionSucceeded {
+            submission_id: "sub1".to_string(),
+            booking_id: "b1".to_string(),
+            submitted_at: chrono::Utc::now(),
+            confirmation_id: Some("conf123".to_string()),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: GovernmentSubmissionSucceeded = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.confirmation_id, Some("conf123".to_string()));
+    }
+
+    #[test]
+    fn test_government_submission_failed_roundtrip() {
+        let data = GovernmentSubmissionFailed {
+            submission_id: "sub1".to_string(),
+            booking_id: "b1".to_string(),
+            error_message: "timeout".to_string(),
+            attempts: 3,
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: GovernmentSubmissionFailed = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.attempts, 3);
+    }
+
+    #[test]
+    fn test_bed_status_changed_roundtrip() {
+        let data = BedStatusChanged {
+            bed_id: "bed-1".to_string(),
+            bed_number: 1,
+            old_status: "available".to_string(),
+            new_status: "occupied".to_string(),
+            reason: Some("check-in".to_string()),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let back: BedStatusChanged = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.new_status, "occupied");
+    }
+
+    // --- Topic Constants ---
+
+    #[test]
+    fn test_topic_constants_format() {
+        assert_eq!(topics::PILGRIM_REGISTERED, "albergue.v1.pilgrim.registered");
+        assert_eq!(topics::PILGRIM_UPDATED, "albergue.v1.pilgrim.updated");
+        assert_eq!(
+            topics::GDPR_CONSENT_RECORDED,
+            "albergue.v1.pilgrim.gdpr_consent_recorded"
+        );
+        assert_eq!(topics::BOOKING_RESERVED, "albergue.v1.booking.reserved");
+        assert_eq!(
+            topics::BOOKING_BED_ASSIGNED,
+            "albergue.v1.booking.bed_assigned"
+        );
+        assert_eq!(topics::BOOKING_CONFIRMED, "albergue.v1.booking.confirmed");
+        assert_eq!(topics::BOOKING_CANCELLED, "albergue.v1.booking.cancelled");
+        assert_eq!(topics::BOOKING_EXPIRED, "albergue.v1.booking.expired");
+        assert_eq!(topics::PAYMENT_RECORDED, "albergue.v1.payment.recorded");
+        assert_eq!(topics::PAYMENT_COMPLETED, "albergue.v1.payment.completed");
+        assert_eq!(
+            topics::GOVERNMENT_SUBMISSION_QUEUED,
+            "albergue.v1.government.submission_queued"
+        );
+        assert_eq!(
+            topics::GOVERNMENT_SUBMISSION_SUCCEEDED,
+            "albergue.v1.government.submission_succeeded"
+        );
+        assert_eq!(
+            topics::GOVERNMENT_SUBMISSION_FAILED,
+            "albergue.v1.government.submission_failed"
+        );
+        assert_eq!(topics::BED_STATUS_CHANGED, "albergue.v1.bed.status_changed");
+    }
+
+    #[test]
+    fn test_all_topics_start_with_albergue_v1() {
+        let all_topics = vec![
+            topics::PILGRIM_REGISTERED,
+            topics::PILGRIM_UPDATED,
+            topics::GDPR_CONSENT_RECORDED,
+            topics::BOOKING_RESERVED,
+            topics::BOOKING_BED_ASSIGNED,
+            topics::BOOKING_CONFIRMED,
+            topics::BOOKING_CANCELLED,
+            topics::BOOKING_EXPIRED,
+            topics::PAYMENT_RECORDED,
+            topics::PAYMENT_COMPLETED,
+            topics::GOVERNMENT_SUBMISSION_QUEUED,
+            topics::GOVERNMENT_SUBMISSION_SUCCEEDED,
+            topics::GOVERNMENT_SUBMISSION_FAILED,
+            topics::BED_STATUS_CHANGED,
+        ];
+        for topic in all_topics {
+            assert!(
+                topic.starts_with("albergue.v1."),
+                "Topic {topic} does not start with albergue.v1."
+            );
+        }
+    }
+}

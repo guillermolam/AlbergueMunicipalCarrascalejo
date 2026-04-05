@@ -6,6 +6,7 @@ use worker::{Request, Response, Result};
 
 use crate::config::{AppConfig, Claims};
 
+#[tracing::instrument(skip_all)]
 pub async fn login_handler(_req: &Request, cfg: &AppConfig) -> Result<Response> {
     let state = uuid::Uuid::new_v4().to_string();
     if let Some(provider) = cfg.providers.first() {
@@ -19,6 +20,7 @@ pub async fn login_handler(_req: &Request, cfg: &AppConfig) -> Result<Response> 
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn callback_handler(req: &Request, cfg: &AppConfig) -> Result<Response> {
     let url = req.url()?;
     let query = url.query().unwrap_or("");
@@ -70,12 +72,14 @@ pub async fn callback_handler(req: &Request, cfg: &AppConfig) -> Result<Response
     Response::from_json(&body)
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn logout_handler(_req: &Request, _cfg: &AppConfig) -> Result<Response> {
     let mut resp = Response::ok("")?;
     resp.headers_mut().set("Location", "/")?;
     Ok(resp.with_status(307))
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn refresh_handler(req: &mut Request, cfg: &AppConfig) -> Result<Response> {
     let body = req.text().await?;
     let payload: HashMap<String, String> = serde_json::from_str(&body).unwrap_or_default();
@@ -125,6 +129,7 @@ pub async fn refresh_handler(req: &mut Request, cfg: &AppConfig) -> Result<Respo
     Response::from_json(&body)
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn well_known_handler(_req: &Request, _cfg: &AppConfig) -> Result<Response> {
     let issuer = "https://alberguecarrascalejo.workers.dev/api/auth";
     let config = json!({

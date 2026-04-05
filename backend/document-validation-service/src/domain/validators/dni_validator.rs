@@ -12,11 +12,13 @@ impl DniValidator {
 }
 
 impl DniValidator {
+    #[tracing::instrument(skip_all)]
     pub fn validate_format(document_number: &str) -> bool {
         let dni_regex = Regex::new(r"^\d{8}[A-Z]$").unwrap();
         dni_regex.is_match(document_number)
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn validate_checksum(document_number: &str) -> bool {
         if document_number.len() != 9 {
             return false;
@@ -37,6 +39,7 @@ impl DniValidator {
         false
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn extract_data_from_ocr(ocr_text: &str) -> AlbergueResult<ExtractedData> {
         let mut extracted = ExtractedData {
             document_number: None,
@@ -84,5 +87,103 @@ impl DniValidator {
         }
 
         Ok(extracted)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- validate_format tests ---
+
+    #[test]
+    fn test_format_valid_dni() {
+        assert!(DniValidator::validate_format("12345678Z"));
+    }
+
+    #[test]
+    fn test_format_valid_all_zeros() {
+        assert!(DniValidator::validate_format("00000000T"));
+    }
+
+    #[test]
+    fn test_format_invalid_lowercase_letter() {
+        assert!(!DniValidator::validate_format("12345678z"));
+    }
+
+    #[test]
+    fn test_format_invalid_no_letter() {
+        assert!(!DniValidator::validate_format("123456789"));
+    }
+
+    #[test]
+    fn test_format_invalid_too_few_digits() {
+        assert!(!DniValidator::validate_format("1234567Z"));
+    }
+
+    #[test]
+    fn test_format_invalid_letters_in_digits() {
+        assert!(!DniValidator::validate_format("1234A678Z"));
+    }
+
+    // --- validate_checksum tests ---
+
+    #[test]
+    fn test_checksum_valid_12345678z() {
+        assert!(DniValidator::validate_checksum("12345678Z"));
+    }
+
+    #[test]
+    fn test_checksum_valid_00000000t() {
+        assert!(DniValidator::validate_checksum("00000000T"));
+    }
+
+    #[test]
+    fn test_checksum_valid_00000001r() {
+        // 1 % 23 = 1 -> 'R'
+        assert!(DniValidator::validate_checksum("00000001R"));
+    }
+
+    #[test]
+    fn test_checksum_invalid_wrong_letter() {
+        assert!(!DniValidator::validate_checksum("12345678A"));
+    }
+
+    #[test]
+    fn test_checksum_empty_string() {
+        assert!(!DniValidator::validate_checksum(""));
+    }
+
+    // --- extract_data_from_ocr tests ---
+
+    #[test]
+    fn test_extract_dni_number_from_text() {
+        let text = "DNI 12345678Z NOMBRE: JUAN";
+        let data = DniValidator::extract_data_from_ocr(text).unwrap();
+        assert_eq!(data.document_number, Some("12345678Z".to_string()));
+    }
+
+    #[test]
+    fn test_extract_name_from_text() {
+        let text = "NOMBRE: JUAN GARCIA";
+        let data = DniValidator::extract_data_from_ocr(text).unwrap();
+        assert_eq!(data.name, Some("JUAN".to_string()));
+        assert_eq!(data.surname, Some("GARCIA".to_string()));
+    }
+
+    #[test]
+    fn test_extract_birth_date_from_text() {
+        let text = "Nacimiento: 15/06/1990";
+        let data = DniValidator::extract_data_from_ocr(text).unwrap();
+        assert!(data.birth_date.is_some());
+        let date = data.birth_date.unwrap();
+        assert_eq!(date.format("%Y-%m-%d").to_string(), "1990-06-15");
+    }
+
+    #[test]
+    fn test_extract_nationality_default_esp() {
+        let text = "some text";
+        let data = DniValidator::extract_data_from_ocr(text).unwrap();
+        assert_eq!(data.nationality, Some("ESP".to_string()));
     }
 }

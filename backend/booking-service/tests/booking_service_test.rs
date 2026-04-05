@@ -1,75 +1,65 @@
-// Legacy tests kept for reference, but disabled because they refer to a
-// `handle_request` entrypoint that is not currently exposed and they use APIs
-// that don't match the current crate setup.
-//
-// Re-enable by removing `cfg(any())` and updating tests to call the actual
-// exported handler(s) for this crate.
-#[cfg(any())]
-mod tests {
-    use super::*;
-    use http::{Method, Request};
-    use std::collections::HashMap;
+// Integration-level tests for booking-service public types.
+// The Cloudflare Workers handler (`fetch`) cannot be tested natively,
+// so these tests exercise the serializable API types exported by the crate.
 
-    #[test]
-    fn test_get_rooms_returns_valid_data() {
-        let req = Request::builder()
-            .method(Method::GET)
-            .uri("/rooms")
-            .body(vec![])
-            .unwrap();
+use booking_service::{Booking, DashboardStats, OccupancyStats, Pricing, Room};
 
-        let result = handle_request(req).unwrap();
+#[test]
+fn test_booking_json_contract() {
+    let booking = Booking {
+        id: "int-1".to_string(),
+        guest_name: "Integration Test".to_string(),
+        guest_email: "int@test.com".to_string(),
+        guest_phone: Some("+34600000001".to_string()),
+        room_type: "dorm-a".to_string(),
+        check_in: "2024-06-01".to_string(),
+        check_out: "2024-06-03".to_string(),
+        num_guests: 2,
+        total_price: 3000,
+        status: "confirmed".to_string(),
+        payment_status: "paid".to_string(),
+    };
+    let json = serde_json::to_value(&booking).unwrap();
+    assert_eq!(json["id"], "int-1");
+    assert_eq!(json["num_guests"], 2);
+    assert_eq!(json["total_price"], 3000);
+}
 
-        // Check that we get a 200 response
-        assert_eq!(result.status(), 200);
+#[test]
+fn test_room_json_contract() {
+    let room = Room {
+        id: "dorm-a".to_string(),
+        name: "Dormitorio A".to_string(),
+        type_: "shared".to_string(),
+        capacity: 12,
+        price_per_night: 1500,
+        amenities: vec!["Taquillas".to_string()],
+        available: true,
+    };
+    let json = serde_json::to_value(&room).unwrap();
+    assert_eq!(json["capacity"], 12);
+    assert_eq!(json["available"], true);
+}
 
-        // Check content type
-        assert_eq!(
-            result.headers().get("content-type").unwrap(),
-            "application/json"
-        );
-    }
+#[test]
+fn test_dashboard_stats_json_contract() {
+    let stats = DashboardStats {
+        occupancy: OccupancyStats {
+            available: 24,
+            occupied: 0,
+            total: 24,
+        },
+        today_bookings: 3,
+        revenue: 4500,
+    };
+    let json = serde_json::to_value(&stats).unwrap();
+    assert_eq!(json["today_bookings"], 3);
+    assert_eq!(json["occupancy"]["total"], 24);
+}
 
-    #[test]
-    fn test_get_bookings_returns_valid_data() {
-        let req = Request::builder()
-            .method(Method::GET)
-            .uri("/bookings")
-            .body(vec![])
-            .unwrap();
-
-        let result = handle_request(req).unwrap();
-
-        assert_eq!(result.status(), 200);
-        assert_eq!(
-            result.headers().get("content-type").unwrap(),
-            "application/json"
-        );
-    }
-
-    #[test]
-    fn test_create_booking_returns_created() {
-        let req = Request::builder()
-            .method(Method::POST)
-            .uri("/bookings")
-            .body(vec![])
-            .unwrap();
-
-        let result = handle_request(req).unwrap();
-
-        assert_eq!(result.status(), 201);
-    }
-
-    #[test]
-    fn test_invalid_route_returns_404() {
-        let req = Request::builder()
-            .method(Method::GET)
-            .uri("/invalid")
-            .body(vec![])
-            .unwrap();
-
-        let result = handle_request(req).unwrap();
-
-        assert_eq!(result.status(), 404);
-    }
+#[test]
+fn test_pricing_json_contract() {
+    let pricing = Pricing { dormitory: 15 };
+    let json = serde_json::to_value(&pricing).unwrap();
+    assert_eq!(json["dormitory"], 15);
 }

@@ -10,6 +10,7 @@ impl MrzValidator {
         Self
     }
 
+    #[tracing::instrument(skip(self), fields(mrz_len = mrz_line.len()))]
     pub fn validate_mrz_checksum(&self, mrz_line: &str) -> AlbergueResult<bool> {
         if mrz_line.len() != 44 {
             return Ok(false);
@@ -33,6 +34,7 @@ impl MrzValidator {
         Ok(sum % 10 == 0)
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn extract_mrz_data(&self, mrz_text: &str) -> AlbergueResult<ExtractedData> {
         let mut extracted = ExtractedData::default();
 
@@ -162,5 +164,88 @@ impl MrzValidator {
         } else {
             Err("Invalid date")
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn validator() -> MrzValidator {
+        MrzValidator::new()
+    }
+
+    // --- validate_mrz_checksum tests ---
+
+    #[test]
+    fn test_mrz_checksum_wrong_length() {
+        assert!(!validator().validate_mrz_checksum("SHORT").unwrap());
+    }
+
+    #[test]
+    fn test_mrz_checksum_rejects_invalid_chars() {
+        // 44 chars with a lowercase letter
+        let line = "P<ESPGARCIa<<JUAN<<<<<<<<<<<<<<<<<<<<<<<<<<";
+        assert!(!validator().validate_mrz_checksum(line).unwrap());
+    }
+
+    #[test]
+    fn test_mrz_checksum_all_fillers() {
+        // 44 '<' chars: all values are 0, sum=0, 0%10=0 -> valid
+        let line = "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
+        assert!(validator().validate_mrz_checksum(line).unwrap());
+    }
+
+    // --- extract_mrz_data TD3 tests ---
+
+    #[test]
+    fn test_extract_td3_passport_data() {
+        // Build two 44-char lines for TD3 format (each must be exactly 44 chars [A-Z0-9<])
+        let line1 = "P<ESPGARCIA<<JUAN<<<<<<<<<<<<<<<<<<<<<<<<<<<"; // 44 chars
+        let line2 = "ABC123456<ESP9001011M3012315<<<<<<<<<<<<<<02"; // 44 chars
+        let mrz = format!("{}\n{}", line1, line2);
+
+        let data = validator().extract_mrz_data(&mrz).unwrap();
+        assert_eq!(data.nationality, Some("ESP".to_string()));
+        assert_eq!(data.surname, Some("GARCIA".to_string()));
+        assert_eq!(data.name, Some("JUAN".to_string()));
+        assert!(data.document_number.is_some());
+    }
+
+    // --- parse_mrz_date tests (via extract_mrz_data) ---
+
+    #[test]
+    fn test_extract_td3_birth_date_parsing() {
+        let line1 = "P<ESPGARCIA<<JUAN<<<<<<<<<<<<<<<<<<<<<<<<<<<"; // 44 chars
+                                                                    // Position 13..19 should be birth date in YYMMDD (900101 = 1990-01-01)
+        let line2 = "ABC123456<ESP9001011M3012315<<<<<<<<<<<<<<02"; // 44 chars
+        let mrz = format!("{}\n{}", line1, line2);
+
+        let data = validator().extract_mrz_data(&mrz).unwrap();
+        assert!(data.birth_date.is_some());
+        let bdate = data.birth_date.unwrap();
+        assert_eq!(bdate.format("%Y").to_string(), "1990");
+    }
+
+    #[test]
+    fn test_extract_td3_future_year() {
+        let line1 = "P<ESPGARCIA<<JUAN<<<<<<<<<<<<<<<<<<<<<<<<<<<"; // 44 chars
+                                                                    // birth = 250101 => 2025-01-01 (year < 50 => 2000+25)
+        let line2 = "ABC123456<ESP2501011M3012315<<<<<<<<<<<<<<02"; // 44 chars
+        let mrz = format!("{}\n{}", line1, line2);
+
+        let data = validator().extract_mrz_data(&mrz).unwrap();
+        assert!(data.birth_date.is_some());
+        let bdate = data.birth_date.unwrap();
+        assert_eq!(bdate.format("%Y").to_string(), "2025");
+    }
+
+    // --- extract_mrz_data with no match ---
+
+    #[test]
+    fn test_extract_mrz_no_match() {
+        let data = validator().extract_mrz_data("random text").unwrap();
+        assert!(data.document_number.is_none());
+        assert!(data.name.is_none());
     }
 }

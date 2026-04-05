@@ -12,6 +12,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tracing::info;
 use worker::{event, Context, Env, Method, Request, Response, Result};
 
 // --- Test-facing exports ----------------------------------------------------
@@ -159,6 +160,7 @@ fn build_rate_limit_response(status: u16, response: &RateLimitResponse) -> Resul
 async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     let method = req.method();
     let path = req.path();
+    info!(method = ?method, path = %path, "incoming rate-limiter request");
 
     let mut config = HashMap::new();
     config.insert("POST:/booking".to_string(), (60, 10));
@@ -177,6 +179,7 @@ async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     }
 }
 
+#[tracing::instrument(skip(req, config))]
 fn handle_rate_limit_check(
     req: &Request,
     config: &HashMap<String, (u32, u32)>,
@@ -188,6 +191,7 @@ fn handle_rate_limit_check(
     build_rate_limit_response(status, &result)
 }
 
+#[tracing::instrument(skip(req))]
 fn handle_rate_limit_status(req: &Request) -> Result<Response> {
     let client_id = extract_client_id(req);
 
@@ -222,6 +226,7 @@ fn handle_rate_limit_status(req: &Request) -> Result<Response> {
     Ok(resp.with_status(200))
 }
 
+#[tracing::instrument(skip(req))]
 async fn handle_rate_limit_reset(req: &mut Request) -> Result<Response> {
     let body = req.text().await?;
     let reset_req: serde_json::Value =
@@ -243,4 +248,274 @@ async fn handle_rate_limit_reset(req: &mut Request) -> Result<Response> {
     resp.headers_mut().set("content-type", "application/json")?;
     resp.headers_mut().set("Access-Control-Allow-Origin", "*")?;
     Ok(resp.with_status(200))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── get_current_timestamp ──────────────────────────────────────────
+
+    #[test]
+    fn test_get_current_timestamp_returns_reasonable_value() {
+        let ts = get_current_timestamp();
+        // Should be after 2024-01-01 and before 2100-01-01
+        assert!(ts > 1_704_067_200, "timestamp should be after 2024-01-01");
+        assert!(ts < 4_102_444_800, "timestamp should be before 2100-01-01");
+    }
+
+    // ── RateLimitEntry ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_rate_limit_entry_creation() {
+        let entry = RateLimitEntry {
+            requests: 5,
+            window_start: 1_000_000,
+            last_request: 1_000_010,
+        };
+        assert_eq!(entry.requests, 5);
+        assert_eq!(entry.window_start, 1_000_000);
+        assert_eq!(entry.last_request, 1_000_010);
+    }
+
+    #[test]
+    fn test_rate_limit_entry_serialize_deserialize() {
+        let entry = RateLimitEntry {
+            requests: 3,
+            window_start: 100,
+            last_request: 120,
+        };
+        let json = serde_json::to_string(&entry).expect("serialize");
+        let restored: RateLimitEntry = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(restored.requests, 3);
+        assert_eq!(restored.window_start, 100);
+        assert_eq!(restored.last_request, 120);
+    }
+
+    #[test]
+    fn test_rate_limit_entry_clone() {
+        let entry = RateLimitEntry {
+            requests: 7,
+            window_start: 200,
+            last_request: 210,
+        };
+        let cloned = entry.clone();
+        assert_eq!(cloned.requests, entry.requests);
+        assert_eq!(cloned.window_start, entry.window_start);
+    }
+
+    // ── RateLimitResponse ──────────────────────────────────────────────
+
+    #[test]
+    fn test_rate_limit_response_serialize_allowed() {
+        let resp = RateLimitResponse {
+            allowed: true,
+            remaining: 9,
+            reset_time: 1_000_060,
+            retry_after: None,
+        };
+        let json = serde_json::to_string(&resp).expect("serialize");
+        assert!(json.contains("\"allowed\":true"));
+        assert!(json.contains("\"remaining\":9"));
+        assert!(json.contains("\"retry_after\":null"));
+    }
+
+    #[test]
+    fn test_rate_limit_response_serialize_blocked() {
+        let resp = RateLimitResponse {
+            allowed: false,
+            remaining: 0,
+            reset_time: 500,
+            retry_after: Some(30),
+        };
+        let json = serde_json::to_string(&resp).expect("serialize");
+        assert!(json.contains("\"allowed\":false"));
+        assert!(json.contains("\"retry_after\":30"));
+    }
+
+    #[test]
+    fn test_rate_limit_response_deserialization() {
+        let json = r#"{"allowed":true,"remaining":42,"reset_time":9999,"retry_after":null}"#;
+        let resp: RateLimitResponse = serde_json::from_str(json).expect("deserialize");
+        assert!(resp.allowed);
+        assert_eq!(resp.remaining, 42);
+        assert_eq!(resp.reset_time, 9999);
+        assert!(resp.retry_after.is_none());
+    }
+
+    // ── calculate_rate_limit ───────────────────────────────────────────
+
+    #[test]
+    fn test_calculate_no_prior_entry_allows_request() {
+        let (allowed, entry, remaining) = calculate_rate_limit(None, 1000, 60, 10);
+        assert!(allowed);
+        assert_eq!(remaining, 9);
+        assert_eq!(entry.requests, 1);
+        assert_eq!(entry.window_start, 1000);
+    }
+
+    #[test]
+    fn test_calculate_within_limit_allows_request() {
+        let existing = RateLimitEntry {
+            requests: 5,
+            window_start: 1000,
+            last_request: 1010,
+        };
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(existing), 1020, 60, 10);
+        assert!(allowed);
+        assert_eq!(entry.requests, 6);
+        assert_eq!(remaining, 4);
+        assert_eq!(entry.last_request, 1020);
+    }
+
+    #[test]
+    fn test_calculate_at_max_blocks_request() {
+        let existing = RateLimitEntry {
+            requests: 10,
+            window_start: 1000,
+            last_request: 1050,
+        };
+        let (allowed, _entry, remaining) = calculate_rate_limit(Some(existing), 1055, 60, 10);
+        assert!(!allowed);
+        assert_eq!(remaining, 0);
+    }
+
+    #[test]
+    fn test_calculate_window_reset_allows_again() {
+        let existing = RateLimitEntry {
+            requests: 10,
+            window_start: 1000,
+            last_request: 1050,
+        };
+        // current_time = 1061 exceeds window_start(1000) + window(60) = 1060
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(existing), 1061, 60, 10);
+        assert!(allowed);
+        assert_eq!(entry.requests, 1);
+        assert_eq!(entry.window_start, 1061);
+        assert_eq!(remaining, 9);
+    }
+
+    #[test]
+    fn test_calculate_exact_window_boundary_resets() {
+        let existing = RateLimitEntry {
+            requests: 10,
+            window_start: 1000,
+            last_request: 1050,
+        };
+        // 1060 >= 1000 + 60, so window resets
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(existing), 1060, 60, 10);
+        assert!(allowed);
+        assert_eq!(entry.requests, 1);
+        assert_eq!(remaining, 9);
+    }
+
+    #[test]
+    fn test_calculate_one_before_boundary_still_blocked() {
+        let existing = RateLimitEntry {
+            requests: 10,
+            window_start: 1000,
+            last_request: 1050,
+        };
+        // 1059 < 1000 + 60 = 1060, still in window, exhausted
+        let (allowed, _entry, remaining) = calculate_rate_limit(Some(existing), 1059, 60, 10);
+        assert!(!allowed);
+        assert_eq!(remaining, 0);
+    }
+
+    #[test]
+    fn test_calculate_zero_remaining_then_blocked() {
+        let existing = RateLimitEntry {
+            requests: 1,
+            window_start: 500,
+            last_request: 500,
+        };
+        // max_requests = 1, already used 1
+        let (allowed, _entry, remaining) = calculate_rate_limit(Some(existing), 510, 60, 1);
+        assert!(!allowed);
+        assert_eq!(remaining, 0);
+    }
+
+    #[test]
+    fn test_calculate_very_old_timestamp_resets_window() {
+        let existing = RateLimitEntry {
+            requests: 100,
+            window_start: 100,
+            last_request: 150,
+        };
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(existing), 999_999, 60, 10);
+        assert!(allowed);
+        assert_eq!(entry.requests, 1);
+        assert_eq!(entry.window_start, 999_999);
+        assert_eq!(remaining, 9);
+    }
+
+    // ── Default rate-limit config ──────────────────────────────────────
+
+    #[test]
+    fn test_default_config_has_expected_endpoints() {
+        let mut config: HashMap<String, (u32, u32)> = HashMap::new();
+        config.insert("POST:/booking".to_string(), (60, 10));
+        config.insert("POST:/validation".to_string(), (60, 20));
+        config.insert("GET:/reviews".to_string(), (60, 100));
+
+        assert_eq!(config.get("POST:/booking"), Some(&(60, 10)));
+        assert_eq!(config.get("POST:/validation"), Some(&(60, 20)));
+        assert_eq!(config.get("GET:/reviews"), Some(&(60, 100)));
+        assert_eq!(config.get("DELETE:/unknown"), None);
+    }
+
+    // ── Successive requests drain remaining ────────────────────────────
+
+    #[test]
+    fn test_successive_requests_drain_remaining() {
+        let max = 5_u32;
+        let window = 60_u32;
+        let t = 2000_u64;
+
+        let (allowed, entry, remaining) = calculate_rate_limit(None, t, window, max);
+        assert!(allowed);
+        assert_eq!(remaining, 4);
+
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(entry), t + 1, window, max);
+        assert!(allowed);
+        assert_eq!(remaining, 3);
+
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(entry), t + 2, window, max);
+        assert!(allowed);
+        assert_eq!(remaining, 2);
+
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(entry), t + 3, window, max);
+        assert!(allowed);
+        assert_eq!(remaining, 1);
+
+        let (allowed, entry, remaining) = calculate_rate_limit(Some(entry), t + 4, window, max);
+        assert!(allowed);
+        assert_eq!(remaining, 0);
+
+        // 6th request is blocked
+        let (allowed, _entry, remaining) = calculate_rate_limit(Some(entry), t + 5, window, max);
+        assert!(!allowed);
+        assert_eq!(remaining, 0);
+    }
+
+    #[test]
+    fn test_window_reset_after_drain_allows_new_burst() {
+        let max = 3_u32;
+        let window = 10_u32;
+        let t = 5000_u64;
+
+        // Exhaust all requests
+        let (_, entry, _) = calculate_rate_limit(None, t, window, max);
+        let (_, entry, _) = calculate_rate_limit(Some(entry), t + 1, window, max);
+        let (_, entry, _) = calculate_rate_limit(Some(entry), t + 2, window, max);
+        let (allowed, entry, _) = calculate_rate_limit(Some(entry), t + 3, window, max);
+        assert!(!allowed);
+
+        // Jump past the window
+        let (allowed, new_entry, remaining) =
+            calculate_rate_limit(Some(entry), t + 11, window, max);
+        assert!(allowed);
+        assert_eq!(new_entry.requests, 1);
+        assert_eq!(remaining, 2);
+    }
 }

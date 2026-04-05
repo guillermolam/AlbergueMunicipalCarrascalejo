@@ -40,6 +40,7 @@ impl PostgresCardsRepository {
 
 #[async_trait]
 impl StoragePort for PostgresCardsRepository {
+    #[tracing::instrument(skip(self, card), fields(card_title = %card.title))]
     async fn save_card(&self, card: InfoCard) -> AlbergueResult<InfoCard> {
         #[cfg(target_arch = "wasm32")]
         {
@@ -92,6 +93,7 @@ impl StoragePort for PostgresCardsRepository {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn get_card_by_id(&self, id: Uuid) -> AlbergueResult<InfoCard> {
         #[cfg(target_arch = "wasm32")]
         {
@@ -119,6 +121,7 @@ impl StoragePort for PostgresCardsRepository {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn get_card_by_type(&self, card_type: CardType) -> AlbergueResult<InfoCard> {
         #[cfg(target_arch = "wasm32")]
         {

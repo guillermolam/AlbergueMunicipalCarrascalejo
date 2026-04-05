@@ -7,18 +7,19 @@ use worker::{event, Context, Env, Method, Request, Response, Result};
 
 mod adapters;
 mod application;
-mod domain;
+pub mod domain;
 mod infrastructure;
 mod ports;
 
 use adapters::scraper::MeridaScraperAdapter;
 use adapters::storage::PostgresCardsRepository;
 use application::CardsServiceImpl;
+use ports::StoragePort;
 
 #[event(fetch)]
 async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
-    let repo = Box::new(PostgresCardsRepository::new());
-    let scraper = Box::new(MeridaScraperAdapter::new());
+    let repo: Box<dyn StoragePort> = Box::new(PostgresCardsRepository::new());
+    let scraper: Box<dyn crate::ports::ScraperPort> = Box::new(MeridaScraperAdapter::new());
     let service = CardsServiceImpl::new(repo, scraper);
 
     let uri = req.path();

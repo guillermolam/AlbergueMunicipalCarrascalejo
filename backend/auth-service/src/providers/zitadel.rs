@@ -16,6 +16,7 @@ impl IdentityProvider for ZitadelProvider {
         "zitadel"
     }
 
+    #[tracing::instrument(skip(self))]
     fn authorization_url(&self, state: &str) -> String {
         let mut auth_url = self.metadata.authorization_endpoint().url().clone();
         auth_url
@@ -28,6 +29,7 @@ impl IdentityProvider for ZitadelProvider {
         auth_url.to_string()
     }
 
+    #[tracing::instrument(skip(self, code))]
     async fn exchange_code(&self, code: &str, redirect_uri: &str) -> anyhow::Result<TokenResponse> {
         let token_url = self
             .metadata
@@ -78,6 +80,7 @@ impl IdentityProvider for ZitadelProvider {
         Ok(token_resp)
     }
 
+    #[tracing::instrument(skip(self, refresh_token))]
     async fn refresh_token(&self, refresh_token: &str) -> anyhow::Result<TokenResponse> {
         let token_url = self
             .metadata

@@ -1,11 +1,15 @@
 #![warn(clippy::all, clippy::pedantic)]
-#![allow(clippy::module_name_repetitions, clippy::same_length_and_capacity)]
+#![allow(
+    clippy::module_name_repetitions,
+    clippy::same_length_and_capacity,
+    clippy::missing_errors_doc
+)]
 
 use worker::{event, Context, Env, Method, Request, Response, Result};
 
-mod config;
-mod handlers;
-mod providers;
+pub mod config;
+pub mod handlers;
+pub mod providers;
 
 use config::load_config;
 use handlers::{

@@ -8,18 +8,16 @@ use std::future::Future;
 use std::pin::Pin;
 
 pub struct CardsServiceImpl {
-    storage: Box<crate::adapters::storage::PostgresCardsRepository>,
+    storage: Box<dyn StoragePort>,
     scraper: Box<dyn ScraperPort>,
 }
 
 impl CardsServiceImpl {
-    pub fn new(
-        storage: Box<crate::adapters::storage::PostgresCardsRepository>,
-        scraper: Box<dyn ScraperPort>,
-    ) -> Self {
+    pub fn new(storage: Box<dyn StoragePort>, scraper: Box<dyn ScraperPort>) -> Self {
         Self { storage, scraper }
     }
 
+    #[tracing::instrument(skip(self, create_card))]
     async fn get_or_create_card<F, Fut>(
         &self,
         card_type: CardType,
@@ -31,6 +29,7 @@ impl CardsServiceImpl {
     {
         if let Ok(cached_card) = self.storage.get_card_by_type(card_type).await {
             if !cached_card.is_cache_expired() {
+                tracing::debug!("returning cached card");
                 return Ok(serde_json::to_string(&cached_card)?);
             }
         }
@@ -39,6 +38,7 @@ impl CardsServiceImpl {
         Ok(serde_json::to_string(&card)?)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_merida_attractions(&self) -> AlbergueResult<String> {
         self.get_or_create_card(CardType::MeridaAttractions, || async {
             let scraped_content = self.scraper.scrape_merida_attractions().await?;
@@ -97,6 +97,7 @@ impl CardsServiceImpl {
         }).await
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_carrascalejo_info(&self) -> AlbergueResult<String> {
         if let Ok(cached_card) = self
             .storage
@@ -165,6 +166,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&carrascalejo_card)?)
     }
 
+    #[tracing::instrument(skip(self))]
     #[allow(clippy::unused_async)]
     pub async fn get_emergency_contacts(&self) -> AlbergueResult<String> {
         let emergency_card = InfoCard::new(
@@ -239,6 +241,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&emergency_card)?)
     }
 
+    #[tracing::instrument(skip(self))]
     #[allow(clippy::unused_async)]
     pub async fn get_route_map(&self, next_stage: &str) -> AlbergueResult<String> {
         let route_data = match next_stage {
@@ -316,6 +319,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&map_card)?)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_restaurants_eat(&self) -> AlbergueResult<String> {
         // Try to get cached content first
         if let Ok(cached_card) = self
@@ -383,6 +387,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&restaurants_card)?)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_taxi_services(&self) -> AlbergueResult<String> {
         if let Ok(cached_card) = self.storage.get_card_by_type(CardType::TaxiServices).await {
             if !cached_card.is_cache_expired() {
@@ -434,6 +439,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&taxi_card)?)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_car_rentals(&self) -> AlbergueResult<String> {
         if let Ok(cached_card) = self.storage.get_card_by_type(CardType::CarRentals).await {
             if !cached_card.is_cache_expired() {
@@ -495,6 +501,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&car_rental_card)?)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_all_info_cards(&self) -> AlbergueResult<String> {
         let mut all_cards = Vec::new();
 
@@ -523,6 +530,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&all_cards)?)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn update_card_content(
         &self,
         card_id: &str,
@@ -538,5 +546,328 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         self.storage.save_card(card.clone()).await?;
 
         Ok(serde_json::to_string(&card)?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::ScrapedContent;
+    use async_trait::async_trait;
+    use chrono::Utc;
+    use std::sync::Mutex;
+
+    // --- Mock Storage ---
+    struct MockStorage {
+        cards: Mutex<Vec<InfoCard>>,
+    }
+
+    impl MockStorage {
+        fn new() -> Self {
+            Self {
+                cards: Mutex::new(Vec::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl StoragePort for MockStorage {
+        async fn save_card(&self, card: InfoCard) -> AlbergueResult<InfoCard> {
+            let mut cards = self.cards.lock().unwrap();
+            // Replace if same type exists
+            cards.retain(|c| c.card_type != card.card_type);
+            cards.push(card.clone());
+            Ok(card)
+        }
+
+        async fn get_card_by_id(&self, id: uuid::Uuid) -> AlbergueResult<InfoCard> {
+            let cards = self.cards.lock().unwrap();
+            cards
+                .iter()
+                .find(|c| c.id == id)
+                .cloned()
+                .ok_or(AlbergueError::NotFound(format!("Card {id} not found")))
+        }
+
+        async fn get_card_by_type(&self, card_type: CardType) -> AlbergueResult<InfoCard> {
+            let cards = self.cards.lock().unwrap();
+            cards
+                .iter()
+                .find(|c| c.card_type == card_type)
+                .cloned()
+                .ok_or(AlbergueError::NotFound("Not found".to_string()))
+        }
+
+        async fn get_all_cards(&self) -> AlbergueResult<Vec<InfoCard>> {
+            Ok(self.cards.lock().unwrap().clone())
+        }
+
+        async fn delete_card(&self, id: uuid::Uuid) -> AlbergueResult<()> {
+            let mut cards = self.cards.lock().unwrap();
+            cards.retain(|c| c.id != id);
+            Ok(())
+        }
+
+        async fn get_cards_by_language(&self, language: &str) -> AlbergueResult<Vec<InfoCard>> {
+            let cards = self.cards.lock().unwrap();
+            Ok(cards
+                .iter()
+                .filter(|c| c.language == language)
+                .cloned()
+                .collect())
+        }
+    }
+
+    // --- Mock Scraper ---
+    struct MockScraper;
+
+    #[async_trait]
+    impl ScraperPort for MockScraper {
+        async fn scrape_merida_attractions(&self) -> AlbergueResult<ScrapedContent> {
+            Ok(ScrapedContent {
+                source_url: "https://mock.test/merida".to_string(),
+                title: "Mock Attractions".to_string(),
+                content: "Teatro Romano\nAnfiteatro".to_string(),
+                links: vec![],
+                images: vec![],
+                last_scraped: Utc::now(),
+                scraping_successful: true,
+                error_message: None,
+            })
+        }
+
+        async fn scrape_carrascalejo_info(&self) -> AlbergueResult<ScrapedContent> {
+            Ok(ScrapedContent {
+                source_url: "https://mock.test/carrascalejo".to_string(),
+                title: "Mock Carrascalejo".to_string(),
+                content: "Info about Carrascalejo".to_string(),
+                links: vec![],
+                images: vec![],
+                last_scraped: Utc::now(),
+                scraping_successful: true,
+                error_message: None,
+            })
+        }
+
+        async fn scrape_weather_info(&self, location: &str) -> AlbergueResult<ScrapedContent> {
+            Ok(ScrapedContent {
+                source_url: format!("https://mock.test/weather/{location}"),
+                title: format!("Weather for {location}"),
+                content: "Sunny 25C".to_string(),
+                links: vec![],
+                images: vec![],
+                last_scraped: Utc::now(),
+                scraping_successful: true,
+                error_message: None,
+            })
+        }
+
+        async fn scrape_local_events(&self, location: &str) -> AlbergueResult<ScrapedContent> {
+            Ok(ScrapedContent {
+                source_url: format!("https://mock.test/events/{location}"),
+                title: "Events".to_string(),
+                content: "No events".to_string(),
+                links: vec![],
+                images: vec![],
+                last_scraped: Utc::now(),
+                scraping_successful: true,
+                error_message: None,
+            })
+        }
+
+        async fn scrape_restaurants(&self) -> AlbergueResult<Vec<ScrapedContent>> {
+            Ok(vec![])
+        }
+
+        async fn scrape_taxi_services(&self) -> AlbergueResult<Vec<ScrapedContent>> {
+            Ok(vec![])
+        }
+
+        async fn scrape_car_rentals(&self) -> AlbergueResult<Vec<ScrapedContent>> {
+            Ok(vec![])
+        }
+    }
+
+    fn make_service() -> CardsServiceImpl {
+        CardsServiceImpl::new(Box::new(MockStorage::new()), Box::new(MockScraper))
+    }
+
+    // --- Tests ---
+
+    #[tokio::test]
+    async fn test_get_merida_attractions_returns_non_empty() {
+        let svc = make_service();
+        let result = svc.get_merida_attractions().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.card_type, CardType::MeridaAttractions);
+        assert!(!card.content.is_empty());
+        assert!(card.content.contains("Mérida"));
+        assert!(!card.links.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_merida_attractions_has_four_links() {
+        let svc = make_service();
+        let result = svc.get_merida_attractions().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.links.len(), 4);
+        assert_eq!(card.links[0].title, "Teatro Romano");
+    }
+
+    #[tokio::test]
+    async fn test_get_carrascalejo_info_returns_expected_info() {
+        let svc = make_service();
+        let result = svc.get_carrascalejo_info().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.card_type, CardType::CarrascalejoInfo);
+        assert!(card.content.contains("Carrascalejo"));
+        assert!(card.content.contains("300 habitantes"));
+        assert_eq!(card.links.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_get_emergency_contacts_returns_contacts_with_phone_numbers() {
+        let svc = make_service();
+        let result = svc.get_emergency_contacts().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.card_type, CardType::EmergencyContacts);
+        assert!(card.links.len() >= 5);
+        // All emergency contact links should start with "tel:"
+        for link in &card.links {
+            assert!(
+                link.url.starts_with("tel:"),
+                "Emergency link url should be a phone: {}",
+                link.url
+            );
+        }
+        assert_eq!(card.priority, 10);
+    }
+
+    #[tokio::test]
+    async fn test_get_route_map_merida() {
+        let svc = make_service();
+        let result = svc.get_route_map("merida").await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.card_type, CardType::RouteMap);
+        assert!(card.title.contains("Mérida"));
+        assert!(card.content.contains("38.0 km"));
+        assert_eq!(card.links.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_get_route_map_unknown_stage_defaults_to_almendralejo() {
+        let svc = make_service();
+        let result = svc.get_route_map("unknown_place").await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert!(card.title.contains("Almendralejo"));
+        assert!(card.content.contains("21.5 km"));
+    }
+
+    #[tokio::test]
+    async fn test_get_all_info_cards_returns_combined_cards() {
+        let svc = make_service();
+        let result = svc.get_all_info_cards().await.unwrap();
+        let cards: Vec<InfoCard> = serde_json::from_str(&result).unwrap();
+        assert!(
+            cards.len() >= 5,
+            "Expected at least 5 cards, got {}",
+            cards.len()
+        );
+        // Should be sorted by priority descending
+        for window in cards.windows(2) {
+            assert!(
+                window[0].priority >= window[1].priority,
+                "Cards should be sorted by priority descending: {} >= {}",
+                window[0].priority,
+                window[1].priority
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_restaurants_eat_returns_restaurant_data() {
+        let svc = make_service();
+        let result = svc.get_restaurants_eat().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.card_type, CardType::RestaurantsEat);
+        assert!(!card.links.is_empty());
+        // All links should be Restaurant type
+        for link in &card.links {
+            assert_eq!(link.link_type, LinkType::Restaurant);
+            assert!(
+                link.phone.is_some(),
+                "Restaurant should have a phone number"
+            );
+            assert!(link.address.is_some(), "Restaurant should have an address");
+            assert!(link.rating.is_some(), "Restaurant should have a rating");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_taxi_services_returns_taxi_data() {
+        let svc = make_service();
+        let result = svc.get_taxi_services().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.card_type, CardType::TaxiServices);
+        assert_eq!(card.links.len(), 3);
+        for link in &card.links {
+            assert_eq!(link.link_type, LinkType::Taxi);
+            assert!(link.phone.is_some(), "Taxi link should have a phone number");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_car_rentals_returns_car_rental_data() {
+        let svc = make_service();
+        let result = svc.get_car_rentals().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert_eq!(card.card_type, CardType::CarRentals);
+        assert_eq!(card.links.len(), 4);
+        // First three should be CarRental, last is Website (bus)
+        assert_eq!(card.links[0].link_type, LinkType::CarRental);
+        assert_eq!(card.links[3].link_type, LinkType::Website);
+    }
+
+    #[tokio::test]
+    async fn test_emergency_contacts_includes_112() {
+        let svc = make_service();
+        let result = svc.get_emergency_contacts().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        let has_112 = card.links.iter().any(|l| l.url == "tel:112");
+        assert!(has_112, "Emergency contacts should include 112");
+    }
+
+    #[tokio::test]
+    async fn test_restaurants_have_price_ranges() {
+        let svc = make_service();
+        let result = svc.get_restaurants_eat().await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        for link in &card.links {
+            assert!(
+                link.price_range.is_some(),
+                "Restaurant {} should have a price range",
+                link.title
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_route_map_merida_alternate_name() {
+        let svc = make_service();
+        let result = svc.get_route_map("Mérida").await.unwrap();
+        let card: InfoCard = serde_json::from_str(&result).unwrap();
+        assert!(card.title.contains("Mérida"));
+        assert!(card.content.contains("38.0 km"));
+    }
+
+    #[tokio::test]
+    async fn test_all_info_cards_contains_emergency_high_priority() {
+        let svc = make_service();
+        let result = svc.get_all_info_cards().await.unwrap();
+        let cards: Vec<InfoCard> = serde_json::from_str(&result).unwrap();
+        // Emergency contacts have priority 10, should appear first
+        let first_card = &cards[0];
+        assert_eq!(first_card.card_type, CardType::EmergencyContacts);
+        assert_eq!(first_card.priority, 10);
     }
 }
