@@ -28,12 +28,6 @@ includes:
   rate-limiter:
     taskfile: ./rate-limiter-service/Taskfile.yml
     dir: .
-  redis-cache:
-    taskfile: ./redis-cache-service/Taskfile.yml
-    dir: .
-  redis:
-    taskfile: ./redis-service/Taskfile.yml
-    dir: .
   reviews:
     taskfile: ./reviews-service/Taskfile.yml
     dir: .

@@ -53,6 +53,10 @@ struct DocumentValidationResult {
     mrz_valid: Option<bool>,
     extracted_data: Option<serde_json::Value>,
     errors: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    warning: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stub: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -91,8 +95,12 @@ fn validate_passport_mrz(mrz: &str) -> bool {
     matches!(lines.len(), 2 | 3) && lines.iter().all(|line| line.len() >= 30)
 }
 
+// TODO: Implement real OCR processing via Cloudflare Workers AI or external API
 async fn process_ocr_document(_image_data: &str) -> Result<serde_json::Value> {
+    console_log!("[WARN] OCR processing is a stub - returning fixture data");
     Ok(serde_json::json!({
+        "stub": true,
+        "warning": "Stub implementation - OCR processing not performed",
         "document_type": "detected_dni",
         "confidence": 0.95,
         "text_regions": [
@@ -129,6 +137,8 @@ async fn validate_document_comprehensive(
                 } else {
                     vec!["Invalid DNI checksum".to_string()]
                 },
+                warning: None,
+                stub: None,
             }
         }
         "nie" => {
@@ -145,8 +155,11 @@ async fn validate_document_comprehensive(
                 } else {
                     vec!["Invalid NIE format".to_string()]
                 },
+                warning: None,
+                stub: None,
             }
         }
+        // TODO: Implement real passport validation with actual MRZ parsing
         "passport" => {
             let mrz_valid = if let Some(ref image) = req_data.image_data {
                 let ocr_result = process_ocr_document(image).await?;
@@ -156,6 +169,7 @@ async fn validate_document_comprehensive(
                 None
             };
 
+            console_log!("[WARN] Passport comprehensive validation is a stub - returning hardcoded valid status");
             DocumentValidationResult {
                 status: "valid".to_string(),
                 confidence: Some(0.88),
@@ -163,6 +177,10 @@ async fn validate_document_comprehensive(
                 mrz_valid,
                 extracted_data: None,
                 errors: vec![],
+                warning: Some(
+                    "Stub implementation - passport validation not fully performed".to_string(),
+                ),
+                stub: Some(true),
             }
         }
         _ => DocumentValidationResult {
@@ -172,6 +190,8 @@ async fn validate_document_comprehensive(
             mrz_valid: None,
             extracted_data: None,
             errors: vec!["Unsupported document type".to_string()],
+            warning: None,
+            stub: None,
         },
     };
 
@@ -210,6 +230,8 @@ async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
                 mrz_valid: None,
                 extracted_data: None,
                 errors: vec!["Validation endpoint not found".to_string()],
+                warning: None,
+                stub: None,
             };
             build_error_response(&result, 404)
         }
@@ -246,6 +268,8 @@ async fn handle_dni_validation(req: &mut Request) -> Result<Response> {
         mrz_valid: None,
         extracted_data: None,
         errors: vec![],
+        warning: None,
+        stub: None,
     };
 
     build_validation_response(&result)
@@ -268,14 +292,18 @@ async fn handle_nie_validation(req: &mut Request) -> Result<Response> {
         mrz_valid: None,
         extracted_data: None,
         errors: vec![],
+        warning: None,
+        stub: None,
     };
 
     build_validation_response(&result)
 }
 
+// TODO: Implement real passport validation - currently returns hardcoded valid result
 async fn handle_passport_validation(req: &mut Request) -> Result<Response> {
     let _body = req.text().await?;
 
+    console_log!("[WARN] Passport validation is a stub - returning hardcoded valid result");
     let result = DocumentValidationResult {
         status: "valid".to_string(),
         confidence: Some(0.88),
@@ -283,6 +311,8 @@ async fn handle_passport_validation(req: &mut Request) -> Result<Response> {
         mrz_valid: Some(true),
         extracted_data: None,
         errors: vec![],
+        warning: Some("Stub implementation - passport validation not performed".to_string()),
+        stub: Some(true),
     };
 
     build_validation_response(&result)

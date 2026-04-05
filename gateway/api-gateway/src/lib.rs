@@ -170,14 +170,31 @@ async fn forward_to_service(
     };
 
     let upstream_path = rewrite_upstream_path(&req.path(), &ctx.service);
-    let target_url = format!("{service_url}{upstream_path}");
+    let mut target_url = format!("{service_url}{upstream_path}");
+
+    // Preserve query string from the original request
+    if let Some(q) = req.url()?.query() {
+        target_url.push('?');
+        target_url.push_str(q);
+    }
 
     let url = worker::Url::parse(&target_url).map_err(|e| anyhow::anyhow!("Invalid URL: {e}"))?;
 
-    let mut forward_req = Request::new_with_init(
-        url.as_str(),
-        worker::RequestInit::new().with_method(req.method()),
-    )?;
+    // Forward the request body for methods that carry a payload
+    let method = req.method();
+    let mut init = worker::RequestInit::new();
+    init.with_method(method.clone());
+    if matches!(
+        method,
+        Method::Post | Method::Put | Method::Patch | Method::Delete
+    ) {
+        let body_bytes = req.bytes().await?;
+        if !body_bytes.is_empty() {
+            init.with_body(Some(body_bytes.into()));
+        }
+    }
+
+    let mut forward_req = Request::new_with_init(url.as_str(), &init)?;
 
     // Copy relevant headers
     for (name, value) in req.headers() {

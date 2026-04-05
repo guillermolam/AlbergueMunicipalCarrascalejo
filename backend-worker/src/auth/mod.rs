@@ -40,10 +40,7 @@ pub async fn handle_callback(req: Request, ctx: RouteContext<()>) -> Result<Resp
         &token_body.to_string(),
     )));
 
-    let token_req = Request::new_with_init(
-        "https://github.com/login/oauth/access_token",
-        &init,
-    )?;
+    let token_req = Request::new_with_init("https://github.com/login/oauth/access_token", &init)?;
 
     let mut token_resp = Fetch::Request(token_req).send().await?;
     let token_data: serde_json::Value = token_resp.json().await?;

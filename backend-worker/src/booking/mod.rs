@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use worker::*;
 
+#[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
 pub struct Booking {
     pub id: String,
@@ -16,6 +17,7 @@ pub struct Booking {
     pub payment_status: String,
 }
 
+#[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
 pub struct Room {
     pub id: String,
@@ -67,11 +69,14 @@ pub async fn create_booking(mut req: Request, ctx: RouteContext<()>) -> Result<R
     // Publish booking event to queue
     if let Ok(queue) = ctx.env.queue("BOOKING_EVENTS") {
         let _ = queue
-            .send(serde_json::json!({
-                "type": "booking_created",
-                "booking_id": id,
-                "email": guest_email
-            }).to_string())
+            .send(
+                serde_json::json!({
+                    "type": "booking_created",
+                    "booking_id": id,
+                    "email": guest_email
+                })
+                .to_string(),
+            )
             .await;
     }
 

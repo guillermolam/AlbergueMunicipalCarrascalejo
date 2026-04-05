@@ -11,9 +11,24 @@ mod reviews;
 mod security;
 mod shared;
 
-fn cors_headers(mut resp: Response) -> Result<Response> {
+/// Default allowed origins for CORS.
+/// TODO: Move to env var `ALLOWED_ORIGINS` (comma-separated) once `Env` is
+/// threaded through to this helper. For now these are hardcoded.
+const DEFAULT_ALLOWED_ORIGINS: &[&str] = &[
+    "https://albergue.pages.dev",
+    "http://localhost:4321",
+    "http://localhost:3000",
+];
+
+fn cors_headers(mut resp: Response, request_origin: Option<&str>) -> Result<Response> {
+    let allowed_origin = match request_origin {
+        Some(origin) if DEFAULT_ALLOWED_ORIGINS.contains(&origin) => origin.to_string(),
+        _ => DEFAULT_ALLOWED_ORIGINS[0].to_string(),
+    };
+
     let headers = resp.headers_mut();
-    headers.set("Access-Control-Allow-Origin", "*")?;
+    headers.set("Access-Control-Allow-Origin", &allowed_origin)?;
+    headers.set("Vary", "Origin")?;
     headers.set(
         "Access-Control-Allow-Methods",
         "GET, POST, PUT, DELETE, OPTIONS",
@@ -31,9 +46,11 @@ fn cors_headers(mut resp: Response) -> Result<Response> {
 
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
+    let request_origin = req.headers().get("Origin").ok().flatten();
+
     // Handle CORS preflight
     if req.method() == Method::Options {
-        return cors_headers(Response::ok("")?);
+        return cors_headers(Response::ok("")?, request_origin.as_deref());
     }
 
     let router = Router::new();
@@ -63,19 +80,25 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get_async("/api/reviews/:source", reviews::get_reviews)
         .get_async("/api/reviews/stats", reviews::get_stats)
         // Security
-        .post("/api/security/scan", security::handle_scan)
-        .post("/api/security/encrypt", security::handle_encrypt)
-        .post("/api/security/validate", security::handle_validate)
-        .get("/api/security/status", security::handle_status)
+        .post_async("/api/security/scan", security::handle_scan)
+        .post_async("/api/security/encrypt", security::handle_encrypt)
+        .post_async("/api/security/validate", security::handle_validate)
+        .get_async("/api/security/status", security::handle_status)
         // Rate Limiter
         .post_async("/api/rate-limit/check", rate_limiter::handle_check)
         .get_async("/api/rate-limit/status", rate_limiter::handle_status)
         .post_async("/api/rate-limit/reset", rate_limiter::handle_reset)
         // Document Validation
-        .post("/api/validate/document", document_validation::handle_document)
-        .post("/api/validate/dni", document_validation::handle_dni)
-        .post("/api/validate/nie", document_validation::handle_nie)
-        .post("/api/validate/passport", document_validation::handle_passport)
+        .post_async(
+            "/api/validate/document",
+            document_validation::handle_document,
+        )
+        .post_async("/api/validate/dni", document_validation::handle_dni)
+        .post_async("/api/validate/nie", document_validation::handle_nie)
+        .post_async(
+            "/api/validate/passport",
+            document_validation::handle_passport,
+        )
         // Notification
         .post_async("/api/notifications/send", notification::handle_send)
         .post_async(
@@ -91,11 +114,11 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .run(req, env)
         .await?;
 
-    cors_headers(response)
+    cors_headers(response, request_origin.as_deref())
 }
 
 #[event(queue)]
-async fn queue(batch: MessageBatch<String>, env: Env, _ctx: Context) -> Result<()> {
+async fn queue(batch: MessageBatch<String>, _env: Env, _ctx: Context) -> Result<()> {
     for message in batch.messages()? {
         let event: serde_json::Value =
             serde_json::from_str(message.body()).unwrap_or(serde_json::json!({}));

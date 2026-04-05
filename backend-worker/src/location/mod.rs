@@ -63,18 +63,28 @@ pub async fn search_locations(_req: Request, _ctx: RouteContext<()>) -> Result<R
 
 fn country_name(code: &str) -> String {
     match code.to_uppercase().as_str() {
-        "ES" => "Spain", "FR" => "France", "PT" => "Portugal",
-        "IT" => "Italy", "DE" => "Germany", "GB" => "United Kingdom",
-        "US" => "United States", _ => "Unknown",
+        "ES" => "Spain",
+        "FR" => "France",
+        "PT" => "Portugal",
+        "IT" => "Italy",
+        "DE" => "Germany",
+        "GB" => "United Kingdom",
+        "US" => "United States",
+        _ => "Unknown",
     }
     .to_string()
 }
 
 fn calling_code(code: &str) -> String {
     match code.to_uppercase().as_str() {
-        "ES" => "+34", "FR" => "+33", "PT" => "+351",
-        "IT" => "+39", "DE" => "+49", "GB" => "+44",
-        "US" => "+1", _ => "+34",
+        "ES" => "+34",
+        "FR" => "+33",
+        "PT" => "+351",
+        "IT" => "+39",
+        "DE" => "+49",
+        "GB" => "+44",
+        "US" => "+1",
+        _ => "+34",
     }
     .to_string()
 }

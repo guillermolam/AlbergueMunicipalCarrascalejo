@@ -39,7 +39,10 @@ pub async fn handle_send(mut req: Request, ctx: RouteContext<()>) -> Result<Resp
     }
 }
 
-pub async fn handle_booking_confirmation(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
+pub async fn handle_booking_confirmation(
+    mut req: Request,
+    ctx: RouteContext<()>,
+) -> Result<Response> {
     let body: serde_json::Value = req.json().await?;
     let email = body["email"].as_str().unwrap_or("");
     let details = body["details"].as_str().unwrap_or("");

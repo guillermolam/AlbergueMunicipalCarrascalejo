@@ -34,6 +34,7 @@ fn validate_nie_format(nie: &str) -> bool {
     nie.len() == 9 && matches!(nie.chars().next(), Some('X' | 'Y' | 'Z'))
 }
 
+#[allow(dead_code)]
 fn validate_passport_mrz(mrz: &str) -> bool {
     let lines: Vec<&str> = mrz.lines().collect();
     matches!(lines.len(), 2 | 3) && lines.iter().all(|l| l.len() >= 30)
@@ -90,9 +91,9 @@ fn build_result(doc_type: &str, doc_number: &str) -> ValidationResult {
     }
 }
 
-pub fn handle_document(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
-    let body: ValidationRequest =
-        serde_json::from_str(&req.text().unwrap_or_default()).unwrap_or(ValidationRequest {
+pub async fn handle_document(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+    let body: ValidationRequest = serde_json::from_str(&req.text().await.unwrap_or_default())
+        .unwrap_or(ValidationRequest {
             document_type: "unknown".to_string(),
             document_number: String::new(),
             image_data: None,
@@ -101,20 +102,20 @@ pub fn handle_document(req: Request, _ctx: RouteContext<()>) -> Result<Response>
     Response::from_json(&build_result(&body.document_type, &body.document_number))
 }
 
-pub fn handle_dni(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
-    let body: serde_json::Value =
-        serde_json::from_str(&req.text().unwrap_or_default()).unwrap_or(serde_json::json!({}));
+pub async fn handle_dni(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+    let body: serde_json::Value = serde_json::from_str(&req.text().await.unwrap_or_default())
+        .unwrap_or(serde_json::json!({}));
     let dni = body["document_number"].as_str().unwrap_or("");
     Response::from_json(&build_result("dni", dni))
 }
 
-pub fn handle_nie(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
-    let body: serde_json::Value =
-        serde_json::from_str(&req.text().unwrap_or_default()).unwrap_or(serde_json::json!({}));
+pub async fn handle_nie(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+    let body: serde_json::Value = serde_json::from_str(&req.text().await.unwrap_or_default())
+        .unwrap_or(serde_json::json!({}));
     let nie = body["document_number"].as_str().unwrap_or("");
     Response::from_json(&build_result("nie", nie))
 }
 
-pub fn handle_passport(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+pub async fn handle_passport(_req: Request, _ctx: RouteContext<()>) -> Result<Response> {
     Response::from_json(&build_result("passport", ""))
 }

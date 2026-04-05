@@ -1,5 +1,6 @@
 use worker::*;
 
+#[allow(dead_code)]
 pub fn json_error(status: u16, message: &str) -> Result<Response> {
     let body = serde_json::json!({
         "error": message,

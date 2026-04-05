@@ -27,3 +27,7 @@ shared = { path = "../shared" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"

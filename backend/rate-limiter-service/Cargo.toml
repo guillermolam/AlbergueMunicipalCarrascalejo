@@ -4,54 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [package.metadata.env]
-# Rate Limiting Configuration
 RATE_LIMIT_REQUESTS = { default = "100", description = "Requests per minute limit" }
 RATE_LIMIT_WINDOW_SECONDS = { default = "60", description = "Rate limit window in seconds" }
 RATE_LIMIT_BURST = { default = "20", description = "Burst limit for rate limiting" }
-
-# Redis Configuration (if using external storage)
 REDIS_URL = { required = false, description = "Redis connection string for rate limit storage" }
-
-# Service Configuration
 LOG_LEVEL = { default = "info", description = "Application log level" }
 
 [dependencies]
-# Cloudflare Workers SDK
 worker = "0.7.5"
-
-# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-
-# Shared dependencies
 shared = { path = "../shared" }
-
-# Error handling
 anyhow = "1.0"
 thiserror = "2.0.17"
-
-# Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
 [dev-dependencies]
 serde_json = "1.0"
-
-[[test]]
-name = "integration_tests"
-path = "tests/integration_tests.rs"
-
-[[test]]
-name = "unit_tests"
-path = "tests/unit_tests.rs"
-
-[[test]]
-name = "rate_limit_algorithm_tests"
-path = "tests/rate_limit_algorithm_tests.rs"
-
-[[test]]
-name = "edge_case_tests"
-path = "tests/edge_case_tests.rs"
-
-[[test]]
-name = "performance_tests"
-path = "tests/performance_tests.rs"

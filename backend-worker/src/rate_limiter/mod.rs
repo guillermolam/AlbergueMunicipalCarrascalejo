@@ -20,15 +20,16 @@ const MAX_REQUESTS: u32 = 100;
 
 fn extract_client_id(req: &Request) -> String {
     req.headers()
-        .get("x-forwarded-for")
+        .get("cf-connecting-ip")
         .ok()
         .flatten()
+        .or_else(|| req.headers().get("x-forwarded-for").ok().flatten())
         .or_else(|| req.headers().get("x-real-ip").ok().flatten())
         .unwrap_or_else(|| "unknown".to_string())
 }
 
 fn now_secs() -> u64 {
-    (Date::now().as_millis() / 1000) as u64
+    Date::now().as_millis() / 1000
 }
 
 pub async fn handle_check(req: Request, ctx: RouteContext<()>) -> Result<Response> {
@@ -37,10 +38,7 @@ pub async fn handle_check(req: Request, ctx: RouteContext<()>) -> Result<Respons
     let key = format!("rl:{client_id}");
     let current_time = now_secs();
 
-    let entry: Option<RateLimitEntry> = kv
-        .get(&key)
-        .json()
-        .await?;
+    let entry: Option<RateLimitEntry> = kv.get(&key).json().await?;
 
     let (allowed, new_entry, remaining) = if let Some(mut e) = entry {
         if current_time >= e.window_start + u64::from(WINDOW_SECONDS) {
@@ -111,9 +109,28 @@ pub async fn handle_status(req: Request, ctx: RouteContext<()>) -> Result<Respon
     }))
 }
 
-pub async fn handle_reset(req: Request, ctx: RouteContext<()>) -> Result<Response> {
-    let body: serde_json::Value =
-        serde_json::from_str(&req.text().unwrap_or_default()).unwrap_or(serde_json::json!({}));
+pub async fn handle_reset(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
+    // Require a valid admin bearer token
+    let admin_token = ctx
+        .var("RATE_LIMIT_ADMIN_TOKEN")
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+
+    let authorized = req
+        .headers()
+        .get("authorization")
+        .ok()
+        .flatten()
+        .and_then(|val| val.strip_prefix("Bearer ").map(String::from))
+        .map(|token| !admin_token.is_empty() && token == admin_token)
+        .unwrap_or(false);
+
+    if !authorized {
+        return Response::error("Unauthorized", 401);
+    }
+
+    let body: serde_json::Value = serde_json::from_str(&req.text().await.unwrap_or_default())
+        .unwrap_or(serde_json::json!({}));
     let client_id = body["client_id"].as_str().unwrap_or("unknown");
 
     let kv = ctx.kv("RATE_LIMIT")?;

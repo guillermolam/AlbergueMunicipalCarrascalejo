@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Cloudflare Workers SDK
-worker = "0.5"
+worker = { version = "0.5", features = ["queue", "d1"] }
 worker-macros = "0.5"
 
 # Serialization
