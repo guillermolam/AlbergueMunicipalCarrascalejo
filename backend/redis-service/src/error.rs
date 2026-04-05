@@ -22,15 +22,18 @@ pub enum RedisServiceError {
 }
 
 impl RedisServiceError {
-    pub fn is_connection_error(&self) -> bool {
-        matches!(self, RedisServiceError::Connection(_))
+    #[must_use]
+    pub const fn is_connection_error(&self) -> bool {
+        matches!(self, Self::Connection(_))
     }
 
-    pub fn is_serialization_error(&self) -> bool {
-        matches!(self, RedisServiceError::Serialization(_))
+    #[must_use]
+    pub const fn is_serialization_error(&self) -> bool {
+        matches!(self, Self::Serialization(_))
     }
 
-    pub fn is_operation_error(&self) -> bool {
-        matches!(self, RedisServiceError::Operation(_))
+    #[must_use]
+    pub const fn is_operation_error(&self) -> bool {
+        matches!(self, Self::Operation(_))
     }
 }

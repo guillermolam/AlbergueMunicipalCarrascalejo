@@ -38,8 +38,15 @@ pub type AlbergueResult<T> = Result<T, AlbergueError>;
 
 impl From<serde_json::Error> for AlbergueError {
     fn from(err: serde_json::Error) -> Self {
-        AlbergueError::Internal {
-            message: format!("Serialization error: {}", err),
+        Self::Internal {
+            message: format!("Serialization error: {err}"),
         }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl From<sqlx::Error> for AlbergueError {
+    fn from(err: sqlx::Error) -> Self {
+        Self::DatabaseError(format!("{err}"))
     }
 }

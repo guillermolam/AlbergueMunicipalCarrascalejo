@@ -1,8 +1,10 @@
-use crate::domain::*;
-use crate::ports::*;
+use crate::domain::{
+    CardType, DifficultyLevel, InfoCard, InfoLink, LinkType, RouteMapData, Waypoint,
+};
+use crate::ports::{ScraperPort, StoragePort};
+use futures::future::BoxFuture;
 use serde_json;
 use shared::{AlbergueError, AlbergueResult};
-use futures::future::BoxFuture;
 
 pub struct CardsServiceImpl {
     storage: Box<crate::adapters::storage::PostgresCardsRepository>,
@@ -162,6 +164,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&carrascalejo_card)?)
     }
 
+    #[allow(clippy::unused_async)]
     pub async fn get_emergency_contacts(&self) -> AlbergueResult<String> {
         let emergency_card = InfoCard::new(
             CardType::EmergencyContacts,
@@ -235,9 +238,9 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         Ok(serde_json::to_string(&emergency_card)?)
     }
 
+    #[allow(clippy::unused_async)]
     pub async fn get_route_map(&self, next_stage: &str) -> AlbergueResult<String> {
         let route_data = match next_stage {
-            "almendralejo" | "Almendralejo" => RouteMapData::default(),
             "merida" | "Mérida" => RouteMapData {
                 current_location: "Albergue del Carrascalejo".to_string(),
                 next_stage: "Mérida".to_string(),
@@ -524,8 +527,9 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         card_id: &str,
         content: &str,
     ) -> AlbergueResult<String> {
-        let card_uuid = uuid::Uuid::parse_str(card_id)
-            .map_err(|_| AlbergueError::Validation { message: "Invalid card ID format".to_string() })?;
+        let card_uuid = uuid::Uuid::parse_str(card_id).map_err(|_| AlbergueError::Validation {
+            message: "Invalid card ID format".to_string(),
+        })?;
 
         let mut card = self.storage.get_card_by_id(card_uuid).await?;
         card.update_content(content.to_string());

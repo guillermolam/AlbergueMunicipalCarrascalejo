@@ -3,9 +3,9 @@ use crate::ports::ScraperPort;
 use async_trait::async_trait;
 use chrono::Utc;
 use reqwest::Client;
-use shared::AlbergueResult;
 #[cfg(not(target_arch = "wasm32"))]
 use shared::AlbergueError;
+use shared::AlbergueResult;
 
 pub struct MeridaScraperAdapter {
     #[allow(dead_code)]
@@ -37,12 +37,12 @@ impl MeridaScraperAdapter {
                 .send()
                 .await
                 .map_err(|e| {
-                    AlbergueError::ExternalServiceError(format!("Failed to fetch {}: {}", url, e))
+                    AlbergueError::ExternalServiceError(format!("Failed to fetch {url}: {e}"))
                 })?;
 
             if response.status().is_success() {
                 response.text().await.map_err(|e| {
-                    AlbergueError::ExternalServiceError(format!("Failed to read response: {}", e))
+                    AlbergueError::ExternalServiceError(format!("Failed to read response: {e}"))
                 })
             } else {
                 Err(AlbergueError::ExternalServiceError(format!(
@@ -54,6 +54,7 @@ impl MeridaScraperAdapter {
         }
     }
 
+    #[allow(clippy::unused_self)]
     fn extract_attractions_from_html(&self, _html: &str) -> Vec<String> {
         // Simple text extraction - in a real implementation this would use scraper crate
         vec![
@@ -80,7 +81,7 @@ impl ScraperPort for MeridaScraperAdapter {
                 Ok(ScrapedContent {
                     source_url: url.to_string(),
                     title: "Atracciones de Mérida".to_string(),
-                    content: format!("• {}", content),
+                    content: format!("• {content}"),
                     links: vec![url.to_string()],
                     images: Vec::new(),
                     last_scraped: Utc::now(),
@@ -128,7 +129,7 @@ impl ScraperPort for MeridaScraperAdapter {
         // For demo purposes, return mock weather data
         Ok(ScrapedContent {
             source_url: url,
-            title: format!("Tiempo en {}", location),
+            title: format!("Tiempo en {location}"),
             content:
                 "Tiempo soleado, temperatura máxima 25°C, mínima 12°C. Viento suave del oeste."
                     .to_string(),
@@ -144,7 +145,7 @@ impl ScraperPort for MeridaScraperAdapter {
         // Mock local events data
         Ok(ScrapedContent {
             source_url: format!("https://www.{}.es/eventos", location.to_lowercase()),
-            title: format!("Eventos en {}", location),
+            title: format!("Eventos en {location}"),
             content: "No hay eventos programados para esta semana.".to_string(),
             links: Vec::new(),
             images: Vec::new(),
@@ -265,7 +266,7 @@ impl ScraperPort for MeridaScraperAdapter {
 
                     rentals.push(ScrapedContent {
                         source_url: url.to_string(),
-                        title: format!("{} Mérida", company),
+                        title: format!("{company} Mérida"),
                         content: description.to_string(),
                         links: vec![format!("tel:{}", phone), url.to_string()],
                         images: Vec::new(),
@@ -277,7 +278,7 @@ impl ScraperPort for MeridaScraperAdapter {
                 Err(_) => {
                     rentals.push(ScrapedContent {
                         source_url: url.to_string(),
-                        title: format!("{} (información no disponible)", company),
+                        title: format!("{company} (información no disponible)"),
                         content:
                             "Consulte directamente con la empresa para disponibilidad y precios."
                                 .to_string(),

@@ -1,7 +1,7 @@
+use crate::config::{IdentityProvider, TokenResponse};
 use async_trait::async_trait;
 use openidconnect::{core::CoreProviderMetadata, ClientId, ClientSecret, RedirectUrl};
 use url::form_urlencoded;
-use crate::config::{IdentityProvider, TokenResponse};      
 
 pub struct LogtoProvider {
     pub metadata: CoreProviderMetadata,
@@ -16,14 +16,14 @@ impl IdentityProvider for LogtoProvider {
         "logto"
     }
 
-    fn authorization_url(&self, state: &str) -> String {   
+    fn authorization_url(&self, state: &str) -> String {
         let mut auth_url = self.metadata.authorization_endpoint().url().clone();
         auth_url
             .query_pairs_mut()
             .append_pair("response_type", "code")
             .append_pair("client_id", self.client_id.as_str())
             .append_pair("redirect_uri", self.redirect.as_str())
-            .append_pair("scope", "openid profile email")  
+            .append_pair("scope", "openid profile email")
             .append_pair("state", state);
         auth_url.to_string()
     }
@@ -39,7 +39,7 @@ impl IdentityProvider for LogtoProvider {
         let body_str = form_urlencoded::Serializer::new(String::new())
             .append_pair("grant_type", "authorization_code")
             .append_pair("code", code)
-            .append_pair("redirect_uri", redirect_uri)     
+            .append_pair("redirect_uri", redirect_uri)
             .append_pair("client_id", self.client_id.as_str())
             .append_pair("client_secret", self.client_secret.secret())
             .finish();
@@ -51,11 +51,15 @@ impl IdentityProvider for LogtoProvider {
             .body(body_str.into_bytes())
             .unwrap();
 
-        let resp: http::Response<Vec<u8>> = spin_sdk::http::send(req).await
-            .map_err(|e| anyhow::anyhow!("Spin HTTP error: {:?}", e))?;
+        let resp: http::Response<Vec<u8>> = spin_sdk::http::send(req)
+            .await
+            .map_err(|e| anyhow::anyhow!("Spin HTTP error: {e:?}"))?;
 
         if resp.status() != 200 {
-            return Err(anyhow::anyhow!("Token exchange failed with status: {}", resp.status()));
+            return Err(anyhow::anyhow!(
+                "Token exchange failed with status: {}",
+                resp.status()
+            ));
         }
 
         let body = resp.body();
@@ -73,8 +77,8 @@ impl IdentityProvider for LogtoProvider {
             .clone();
 
         let body_str = form_urlencoded::Serializer::new(String::new())
-            .append_pair("grant_type", "refresh_token")    
-            .append_pair("refresh_token", refresh_token)   
+            .append_pair("grant_type", "refresh_token")
+            .append_pair("refresh_token", refresh_token)
             .append_pair("client_id", self.client_id.as_str())
             .append_pair("client_secret", self.client_secret.secret())
             .finish();
@@ -86,11 +90,15 @@ impl IdentityProvider for LogtoProvider {
             .body(body_str.into_bytes())
             .unwrap();
 
-        let resp: http::Response<Vec<u8>> = spin_sdk::http::send(req).await
-            .map_err(|e| anyhow::anyhow!("Spin HTTP error: {:?}", e))?;
+        let resp: http::Response<Vec<u8>> = spin_sdk::http::send(req)
+            .await
+            .map_err(|e| anyhow::anyhow!("Spin HTTP error: {e:?}"))?;
 
         if resp.status() != 200 {
-            return Err(anyhow::anyhow!("Token refresh failed with status: {}", resp.status()));
+            return Err(anyhow::anyhow!(
+                "Token refresh failed with status: {}",
+                resp.status()
+            ));
         }
 
         let body = resp.body();

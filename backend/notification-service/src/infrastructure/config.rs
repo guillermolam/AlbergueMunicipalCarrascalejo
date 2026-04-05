@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+#[allow(dead_code)]
 pub struct NotificationConfig {
     pub smtp_host: String,
     pub smtp_port: u16,
@@ -8,6 +9,7 @@ pub struct NotificationConfig {
     pub from_email: String,
 }
 
+#[allow(dead_code)]
 impl NotificationConfig {
     pub fn from_env() -> Result<Self> {
         Ok(Self {
