@@ -3,7 +3,6 @@
   "compilerOptions": {
     "types": ["astro/client"],
     "resolveJsonModule": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
     "moduleResolution": "bundler",
