@@ -27,7 +27,7 @@ args = ["--workspace", "--all-targets", "--all-features", "--", "-Dwarnings"]
 [workspace.dependencies]
 async-trait = "0.1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
-libsql = "0.6"
+libsql = "0.9.30"
 rust_decimal = { version = "1", features = ["serde"] }
 sea-orm = { version = "=2.0.0-rc.27", default-features = false, features = ["macros", "runtime-tokio-rustls", "sqlx-sqlite", "with-chrono", "with-rust_decimal"] }
 sea-orm-migration = { version = "=2.0.0-rc.27", default-features = false, features = ["runtime-tokio-rustls", "sqlx-sqlite"] }

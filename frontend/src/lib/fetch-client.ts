@@ -130,11 +130,11 @@ class ApiClient {
 
   private async parseError(response: Response): Promise<ApiError> {
     try {
-      const errorData = await response.json();
+      const errorData = await response.json() as Record<string, unknown>;
       return {
-        message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+        message: String(errorData.message ?? `HTTP ${response.status}: ${response.statusText}`),
         status: response.status,
-        code: errorData.code,
+        code: errorData.code !== undefined ? String(errorData.code) : undefined,
         details: errorData.details,
       };
     } catch {

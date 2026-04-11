@@ -1,0 +1,255 @@
+---
+/**
+ * MapLibre.astro — Reusable MapLibre GL JS map component (Astro 6 compatible).
+ *
+ * Uses a Web Component (custom element) to avoid the `define:vars` + module import
+ * conflict in Astro 6: data is passed via `data-*` attributes and read in a proper
+ * module `<script>` that can freely `import` from npm packages.
+ *
+ * CSS is imported in the frontmatter so Vite/Astro bundles it correctly.
+ *
+ * Usage:
+ *   <MapLibre latitude={39.02} longitude={-6.33} zoom={14} />
+ *   <MapLibre latitude={39.02} longitude={-6.33} height="260px" interactive={false} />
+ */
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+export interface Props {
+  /** Latitude of the map centre / marker. */
+  latitude: number;
+  /** Longitude of the map centre / marker. */
+  longitude: number;
+  /** Initial zoom level (default 14). */
+  zoom?: number;
+  /** MapLibre style URL (default: OpenFreeMap liberty — free, no API key). */
+  mapStyle?: string;
+  /** CSS height of the map container (default "400px"). */
+  height?: string;
+  /** Additional CSS class(es) applied to the outer element. */
+  class?: string;
+  /** Allow mouse/touch panning & zooming (default true). */
+  interactive?: boolean;
+  /** Allow scroll-wheel zoom (default false — prevents page-scroll hijack). */
+  scrollZoom?: boolean;
+  /** Show a custom SVG pin marker at the centre coordinates (default true). */
+  showMarker?: boolean;
+  /** Title shown in the marker popup (default "Albergue Municipal El Carrascalejo"). */
+  markerTitle?: string;
+  /** Optional subtitle line in the marker popup. */
+  markerSubtitle?: string;
+  /** Show navigation controls (zoom +/−) when interactive (default true). */
+  showControls?: boolean;
+}
+
+const {
+  latitude,
+  longitude,
+  zoom = 14,
+  mapStyle = 'https://tiles.openfreemap.org/styles/liberty',
+  height = '400px',
+  class: className,
+  interactive = true,
+  scrollZoom = false,
+  showMarker = true,
+  markerTitle = 'Albergue Municipal El Carrascalejo',
+  markerSubtitle = '',
+  showControls = true,
+} = Astro.props;
+
+// Unique DOM id so multiple instances on the same page don't clash.
+const uid = `ml-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<maplibre-map
+  data-uid={uid}
+  data-lat={latitude}
+  data-lng={longitude}
+  data-zoom={zoom}
+  data-style={mapStyle}
+  data-interactive={String(interactive)}
+  data-scroll-zoom={String(scrollZoom)}
+  data-marker={String(showMarker)}
+  data-marker-title={markerTitle}
+  data-marker-subtitle={markerSubtitle}
+  data-controls={String(showControls && interactive)}
+  class:list={['maplibre-host', className]}
+  style={`display:block;width:100%;height:${height};`}
+>
+  <!-- MapLibre needs a plain div as its container -->
+  <div id={uid} style="width:100%;height:100%;"></div>
+</maplibre-map>
+
+<style>
+  /*
+   * Scoped to this component.
+   * The host element is display:block with explicit height (passed as inline style).
+   */
+  maplibre-map {
+    display: block;
+    position: relative;
+    overflow: hidden;
+  }
+  maplibre-map > div {
+    position: absolute;
+    inset: 0;
+  }
+</style>
+
+<script>
+  /**
+   * Web Component: <maplibre-map>
+   *
+   * Reads map config from data-* attributes (set by the Astro component above)
+   * and initialises a MapLibre GL JS map on connectedCallback.
+   *
+   * Using a custom element avoids the Astro 6 restriction that define:vars forces
+   * is:inline (which prevents ES module imports inside the same script tag).
+   */
+  import maplibregl from 'maplibre-gl';
+
+  class MapLibreMap extends HTMLElement {
+    private _map: maplibregl.Map | null = null;
+
+    connectedCallback() {
+      const uid          = this.dataset.uid ?? 'map';
+      const lat          = parseFloat(this.dataset.lat  ?? '0');
+      const lng          = parseFloat(this.dataset.lng  ?? '0');
+      const zoom         = parseFloat(this.dataset.zoom ?? '14');
+      const style        = this.dataset.style  ?? 'https://tiles.openfreemap.org/styles/liberty';
+      const interactive  = this.dataset.interactive  !== 'false';
+      const scrollZoom   = this.dataset.scrollZoom   === 'true';
+      const showMarker   = this.dataset.marker        !== 'false';
+      const markerTitle  = this.dataset.markerTitle   ?? '';
+      const markerSub    = this.dataset.markerSubtitle ?? '';
+      const showControls = this.dataset.controls      !== 'false';
+
+      const container = document.getElementById(uid);
+      if (!container) return;
+
+      const map = new maplibregl.Map({
+        container,
+        style,
+        center: [lng, lat],
+        zoom,
+        interactive,
+        attributionControl: false,
+        canvasContextAttributes: { antialias: true }, // enables WebGL2 antialiasing + Three.js sharing
+      });
+      this._map = map;
+
+      // Scroll-zoom off by default to avoid hijacking page scroll
+      if (!scrollZoom) map.scrollZoom.disable();
+
+      // Attribution (compact)
+      map.addControl(
+        new maplibregl.AttributionControl({ compact: true }),
+        'bottom-left',
+      );
+
+      // Navigation controls (+/−)
+      if (showControls) {
+        map.addControl(
+          new maplibregl.NavigationControl({ showCompass: false }),
+          'top-right',
+        );
+      }
+
+      // Custom SVG pin marker — built via DOM API (no innerHTML, safe from XSS)
+      if (showMarker) {
+        this._addMarker(map, lng, lat, markerTitle, markerSub);
+      }
+
+      // Dispatch a custom event so other scripts on the page can access the map instance
+      // without relying on define:vars (which forces is:inline, blocking ES module imports).
+      // Usage: document.querySelector('maplibre-map').addEventListener('maplibre:ready', e => { const map = e.detail.map; })
+      this.dispatchEvent(
+        new CustomEvent('maplibre:ready', {
+          detail: { map },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+
+    disconnectedCallback() {
+      this._map?.remove();
+      this._map = null;
+    }
+
+    private _addMarker(
+      map: maplibregl.Map,
+      lng: number,
+      lat: number,
+      title: string,
+      subtitle: string,
+    ) {
+      const NS = 'http://www.w3.org/2000/svg';
+
+      // ── SVG pin ───────────────────────────────────────────────────────────
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('width',   '36');
+      svg.setAttribute('height',  '44');
+      svg.setAttribute('viewBox', '0 0 36 44');
+      svg.setAttribute('aria-hidden', 'true');
+
+      const shadow = document.createElementNS(NS, 'ellipse');
+      shadow.setAttribute('cx', '18'); shadow.setAttribute('cy', '42');
+      shadow.setAttribute('rx', '8'); shadow.setAttribute('ry', '2.5');
+      shadow.setAttribute('fill', 'rgba(0,0,0,0.22)');
+      svg.appendChild(shadow);
+
+      const body = document.createElementNS(NS, 'path');
+      body.setAttribute(
+        'd',
+        'M18 2C10.268 2 4 8.268 4 16c0 10 14 28 14 28S32 26 32 16C32 8.268 25.732 2 18 2z',
+      );
+      body.setAttribute('fill',         '#00AB39');
+      body.setAttribute('stroke',       'white');
+      body.setAttribute('stroke-width', '2');
+      svg.appendChild(body);
+
+      const dot = document.createElementNS(NS, 'circle');
+      dot.setAttribute('cx', '18'); dot.setAttribute('cy', '16');
+      dot.setAttribute('r',  '5.5');
+      dot.setAttribute('fill', 'white');
+      svg.appendChild(dot);
+
+      const el = document.createElement('div');
+      el.style.cssText =
+        'width:36px;height:44px;cursor:pointer;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.32));';
+      el.appendChild(svg);
+
+      // ── Popup ─────────────────────────────────────────────────────────────
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'padding:0.4rem 0.65rem;font-size:0.82rem;line-height:1.5;';
+
+      const strong = document.createElement('strong');
+      strong.textContent = title;
+      strong.style.cssText = 'display:block;color:#00AB39;margin-bottom:0.1rem;';
+      wrap.appendChild(strong);
+
+      if (subtitle) {
+        const sub = document.createElement('span');
+        sub.textContent = subtitle;
+        sub.style.cssText = 'color:#555;font-size:0.78rem;';
+        wrap.appendChild(sub);
+      }
+
+      const popup = new maplibregl.Popup({ offset: 38, closeButton: false })
+        .setDOMContent(wrap);
+
+      new maplibregl.Marker({ element: el })
+        .setLngLat([lng, lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      // Open popup automatically once the style has loaded
+      map.on('load', () => popup.addTo(map));
+    }
+  }
+
+  // Guard against re-registration (HMR or multiple component instances)
+  if (!customElements.get('maplibre-map')) {
+    customElements.define('maplibre-map', MapLibreMap);
+  }
+</script>

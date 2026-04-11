@@ -134,7 +134,7 @@ class ApiClient {
           body: JSON.stringify(payload),
         });
 
-        const data = await response.json();
+        const data = await response.json() as { ok: boolean };
 
         return {
           data,

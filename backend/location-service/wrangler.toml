@@ -7,6 +7,9 @@ command = "cargo install worker-build && worker-build --release"
 
 [vars]
 ENVIRONMENT = "production"
+# Geoapify API key — override in .dev.vars for local dev,
+# set via `wrangler secret put GEOAPIFY_API_KEY` for production.
+GEOAPIFY_API_KEY = ""
 
 # KV for caching
 [[kv_namespaces]]

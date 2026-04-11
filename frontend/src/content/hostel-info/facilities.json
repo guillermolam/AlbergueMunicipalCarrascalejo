@@ -1,0 +1,10 @@
+[
+  {"id": "bed",      "type": "facility", "icon": "bed",      "title": "24 Camas",           "description": "Literas en dos salas separadas",  "order": 1},
+  {"id": "shower",   "type": "facility", "icon": "shower",   "title": "Duchas Calientes",   "description": "Baños separados H/M con duchas",  "order": 2},
+  {"id": "kitchen",  "type": "facility", "icon": "kitchen",  "title": "Cocina Compartida",  "description": "Nevera, microondas, lavadora",    "order": 3},
+  {"id": "wifi",     "type": "facility", "icon": "wifi",     "title": "WiFi Gratis",        "description": "Cobertura en todas las zonas",    "order": 4},
+  {"id": "lock",     "type": "facility", "icon": "lock",     "title": "Taquillas",          "description": "Guardado seguro de tus cosas",    "order": 5},
+  {"id": "laundry",  "type": "facility", "icon": "laundry",  "title": "Lavanderia",         "description": "Lavadora y secadora disponibles", "order": 6},
+  {"id": "garden",   "type": "facility", "icon": "garden",   "title": "Patio Exterior",     "description": "Mesas y tendedero al aire libre", "order": 7},
+  {"id": "bike",     "type": "facility", "icon": "bike",     "title": "Parking Bici",       "description": "Guarda bicicletas cubierto",      "order": 8}
+]

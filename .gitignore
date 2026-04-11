@@ -6,6 +6,7 @@
 **/.astro/
 frontend/worker-configuration.d.ts
 frontend/.wrangler/
+**/.wrangler/
 **/.vite/
 **/.cache/
 **/.next/
@@ -63,6 +64,8 @@ frontend/.wrangler/
 **/.turbo/
 
 # === ENVIRONMENT & SECRETS ===
+**/.dev.vars
+**/.claude/
 **/.env
 **/.env.*
 **/.env.local

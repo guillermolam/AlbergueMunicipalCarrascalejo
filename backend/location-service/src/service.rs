@@ -192,7 +192,8 @@ impl LocationService {
                     .duration_since(UNIX_EPOCH)
                     .ok()
                     .map_or(0, |d| d.as_secs());
-                now - entry.timestamp < self.cache_config.ttl.as_secs()
+                now.checked_sub(entry.timestamp)
+                    .is_some_and(|age| age < self.cache_config.ttl.as_secs())
             })
     }
 }

@@ -1,0 +1,447 @@
+---
+export const prerender = true;
+import Layout from '../../layouts/Layout.astro';
+import MapLibre from '../../components/MapLibre.astro';
+import directionsData from '../../content/local-guide/directions.json';
+import stagesData from '../../content/camino-guide/stages.json';
+
+type DirectionEntry = {
+  id: string; type: string; icon: string; name: string; subtitle: string;
+  detail1: string; detail2: string; description: string; color: string; order: number;
+};
+type StageEntry = {
+  type: 'stage'; id: string; num: number; name: string; km: number;
+  difficulty: string; towns: string[]; hours: string; highlight: boolean;
+};
+
+const directionCards = (directionsData as DirectionEntry[])
+  .sort((a, b) => a.order - b.order)
+  .map(d => ({
+    icon:  d.icon,
+    title: d.name,
+    lines: [d.detail1, d.detail2, d.description],
+    color: d.color,
+  }));
+
+// Albergue Municipal El Carrascalejo — GPS verified
+const LAT = 39.0237972;
+const LNG = -6.3373782;
+const ELEVATION = 177; // metres above sea level
+
+// Get 3 stages around El Carrascalejo (stages 11, 12, 13 – highlight stage 12)
+const nearbyStages = (stagesData as StageEntry[])
+  .filter(s => s.type === 'stage' && s.num >= 11 && s.num <= 13)
+  .sort((a, b) => a.num - b.num)
+  .map(s => ({
+    from:  s.towns[0] ?? '',
+    to:    s.towns[s.towns.length - 1] ?? '',
+    km:    s.km,
+    diff:  s.difficulty === 'easy' ? 'Baja' : s.difficulty === 'medium' ? 'Media' : 'Alta',
+    days:  s.highlight ? 0 : s.num - 12,
+  }));
+
+const osmUrl        = `https://www.openstreetmap.org/?mlat=${LAT}&mlon=${LNG}&zoom=15`;
+const osmDirections = `https://www.openstreetmap.org/directions?from=&to=${LAT},${LNG}`;
+---
+
+<Layout title="Como Llegar — Albergue Municipal de El Carrascalejo">
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- HERO -->
+  <section class="page-hero reveal-section">
+    <div class="page-hero-inner">
+      <a href="/dashboard" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al Panel
+      </a>
+      <div class="hero-emoji" aria-hidden="true">🧭</div>
+      <h1 class="page-title">Como Llegar</h1>
+      <p class="page-subtitle">Rutas, transporte y mapas para El Carrascalejo</p>
+    </div>
+  </section>
+
+  <div class="page-content">
+
+    <!-- HOW TO ARRIVE CARDS -->
+    <section class="cards-section reveal-section" style="--delay:0.05s">
+      <h2 class="section-title">Formas de Llegar</h2>
+      <div class="arrival-grid">
+        {directionCards.map(card => (
+          <div class="arrival-card">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke={card.color} stroke-width="1.5" filter="url(#sketchy-filter)" stroke-opacity="0.4"/>
+            </svg>
+            <div class="arrival-inner">
+              <div class="arrival-header">
+                <span class="arrival-emoji" aria-hidden="true">{card.icon}</span>
+                <h3 class="arrival-title" style={`color:${card.color}`}>{card.title}</h3>
+              </div>
+              <ul class="arrival-list">
+                {card.lines.map(l => <li>{l}</li>)}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- MAPLIBRE GL MAP — OpenStreetMap tiles via OpenFreeMap (no API key) -->
+    <section class="map-section reveal-section" style="--delay:0.1s">
+      <h2 class="section-title">Ubicación</h2>
+      <div class="map-card">
+        <!--
+          Hidden meta element — passes GPS + elevation to the Three.js script.
+          Avoids define:vars (which forces is:inline and breaks ES module imports in Astro 6).
+        -->
+        <meta
+          id="map-config"
+          data-lat={LAT}
+          data-lng={LNG}
+          data-elevation={ELEVATION}
+        />
+        <!-- Reusable MapLibre component (Astro 6 Web Component pattern) -->
+        <MapLibre
+          latitude={LAT}
+          longitude={LNG}
+          zoom={15}
+          height="380px"
+          markerTitle="Albergue Municipal"
+          markerSubtitle={`El Carrascalejo · Km 482 · ${ELEVATION}m`}
+          scrollZoom={true}
+          class="directions-map"
+        />
+        <div class="map-meta">
+          <div class="map-coords">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {LAT.toFixed(6)}°N, {Math.abs(LNG).toFixed(6)}°O · {ELEVATION} m · Extremadura, España
+          </div>
+          <div class="map-actions">
+            <a href={osmUrl} target="_blank" rel="noopener noreferrer" class="map-btn map-btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Ver en OpenStreetMap
+            </a>
+            <a href={osmDirections} target="_blank" rel="noopener noreferrer" class="map-btn map-btn-secondary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+              Cómo llegar
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRAIL STAGES -->
+    <section class="stages-section reveal-section" style="--delay:0.15s">
+      <h2 class="section-title">Etapas Proximas</h2>
+      <div class="stages-list">
+        {nearbyStages.map((stage, i) => (
+          <div class="stage-row reveal-section" style={`--delay:${0.17 + i * 0.06}s`}>
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="12" fill="white" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-filter)"/>
+            </svg>
+            <div class="stage-inner">
+              <div class="stage-route">
+                <span class="stage-city">{stage.from}</span>
+                <svg width="24" height="14" viewBox="0 0 24 14" fill="none" aria-hidden="true">
+                  <path d="M0 7h20M14 2l6 5-6 5" stroke="var(--green)" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="stage-city">{stage.to}</span>
+                {stage.days === 0 && <span class="stage-badge">Aqui</span>}
+              </div>
+              <div class="stage-meta">
+                <span class="stage-km">{stage.km} km</span>
+                <span class={`stage-diff diff-${stage.diff.toLowerCase()}`}>{stage.diff}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+  </div>
+
+  <style>
+    :root {
+      --green: #00AB39;
+      --green-dark: #006622;
+      --green-darker: #004d1a;
+      --green-light: #e6f9ed;
+      --black: #1a1a1a;
+      --gold: #f59e0b;
+    }
+
+    .page-hero {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 60%, #3b82f6 100%);
+      padding: 2.5rem 1rem 2rem; color: white;
+      position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.06); border-radius: 50%;
+    }
+    .page-hero-inner { max-width: 1020px; margin: 0 auto; position: relative; z-index: 1; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: rgba(255,255,255,0.8); text-decoration: none;
+      font-family: var(--font-hand, sans-serif); font-size: 0.85rem;
+      margin-bottom: 1rem;
+      transition: color 200ms ease;
+    }
+    .back-link:hover { color: white; }
+    .hero-emoji { font-size: 2.8rem; margin-bottom: 0.4rem; }
+    .page-title {
+      font-family: var(--font-display, sans-serif);
+      font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 0.25rem; color: white;
+    }
+    .page-subtitle { font-family: var(--font-hand, sans-serif); font-size: 1rem; opacity: 0.85; margin: 0; }
+
+    .page-content { max-width: 1020px; margin: 0 auto; padding: 2rem 1rem 4rem; display: flex; flex-direction: column; gap: 2.5rem; }
+
+    .section-title {
+      font-family: var(--font-display, sans-serif); font-size: 1.4rem; color: var(--black);
+      margin: 0 0 1rem;
+    }
+
+    /* Arrival grid */
+    .arrival-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .arrival-card {
+      position: relative; border-radius: 14px;
+      transition: transform 250ms ease;
+    }
+    .arrival-card:hover { transform: translateY(-3px); }
+    .arrival-inner { position: relative; z-index: 2; padding: 1.25rem 1.25rem 1.1rem; }
+    .arrival-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+    .arrival-emoji { font-size: 1.6rem; }
+    .arrival-title { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 1rem; margin: 0; }
+    .arrival-list {
+      margin: 0; padding: 0 0 0 1rem; list-style: none;
+      display: flex; flex-direction: column; gap: 0.35rem;
+    }
+    .arrival-list li {
+      font-family: var(--font-hand, sans-serif); font-size: 0.85rem; color: #555;
+      padding-left: 0.9rem; position: relative;
+    }
+    .arrival-list li::before { content: '›'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+    /* MapLibre map */
+    .map-card { border-radius: 16px; overflow: hidden; border: 2px solid rgba(5,150,105,0.2); }
+    .directions-map { width: 100%; }
+    .map-meta {
+      padding: 1rem 1.25rem 1.25rem; background: white;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .map-coords {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-family: var(--font-hand, sans-serif); font-size: 0.85rem; color: #666;
+    }
+    .map-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .map-btn {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      padding: 0.6rem 1.2rem; text-decoration: none; border-radius: 10px;
+      font-family: var(--font-sketch, sans-serif); font-weight: 700;
+      font-size: 0.85rem; letter-spacing: 0.03em; text-transform: uppercase;
+      transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+    .map-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    .map-btn-primary  { background: var(--green); color: white; }
+    .map-btn-secondary { background: var(--green-light); color: var(--green-dark); border: 1.5px solid rgba(0,171,57,0.3); }
+
+    /* Stages */
+    .stages-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .stage-row { position: relative; border-radius: 12px; transition: transform 250ms ease; }
+    .stage-row:hover { transform: translateX(4px); }
+    .stage-inner {
+      position: relative; z-index: 2; padding: 1rem 1.25rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .stage-route { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .stage-city { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.95rem; color: var(--black); }
+    .stage-badge {
+      font-family: var(--font-hand, sans-serif); font-size: 0.72rem;
+      background: rgba(0,171,57,0.12); color: var(--green-dark);
+      border: 1px solid rgba(0,171,57,0.3); border-radius: 50px;
+      padding: 0.1rem 0.5rem;
+    }
+    .stage-meta { display: flex; align-items: center; gap: 0.6rem; }
+    .stage-km { font-family: var(--font-display, sans-serif); font-size: 1.1rem; color: var(--green); }
+    .stage-diff {
+      font-family: var(--font-hand, sans-serif); font-size: 0.75rem;
+      padding: 0.15rem 0.5rem; border-radius: 50px;
+    }
+    .diff-media { background: #fef9c3; color: #92400e; }
+    .diff-alta  { background: #fee2e2; color: #991b1b; }
+    .diff-baja  { background: #dcfce7; color: #166534; }
+
+    /* Animations */
+    .reveal-section { opacity: 0; transform: translateY(24px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
+    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 640px) {
+      .arrival-grid { grid-template-columns: 1fr; }
+      .directions-map { height: 260px !important; }
+      .map-actions { flex-direction: column; }
+    }
+  </style>
+
+  <!--
+    Astro 6 module script — ES module imports work here.
+    GPS coordinates are read from data-* attributes on #map-config (no define:vars needed).
+    The map instance comes via the maplibre:ready CustomEvent dispatched by <MapLibre>.
+  -->
+  <script>
+    import * as THREE from 'three';
+    import maplibregl from 'maplibre-gl';
+
+    // ── Read coordinates from DOM (avoids define:vars / is:inline restriction) ─
+    const configEl = document.getElementById('map-config');
+    const LAT       = parseFloat(configEl?.dataset.lat        ?? '39.0237972');
+    const LNG       = parseFloat(configEl?.dataset.lng        ?? '-6.3373782');
+    const ELEVATION = parseFloat(configEl?.dataset.elevation  ?? '177');
+
+    // ── Pre-compute Mercator origin for the Three.js layer ────────────────────
+    const mercatorOrigin = maplibregl.MercatorCoordinate.fromLngLat([LNG, LAT], ELEVATION);
+    const metersPerUnit  = mercatorOrigin.meterInMercatorCoordinateUnits();
+
+    // ── Three.js CustomLayerInterface — animated 3D beacon ────────────────────
+    // Shares MapLibre's WebGL2 canvas; renderer.autoClear = false so MapLibre
+    // keeps ownership of clearing the framebuffer each frame.
+    const threeLayer: maplibregl.CustomLayerInterface = {
+      id:            'albergue-beacon',
+      type:          'custom',
+      renderingMode: '3d',
+
+      _renderer: null as THREE.WebGLRenderer | null,
+      _scene:    null as THREE.Scene | null,
+      _camera:   null as THREE.Camera | null,
+      _rings:    [] as THREE.Mesh[],
+      _beacon:   null as THREE.Mesh | null,
+      _clock:    new THREE.Clock(),
+
+      onAdd(mapRef: maplibregl.Map, gl: WebGL2RenderingContext) {
+        this._renderer = new THREE.WebGLRenderer({
+          canvas: mapRef.getCanvas(),
+          context: gl,
+          antialias: true,
+        });
+        this._renderer.autoClear = false;
+
+        this._scene  = new THREE.Scene();
+        this._camera = new THREE.Camera(); // base class — matrix supplied externally each frame
+
+        // Beacon pillar (1 unit ≈ 1 metre in Mercator after modelMatrix)
+        const pillarGeo = new THREE.CylinderGeometry(2, 4, 40, 12);
+        const pillarMat = new THREE.MeshBasicMaterial({ color: 0x00AB39, transparent: true, opacity: 0.9 });
+        this._beacon = new THREE.Mesh(pillarGeo, pillarMat);
+        this._beacon.position.y = 20;
+        this._scene.add(this._beacon);
+
+        // Glowing tip sphere
+        const tipMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(5, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0x00ff55, transparent: true, opacity: 0.95 }),
+        );
+        tipMesh.position.y = 42;
+        this._scene.add(tipMesh);
+
+        // Three staggered pulsing rings expanding from the beacon base
+        for (let i = 0; i < 3; i++) {
+          const ring = new THREE.Mesh(
+            new THREE.RingGeometry(0.1, 4, 32),
+            new THREE.MeshBasicMaterial({ color: 0x00AB39, transparent: true, opacity: 0.6, side: THREE.DoubleSide }),
+          );
+          ring.rotation.x = -Math.PI / 2; // lay flat on the ground plane
+          ring.userData = { phase: i / 3 };
+          this._rings.push(ring);
+          this._scene.add(ring);
+        }
+      },
+
+      render(_gl: WebGL2RenderingContext, args: { defaultProjectionData: { mainMatrix: Float32Array } }) {
+        if (!this._renderer || !this._scene || !this._camera) return;
+
+        const t = this._clock.getElapsedTime();
+
+        // Pulse pillar opacity
+        if (this._beacon) {
+          (this._beacon.material as THREE.MeshBasicMaterial).opacity = 0.75 + 0.2 * Math.sin(t * 2);
+        }
+
+        // Expand + fade rings
+        for (const ring of this._rings) {
+          const phase  = (t * 0.5 + (ring.userData.phase as number)) % 1;
+          ring.scale.setScalar(phase * 80);
+          (ring.material as THREE.MeshBasicMaterial).opacity = (1 - phase) * 0.55;
+        }
+
+        // Mercator model matrix — scale units to metres, flip Y axis
+        const modelMatrix = new THREE.Matrix4()
+          .makeTranslation(mercatorOrigin.x, mercatorOrigin.y, mercatorOrigin.z)
+          .scale(new THREE.Vector3(metersPerUnit, -metersPerUnit, metersPerUnit));
+
+        this._camera.projectionMatrix = new THREE.Matrix4()
+          .fromArray(args.defaultProjectionData.mainMatrix)
+          .multiply(modelMatrix);
+
+        this._renderer.resetState();
+        this._renderer.render(this._scene, this._camera);
+        // Access map via closure from addEventListener below (see maplibre:ready handler)
+        (this as { _mapRef?: maplibregl.Map })._mapRef?.triggerRepaint();
+      },
+
+      onRemove() {
+        this._renderer?.dispose();
+      },
+    };
+
+    // ── Listen for MapLibre component's ready event ───────────────────────────
+    // The <MapLibre> component dispatches 'maplibre:ready' with { detail: { map } }
+    // once the map instance is created, enabling module scripts to access it.
+    const mapHost = document.querySelector('.directions-map');
+    if (mapHost) {
+      mapHost.addEventListener('maplibre:ready', (e: Event) => {
+        const { map } = (e as CustomEvent<{ map: maplibregl.Map }>).detail;
+
+        // Add scale control (not in generic MapLibre component)
+        map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
+
+        // Attach map reference to layer for triggerRepaint
+        (threeLayer as { _mapRef?: maplibregl.Map })._mapRef = map;
+
+        // Add Three.js beacon layer once style has fully loaded
+        map.once('style.load', () => {
+          try {
+            map.addLayer(threeLayer as maplibregl.CustomLayerInterface);
+          } catch { /* layer may already be added on HMR */ }
+        });
+      });
+    }
+
+    // ── Scroll-reveal animations ──────────────────────────────────────────────
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('revealed');
+          obs.unobserve(e.target);
+          // Trigger map resize when the map section scrolls into view
+          if (e.target.classList.contains('map-section')) {
+            const mh = e.target.querySelector('.directions-map');
+            if (mh) {
+              mh.addEventListener('maplibre:ready', (ev: Event) => {
+                const { map } = (ev as CustomEvent<{ map: maplibregl.Map }>).detail;
+                setTimeout(() => map.resize(), 650);
+              }, { once: true });
+            }
+          }
+        }
+      });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.reveal-section').forEach(el => obs.observe(el));
+  </script>
+</Layout>

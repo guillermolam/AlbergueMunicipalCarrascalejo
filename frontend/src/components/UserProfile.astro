@@ -3,10 +3,10 @@ import type { Pilgrim } from '../stores/user';
 import './UserProfile.css';
 
 const getStatusText = (status: Pilgrim['status']) => {
-  if (status === 'pending') return t('pending', 'Pendiente');
-  if (status === 'confirmed') return t('confirmed', 'Confirmado');
-  if (status === 'cancelled') return t('cancelled', 'Cancelado');
-  return t('unknownStatus', 'Estado desconocido');
+  if (status === 'pending') return 'Pendiente';
+  if (status === 'confirmed') return 'Confirmado';
+  if (status === 'cancelled') return 'Cancelado';
+  return 'Estado desconocido';
 };
 
 const formatDate = (dateString: string) => {

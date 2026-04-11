@@ -1,7 +1,7 @@
 // SSR-safe gateway configuration system
 // Supports fake routes, mocked gateway, and real gateway integration
 
-import { getConfig } from './config-ssr';
+import { API_MODE } from './config-ssr';
 
 // SSR-safe environment check
 const isServer = typeof window === 'undefined';
@@ -283,19 +283,22 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Get gateway configuration mode
+ * Get gateway configuration mode.
+ * Priority: GATEWAY_MODE server env var → PUBLIC_API_MODE → 'fake'
  */
 export async function getGatewayMode(): Promise<GatewayMode> {
-  const config = await getConfig();
-
-  // Check environment variables first
+  // Server-side env var takes precedence
   const gatewayMode = getServerEnv('GATEWAY_MODE');
   if (gatewayMode) {
     return gatewayMode as GatewayMode;
   }
 
-  // Check configuration
-  return (config as any).gateway?.mode || 'fake';
+  // Fall back to the public API mode flag (real | mock)
+  if (API_MODE === 'real') return 'real';
+  if (API_MODE === 'mock') return 'mock';
+
+  // Default to fake (in-memory stubs) during local development
+  return 'fake';
 }
 
 /**

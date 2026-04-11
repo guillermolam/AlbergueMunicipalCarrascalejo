@@ -1,0 +1,53 @@
+# Native Rust HTTP server — replaces the CF Worker approach.
+# Uses Tesseract for OCR (runs locally without Cloudflare credentials).
+# For production, deploy as a regular HTTP service alongside the CF Worker frontend.
+[workspace]
+
+[package]
+name = "ocr-service"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "ocr-service"
+path = "src/main.rs"
+
+[dependencies]
+# HTTP server
+axum         = { version = "0.7", features = ["multipart"] }
+tokio        = { version = "1",   features = ["full"] }
+tower-http   = { version = "0.5", features = ["cors", "trace"] }
+
+# Image processing — grayscale + Otsu binarisation (same as tutorial)
+image        = "0.25"
+imageproc    = "0.25"
+
+# Tesseract OCR wrapper (wraps libtesseract via FFI)
+tesseract    = "0.15"
+
+# Temp files — Tesseract needs a file path, not raw bytes
+tempfile     = "3"
+
+# Document field parsing
+regex        = "1"
+
+# Serialisation
+serde        = { version = "1", features = ["derive"] }
+serde_json   = "1"
+
+# UUID for profile IDs
+uuid         = { version = "1", features = ["v4"] }
+
+# Error handling
+anyhow       = "1"
+thiserror    = "2"
+
+# Logging
+tracing             = "0.1"
+tracing-subscriber  = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+opt-level = 3
+lto       = true
+strip     = true

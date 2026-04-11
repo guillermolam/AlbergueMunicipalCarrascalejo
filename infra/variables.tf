@@ -123,3 +123,17 @@ variable "encryption_key" {
   sensitive   = true
   default     = ""
 }
+
+variable "geoapify_api_key" {
+  description = "Geoapify API key for address autocomplete (stored as CF Pages secret)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "api_service_token" {
+  description = "Shared token for Astro SSR → Rust gateway authentication"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

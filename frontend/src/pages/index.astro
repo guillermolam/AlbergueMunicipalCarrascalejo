@@ -1,132 +1,794 @@
 ---
-export const prerender = true;
-
 import Layout from '../layouts/Layout.astro';
+import { getD1, db, pricingRules, dormitories, bookings } from '../db/helpers';
+import { eq, and, lte, gt, or, isNull, inArray, sql } from 'drizzle-orm';
+
+// ── Live data from D1 ─────────────────────────────────────────────────────────
+// Queried directly on every SSR request — no backend service dependency.
+// Falls back to sensible defaults when D1 is unavailable (local Vite dev).
+
+const DEFAULT_PRICE_CENTS = 1500; // €15
+const DEFAULT_TOTAL_BEDS  = 24;
+const DEFAULT_DORM_COUNT  = 2;
+
+let priceCents   = DEFAULT_PRICE_CENTS;
+let totalBeds    = DEFAULT_TOTAL_BEDS;
+let dormCount    = DEFAULT_DORM_COUNT;
+let occupiedBeds = 0;
+
+const d1 = await getD1();
+if (d1) {
+  try {
+    // 1. Current dormitory price
+    const priceRows = await db(d1)
+      .select({ priceCents: pricingRules.priceCents })
+      .from(pricingRules)
+      .where(and(eq(pricingRules.accommodationType, 'dormitory'), eq(pricingRules.active, 1)))
+      .limit(1);
+    if (priceRows[0]) priceCents = priceRows[0].priceCents;
+
+    // 2. Total beds and dorm count from active dormitories
+    const dormRows = await db(d1)
+      .select({
+        dormCount: sql<number>`count(*)`,
+        totalBeds: sql<number>`coalesce(sum(${dormitories.bedsCount}), 0)`,
+      })
+      .from(dormitories)
+      .where(eq(dormitories.active, 1));
+    if (dormRows[0]) {
+      dormCount = dormRows[0].dormCount  ?? DEFAULT_DORM_COUNT;
+      totalBeds = dormRows[0].totalBeds  ?? DEFAULT_TOTAL_BEDS;
+    }
+
+    // 3. Occupied beds tonight — confirmed/pending bookings that straddle today
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const occupiedRows = await db(d1)
+      .select({ guests: sql<number>`coalesce(sum(${bookings.numGuests}), 0)` })
+      .from(bookings)
+      .where(
+        and(
+          inArray(bookings.status, ['confirmed', 'pending']),
+          lte(bookings.checkIn,  today),
+          or(gt(bookings.checkOut, today), isNull(bookings.checkOut)),
+        ),
+      );
+    if (occupiedRows[0]) occupiedBeds = occupiedRows[0].guests ?? 0;
+  } catch (e) {
+    console.error('[index.astro] D1 query failed:', e);
+    // keep defaults
+  }
+}
+
+const priceEur      = priceCents / 100;
+const priceDisplay  = `€${Number.isInteger(priceEur) ? priceEur : priceEur.toFixed(2)}`;
+const bedsAvailable = Math.max(0, totalBeds - occupiedBeds);
+const bedsLabel     = `${bedsAvailable}/${totalBeds}`;
+
+const carouselSlides = [
+  {
+    title: 'The Journey',
+    subtitle: 'Hiking & Nature',
+    location: '',
+    image: '/images/carousel/journey-hiking.jpg',
+  },
+  {
+    title: 'Mérida',
+    subtitle: 'Roman Ruins & Amphitheater',
+    location: '35 km away',
+    image: '/images/carousel/merida-roman-ruins.jpg',
+  },
+  {
+    title: 'Extremadura',
+    subtitle: 'Natural Landscapes',
+    location: 'All around',
+    image: '/images/carousel/extremadura-landscape.jpg',
+  },
+  {
+    title: 'El Carrascalejo',
+    subtitle: 'Your Destination',
+    location: '',
+    image: '/images/carousel/medieval-spain.jpg',
+  },
+  {
+    title: 'Vía de la Plata',
+    subtitle: 'Historic Route',
+    location: '',
+    image: '/images/carousel/camino-via-plata.jpg',
+  },
+];
+
+// Dynamic feature text uses live dorm/bed counts
+const bedsPerDorm = dormCount > 0 ? Math.round(totalBeds / dormCount) : totalBeds;
+const features = [
+  {
+    icon: 'home',
+    text: `${dormCount} ${dormCount === 1 ? 'dormitory' : 'dormitories'} with ${bedsPerDorm} beds each`,
+  },
+  {
+    icon: 'map-pin',
+    text: 'Historic Camino route location',
+  },
+  {
+    icon: 'check-circle',
+    text: 'Modern facilities, warm hospitality',
+  },
+];
 ---
 
-<Layout title="AlbergueCarrascalejo - Tu refugio en el Camino de Santiago">
-  <main class="bg-linear-to-br from-slate-50 via-white to-slate-100">
-    <!-- Hero Section -->
-    <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <!-- Background gradient -->
-      <div class="absolute inset-0 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900"></div>
+<Layout title="Albergue Municipal de El Carrascalejo — Bienvenido, Peregrino">
+  <!-- Hidden SVG filter definitions -->
+  <svg style="position:absolute;width:0;height:0" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+      </filter>
+      <filter id="sketchy-filter-strong">
+        <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="5" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" />
+      </filter>
+      <filter id="frame-sketchy">
+        <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="3" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" />
+      </filter>
+    </defs>
+  </svg>
 
-      <!-- Content -->
-      <div class="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight">
-            ¡Bienvenido!
-          </h1>
-          <h2 class="text-2xl md:text-3xl text-slate-200 font-light">Peregrino</h2>
-        </div>
+  <!-- Hero Section -->
+  <section class="hero-section" style="padding: 3rem 0 4rem; min-height: calc(100vh - 64px); display: flex; align-items: center;">
+    <div class="container mx-auto px-4" style="max-width: 80rem; width: 100%;">
+      <div class="hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
 
-        <!-- Price & Availability Card -->
-        <div
-          class="bg-white/10 backdrop-blur-md rounded-2xl p-8 mb-8 border border-white/20 shadow-2xl"
-        >
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-white">
-            <div class="text-center">
-              <div class="text-4xl font-bold mb-2">€10</div>
-              <div class="text-sm text-slate-200 uppercase tracking-wider">por noche</div>
-            </div>
-            <div class="text-center border-l border-white/30 pl-6">
-              <div class="text-4xl font-bold mb-2">24</div>
-              <div class="text-sm text-slate-200 uppercase tracking-wider">camas disponibles</div>
-            </div>
-            <div class="text-center border-l border-white/30 pl-6">
-              <div class="text-4xl font-bold mb-2">📍</div>
-              <div class="text-sm text-slate-200 uppercase tracking-wider">Vía de la Plata</div>
-            </div>
+        <!-- LEFT COLUMN -->
+        <div class="left-column">
+          <!-- Green Heart Icon -->
+          <div style="display: inline-block; margin-bottom: 1rem; animation: heart-float 4s ease-in-out infinite; transform-origin: center;">
+            <svg class="heart-icon" width="40" height="40" viewBox="0 0 24 24" fill="#00AB39" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 2.5rem; height: 2.5rem;">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
           </div>
-        </div>
 
-        <!-- Main CTA -->
-        <div class="space-y-4">
-          <a
-            href="/book"
-            class="inline-block bg-white text-slate-900 px-10 py-4 rounded-full text-lg font-bold hover:bg-slate-100 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl"
-          >
-            Reservar Ahora
-          </a>
-          <p class="text-slate-300 text-base">
-            Tu refugio en la ruta histórica de la Vía de la Plata
+          <!-- Bienvenido heading -->
+          <div class="fade-in" style="animation-delay: 0.1s;">
+            <h2 class="wave-underline" style="font-family: 'Shadows Into Light', cursive; font-size: 2.25rem; color: #1A1A1A; margin: 0 0 0.75rem; line-height: 1.1; display: inline-block;">
+              &#161;Bienvenido!
+            </h2>
+          </div>
+
+          <!-- Peregrino subtitle -->
+          <div class="fade-in" style="animation-delay: 0.3s;">
+            <h3 style="font-family: 'Cabin Sketch', cursive; font-size: 1.5rem; color: #00AB39; margin: 0 0 0.5rem; font-weight: 700;">
+              Peregrino
+            </h3>
+            <!-- Wave divider -->
+            <svg width="120" height="8" viewBox="0 0 120 8" style="display: block; margin-bottom: 1.25rem; opacity: 0.6;">
+              <path d="M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4" stroke="#00AB39" stroke-width="2" fill="none" />
+            </svg>
+          </div>
+
+          <!-- Description text -->
+          <p class="fade-in" style="font-family: 'Patrick Hand', cursive; font-size: 1rem; color: inherit; line-height: 1.7; margin-bottom: 1.5rem; max-width: 480px; animation-delay: 0.4s;">
+            Your resting place on the historic <a href="/camino" style="color: #00AB39; text-decoration: underline; text-underline-offset: 3px;">Via de la Plata</a> route through Extremadura.
           </p>
+
+          <!-- Stat Boxes -->
+          <div class="fade-in" style="display: flex; gap: 1rem; margin-bottom: 1.75rem; animation-delay: 0.5s;">
+            <!-- PRICE stat box -->
+            <div class="stat-box" style="min-width: 100px; padding: 1.25rem 1.5rem; animation: stat-float-a 2.5s ease-in-out infinite;">
+              <svg class="stat-border" width="100%" height="100%">
+                <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="10" fill="white" stroke="#00AB39" stroke-width="2" filter="url(#sketchy-filter)" />
+              </svg>
+              <span class="pulse-dot" style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 3;"></span>
+              <div style="position: relative; z-index: 2;">
+                <div style="font-family: 'Cabin Sketch', cursive; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; font-weight: 700;">PRICE</div>
+                <div class="stat-value" style="font-family: 'Shadows Into Light', cursive; font-size: 1.5rem; color: #00AB39; line-height: 1.2; animation: pulse-glow 3s ease-in-out infinite;">{priceDisplay}</div>
+                <div style="font-family: 'Patrick Hand', cursive; font-size: 0.75rem; color: #9ca3af;">/night</div>
+              </div>
+            </div>
+
+            <!-- BEDS stat box -->
+            <div class="stat-box" style="min-width: 100px; padding: 1.25rem 1.5rem; animation: stat-float-b 2.5s ease-in-out infinite; animation-delay: 0.3s;">
+              <svg class="stat-border" width="100%" height="100%">
+                <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="10" fill="white" stroke="#00AB39" stroke-width="2" filter="url(#sketchy-filter)" />
+              </svg>
+              <span class="pulse-dot" style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 3;"></span>
+              <div style="position: relative; z-index: 2;">
+                <div style="font-family: 'Cabin Sketch', cursive; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; font-weight: 700;">BEDS</div>
+                <div class="stat-value" style="font-family: 'Shadows Into Light', cursive; font-size: 1.5rem; color: #00AB39; line-height: 1.2; animation: pulse-glow 3s ease-in-out infinite;">{bedsLabel}</div>
+                <div style="font-family: 'Patrick Hand', cursive; font-size: 0.75rem; color: #9ca3af;">available tonight</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CTA Button: Start Booking Now -->
+          <div class="fade-in" style="margin-bottom: 1.75rem; animation-delay: 0.6s;">
+            <a href="/book" class="sketchy-btn" style="padding: 0.85rem 2rem; text-decoration: none; display: inline-flex; position: relative; animation: cta-rock 2s ease-in-out infinite;">
+              <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;">
+                <!-- Shadow layer -->
+                <rect x="3" y="5" width="calc(100% - 6px)" height="calc(100% - 6px)" rx="10" fill="black" filter="blur(3px)" opacity="0.15" />
+                <!-- Main fill -->
+                <rect x="0" y="0" width="100%" height="100%" rx="10" fill="#00AB39" stroke="#1A1A1A" stroke-width="2.5" filter="url(#sketchy-filter)" />
+              </svg>
+              <span style="position: relative; z-index: 2; color: white; font-family: 'Cabin Sketch', cursive; font-weight: 700; font-size: 1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); letter-spacing: 0.05em;">
+                Start Booking Now
+              </span>
+            </a>
+          </div>
+
+          <!-- Feature Checklist -->
+          <div class="fade-in" style="animation-delay: 0.7s;">
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.625rem;">
+              <!-- Feature 1: Home icon -->
+              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: 'Patrick Hand', cursive; font-size: 0.95rem; color: #374151;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                2 dormitories with 12 beds each
+              </li>
+              <!-- Feature 2: Map Pin icon -->
+              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: 'Patrick Hand', cursive; font-size: 0.95rem; color: #374151;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                Historic Camino route location
+              </li>
+              <!-- Feature 3: Check Circle icon -->
+              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: 'Patrick Hand', cursive; font-size: 0.95rem; color: #374151;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                Modern facilities, warm hospitality
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
 
-      <!-- Bottom gradient -->
-      <div
-        class="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-slate-900 to-transparent"
-      >
-      </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="py-20 bg-linear-to-b from-slate-50 to-white">
-      <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
-          <div class="text-center group">
-            <div
-              class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-slate-700 transition-colors shadow-lg"
-            >
-              <span class="text-3xl">🛏️</span>
-            </div>
-            <h3 class="text-2xl font-bold text-slate-900 mb-4">2 Dormitorios</h3>
-            <p class="text-slate-600 text-lg leading-relaxed">
-              Cada uno con 12 camas cómodas, perfectas para descansar después de un día de camino
-            </p>
-          </div>
-
-          <div class="text-center group">
-            <div
-              class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-slate-700 transition-colors shadow-lg"
-            >
-              <span class="text-3xl">📍</span>
-            </div>
-            <h3 class="text-2xl font-bold text-slate-900 mb-4">Ruta Histórica</h3>
-            <p class="text-slate-600 text-lg leading-relaxed">
-              Ubicación privilegiada en la ruta del Camino de Santiago Vía de la Plata
-            </p>
-          </div>
-
-          <div class="text-center group">
-            <div
-              class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-slate-700 transition-colors shadow-lg"
-            >
-              <span class="text-3xl">🏨</span>
-            </div>
-            <h3 class="text-2xl font-bold text-slate-900 mb-4">Instalaciones Modernas</h3>
-            <p class="text-slate-600 text-lg leading-relaxed">
-              Comodidad y hospitalidad en un entorno acogedor para peregrinos
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="py-20 bg-linear-to-r from-slate-900 to-slate-800 text-white">
-      <div class="container mx-auto px-4 text-center">
-        <h2 class="text-4xl md:text-5xl font-bold mb-6">Descubre Más...</h2>
-        <p class="text-slate-300 text-lg mb-12 max-w-3xl mx-auto leading-relaxed">
-          Descubre el lugar perfecto para descansar en tu Camino de Santiago. Experimenta comodidad,
-          comunidad y el espíritu de la peregrinación.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
-          <a
-            href="/camino"
-            class="inline-block bg-white text-slate-900 px-8 py-4 rounded-full text-lg font-bold hover:bg-slate-100 transition-all duration-300 transform hover:scale-105 shadow-xl"
-          >
-            ✨ Ver Dashboard
+        <!-- RIGHT COLUMN -->
+        <div class="right-column" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+          <!-- "Tell me more..." button -->
+          <a href="/info" class="sketchy-btn" style="padding: 0.625rem 1.5rem; text-decoration: none; display: inline-flex; position: relative; align-self: flex-end; animation: wobble 4s ease-in-out infinite;">
+            <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;">
+              <rect x="0" y="0" width="100%" height="100%" rx="20" fill="#00AB39" stroke="#1A1A1A" stroke-width="2" filter="url(#sketchy-filter)" />
+            </svg>
+            <span style="position: relative; z-index: 2; color: white; font-family: 'Cabin Sketch', cursive; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.375rem;">
+              <span>&#10024;</span> Tell me more...
+            </span>
           </a>
-          <a
-            href="/book"
-            class="inline-block border-2 border-white text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-white hover:text-slate-900 transition-all duration-300 transform hover:scale-105"
-          >
-            🏨 Reservar
-          </a>
+
+          <!-- Image Carousel in tablet/phone frame -->
+          <div class="parallax-frame" id="parallax-frame" style="width: 100%; position: relative; perspective: 1000px; transform-style: preserve-3d; overflow: visible;">
+            <div class="parallax-content" id="parallax-content" style="position: relative; transform-style: preserve-3d; transition: transform 100ms ease-out;">
+              <!-- Frame border SVG -->
+              <svg class="carousel-frame-border" style="position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); pointer-events: none; z-index: 5;">
+                <!-- Outer frame -->
+                <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="24" fill="none" stroke="#1A1A1A" stroke-width="4" filter="url(#frame-sketchy)" />
+                <!-- Inner frame -->
+                <rect x="8" y="8" width="calc(100% - 16px)" height="calc(100% - 16px)" rx="20" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.8" />
+              </svg>
+
+              <!-- Corner Sparkles -->
+              <svg class="corner-sparkle sparkle-tl" width="20" height="20" viewBox="0 0 24 24" style="position: absolute; top: -10px; left: -10px; z-index: 6; fill: #00AB39;">
+                <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
+              </svg>
+              <svg class="corner-sparkle sparkle-tr" width="20" height="20" viewBox="0 0 24 24" style="position: absolute; top: -10px; right: -10px; z-index: 6; fill: #00AB39;">
+                <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
+              </svg>
+              <svg class="corner-sparkle sparkle-bl" width="16" height="16" viewBox="0 0 24 24" style="position: absolute; bottom: -8px; left: -8px; z-index: 6; fill: #00AB39;">
+                <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
+              </svg>
+              <svg class="corner-sparkle sparkle-br" width="16" height="16" viewBox="0 0 24 24" style="position: absolute; bottom: -8px; right: -8px; z-index: 6; fill: #00AB39;">
+                <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
+              </svg>
+
+              <!-- Carousel Container -->
+              <div id="carousel" style="position: relative; border-radius: 1rem; overflow: hidden; aspect-ratio: 4/3; background: #f3f4f6; perspective: 800px; transform-style: preserve-3d;">
+
+                <!-- Floating Particles -->
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 10%; left: 15%; z-index: 4;"></div>
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 20%; right: 10%; z-index: 4;"></div>
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 60%; left: 8%; z-index: 4;"></div>
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 75%; right: 20%; z-index: 4;"></div>
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 40%; left: 85%; z-index: 4;"></div>
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 30%; left: 50%; z-index: 4;"></div>
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 85%; left: 40%; z-index: 4;"></div>
+                <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 50%; left: 25%; z-index: 4;"></div>
+
+                <!-- Slides -->
+                {carouselSlides.map((slide, i) => (
+                  <div
+                    class={`carousel-slide ${i === 0 ? 'active' : ''}`}
+                    data-index={i}
+                    style={`position: absolute; inset: 0; opacity: ${i === 0 ? '1' : '0'}; transition: opacity 0.8s ease-in-out;`}
+                  >
+                    <!-- Image -->
+                    <img
+                      src={slide.image}
+                      alt={slide.title}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    />
+                    <!-- Gradient overlays -->
+                    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,171,57,0.15) 0%, transparent 40%, rgba(0,0,0,0.5) 100%); pointer-events: none;"></div>
+
+                    <!-- Info Card overlay at bottom -->
+                    <div class="carousel-info-card" style="position: absolute; bottom: 1rem; left: 1rem; right: 1rem; z-index: 3; opacity: 0; transform: translateY(12px); transition: opacity 0.4s cubic-bezier(0.23,1,0.32,1), transform 0.4s cubic-bezier(0.23,1,0.32,1);">
+                      <div style="position: relative; background: rgba(255,255,255,0.95); border-radius: 0.75rem; padding: 0.875rem 1rem; backdrop-filter: blur(8px);">
+                        <!-- SVG border for info card -->
+                        <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
+                          <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="12" fill="none" stroke="#00AB39" stroke-width="1.5" opacity="0.5" filter="url(#sketchy-filter)" />
+                        </svg>
+                        <div style="position: relative; z-index: 2;">
+                          <!-- Wave underline SVG for each slide title -->
+                          <div class="slide-title" style="font-family: 'Shadows Into Light', cursive; font-size: 1.125rem; color: #1A1A1A; line-height: 1.2; opacity: 0; transform: scale(0.9); transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
+                            {slide.title}
+                            <svg width="80" height="6" viewBox="0 0 80 6" style="display:block; margin-top:2px;">
+                              <path class="slide-wave" d="M0,3 Q5,1 10,3 T20,3 T30,3 T40,3 T50,3 T60,3 T70,3 T80,3"
+                                stroke="#00AB39" stroke-width="1.5" fill="none"
+                                stroke-dasharray="100" stroke-dashoffset="100"
+                                style="transition: stroke-dashoffset 0.8s ease 0.5s;" />
+                            </svg>
+                          </div>
+                          <div class="slide-subtitle" style="font-family: 'Patrick Hand', cursive; font-size: 0.85rem; color: #6b7280; opacity: 0; transform: translateX(-8px); transition: opacity 0.3s ease 0.15s, transform 0.3s ease 0.15s;">
+                            {slide.subtitle}
+                          </div>
+                          {slide.location && (
+                            <span class="slide-location" style="display: inline-flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem; padding: 0.125rem 0.5rem; background: rgba(0,171,57,0.1); border-radius: 9999px; font-family: 'Patrick Hand', cursive; font-size: 0.75rem; color: #00AB39; opacity: 0; transform: translateX(-20px); transition: opacity 0.3s ease 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.3s;">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                              {slide.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <!-- Navigation Arrows -->
+                <button
+                  id="carousel-prev"
+                  aria-label="Previous slide"
+                  style="position: absolute; left: 0.75rem; top: 50%; width: 36px; height: 36px; background: rgba(255,255,255,0.9); border: 2px solid #00AB39; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button
+                  id="carousel-next"
+                  aria-label="Next slide"
+                  style="position: absolute; right: 0.75rem; top: 50%; width: 36px; height: 36px; background: rgba(255,255,255,0.9); border: 2px solid #00AB39; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+
+              <!-- Pagination Dots -->
+              <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
+                {carouselSlides.map((_, i) => (
+                  <button
+                    class={`carousel-dot ${i === 0 ? 'active' : ''}`}
+                    data-slide={i}
+                    aria-label={`Go to slide ${i + 1}`}
+                    style={`width: 10px; height: 10px; border-radius: 50%; border: 2px solid #00AB39; cursor: pointer; transition: all 0.3s; padding: 0; ${i === 0 ? 'background: #00AB39; transform: scale(1.3);' : 'background: transparent;'}`}
+                  ></button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
+
+  <style>
+    /* Responsive: Stack hero grid on mobile */
+    @media (max-width: 768px) {
+      .hero-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .heart-icon {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+      }
+    }
+
+    @media (min-width: 640px) {
+      .left-column h2 {
+        font-size: 3rem !important;
+      }
+      .left-column h3 {
+        font-size: 1.875rem !important;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .heart-icon {
+        width: 3.5rem !important;
+        height: 3.5rem !important;
+      }
+      .left-column h2 {
+        font-size: 3.75rem !important;
+      }
+      .left-column h3 {
+        font-size: 2.25rem !important;
+      }
+      .left-column p {
+        font-size: 1.125rem !important;
+      }
+      .stat-box .stat-value {
+        font-size: 1.875rem !important;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .left-column h2 {
+        font-size: 4.5rem !important;
+      }
+      .left-column h3 {
+        font-size: 3rem !important;
+      }
+    }
+
+    /* Heart float animation */
+    @keyframes heart-float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25%       { transform: translateY(-12px) rotate(8deg); }
+      50%       { transform: translateY(-6px) rotate(0deg); }
+      75%       { transform: translateY(-12px) rotate(-8deg); }
+    }
+
+    /* Stat box float animations */
+    @keyframes stat-float-a {
+      0%, 100% { transform: translateY(0) rotateZ(0deg); }
+      50%       { transform: translateY(-5px) rotateZ(-1.5deg); }
+    }
+    @keyframes stat-float-b {
+      0%, 100% { transform: translateY(0) rotateZ(0deg); }
+      50%       { transform: translateY(-5px) rotateZ(1.5deg); }
+    }
+    .stat-box:hover {
+      transform: scale(1.05) translateY(-7px) !important;
+      animation-play-state: paused;
+      transition: transform 200ms ease;
+    }
+
+    /* CTA button rock animation */
+    @keyframes cta-rock {
+      0%, 100% { transform: rotateZ(0deg) translateY(0); }
+      25%       { transform: rotateZ(-1deg) translateY(-2px); }
+      50%       { transform: rotateZ(1deg) translateY(-1px); }
+      75%       { transform: rotateZ(-1deg) translateY(-2px); }
+    }
+    /* CTA Hover overrides */
+    a[href="/book"]:hover {
+      transform: scale(1.08) rotateZ(-5deg) translateY(-4px) !important;
+      animation-play-state: paused !important;
+      transition: transform 200ms ease !important;
+    }
+    a[href="/book"]:active {
+      transform: scale(0.95) !important;
+      animation-play-state: paused !important;
+    }
+
+    /* Sparkle spin animations — 20s per spec */
+    @keyframes sparkle-spin-cw  { 0% { transform: rotate(0deg);   } 100% { transform: rotate(360deg);  } }
+    @keyframes sparkle-spin-ccw { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg);    } }
+    .sparkle-tl, .sparkle-bl { animation: sparkle-spin-cw  20s linear infinite; }
+    .sparkle-tr, .sparkle-br { animation: sparkle-spin-ccw 20s linear infinite; }
+
+    /* Carousel slide transitions — 3D flip */
+    .carousel-slide {
+      will-change: opacity, transform;
+      transition: opacity 0.8s cubic-bezier(0.23, 1, 0.32, 1),
+                  transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .carousel-slide.entering-right {
+      animation: slide-enter-right 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    .carousel-slide.entering-left {
+      animation: slide-enter-left 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    .carousel-slide.exiting-right {
+      animation: slide-exit-right 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    .carousel-slide.exiting-left {
+      animation: slide-exit-left 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    @keyframes slide-enter-right {
+      from { opacity: 0; transform: translateX(300px) rotateY(45deg) scale(0.8); }
+      to   { opacity: 1; transform: translateX(0)     rotateY(0deg)  scale(1);   }
+    }
+    @keyframes slide-enter-left {
+      from { opacity: 0; transform: translateX(-300px) rotateY(-45deg) scale(0.8); }
+      to   { opacity: 1; transform: translateX(0)      rotateY(0deg)   scale(1);   }
+    }
+    @keyframes slide-exit-right {
+      from { opacity: 1; transform: translateX(0)      rotateY(0deg)   scale(1);   }
+      to   { opacity: 0; transform: translateX(-300px) rotateY(-45deg) scale(0.8); }
+    }
+    @keyframes slide-exit-left {
+      from { opacity: 1; transform: translateX(0)     rotateY(0deg)  scale(1);   }
+      to   { opacity: 0; transform: translateX(300px) rotateY(45deg) scale(0.8); }
+    }
+
+    /* Arrow float animation — MUST include translateY(-50%) so the centering
+       offset isn't lost when the animation overrides the inline transform. */
+    @keyframes arrow-float {
+      0%, 100% { transform: translateY(-50%); }
+      50%       { transform: translateY(calc(-50% - 5px)); }
+    }
+    #carousel-prev { animation: arrow-float 2s ease-in-out infinite; }
+    #carousel-next { animation: arrow-float 2s ease-in-out infinite; animation-delay: 1s; }
+
+    /* Remove the inline transform so the animation fully controls positioning */
+    #carousel-prev,
+    #carousel-next { top: 50%; }
+
+    /* Dot styles */
+    .carousel-dot.active {
+      background: #00AB39 !important;
+      transform: scale(1.3) !important;
+    }
+
+    /* Parallax smooth */
+    .parallax-content {
+      transition: transform 100ms ease-out;
+    }
+
+    /* Fade-in initial state for JS enhancement */
+    .fade-in-waiting {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  </style>
+
+  <script>
+    // =========================================================================
+    // Carousel auto-rotation and navigation
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      const slides = document.querySelectorAll('.carousel-slide');
+      const dots = document.querySelectorAll('.carousel-dot');
+      const prevBtn = document.getElementById('carousel-prev');
+      const nextBtn = document.getElementById('carousel-next');
+      let currentSlide = 0;
+      let autoRotateTimer: ReturnType<typeof setInterval> | null = null;
+      const totalSlides = slides.length;
+      let direction = 1; // 1 = forward, -1 = backward
+
+      // Animate info card elements in for a given slide element
+      function animateInfoCard(slideEl: HTMLElement) {
+        const card    = slideEl.querySelector('.carousel-info-card') as HTMLElement | null;
+        const title   = slideEl.querySelector('.slide-title')    as HTMLElement | null;
+        const sub     = slideEl.querySelector('.slide-subtitle') as HTMLElement | null;
+        const loc     = slideEl.querySelector('.slide-location') as HTMLElement | null;
+        const wave    = slideEl.querySelector('.slide-wave')     as SVGPathElement | null;
+
+        // Reset all to hidden
+        if (card)  { card.style.opacity  = '0'; card.style.transform  = 'translateY(12px)'; }
+        if (title) { title.style.opacity = '0'; title.style.transform = 'scale(0.9)'; }
+        if (sub)   { sub.style.opacity   = '0'; sub.style.transform   = 'translateX(-8px)'; }
+        if (loc)   { loc.style.opacity   = '0'; loc.style.transform   = 'translateX(-20px)'; }
+        if (wave)  { wave.style.strokeDashoffset = '100'; }
+
+        // Staggered entrance matching Framer spec:
+        // card:  delay 0   (translateY 12→0)
+        // title: delay 0.4 (scale 0.9→1)
+        // sub:   delay 0.5 (x -8→0)
+        // wave:  delay 0.5 (pathLength 0→1)
+        // loc:   delay 0.6 (x -20→0)
+        setTimeout(() => {
+          if (card) { card.style.opacity  = '1'; card.style.transform  = 'translateY(0)'; }
+        }, 0);
+        setTimeout(() => {
+          if (title) { title.style.opacity = '1'; title.style.transform = 'scale(1)'; }
+        }, 400);
+        setTimeout(() => {
+          if (sub) { sub.style.opacity = '1'; sub.style.transform = 'translateX(0)'; }
+          if (wave) { wave.style.strokeDashoffset = '0'; }
+        }, 500);
+        setTimeout(() => {
+          if (loc) { loc.style.opacity = '1'; loc.style.transform = 'translateX(0)'; }
+        }, 600);
+      }
+
+      function goToSlide(index: number) {
+        const prevSlide = currentSlide;
+        currentSlide = ((index % totalSlides) + totalSlides) % totalSlides;
+
+        if (prevSlide === currentSlide) return;
+
+        const exitingEl  = slides[prevSlide]  as HTMLElement;
+        const enteringEl = slides[currentSlide] as HTMLElement;
+        const isForward  = direction > 0;
+
+        // Hide exiting card immediately
+        const exitCard = exitingEl.querySelector('.carousel-info-card') as HTMLElement | null;
+        if (exitCard) { exitCard.style.opacity = '0'; exitCard.style.transform = 'translateY(12px)'; }
+
+        // Remove old classes
+        exitingEl.classList.remove('entering-right', 'entering-left', 'active');
+        enteringEl.classList.remove('exiting-right', 'exiting-left');
+
+        // Apply 3D flip animations
+        exitingEl.classList.add(isForward ? 'exiting-right' : 'exiting-left');
+        enteringEl.style.opacity = '1';
+        enteringEl.classList.add(isForward ? 'entering-right' : 'entering-left');
+        enteringEl.classList.add('active');
+
+        // Update dots with spring-bounce scale
+        dots[prevSlide]?.setAttribute('style', `width:10px;height:10px;border-radius:50%;border:2px solid #00AB39;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);padding:0;background:transparent;`);
+        dots[prevSlide]?.classList.remove('active');
+        dots[currentSlide]?.setAttribute('style', `width:10px;height:10px;border-radius:50%;border:2px solid #00AB39;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);padding:0;background:#00AB39;transform:scale(1.4);`);
+        dots[currentSlide]?.classList.add('active');
+
+        // Animate info card elements in (staggered, per spec)
+        animateInfoCard(enteringEl);
+
+        // Clean up animation classes after they finish
+        setTimeout(() => {
+          exitingEl.classList.remove('exiting-right', 'exiting-left');
+          exitingEl.style.opacity = '0';
+          enteringEl.classList.remove('entering-right', 'entering-left');
+        }, 820);
+      }
+
+      // Animate the first slide's info card on load
+      setTimeout(() => animateInfoCard(slides[0] as HTMLElement), 300);
+
+      function nextSlide() { direction = 1; goToSlide(currentSlide + 1); }
+      function prevSlide() { direction = -1; goToSlide(currentSlide - 1); }
+
+      function startAutoRotate() {
+        stopAutoRotate();
+        autoRotateTimer = setInterval(nextSlide, 5000);
+      }
+
+      function stopAutoRotate() {
+        if (autoRotateTimer) {
+          clearInterval(autoRotateTimer);
+          autoRotateTimer = null;
+        }
+      }
+
+      // Button handlers
+      nextBtn?.addEventListener('click', () => {
+        nextSlide();
+        startAutoRotate();
+      });
+
+      prevBtn?.addEventListener('click', () => {
+        prevSlide();
+        startAutoRotate();
+      });
+
+      // Dot handlers
+      dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => {
+          goToSlide(i);
+          startAutoRotate();
+        });
+      });
+
+      // Start auto-rotation
+      startAutoRotate();
+
+      // =========================================================================
+      // 3D Parallax mouse tracking — spring-interpolated (stiffness:150, damping:20)
+      // Spec: rotateX/Y ±10deg, perspective:1000px, springs back on mouseleave
+      // =========================================================================
+      const frame   = document.getElementById('parallax-frame');
+      const content = document.getElementById('parallax-content');
+
+      // Spring state
+      let springX = 0, springY = 0;   // current interpolated values
+      let targetX = 0, targetY = 0;   // target values from mouse position
+      let rafId: ReturnType<typeof requestAnimationFrame> | null = null;
+      const SPRING = 0.12; // approx stiffness:150 damping:20 → ~12% per frame
+
+      function springStep() {
+        springX += (targetX - springX) * SPRING;
+        springY += (targetY - springY) * SPRING;
+        if (content) {
+          content.style.transform =
+            `rotateX(${springY.toFixed(3)}deg) rotateY(${springX.toFixed(3)}deg)`;
+        }
+        const stillMoving =
+          Math.abs(targetX - springX) > 0.01 ||
+          Math.abs(targetY - springY) > 0.01;
+        if (stillMoving) {
+          rafId = requestAnimationFrame(springStep);
+        } else {
+          // Snap to final value and stop RAF
+          springX = targetX;
+          springY = targetY;
+          if (content) {
+            content.style.transform =
+              `rotateX(${springY.toFixed(3)}deg) rotateY(${springX.toFixed(3)}deg)`;
+          }
+          rafId = null;
+        }
+      }
+
+      frame?.addEventListener('mousemove', (e: MouseEvent) => {
+        const rect = (frame as HTMLElement).getBoundingClientRect();
+        const nx = (e.clientX - rect.left)  / rect.width;   // 0..1
+        const ny = (e.clientY - rect.top)   / rect.height;  // 0..1
+        targetX =  (nx - 0.5) * 20;  // ±10deg on Y-axis (left-right tilt)
+        targetY = -(ny - 0.5) * 20;  // ±10deg on X-axis (up-down tilt), inverted
+        if (!rafId) rafId = requestAnimationFrame(springStep);
+      });
+
+      frame?.addEventListener('mouseleave', () => {
+        // Spring back to neutral
+        targetX = 0;
+        targetY = 0;
+        if (!rafId) rafId = requestAnimationFrame(springStep);
+      });
+
+      // =========================================================================
+      // Arrow button hover — spec: left: scale:1.2 rotate:-10, right: scale:1.2 rotate:10, tap: scale:0.85
+      // =========================================================================
+      const arrows = [
+        { el: prevBtn, hoverRotate: '-10deg' },
+        { el: nextBtn, hoverRotate: '10deg' }
+      ];
+      arrows.forEach(({ el, hoverRotate }) => {
+        if (!el) return;
+
+        // Always-on float animation handled by CSS (#carousel-prev / #carousel-next)
+
+        // Always keep translateY(-50%) in every transform so the button stays
+        // vertically centred regardless of what else we apply.
+        el.addEventListener('mouseenter', () => {
+          el.style.animation = 'none';
+          el.style.transform = `translateY(-50%) scale(1.2) rotate(${hoverRotate})`;
+          el.style.transition = 'transform 200ms ease';
+        });
+        el.addEventListener('mouseleave', () => {
+          el.style.transform = '';
+          el.style.transition = '';
+          el.style.animation = 'arrow-float 2s ease-in-out infinite';
+        });
+        el.addEventListener('mousedown', () => {
+          el.style.transform = `translateY(-50%) scale(0.85)`;
+          el.style.animation = 'none';
+        });
+        el.addEventListener('mouseup', () => {
+          el.style.transform = `translateY(-50%) scale(1.2) rotate(${hoverRotate})`;
+        });
+      });
+
+      // =========================================================================
+      // Feature list — spec: item hover x:3, icon hover scale:1.15 rotate:360
+      // =========================================================================
+      document.querySelectorAll('.hero-section li').forEach(item => {
+        const icon = item.querySelector('svg');
+        item.addEventListener('mouseenter', () => {
+          (item as HTMLElement).style.transform = 'translateX(3px)';
+          (item as HTMLElement).style.transition = 'transform 200ms ease';
+          if (icon) {
+            (icon as HTMLElement).style.transform = 'scale(1.15) rotate(360deg)';
+            (icon as HTMLElement).style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          }
+        });
+        item.addEventListener('mouseleave', () => {
+          (item as HTMLElement).style.transform = '';
+          if (icon) {
+            (icon as HTMLElement).style.transform = '';
+          }
+        });
+      });
+
+      // =========================================================================
+      // Fade-in on load
+      // =========================================================================
+      const fadeElements = document.querySelectorAll('.fade-in');
+      fadeElements.forEach((el) => {
+        el.classList.add('fade-in');
+      });
+    });
+  </script>
 </Layout>

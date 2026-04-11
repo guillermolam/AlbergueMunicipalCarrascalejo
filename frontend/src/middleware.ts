@@ -1,85 +1,55 @@
-import type { MiddlewareHandler } from 'astro';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/astro/server';
 
-const MOCK_RESPONSES = {
-  '/api/health': {
-    ok: true,
-    mode: 'mock',
-    ts: Date.now(),
-  },
-  '/api/progress': {
-    ok: true,
-  },
-} as const;
+// Routes that require an authenticated user
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/profile(.*)']);
 
-export const onRequest: MiddlewareHandler = async (context, next) => {
-  const { url, request } = context;
-  const isMockMode = import.meta.env.PUBLIC_API_MODE === 'mock';
+// Routes that require the admin role (set via Clerk publicMetadata.role)
+const isAdminRoute = createRouteMatcher(['/admin', '/admin/(.*)']);
 
-  if (!isMockMode) {
-    return next();
+// ---------------------------------------------------------------------------
+// Clerk middleware — wraps every request.
+// Clerk attaches auth state to Astro.locals automatically via the integration.
+// We add our own role check on top for admin-gated pages.
+// ---------------------------------------------------------------------------
+export const onRequest = clerkMiddleware(async (auth, context, next) => {
+  const authState = await auth();
+  const { userId, sessionClaims } = authState;
+
+  // Derive role from Clerk publicMetadata (set in Clerk dashboard or via API)
+  const metadata = (sessionClaims as Record<string, unknown> | null)?.metadata as
+    | { role?: string }
+    | undefined;
+  const role: 'admin' | 'pilgrim' | 'guest' = userId
+    ? metadata?.role === 'admin'
+      ? 'admin'
+      : 'pilgrim'
+    : 'guest';
+
+  // Expose to all pages via Astro.locals
+  context.locals.role = role;
+  context.locals.user = userId
+    ? {
+        id: userId,
+        email: String((sessionClaims as Record<string, unknown>)?.email ?? ''),
+        name: String((sessionClaims as Record<string, unknown>)?.name ?? ''),
+      }
+    : null;
+  context.locals.sessionToken = null; // session managed by Clerk cookies
+
+  // Admin-only guard
+  if (isAdminRoute(context.request) && role !== 'admin') {
+    const dest = new URL('/auth', context.url.origin);
+    dest.searchParams.set('from', context.url.pathname);
+    dest.searchParams.set('reason', 'unauthorized');
+    return context.redirect(dest.toString(), 302);
   }
 
-  const pathname = url.pathname;
-
-  // Handle health check
-  if (pathname === '/api/health' && request.method === 'GET') {
-    return new Response(JSON.stringify(MOCK_RESPONSES['/api/health']), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Mock-Mode': 'true',
-      },
-    });
-  }
-
-  // Handle progress sync
-  if (pathname === '/api/progress' && request.method === 'POST') {
-    try {
-      const body = await request.json();
-
-      // Validate payload
-      if (!body.dailyGoalKm || !body.currentStageProgress || !body.ts) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Validate ranges
-      const dailyGoalKm = Number(body.dailyGoalKm);
-      const currentStageProgress = Number(body.currentStageProgress);
-
-      if (dailyGoalKm < 15 || dailyGoalKm > 35) {
-        return new Response(JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      if (currentStageProgress < 0 || currentStageProgress > 100) {
-        return new Response(
-          JSON.stringify({ error: 'currentStageProgress must be between 0 and 100' }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      return new Response(JSON.stringify(MOCK_RESPONSES['/api/progress']), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Mock-Mode': 'true',
-        },
-      });
-    } catch (error) {
-      return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+  // Auth-required guard
+  if (isProtectedRoute(context.request) && !userId) {
+    const dest = new URL('/auth', context.url.origin);
+    dest.searchParams.set('from', context.url.pathname);
+    return context.redirect(dest.toString(), 302);
   }
 
   return next();
-};
+});

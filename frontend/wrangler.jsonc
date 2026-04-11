@@ -1,4 +1,97 @@
 {
   "name": "albergue-carrascalejo",
-  "compatibility_date": "2025-05-21"
+  "compatibility_date": "2025-05-21",
+  // nodejs_compat enables Node.js APIs (crypto, stream, etc.) needed by Astro SSR.
+  // Without this flag, imports of Node built-ins throw at runtime in Workers.
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static asset routing (Cloudflare Workers Static Assets).
+  //
+  // "main" and "assets.directory" / "assets.binding" are intentionally omitted
+  // here — @astrojs/cloudflare generates them in dist/server/wrangler.json at
+  // build time (main → entry.mjs, assets.directory → ../client).
+  // Adding them to this file causes the Vite/Cloudflare plugin to validate the
+  // built files before they exist, breaking `pnpm build`.
+  //
+  // run_worker_first — for these path prefixes the Worker runs BEFORE the asset
+  // lookup.  Required for:
+  //   • /api/*        — SSR API routes (availability, OCR SSR proxy fallback)
+  //   • /admin/*      — admin dashboard (auth-gated SSR)
+  //   • /dashboard*   — pilgrim dashboard (auth-gated SSR)
+  //   • /profile*     — pilgrim profile (auth-gated SSR)
+  // Everything else (static pre-rendered pages like /book, /auth, /info/*, etc.)
+  // is served directly from the CF edge without touching the Worker.
+  //
+  // Docs: https://developers.cloudflare.com/workers/static-assets/routing/worker-script/
+  //       https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/
+  "assets": {
+    "run_worker_first": [
+      "/api/*",
+      "/admin/*",
+      "/dashboard",
+      "/dashboard/*",
+      "/profile",
+      "/profile/*"
+    ]
+  },
+
+  // ─── KV Namespaces ───────────────────────────────────────────────────────────
+  // IDs are created by Terraform (infra/cloudflare.tf) and output via:
+  //   terraform output cloudflare_kv_cache_id
+  //   terraform output cloudflare_kv_cache_preview_id
+  //   terraform output cloudflare_kv_session_id
+  //   terraform output cloudflare_kv_session_preview_id
+  //
+  // Alternative (wrangler CLI, if skipping Terraform):
+  //   wrangler kv namespace create CACHE          → copy id here
+  //   wrangler kv namespace create CACHE --preview → copy id to preview_id
+  //   wrangler kv namespace create SESSION
+  //   wrangler kv namespace create SESSION --preview
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "9730f4ee95c84093a9a399c24d3607d9",
+      "preview_id": "3b8b01d0817d4973b3c6562177be4bbc"
+    },
+    {
+      "binding": "SESSION",
+      "id": "e37d242325bc4a9ca480e90543971a07",
+      "preview_id": "fae4d5012fa149c591b44a86c8e721bf"
+    }
+  ],
+
+  // ─── D1 Database ─────────────────────────────────────────────────────────────
+  // ID is created by Terraform (infra/cloudflare.tf) and output via:
+  //   terraform output cloudflare_d1_database_id
+  //
+  // Alternative (wrangler CLI, if skipping Terraform):
+  //   wrangler d1 create albergue-db   → copy database_id here
+  //
+  // After getting the ID, run migrations:
+  //   wrangler d1 migrations apply albergue-db --remote
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "albergue-db",
+      "database_id": "541bcbf5-059b-485d-8f96-690c22b6bc0f"
+    }
+  ],
+
+  // ─── Public vars (non-secret, injected at build/runtime) ───────────────────
+  "vars": {
+    "PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_ZXF1YWwtcGVhY29jay00MS5jbGVyay5hY2NvdW50cy5kZXYk"
+  },
+
+  // ─── Secrets ────────────────────────────────────────────────────────────────
+  // Set via `wrangler secret put <NAME>` or via CF Pages dashboard > Settings > Env.
+  // Terraform sets these as CF Pages deployment secrets (infra/cloudflare.tf).
+  //   GEOAPIFY_API_KEY       — address autocomplete
+  //   API_SERVICE_TOKEN      — Astro SSR → Rust gateway auth
+  //   CAMINO_EMERGENCY_CONTACT (optional, has safe fallback in config-ssr.ts)
+  //   CLERK_SECRET_KEY       — Clerk backend SDK (set as secret, not in vars)
+
+  // ─── Observability ──────────────────────────────────────────────────────────
+  "observability": {
+    "enabled": true
+  }
 }

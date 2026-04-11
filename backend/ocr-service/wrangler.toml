@@ -1,0 +1,33 @@
+name               = "albergue-ocr"
+main               = "build/index.js"
+compatibility_date = "2024-12-01"
+
+[build]
+# $HOME/.cargo/bin is where `cargo install` puts binaries.
+# /bin/sh (used by wrangler) doesn't inherit the interactive shell PATH,
+# so we reference worker-build via its absolute install location.
+command = "export PATH=$HOME/.cargo/bin:$PATH && worker-build --release"
+
+[vars]
+ENVIRONMENT = "production"
+
+# Workers AI binding — typed as `Ai` in workers-rs 0.7 via env.ai("AI")
+[ai]
+binding = "AI"
+
+# D1 Database for pilgrim profiles
+[[d1_databases]]
+binding       = "DB"
+database_name = "albergue-pilgrims"
+# Local dev uses a SQLite file; this id only matters for remote deployment.
+# Run: wrangler d1 create albergue-pilgrims   — then paste the real id here.
+database_id   = "00000000-0000-0000-0000-000000000001"
+
+# R2 bucket for avatar images
+[[r2_buckets]]
+binding     = "AVATARS"
+bucket_name = "albergue-avatars"
+
+[env.development]
+[env.development.vars]
+ENVIRONMENT = "development"

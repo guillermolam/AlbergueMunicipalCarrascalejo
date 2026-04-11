@@ -1,0 +1,314 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { serverFetch } from '../../lib/api/core';
+
+interface HostelConfig {
+  name: string; tagline: string;
+  address_street: string; address_postcode: string; address_town: string;
+  address_province: string; address_country: string;
+  phone: string; email: string; website: string;
+  cif: string; tourism_license: string; insurance_policy: string;
+  check_in_time: string; check_out_time: string; reception_hours: string;
+}
+
+const hostelResult = await serverFetch<HostelConfig>('/api/info/hostel', {}, import.meta.env.API_SERVICE_TOKEN ?? '').catch(() => null);
+const hostel = hostelResult?.ok ? hostelResult.data : null;
+
+const phone           = hostel?.phone           ?? '+34 924 XXX XXX';
+const email           = hostel?.email           ?? 'info@alberguecarrascalejo.es';
+const receptionHours  = hostel?.reception_hours ?? '08:00–22:00';
+---
+
+<Layout title="Contactos — Albergue Municipal de El Carrascalejo">
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <section class="page-hero reveal-section">
+    <div class="page-hero-inner">
+      <a href="/dashboard" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al Panel
+      </a>
+      <div class="hero-emoji" aria-hidden="true">📞</div>
+      <h1 class="page-title">Contactos</h1>
+      <p class="page-subtitle">Emergencias, servicios locales y albergue · Recepción {receptionHours}</p>
+    </div>
+  </section>
+
+  <div class="page-content">
+
+    <!-- ─── EMERGENCY ─── -->
+    <section class="contacts-group reveal-section" style="--delay:0.04s">
+      <div class="group-header emergency-header">
+        <span class="group-icon" aria-hidden="true">🚨</span>
+        <div>
+          <h2 class="group-title">Emergencias</h2>
+          <p class="group-desc">Llama al 112 para cualquier emergencia medica, incendio o delito</p>
+        </div>
+      </div>
+      <div class="contacts-grid">
+        {[
+          { emoji: '🚨', label: 'Emergencias',   sub: 'Policia · Bomberos · Ambulancia', num: '112', color: '#dc2626', bg: '#fef2f2', href: 'tel:112',    desc: 'Numero unico europeo de emergencias. Atiende los 365 dias.' },
+          { emoji: '👮', label: 'Guardia Civil',  sub: 'Seguridad y proteccion',           num: '062', color: '#1d4ed8', bg: '#eff6ff', href: 'tel:062',    desc: 'Policia en zonas rurales y carreteras. Patrulla la N-630.' },
+          { emoji: '🚑', label: 'Ambulancia',     sub: 'Urgencias sanitarias',             num: '112', color: '#059669', bg: '#f0fdf4', href: 'tel:112',    desc: 'Cruz Roja y SESCAM. Cobertura en toda Extremadura.' },
+          { emoji: '🔥', label: 'Bomberos',       sub: 'Incendios y rescate',              num: '112', color: '#ea580c', bg: '#fff7ed', href: 'tel:112',    desc: 'Parque mas cercano en Miajadas (18 km).' },
+        ].map(c => (
+          <a href={c.href} class="contact-card emergency-card reveal-section" style={`--cc:${c.color};--cb:${c.bg};--delay:0.06s`}>
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="16" fill={c.bg} stroke={c.color} stroke-width="2" filter="url(#sketchy-filter)" stroke-opacity="0.45"/>
+            </svg>
+            <div class="cc-inner">
+              <div class="cc-top">
+                <span class="cc-emoji" aria-hidden="true">{c.emoji}</span>
+                <span class="cc-num">{c.num}</span>
+              </div>
+              <span class="cc-label" style={`color:${c.color}`}>{c.label}</span>
+              <span class="cc-sub">{c.sub}</span>
+              <p class="cc-desc">{c.desc}</p>
+              <div class="cc-call-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.color} stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.82 19 19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.93a16 16 0 0 0 6 6l.85-.85a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg>
+                <span style={`color:${c.color};font-family:var(--font-sketch);font-weight:700;font-size:.8rem`}>Llamar ahora</span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ─── LOCAL SERVICES ─── -->
+    <section class="contacts-group reveal-section" style="--delay:0.08s">
+      <div class="group-header">
+        <span class="group-icon" aria-hidden="true">🏘️</span>
+        <div>
+          <h2 class="group-title">Servicios Locales</h2>
+          <p class="group-desc">Taxis, salud y servicios de la zona</p>
+        </div>
+      </div>
+      <div class="contacts-grid contacts-grid-3">
+        {[
+          { emoji: '🚕', label: 'Taxi Local',       sub: 'El Carrascalejo', num: '+34 924 XXX XXX', color: '#d97706', bg: '#fffbeb', href: 'tel:+34924000000', desc: 'Cobertura local y a Miajadas o Merida. Reserva previa recomendada.' },
+          { emoji: '🏥', label: 'Centro de Salud',  sub: 'Almoharín · 8 km', num: '+34 927 XXX XXX', color: '#7c3aed', bg: '#f5f3ff', href: 'tel:+34927000000', desc: 'Atencion primaria. Urgencias menores. Abierto L-V 8:00–15:00h.' },
+          { emoji: '⛽', label: 'Gasolinera',       sub: 'Alquéscar · 5 km', num: '+34 927 XXX XXX', color: '#0891b2', bg: '#f0f9ff', href: 'tel:+34927000001', desc: 'Gasolinera con tienda. Abre 7:00–22:00h todos los dias.' },
+          { emoji: '🏦', label: 'Banco (cajero)',   sub: 'Miajadas · 15 km', num: '',               color: '#475569', bg: '#f8fafc', href: '#',               desc: 'El cajero mas cercano esta en Miajadas. Lleva efectivo.' },
+          { emoji: '🛒', label: 'Supermercado',     sub: 'Miajadas · 15 km', num: '+34 924 XXX XXX', color: '#16a34a', bg: '#f0fdf4', href: 'tel:+34924000002', desc: 'Mercadona en Miajadas. Lo mas cercano para compras grandes.' },
+          { emoji: '🔧', label: 'Taller Mecanico',  sub: 'Miajadas · 15 km', num: '+34 924 XXX XXX', color: '#92400e', bg: '#fef3c7', href: 'tel:+34924000003', desc: 'Para incidencias de bicicleta o vehiculo en la ruta.' },
+        ].map(c => (
+          <a href={c.href === '#' ? undefined : c.href} class={`contact-card reveal-section ${c.href === '#' ? 'contact-info-only' : ''}`} style={`--cc:${c.color};--cb:${c.bg};--delay:0.1s`}>
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="16" fill={c.bg} stroke={c.color} stroke-width="1.5" filter="url(#sketchy-filter)" stroke-opacity="0.35"/>
+            </svg>
+            <div class="cc-inner">
+              <div class="cc-top">
+                <span class="cc-emoji" aria-hidden="true">{c.emoji}</span>
+                {c.num && <span class="cc-num-sm">{c.num}</span>}
+              </div>
+              <span class="cc-label" style={`color:${c.color}`}>{c.label}</span>
+              <span class="cc-sub">{c.sub}</span>
+              <p class="cc-desc">{c.desc}</p>
+              {c.num && (
+                <div class="cc-call-row">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={c.color} stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.82 19 19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.93a16 16 0 0 0 6 6l.85-.85a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg>
+                  <span style={`color:${c.color};font-family:var(--font-sketch);font-weight:700;font-size:.8rem`}>Llamar</span>
+                </div>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ─── ALBERGUE CONTACTS ─── -->
+    <section class="contacts-group reveal-section" style="--delay:0.12s">
+      <div class="group-header">
+        <span class="group-icon" aria-hidden="true">🏠</span>
+        <div>
+          <h2 class="group-title">Albergue Municipal</h2>
+          <p class="group-desc">Habla directamente con el equipo de gestion</p>
+        </div>
+      </div>
+      <div class="albergue-grid">
+        {[
+          { emoji: '📞', label: 'Llamar',    sub: 'Recepcion directa',         detail: phone, color: '#00AB39', bg: '#f0fdf4', href: `tel:${phone.replace(/\s/g,'')}`,           external: false },
+          { emoji: '💬', label: 'WhatsApp',  sub: 'Respuesta en pocos minutos', detail: phone, color: '#25D366', bg: '#f0fdf8', href: `https://wa.me/${phone.replace(/[^0-9]/g,'')}`, external: true  },
+          { emoji: '✈️', label: 'Telegram',  sub: '@albergue_carrascalejo',    detail: 'Chat directo',    color: '#2AABEE', bg: '#f0f9ff', href: 'https://t.me/alberguecarrascalejo',      external: true  },
+          { emoji: '✉️', label: 'Email',     sub: 'Para reservas y consultas', detail: email, color: '#7c3aed', bg: '#f5f3ff', href: `mailto:${email}`,                                   external: false },
+        ].map((c, i) => (
+          <a
+            href={c.href}
+            class="albergue-btn reveal-section"
+            style={`--cc:${c.color};--cb:${c.bg};--delay:${0.14 + i * 0.04}s`}
+            target={c.external ? '_blank' : undefined}
+            rel={c.external ? 'noopener noreferrer' : undefined}
+            aria-label={`Contactar via ${c.label}`}
+          >
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="18" fill={c.bg} stroke={c.color} stroke-width="2" filter="url(#sketchy-filter)" stroke-opacity="0.45"/>
+            </svg>
+            <div class="ab-inner">
+              <span class="ab-emoji" aria-hidden="true">{c.emoji}</span>
+              <span class="ab-label" style={`color:${c.color}`}>{c.label}</span>
+              <span class="ab-sub">{c.sub}</span>
+              <span class="ab-detail">{c.detail}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ─── USEFUL LINKS ─── -->
+    <section class="reveal-section" style="--delay:0.16s">
+      <h2 class="section-title">Recursos Utiles para Peregrinos</h2>
+      <div class="links-grid">
+        {[
+          { emoji: '🌐', label: 'Amigos del Camino de Santiago', href: 'https://www.caminodesantiago.org', sub: 'Informacion oficial y credenciales' },
+          { emoji: '🗺️', label: 'Wikiloc · Via de la Plata',    href: 'https://www.wikiloc.com',          sub: 'Rutas GPS descargables' },
+          { emoji: '⛅', label: 'AEMET Extremadura',             href: 'https://www.aemet.es',             sub: 'Prevision meteorologica local' },
+          { emoji: '🚌', label: 'AutoRes / Avanza Bus',          href: 'https://www.avanzabus.com',        sub: 'Horarios Merida–Caceres' },
+        ].map(l => (
+          <a href={l.href} target="_blank" rel="noopener noreferrer" class="link-card reveal-section" style="--delay:0.18s">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="12" fill="white" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-filter)"/>
+            </svg>
+            <div class="lc-inner">
+              <span class="lc-emoji" aria-hidden="true">{l.emoji}</span>
+              <div>
+                <span class="lc-label">{l.label}</span>
+                <span class="lc-sub">{l.sub}</span>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+  </div>
+
+  <style>
+    .page-hero {
+      background: linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #ef4444 100%);
+      padding: 2.5rem 1rem 2rem; color: white;
+      position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.06); border-radius: 50%;
+    }
+    .page-hero-inner { max-width: 1020px; margin: 0 auto; position: relative; z-index: 1; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: rgba(255,255,255,0.8); text-decoration: none;
+      font-family: var(--font-hand, sans-serif); font-size: 0.85rem;
+      margin-bottom: 1rem; transition: color 200ms ease;
+    }
+    .back-link:hover { color: white; }
+    .hero-emoji { font-size: 2.8rem; margin-bottom: 0.4rem; }
+    .page-title {
+      font-family: var(--font-display, sans-serif);
+      font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 0.25rem; color: white;
+    }
+    .page-subtitle { font-family: var(--font-hand, sans-serif); font-size: 1rem; opacity: 0.85; margin: 0; }
+
+    .page-content { max-width: 1020px; margin: 0 auto; padding: 2rem 1rem 4rem; display: flex; flex-direction: column; gap: 2.5rem; }
+    .section-title { font-family: var(--font-display, sans-serif); font-size: 1.4rem; color: #1a1a1a; margin: 0 0 1rem; }
+
+    /* Group headers */
+    .contacts-group {}
+    .group-header {
+      display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem;
+    }
+    .emergency-header { padding: 0.85rem 1.1rem; background: #fef2f2; border-radius: 12px; border-left: 4px solid #dc2626; margin-bottom: 1rem; }
+    .group-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .group-title { font-family: var(--font-display, sans-serif); font-size: 1.3rem; color: #1a1a1a; margin: 0 0 0.2rem; }
+    .group-desc { font-family: var(--font-hand, sans-serif); font-size: 0.85rem; color: #666; margin: 0; }
+
+    /* Contact cards grid */
+    .contacts-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; }
+    .contacts-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .contact-card {
+      position: relative; border-radius: 16px; text-decoration: none;
+      transition: transform 230ms ease, box-shadow 230ms ease;
+    }
+    .contact-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+    .contact-card:active { transform: scale(0.97); }
+    .contact-info-only { pointer-events: none; opacity: 0.85; }
+    .cc-inner {
+      position: relative; z-index: 2;
+      padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: 0.25rem;
+    }
+    .cc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem; }
+    .cc-emoji { font-size: 1.8rem; }
+    .cc-num { font-family: var(--font-display, sans-serif); font-size: 1.5rem; color: var(--cc, #333); }
+    .cc-num-sm { font-family: var(--font-hand, sans-serif); font-size: 0.78rem; color: var(--cc, #333); }
+    .cc-label { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.95rem; }
+    .cc-sub { font-family: var(--font-hand, sans-serif); font-size: 0.75rem; color: #888; }
+    .cc-desc { font-family: var(--font-hand, sans-serif); font-size: 0.78rem; color: #666; line-height: 1.45; margin: 0.2rem 0 0; }
+    .cc-call-row {
+      display: flex; align-items: center; gap: 0.3rem; margin-top: 0.5rem;
+      padding-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    /* Emergency card pulse on hover */
+    .emergency-card:hover .cc-emoji { animation: pulse-emoji 500ms ease; }
+    @keyframes pulse-emoji {
+      0%,100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+
+    /* Albergue big buttons */
+    .albergue-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .albergue-btn {
+      position: relative; border-radius: 18px; text-decoration: none;
+      transition: transform 230ms ease, box-shadow 230ms ease;
+    }
+    .albergue-btn:hover { transform: translateY(-5px) rotate(-0.5deg); box-shadow: 0 14px 36px rgba(0,0,0,0.12); }
+    .albergue-btn:active { transform: scale(0.97); }
+    .ab-inner {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+      padding: 1.5rem 1rem 1.25rem; text-align: center;
+    }
+    .ab-emoji { font-size: 2.4rem; transition: transform 220ms ease; margin-bottom: 0.2rem; }
+    .albergue-btn:hover .ab-emoji { transform: scale(1.2) rotate(-5deg); }
+    .ab-label { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 1rem; }
+    .ab-sub { font-family: var(--font-hand, sans-serif); font-size: 0.75rem; color: #777; }
+    .ab-detail { font-family: monospace; font-size: 0.72rem; color: #999; margin-top: 0.2rem; word-break: break-all; }
+
+    /* Useful links */
+    .links-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+    .link-card { position: relative; border-radius: 12px; text-decoration: none; transition: transform 200ms ease; }
+    .link-card:hover { transform: translateX(4px); }
+    .lc-inner { position: relative; z-index: 2; padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.75rem; }
+    .lc-emoji { font-size: 1.4rem; flex-shrink: 0; }
+    .lc-label { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.9rem; color: #1a1a1a; margin-bottom: 0.1rem; }
+    .lc-sub { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.78rem; color: #888; }
+    .lc-inner > svg { margin-left: auto; flex-shrink: 0; }
+
+    /* Animations */
+    .reveal-section { opacity: 0; transform: translateY(24px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
+    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 860px) {
+      .contacts-grid { grid-template-columns: repeat(2, 1fr); }
+      .contacts-grid-3 { grid-template-columns: repeat(2, 1fr); }
+      .albergue-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .contacts-grid { grid-template-columns: 1fr 1fr; }
+      .albergue-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+
+  <script>
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); } });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.reveal-section').forEach(el => obs.observe(el));
+  </script>
+</Layout>

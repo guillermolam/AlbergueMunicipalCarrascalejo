@@ -1,0 +1,225 @@
+---
+export const prerender = true;
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const allEntries = await getCollection('localGuide');
+const restaurants = allEntries
+  .filter(e => e.data.type === 'restaurant')
+  .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
+  .map(e => ({
+    name:        e.data.name,
+    type:        e.data.category ?? '',
+    distance:    e.data.distance ?? '',
+    walk:        e.data.walkTime ?? '',
+    hours:       e.data.hours ?? '',
+    price:       e.data.priceRange ?? '€',
+    stars:       e.data.stars ?? 3,
+    pilgrimMenu: e.data.pilgrimMenu ?? false,
+    notes:       e.body.trim(),
+    tags:        e.data.tags ?? [],
+  }));
+---
+
+<Layout title="Restaurantes — Albergue Municipal de El Carrascalejo">
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <section class="page-hero reveal-section">
+    <div class="page-hero-inner">
+      <a href="/dashboard" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al Panel
+      </a>
+      <div class="hero-emoji" aria-hidden="true">🍽️</div>
+      <h1 class="page-title">Donde Comer</h1>
+      <p class="page-subtitle">Restaurantes y tiendas cerca del albergue</p>
+    </div>
+  </section>
+
+  <div class="page-content">
+
+    <!-- Pilgrim tip -->
+    <div class="tip-box reveal-section" style="--delay:0.04s">
+      <span class="tip-icon" aria-hidden="true">💡</span>
+      <p class="tip-text">
+        <strong>Consejo peregrino:</strong> La mayoria de bares ofrecen bocadillos para llevar.
+        Pidelo la noche anterior si sales pronto. El albergue tiene nevera comunitaria.
+      </p>
+    </div>
+
+    <!-- Restaurant cards -->
+    <section class="restaurants-section reveal-section" style="--delay:0.08s">
+      <h2 class="section-title">Establecimientos</h2>
+      <div class="restaurant-list">
+        {restaurants.map((r, i) => (
+          <div class="rest-card reveal-section" style={`--delay:${0.1 + i * 0.06}s`}>
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke="#d97706" stroke-width="1.5" filter="url(#sketchy-filter)" stroke-opacity="0.3"/>
+            </svg>
+            <div class="rest-inner">
+              <div class="rest-header">
+                <div>
+                  <h3 class="rest-name">{r.name}</h3>
+                  <span class="rest-type">{r.type}</span>
+                </div>
+                <div class="rest-right">
+                  <span class="rest-price">{r.price}</span>
+                  <span class="rest-stars" aria-label={`${r.stars} estrellas`}>
+                    {'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}
+                  </span>
+                </div>
+              </div>
+              <p class="rest-notes">{r.notes}</p>
+              <div class="rest-meta">
+                <span class="meta-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {r.distance} · {r.walk}
+                </span>
+                <span class="meta-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {r.hours}
+                </span>
+                {r.pilgrimMenu && <span class="pilgrim-chip">🎒 Menu Peregrino</span>}
+              </div>
+              <div class="rest-tags">
+                {r.tags.map(t => <span class="tag">{t}</span>)}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Meal times -->
+    <section class="meals-section reveal-section" style="--delay:0.14s">
+      <h2 class="section-title">Horarios Habituales en Espana</h2>
+      <div class="meals-grid">
+        {[
+          { meal: 'Desayuno',  time: '07:30 – 10:00', note: 'Cafe + tostada con tomate', icon: '☕' },
+          { meal: 'Almuerzo', time: '10:30 – 12:00', note: 'Bocadillo o tapas',           icon: '🥪' },
+          { meal: 'Comida',   time: '14:00 – 16:00', note: 'El menu del dia mas barato',  icon: '🍲' },
+          { meal: 'Merienda', time: '17:00 – 19:00', note: 'Cafe y pastel',               icon: '🍰' },
+          { meal: 'Cena',     time: '21:00 – 23:00', note: 'Mas tarde que en el norte',   icon: '🌙' },
+        ].map(m => (
+          <div class="meal-chip">
+            <span class="meal-emoji" aria-hidden="true">{m.icon}</span>
+            <div>
+              <span class="meal-name">{m.meal}</span>
+              <span class="meal-time">{m.time}</span>
+              <span class="meal-note">{m.note}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+  </div>
+
+  <style>
+    .page-hero {
+      background: linear-gradient(135deg, #92400e 0%, #d97706 60%, #f59e0b 100%);
+      padding: 2.5rem 1rem 2rem; color: white;
+      position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.06); border-radius: 50%;
+    }
+    .page-hero-inner { max-width: 1020px; margin: 0 auto; position: relative; z-index: 1; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: rgba(255,255,255,0.8); text-decoration: none;
+      font-family: var(--font-hand, sans-serif); font-size: 0.85rem;
+      margin-bottom: 1rem; transition: color 200ms ease;
+    }
+    .back-link:hover { color: white; }
+    .hero-emoji { font-size: 2.8rem; margin-bottom: 0.4rem; }
+    .page-title {
+      font-family: var(--font-display, sans-serif);
+      font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 0.25rem; color: white;
+    }
+    .page-subtitle { font-family: var(--font-hand, sans-serif); font-size: 1rem; opacity: 0.85; margin: 0; }
+
+    .page-content { max-width: 1020px; margin: 0 auto; padding: 2rem 1rem 4rem; display: flex; flex-direction: column; gap: 2.5rem; }
+    .section-title { font-family: var(--font-display, sans-serif); font-size: 1.4rem; color: #1a1a1a; margin: 0 0 1rem; }
+
+    /* Tip */
+    .tip-box {
+      display: flex; gap: 0.75rem; align-items: flex-start;
+      background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+    .tip-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .tip-text { font-family: var(--font-hand, sans-serif); font-size: 0.88rem; color: #78350f; margin: 0; line-height: 1.5; }
+
+    /* Restaurants */
+    .restaurant-list { display: flex; flex-direction: column; gap: 1rem; }
+    .rest-card { position: relative; border-radius: 14px; transition: transform 250ms ease; }
+    .rest-card:hover { transform: translateY(-3px); }
+    .rest-inner { position: relative; z-index: 2; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .rest-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+    .rest-name { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 1.05rem; color: #1a1a1a; margin: 0 0 0.2rem; }
+    .rest-type { font-family: var(--font-hand, sans-serif); font-size: 0.8rem; color: #888; }
+    .rest-right { text-align: right; flex-shrink: 0; }
+    .rest-price { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 1rem; color: #d97706; }
+    .rest-stars { display: block; color: #f59e0b; font-size: 0.85rem; letter-spacing: 1px; }
+    .rest-notes { font-family: var(--font-hand, sans-serif); font-size: 0.85rem; color: #555; margin: 0; line-height: 1.4; }
+    .rest-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .meta-chip {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-family: var(--font-hand, sans-serif); font-size: 0.78rem; color: #666;
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 50px;
+      padding: 0.2rem 0.6rem;
+    }
+    .pilgrim-chip {
+      display: inline-flex; align-items: center;
+      font-family: var(--font-hand, sans-serif); font-size: 0.78rem;
+      background: rgba(0,171,57,0.1); color: #065f46;
+      border: 1px solid rgba(0,171,57,0.3); border-radius: 50px;
+      padding: 0.2rem 0.6rem;
+    }
+    .rest-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .tag {
+      font-family: var(--font-hand, sans-serif); font-size: 0.72rem;
+      background: #fef3c7; color: #92400e; border-radius: 50px;
+      padding: 0.1rem 0.5rem;
+    }
+
+    /* Meals */
+    .meals-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
+    .meal-chip {
+      display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+      background: white; border: 1.5px solid rgba(217,119,6,0.2); border-radius: 12px;
+      padding: 0.875rem 0.6rem; text-align: center;
+    }
+    .meal-emoji { font-size: 1.6rem; }
+    .meal-name { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.8rem; color: #1a1a1a; }
+    .meal-time { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.72rem; color: #d97706; margin-top: 0.1rem; }
+    .meal-note { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.68rem; color: #aaa; margin-top: 0.15rem; line-height: 1.3; }
+
+    .reveal-section { opacity: 0; transform: translateY(24px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
+    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 700px) {
+      .meals-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .meals-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+
+  <script>
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); } });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.reveal-section').forEach(el => obs.observe(el));
+  </script>
+</Layout>

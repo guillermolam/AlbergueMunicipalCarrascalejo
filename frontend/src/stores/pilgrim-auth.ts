@@ -831,8 +831,8 @@ async function getClientIP(): Promise<string | null> {
   try {
     // In a real implementation, you'd get this from the server
     const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
+    const data = await response.json() as { ip?: string };
+    return data.ip ?? null;
   } catch {
     return null;
   }

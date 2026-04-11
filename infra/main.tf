@@ -18,11 +18,10 @@ terraform {
       source  = "hashicorp/tfe"
       version = "~> 0.76"
     }
-    # cloudflare - needs scoped API Token
-    # cloudflare = {
-    #   source  = "cloudflare/cloudflare"
-    #   version = "~> 5.18"
-    # }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.18"
+    }
     # neon - needs org-level API key
     # neon = {
     #   source  = "terraform-community-providers/neon"

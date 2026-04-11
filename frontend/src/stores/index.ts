@@ -38,20 +38,28 @@ export {
 // Pilgrim stores
 export { authActions, authStore, permissionsStore, sessionStore } from './pilgrim-auth';
 export {
-  bookingsStore,
-  currentPilgrimageStore,
+  // ---- ACTIVE: used by UI state ----
   currentProfile,
-  healthSafetyStore,
   isAuthenticated,
   isPilgrimageActive,
   isSessionValid,
-  pilgrimageActions,
   pilgrimageProgress,
   pilgrimActions,
-  pilgrimProfileStore,
-  socialProfileStore,
+  pilgrimageActions,
   uiStateStore,
   upcomingBookings,
+  // ---- DEPRECATED: data lives on the server; replace with API calls via src/lib/api/ ----
+  // @deprecated Use GET /api/users/profile via src/lib/api/user.ts instead
+  pilgrimProfileStore,
+  // @deprecated Use GET /api/camino/progress via src/lib/api/user.ts instead
+  currentPilgrimageStore,
+  // @deprecated Use GET /api/bookings via src/lib/api/booking.ts instead
+  bookingsStore,
+  // @deprecated Use GET /api/accommodation/health via src/lib/api/hostel.ts instead
+  healthSafetyStore,
+  // @deprecated Merge into pilgrimProfileStore or remove entirely
+  socialProfileStore,
+  // @deprecated Use Astro.locals.user injected by middleware instead
   userAuthStore,
 } from './pilgrim';
 

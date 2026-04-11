@@ -1,9 +1,13 @@
 ﻿---
-export const prerender = true;
-
+// On-demand rendering: admin-role required
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import ServiceStatus from '../../components/admin/ServiceStatus.astro';
 import { mockHealthChecks } from '../../lib/healthchecks';
+
+const { userId: _uid } = Astro.locals.auth();
+if (!_uid || Astro.locals.role !== 'admin') {
+  return Astro.redirect(`/auth?from=${Astro.url.pathname}&reason=unauthorized`, 302);
+}
 ---
 
 <AdminLayout title="Services Health - Admin Dashboard" activeSection="services">

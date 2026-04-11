@@ -1,61 +1,58 @@
-import { createClient } from 'redis';
+/**
+ * Redis stub for Cloudflare Workers compatibility.
+ *
+ * The `redis` npm package requires Node.js TCP sockets (net/tls) which are
+ * unavailable in the Cloudflare Workers runtime.  All functions here are
+ * intentional no-ops so that any existing call-sites don't throw at runtime.
+ *
+ * ─── What to use instead ────────────────────────────────────────────────────
+ *  • Short-lived cache  → Workers KV  (via Astro.locals.runtime.env.CACHE)
+ *  • Session state      → Cloudflare KV or Durable Objects
+ *  • Rate-limit counters → Cloudflare Zone Rate Limiting rules (free tier)
+ *                         or Durable Objects (paid tier)
+ * ────────────────────────────────────────────────────────────────────────────
+ */
 
-const redisUrl = import.meta.env.SSR
-  ? process.env.REDIS_URL || 'redis://localhost:6379'
-  : 'redis://localhost:6379';
+function warn(fn: string) {
+  if (import.meta.env.DEV) {
+    console.warn(`[redis stub] ${fn}() called — Redis is not available in Cloudflare Workers. Use KV instead.`);
+  }
+}
 
-let redisClient: ReturnType<typeof createClient> | null = null;
+// Fake client shape so call-sites that destructure the client don't crash.
+const noopClient = {
+  get: async (_key: string) => null,
+  setEx: async (_key: string, _ttl: number, _value: string) => {},
+  del: async (_key: string) => {},
+  quit: async () => {},
+  on: (_event: string, _cb: (...args: unknown[]) => void) => noopClient,
+  connect: async () => {},
+  disconnect: async () => {},
+};
 
+/** @deprecated Use Workers KV via Astro.locals.runtime.env.CACHE instead. */
 export async function getRedisClient() {
-  if (!redisClient) {
-    redisClient = createClient({
-      url: redisUrl,
-      socket: {
-        reconnectStrategy: (retries) => Math.min(retries * 50, 1000),
-      },
-    });
-
-    redisClient.on('error', (err) => {
-      console.error('Redis Client Error', err);
-    });
-
-    await redisClient.connect();
-  }
-
-  return redisClient;
+  warn('getRedisClient');
+  return noopClient;
 }
 
-export async function setRedisKey(key: string, value: string, expireInSeconds = 3600) {
-  try {
-    const client = await getRedisClient();
-    await client.setEx(key, expireInSeconds, value);
-  } catch (error) {
-    console.error('Error setting Redis key:', error);
-  }
+/** @deprecated Use Workers KV instead. */
+export async function setRedisKey(_key: string, _value: string, _expireInSeconds = 3600) {
+  warn('setRedisKey');
 }
 
-export async function getRedisKey(key: string) {
-  try {
-    const client = await getRedisClient();
-    return await client.get(key);
-  } catch (error) {
-    console.error('Error getting Redis key:', error);
-    return null;
-  }
+/** @deprecated Use Workers KV instead. */
+export async function getRedisKey(_key: string): Promise<string | null> {
+  warn('getRedisKey');
+  return null;
 }
 
-export async function deleteRedisKey(key: string) {
-  try {
-    const client = await getRedisClient();
-    await client.del(key);
-  } catch (error) {
-    console.error('Error deleting Redis key:', error);
-  }
+/** @deprecated Use Workers KV instead. */
+export async function deleteRedisKey(_key: string) {
+  warn('deleteRedisKey');
 }
 
+/** @deprecated No-op — no persistent connection in Workers. */
 export async function closeRedisConnection() {
-  if (redisClient) {
-    await redisClient.quit();
-    redisClient = null;
-  }
+  warn('closeRedisConnection');
 }

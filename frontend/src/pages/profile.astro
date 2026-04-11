@@ -1,0 +1,2299 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const clerkUser  = await Astro.locals.currentUser();
+const firstName  = clerkUser?.firstName  ?? '';
+const lastName   = clerkUser?.lastName   ?? '';
+const fullName   = [firstName, lastName].filter(Boolean).join(' ') || 'Peregrino';
+const email      = clerkUser?.emailAddresses?.[0]?.emailAddress ?? '';
+const avatarUrl  = clerkUser?.imageUrl ?? '';
+const createdAt  = clerkUser?.createdAt ? new Date(clerkUser.createdAt) : null;
+const memberYear = createdAt?.getFullYear()?.toString() ?? '';
+const memberSince = createdAt
+  ? createdAt.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+  : '';
+const socialAccounts: { provider: string; label: string; icon: string }[] =
+  (clerkUser?.externalAccounts ?? []).map((ea: any) => {
+    const p = String(ea.provider ?? '').toLowerCase();
+    const labels: Record<string, { label: string; icon: string }> = {
+      google:   { label: 'Google',   icon: 'G' },
+      github:   { label: 'GitHub',   icon: '⌥' },
+      apple:    { label: 'Apple',    icon: '' },
+      facebook: { label: 'Facebook', icon: 'f' },
+      twitter:  { label: 'Twitter',  icon: '𝕏' },
+      microsoft:{ label: 'Microsoft',icon: 'M' },
+    };
+    return { provider: p, ...(labels[p] ?? { label: p, icon: '●' }) };
+  });
+
+const meta: Record<string, any> = (clerkUser?.unsafeMetadata?.pilgrimProfile as any) ?? {};
+const initStages: string[] = meta.camino?.stages ?? [];
+const STAGE_KM_LIST: Record<string, number> = {
+  s01:20,s02:25,s03:22,s04:18,s05:26,s06:19,s07:22,s08:16,
+  s09:23,s10:24,s11:12,s12:22,s13:21,s14:8, s15:33,s16:14,
+  s17:26,s18:24,s19:20,s20:18,s21:22,s22:26,s23:30,s24:27,
+  s25:22,s26:22,s27:25,s28:29,s29:30,s30:21,s31:32,s32:24,
+  s33:29,s34:21,s35:18,s36:22,s37:25,s38:29,s39:19,s40:20,
+};
+const initKm  = initStages.reduce((a, id) => a + (STAGE_KM_LIST[id] ?? 0), 0);
+const initPct = Math.min(100, Math.round((initStages.length / 40) * 100));
+
+const STAGES = [
+  { id:'s01', from:'Sevilla',                      to:'Guillena',                       km:20 },
+  { id:'s02', from:'Guillena',                     to:'Castilblanco de los Arroyos',    km:25 },
+  { id:'s03', from:'Castilblanco',                 to:'Almadén de la Plata',            km:22 },
+  { id:'s04', from:'Almadén de la Plata',          to:'El Real de la Jara',             km:18 },
+  { id:'s05', from:'El Real de la Jara',           to:'Monesterio',                     km:26 },
+  { id:'s06', from:'Monesterio',                   to:'Fuente de Cantos',               km:19 },
+  { id:'s07', from:'Fuente de Cantos',             to:'Zafra',                          km:22 },
+  { id:'s08', from:'Zafra',                        to:'Los Santos de Maimona',          km:16 },
+  { id:'s09', from:'Los Santos de Maimona',        to:'Villafranca de los Barros',      km:23 },
+  { id:'s10', from:'Villafranca de los Barros',    to:'Torremejía',                     km:24 },
+  { id:'s11', from:'Torremejía',                   to:'Mérida',                         km:12 },
+  { id:'s12', from:'Mérida',                       to:'Aljucén',                        km:22 },
+  { id:'s13', from:'Aljucén',                      to:'El Carrascalejo',                km:21, highlight:true },
+  { id:'s14', from:'El Carrascalejo',              to:'Alcuéscar',                      km:8,  highlight:true },
+  { id:'s15', from:'Alcuéscar',                    to:'Cáceres',                        km:33 },
+  { id:'s16', from:'Cáceres',                      to:'Casar de Cáceres',               km:14 },
+  { id:'s17', from:'Casar de Cáceres',             to:'Grimaldo',                       km:26 },
+  { id:'s18', from:'Grimaldo',                     to:'Carcaboso / Caparra',            km:24 },
+  { id:'s19', from:'Carcaboso',                    to:'Aldeanueva del Camino',          km:20 },
+  { id:'s20', from:'Aldeanueva del Camino',        to:'Baños de Montemayor',            km:18 },
+  { id:'s21', from:'Baños de Montemayor',          to:'Calzada de Béjar',               km:22 },
+  { id:'s22', from:'Calzada de Béjar',             to:'Salamanca',                      km:26 },
+  { id:'s23', from:'Salamanca',                    to:'El Cubo de la Tierra del Vino',  km:30 },
+  { id:'s24', from:'El Cubo de la Tierra del Vino', to:'Zamora',                        km:27 },
+  { id:'s25', from:'Zamora',                       to:'Montamarta',                     km:22 },
+  { id:'s26', from:'Montamarta',                   to:'Granja de Moreruela',            km:22 },
+  { id:'s27', from:'Granja de Moreruela',          to:'Benavente',                      km:25 },
+  { id:'s28', from:'Benavente',                    to:'La Bañeza',                      km:29 },
+  { id:'s29', from:'La Bañeza',                    to:'Astorga',                        km:30 },
+  { id:'s30', from:'Astorga',                      to:'Rabanal del Camino',             km:21 },
+  { id:'s31', from:'Rabanal del Camino',           to:'Ponferrada',                     km:32 },
+  { id:'s32', from:'Ponferrada',                   to:'Villafranca del Bierzo',         km:24 },
+  { id:'s33', from:'Villafranca del Bierzo',       to:'O Cebreiro',                     km:29 },
+  { id:'s34', from:'O Cebreiro',                   to:'Triacastela',                    km:21 },
+  { id:'s35', from:'Triacastela',                  to:'Sarria',                         km:18 },
+  { id:'s36', from:'Sarria',                       to:'Portomarín',                     km:22 },
+  { id:'s37', from:'Portomarín',                   to:'Palas de Rei',                   km:25 },
+  { id:'s38', from:'Palas de Rei',                 to:'Arzúa',                          km:29 },
+  { id:'s39', from:'Arzúa',                        to:'O Pedrouzo',                     km:19 },
+  { id:'s40', from:'O Pedrouzo',                   to:'Santiago de Compostela',         km:20 },
+];
+
+const BADGES = [
+  { id:'b_first',        glyph:'I',   name:'Primera Etapa',       desc:'Completa tu primera etapa',              auto:true,  level:'Bronce' },
+  { id:'b_5stages',      glyph:'V',   name:'5 Etapas',            desc:'Completa 5 etapas del camino',           auto:true,  level:'Plata'  },
+  { id:'b_10stages',     glyph:'X',   name:'10 Etapas',           desc:'Completa 10 etapas del camino',          auto:true,  level:'Plata'  },
+  { id:'b_halfway',      glyph:'½',   name:'Mitad del Camino',    desc:'Supera la etapa 20',                     auto:true,  level:'Oro'    },
+  { id:'b_carrascalejo', glyph:'C',   name:'El Carrascalejo',     desc:'Pasa por el Albergue Municipal',         auto:true,  level:'Oro'    },
+  { id:'b_100km',        glyph:'C',   name:'100 km',              desc:'Camina más de 100 km en total',          auto:false, level:'Bronce' },
+  { id:'b_rain',         glyph:'~',   name:'Peregrino Mojado',    desc:'Sal a andar bajo la lluvia',             auto:false, level:'Bronce' },
+  { id:'b_stamps5',      glyph:'5S',  name:'5 Sellos',            desc:'Colecciona 5 sellos en tu credencial',   auto:false, level:'Plata'  },
+  { id:'b_stamps10',     glyph:'10S', name:'10 Sellos',           desc:'Colecciona 10 sellos',                   auto:false, level:'Oro'    },
+  { id:'b_social',       glyph:'∞',   name:'Espíritu Peregrino',  desc:'Comparte mesa con otros peregrinos',     auto:false, level:'Plata'  },
+  { id:'b_dawn',         glyph:'↑',   name:'Madrugador',          desc:'Sal antes de las 6:00 h',                auto:false, level:'Bronce' },
+  { id:'b_complete',     glyph:'★',   name:'Buen Camino',         desc:'Llega a Santiago de Compostela',         auto:true,  level:'Legendario' },
+];
+---
+
+<Layout title="Mi Perfil — Albergue Municipal de El Carrascalejo">
+
+  <!-- Shared sketchy filter -->
+  <svg style="position:absolute;width:0;height:0" aria-hidden="true">
+    <defs>
+      <filter id="sk">
+        <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.5"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Back -->
+  <div class="topbar">
+    <a href="/dashboard" class="back-link">← Panel</a>
+    <input type="file" id="avatarInput" accept="image/*" style="display:none" />
+  </div>
+
+  <div class="page-wrap">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         LEFT — THE POKÉMON-STYLE PROFILE CARD
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="card-col">
+
+      <!-- Profile trading card -->
+      <div class="poke-card" id="pokeCard">
+        <!-- Card chrome border -->
+        <div class="card-inner">
+
+          <!-- Header strip -->
+          <div class="card-header">
+            <span class="card-type-badge">PEREGRINO</span>
+            <span class="card-hp">
+              <span class="card-hp-label">KM</span>
+              <span class="card-hp-val" id="cardKmVal">{initKm}</span>
+            </span>
+          </div>
+
+          <!-- Avatar art frame -->
+          <div class="card-art" id="cardArtZone" role="button" tabindex="0" aria-label="Cambiar foto de perfil">
+            <div class="card-art-frame">
+              <div class="card-art-inner">
+                {avatarUrl
+                  ? <img src={avatarUrl} alt="Foto de perfil" class="card-avatar-img" id="cardAvatar" />
+                  : <span class="card-avatar-initials" id="cardInitials">
+                      {(firstName[0] ?? 'P').toUpperCase()}{(lastName[0] ?? '').toUpperCase()}
+                    </span>
+                }
+              </div>
+              <div class="card-art-overlay" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                Cambiar
+              </div>
+            </div>
+          </div>
+
+          <!-- Card name (read-only from Clerk) -->
+          <div class="card-name-row">
+            <div class="card-name" id="cardName">{fullName}</div>
+          </div>
+
+          <!-- Route label -->
+          <div class="card-route" id="cardRoute">
+            <span class="route-dot"></span>
+            <span id="cardRouteName">{meta.camino?.route === 'frances' ? 'Camino Francés' : 'Vía de la Plata'}</span>
+          </div>
+
+          <!-- Stat bars — Pokémon style -->
+          <div class="card-stats">
+            <div class="stat-row">
+              <span class="stat-label">Etapas</span>
+              <div class="stat-track">
+                <div class="stat-fill" id="statFillStages" style={`width:${initPct}%`}></div>
+              </div>
+              <span class="stat-num" id="statNumStages">{initStages.length}<small>/40</small></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Km</span>
+              <div class="stat-track">
+                <div class="stat-fill" id="statFillKm" style={`width:${Math.min(100, Math.round((initKm/910)*100))}%`}></div>
+              </div>
+              <span class="stat-num" id="statNumKm">{initKm}<small>/910</small></span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Logros</span>
+              <div class="stat-track">
+                <div class="stat-fill" id="statFillBadges" style="width:0%"></div>
+              </div>
+              <span class="stat-num" id="statNumBadges">0<small>/12</small></span>
+            </div>
+          </div>
+
+          <!-- Card footer -->
+          <div class="card-footer">
+            <span class="card-footer-text">{email}</span>
+            {memberYear && <span class="card-footer-year">{memberYear}</span>}
+          </div>
+        </div><!-- /.card-inner -->
+      </div><!-- /.poke-card -->
+
+      <!-- Coat-of-arms badge collection (under poke-card) -->
+      <div class="coa-badges-section">
+        <div class="panel-head" style="margin-bottom:0.6rem;margin-top:0.85rem">
+          <span class="panel-title">Logros</span>
+          <span class="badge-count-pill" id="badgeCountPill">0/16</span>
+        </div>
+        <div class="coa-badges-wrap" id="coaBadgesWrap">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Social logins + member since -->
+      <div class="social-logins-row">
+        {memberSince && (
+          <span class="social-chip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Miembro desde {memberSince}
+          </span>
+        )}
+        {socialAccounts.map(sa => (
+          <span class="social-chip social-chip--connected" title={`Conectado con ${sa.label}`}>
+            <span class="social-chip-icon">{sa.icon}</span>
+            {sa.label}
+          </span>
+        ))}
+      </div>
+
+    </div><!-- /card-col -->
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         RIGHT — INFO PANELS + CAMINO + BADGES
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="right-col">
+
+      <!-- ─── INFO PANELS (above camino) ─── -->
+
+      <!-- Personal Profile Panel -->
+      <div class="info-panel ip-glass">
+        <div class="panel-head">
+          <div class="panel-head-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="panel-title">Perfil personal</span>
+          </div>
+          <button class="panel-toggle" data-target="panelPersonalForm" aria-expanded="false">Editar</button>
+        </div>
+        <div class="panel-display" id="panelPersonalDisplay">
+          <div class="disp-pills" id="dispPersonal">
+            <span class="disp-empty">Sin información personal</span>
+          </div>
+        </div>
+        <div class="panel-form" id="panelPersonalForm" hidden>
+          <div class="form-grid">
+            <div class="field field-full">
+              <label>Teléfono</label>
+              <div class="phone-outer-p">
+                <div class="phone-wrap-p">
+                  <button type="button" class="phone-prefix-p" id="p-phone-prefix" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="p-phone-flag">🇪🇸</span>
+                    <span class="p-prefix-code" id="p-phone-dial">+34</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <input type="tel" id="fPhone" placeholder="612 345 678" class="phone-input-p" inputmode="numeric" />
+                  <input type="hidden" id="fPhoneCC" value="ES" />
+                </div>
+                <div id="p-phone-drop" class="phone-drop-p" role="listbox">
+                  <input type="text" class="phone-drop-search-p" placeholder="País o +código…" autocomplete="off" />
+                  <ul class="phone-drop-list-p"></ul>
+                </div>
+              </div>
+            </div>
+            <div class="field field-full">
+              <label>Dirección de casa</label>
+              <div class="addr-outer">
+                <input type="text" id="fAddress" placeholder="Calle, ciudad, país…" autocomplete="off" aria-autocomplete="list" aria-haspopup="listbox" />
+                <ul id="addrDrop" class="addr-drop" role="listbox" hidden></ul>
+              </div>
+            </div>
+            <div class="field field-full"><label>Sobre mí</label><textarea id="fBio" rows="2" placeholder="Cuéntanos algo…"></textarea></div>
+          </div>
+          <div class="form-actions">
+            <button class="sketchy-btn" data-save="personal">Guardar</button>
+            <button class="sketchy-btn-ghost" data-cancel="personal">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency Contact Panel -->
+      <div class="info-panel ip-glass">
+        <div class="panel-head">
+          <div class="panel-head-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.32 2 2 0 0 1 3.62 1.13h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.73a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16z"/></svg>
+            <span class="panel-title">Contacto de emergencia</span>
+          </div>
+          <button class="panel-toggle" data-target="panelEmForm" aria-expanded="false">Editar</button>
+        </div>
+        <div class="panel-display" id="panelEmDisplay">
+          <div class="disp-pills" id="dispEmergency">
+            <span class="disp-empty">Sin contacto de emergencia</span>
+          </div>
+        </div>
+        <div class="panel-form" id="panelEmForm" hidden>
+          <div id="emValidationMsg" class="validation-msg" hidden></div>
+          <div class="form-grid">
+            <div class="field"><label>Nombre *</label><input type="text" id="emName" placeholder="Nombre completo" required /></div>
+            <div class="field"><label>Relación *</label>
+              <select id="emRelation">
+                <option value="">— elige —</option>
+                <option value="pareja">Pareja</option><option value="padre_madre">Padre/Madre</option>
+                <option value="hijo_a">Hijo/a</option><option value="hermano_a">Hermano/a</option>
+                <option value="amigo_a">Amigo/a</option><option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="field field-full">
+              <label>Teléfono contacto *</label>
+              <div class="phone-outer-p">
+                <div class="phone-wrap-p">
+                  <button type="button" class="phone-prefix-p" id="em-phone-prefix" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="em-phone-flag">🇪🇸</span>
+                    <span class="p-prefix-code" id="em-phone-dial">+34</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <input type="tel" id="emPhoneNum" placeholder="612 345 678" class="phone-input-p" inputmode="numeric" />
+                  <input type="hidden" id="emPhoneCC" value="ES" />
+                </div>
+                <div id="em-phone-drop" class="phone-drop-p" role="listbox">
+                  <input type="text" class="phone-drop-search-p" placeholder="País o +código…" autocomplete="off" />
+                  <ul class="phone-drop-list-p"></ul>
+                </div>
+              </div>
+            </div>
+            <div class="field field-full"><label>Email contacto *</label><input type="email" id="emEmail" placeholder="email@ejemplo.com" required /></div>
+          </div>
+          <div class="form-actions">
+            <button class="sketchy-btn" data-save="emergency">Guardar</button>
+            <button class="sketchy-btn-ghost" data-cancel="emergency">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vehicles Panel -->
+      <div class="info-panel ip-glass">
+        <div class="panel-head">
+          <div class="panel-head-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h3l3 3v5h-6V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <span class="panel-title">Vehículos</span>
+          </div>
+          <button class="panel-toggle" data-target="panelVehicleForm" aria-expanded="false">+ Añadir</button>
+        </div>
+        <div class="gear-chips-wrap" id="vehicleDisplay">
+          <span class="disp-empty">Sin vehículos registrados</span>
+        </div>
+        <div class="panel-form" id="panelVehicleForm" hidden>
+          <div id="vehicleValidationMsg" class="validation-msg" hidden></div>
+          <div class="form-grid">
+            <div class="field"><label>Tipo *</label>
+              <select id="vType"><option value="">— elige —</option><option value="coche">Coche</option><option value="bicicleta">Bicicleta</option><option value="moto">Moto</option><option value="furgoneta">Furgoneta</option></select>
+            </div>
+            <div class="field"><label>Matrícula *</label><input type="text" id="vPlate" placeholder="1234 ABC" required /></div>
+            <div class="field"><label>Modelo</label><input type="text" id="vModel" placeholder="Seat Ibiza" /></div>
+            <div class="field"><label>Color</label><input type="text" id="vColor" placeholder="Rojo" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="sketchy-btn" id="addVehicleBtn">Añadir vehículo</button>
+            <button class="sketchy-btn-ghost" data-cancel="gear">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Belongings Panel -->
+      <div class="info-panel ip-glass">
+        <div class="panel-head">
+          <div class="panel-head-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span class="panel-title">Equipaje &amp; Taquilla</span>
+          </div>
+          <button class="panel-toggle" data-target="panelBelongingsForm" aria-expanded="false">+ Añadir</button>
+        </div>
+        <div class="gear-chips-wrap" id="belongingsDisplay">
+          <span class="disp-empty">Sin artículos registrados</span>
+        </div>
+        <div class="panel-form" id="panelBelongingsForm" hidden>
+          <div class="gear-sub-tabs" style="margin-bottom:0.75rem">
+            <button class="gear-sub-tab active" data-sub="gItem">Artículo</button>
+            <button class="gear-sub-tab" data-sub="gLocker">Taquilla</button>
+          </div>
+          <div id="gItem">
+            <div id="itemValidationMsg" class="validation-msg" hidden></div>
+            <div class="form-grid">
+              <div class="field"><label>Categoría *</label>
+                <select id="bCategory"><option value="">— elige —</option><option value="mochila">Mochila</option><option value="medicamentos">Medicamentos</option><option value="electronica">Electrónica</option><option value="documentacion">Documentación</option><option value="ropa">Ropa</option><option value="valor">Objetos de valor</option><option value="llaves">Llaves</option><option value="otro">Otro</option></select>
+              </div>
+              <div class="field"><label>Cantidad</label><input type="number" id="bCount" min="1" max="100" value="1" style="max-width:80px" /></div>
+              <div class="field field-full"><label>Artículo *</label><input type="text" id="bName" placeholder="Pasaporte" required /></div>
+              <div class="field field-full"><label>Notas</label><input type="text" id="bNotes" placeholder="Descripción…" /></div>
+            </div>
+            <div class="form-actions"><button class="sketchy-btn" id="addItemBtn">Añadir artículo</button></div>
+          </div>
+          <div id="gLocker" hidden>
+            <div class="field" style="max-width:180px"><label>Número de taquilla</label><input type="text" id="lockerNum" placeholder="12" /></div>
+            <div class="form-actions"><button class="sketchy-btn" data-save="locker">Guardar</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pets Panel -->
+      <div class="info-panel ip-glass">
+        <div class="panel-head">
+          <div class="panel-head-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .08.703 1.725 1.722 3.656 1 1.261-.472 1.96-1.45 2.344-2.5"/><path d="M14.267 5.172c0-1.39 1.577-2.493 3.5-2.172 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.96-1.45-2.344-2.5"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75z"/><path d="M4.42 11.247A13.152 13.152 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444c0-1.061-.162-2.2-.493-3.309m-9.243-6.082A8.801 8.801 0 0 1 12 5c.78 0 1.5.108 2.161.306"/></svg>
+            <span class="panel-title">Mascotas</span>
+          </div>
+          <button class="panel-toggle" data-target="panelPetsForm" aria-expanded="false">+ Añadir</button>
+        </div>
+        <div class="gear-chips-wrap" id="petsDisplay">
+          <span class="disp-empty">Sin mascotas registradas</span>
+        </div>
+        <div class="panel-form" id="panelPetsForm" hidden>
+          <div id="petValidationMsg" class="validation-msg" hidden></div>
+          <div class="form-grid">
+            <div class="field"><label>Nombre *</label><input type="text" id="petName" placeholder="Luna" required /></div>
+            <div class="field"><label>Especie *</label>
+              <select id="petSpecies"><option value="">— elige —</option><option value="perro">Perro</option><option value="gato">Gato</option><option value="ave">Ave</option><option value="otro">Otro</option></select>
+            </div>
+            <div class="field"><label>Raza</label><input type="text" id="petBreed" placeholder="Labrador" /></div>
+            <div class="field"><label>Chip / ID</label><input type="text" id="petChip" placeholder="Nº chip" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="sketchy-btn" id="addPetBtn">Añadir mascota</button>
+            <button class="sketchy-btn-ghost" data-cancel="pet">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Camino stages panel -->
+      <div class="camino-panel">
+        <div class="panel-head">
+          <span class="panel-title">El Camino — Etapas</span>
+          <span class="stage-count-pill" id="stageCountPill">{initStages.length}/40</span>
+        </div>
+        <div class="camino-route-row">
+          <select id="cRoute" class="route-select">
+            <option value="vdlp">Vía de la Plata</option>
+            <option value="frances">Camino Francés</option>
+            <option value="norte">Camino del Norte</option>
+            <option value="portugues">Camino Portugués</option>
+            <option value="sana">Vía de la Plata + Sanabrés</option>
+            <option value="otro">Otro</option>
+          </select>
+          <input type="date" id="cStart" class="date-input" title="Fecha de inicio" />
+        </div>
+        <div class="stage-list" id="stageList">
+          {STAGES.map((s) => (
+            <label class:list={['stage-row', s.highlight ? 'stage-hl' : '']} data-id={s.id}>
+              <input type="checkbox" class="stage-cb" value={s.id} checked={initStages.includes(s.id)} />
+              <span class="stage-mark"></span>
+              <span class="stage-name">{s.from} → {s.to}</span>
+              <span class="stage-km-tag">{s.km} km</span>
+            </label>
+          ))}
+        </div>
+        <div class="camino-actions">
+          <button class="sketchy-btn" id="saveCaminoBtn">Guardar progreso</button>
+        </div>
+      </div>
+
+      <!-- Badge count pill for stats -->
+      <span class="badge-count-pill" id="badgeCountPillRight" style="display:none">0/16</span>
+
+    </div><!-- /right-col -->
+  </div><!-- /page-wrap -->
+
+  <!-- Stage detail modal -->
+  <div id="stageModal" class="stage-modal-overlay" hidden aria-modal="true" role="dialog">
+    <div class="stage-modal" id="stageModalCard">
+      <div class="stage-modal-head">
+        <span class="stage-modal-title" id="stageModalTitle">Etapa</span>
+        <button class="stage-modal-close" id="stageModalClose" aria-label="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="stage-modal-body">
+        <div class="sm-field-row">
+          <div class="sm-field">
+            <label class="sm-label">Fecha inicio</label>
+            <input type="date" id="smStartDate" class="sm-input" />
+          </div>
+          <div class="sm-field">
+            <label class="sm-label">Hora inicio</label>
+            <input type="time" id="smStartTime" class="sm-input" value="06:00" />
+          </div>
+        </div>
+        <div class="sm-field-row">
+          <div class="sm-field">
+            <label class="sm-label">Fecha llegada</label>
+            <input type="date" id="smEndDate" class="sm-input" />
+          </div>
+          <div class="sm-field">
+            <label class="sm-label">Hora llegada</label>
+            <input type="time" id="smEndTime" class="sm-input" value="14:00" />
+          </div>
+        </div>
+        <div class="sm-field">
+          <label class="sm-label">Transporte</label>
+          <select id="smTransport" class="sm-input">
+            <option value="walking">🚶 A pie</option>
+            <option value="bike">🚲 Bicicleta</option>
+            <option value="horse">🐴 Caballo</option>
+            <option value="bus">🚌 Autobús</option>
+            <option value="car">🚗 Coche</option>
+            <option value="taxi">🚕 Taxi</option>
+            <option value="other">✦ Otro</option>
+          </select>
+        </div>
+        <div class="sm-field">
+          <label class="sm-label">Notas</label>
+          <textarea id="smNotes" class="sm-input" rows="2" placeholder="Comentarios de la etapa…"></textarea>
+        </div>
+      </div>
+      <div class="stage-modal-foot">
+        <button class="sketchy-btn" id="stageModalSave">Guardar etapa</button>
+        <button class="sketchy-btn-ghost" id="stageModalCancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileData" data-user-email={email} hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+</Layout>
+
+<style>
+  /* ── Tokens ── */
+  :root {
+    --g:   #00AB39;
+    --gd:  #1a3a2e;
+    --gm:  #2d5a3d;
+    --gl:  #e8f5e9;
+    --parchment: #faf7f0;
+    --ink: #1a2a1a;
+    --font-hand: 'Patrick Hand', cursive;
+    --font-sketch: 'Cabin Sketch', cursive;
+  }
+
+  /* ── Page ── */
+  .topbar {
+    background: var(--gd);
+    padding: 0.75rem 1.25rem;
+  }
+  .back-link {
+    font-family: var(--font-hand);
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #fff; }
+
+  .page-wrap {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.25rem;
+    max-width: 1080px;
+    margin: 1.25rem auto 4rem;
+    padding: 0 1rem;
+    align-items: start;
+  }
+
+  /* ══════════════════════════════════════════════════════
+     POKÉMON-STYLE PROFILE CARD
+  ═══════════════════════════════════════════════════════ */
+  .poke-card {
+    background: var(--parchment);
+    border: 4px solid var(--gd);
+    border-radius: 18px;
+    padding: 6px;
+    box-shadow:
+      0 2px 0 0 rgba(0,0,0,0.18),
+      4px 6px 24px rgba(0,0,0,0.14),
+      inset 0 1px 0 rgba(255,255,255,0.7);
+    filter: url(#sk);
+    position: relative;
+  }
+  .card-inner {
+    border: 2px solid rgba(0,171,57,0.35);
+    border-radius: 13px;
+    overflow: hidden;
+    background: var(--parchment);
+    filter: none; /* reset nested filter */
+  }
+
+  /* Card header strip */
+  .card-header {
+    background: linear-gradient(135deg, var(--gd) 0%, var(--gm) 100%);
+    padding: 0.5rem 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-type-badge {
+    font-family: var(--font-sketch);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 4px;
+    padding: 0.1rem 0.5rem;
+  }
+  .card-hp {
+    font-family: var(--font-hand);
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.85);
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+  }
+  .card-hp-label { font-size: 0.62rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.1em; }
+  .card-hp-val { font-family: var(--font-sketch); font-size: 1.1rem; color: #fff; }
+
+  /* Art frame */
+  .card-art {
+    padding: 0.75rem 0.85rem 0.5rem;
+    cursor: pointer;
+  }
+  .card-art-frame {
+    position: relative;
+    border: 2px solid var(--gd);
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(160deg, #d4edd9 0%, #b8dfc0 50%, #c5e8ca 100%);
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-art-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .card-avatar-initials {
+    font-family: var(--font-sketch);
+    font-size: 4rem;
+    color: var(--gd);
+    opacity: 0.6;
+    user-select: none;
+  }
+  .card-art-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(26,58,46,0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: #fff;
+    font-family: var(--font-hand);
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card-art:hover .card-art-overlay { opacity: 1; }
+
+  /* Name row */
+  .card-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.85rem 0.1rem;
+    gap: 0.5rem;
+  }
+  .card-name {
+    font-family: var(--font-sketch);
+    font-size: 1.25rem;
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  /* Route label */
+  .card-route {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0.85rem 0.5rem;
+    font-family: var(--font-hand);
+    font-size: 0.82rem;
+    color: var(--gm);
+  }
+  .route-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--g);
+    flex-shrink: 0;
+  }
+
+  /* Stat bars */
+  .card-stats {
+    padding: 0.5rem 0.85rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: 1px dashed rgba(0,171,57,0.25);
+  }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .stat-label {
+    font-family: var(--font-hand);
+    font-size: 0.72rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    width: 46px;
+    flex-shrink: 0;
+  }
+  .stat-track {
+    flex: 1;
+    height: 7px;
+    background: rgba(0,0,0,0.07);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(0,171,57,0.15);
+  }
+  .stat-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--g), #52c778);
+    border-radius: 6px;
+    transition: width 0.7s cubic-bezier(.4,0,.2,1);
+    min-width: 0;
+  }
+  .stat-num {
+    font-family: var(--font-hand);
+    font-size: 0.82rem;
+    color: var(--gd);
+    font-weight: 700;
+    min-width: 52px;
+    text-align: right;
+  }
+  .stat-num small { font-size: 0.62rem; color: #aaa; font-weight: 400; }
+
+  /* Card footer */
+  .card-footer {
+    background: rgba(0,171,57,0.06);
+    border-top: 1px dashed rgba(0,171,57,0.25);
+    padding: 0.4rem 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-footer-text { font-family: var(--font-hand); font-size: 0.72rem; color: #999; }
+  .card-footer-year { font-family: var(--font-sketch); font-size: 0.72rem; color: rgba(0,171,57,0.6); }
+
+  /* ══════════════════════════════════════════════════════
+     INFO PANELS (below card)
+  ═══════════════════════════════════════════════════════ */
+  .info-panels { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+
+  .info-panel {
+    background: #fff;
+    border: 2px solid rgba(0,171,57,0.18);
+    border-radius: 12px;
+    overflow: hidden;
+    filter: url(#sk);
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.85rem;
+    background: var(--gl);
+    border-bottom: 1px solid rgba(0,171,57,0.15);
+  }
+  .panel-title {
+    font-family: var(--font-hand);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--gd);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .panel-toggle {
+    font-family: var(--font-hand);
+    font-size: 0.75rem;
+    color: var(--g);
+    background: none;
+    border: 1px solid rgba(0,171,57,0.35);
+    border-radius: 12px;
+    padding: 0.15rem 0.65rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .panel-toggle:hover, .panel-toggle[aria-expanded="true"] {
+    background: var(--g);
+    color: #fff;
+    border-color: var(--g);
+  }
+
+  .panel-display { padding: 0.65rem 0.85rem; }
+  .panel-form { padding: 0.75rem 0.85rem; border-top: 1px solid rgba(0,171,57,0.1); }
+
+  .disp-pills {
+    display: flex;
+    flex-direction: column;
+    gap: 0.42rem;
+    padding: 0.1rem 0;
+  }
+  .disp-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(0,171,57,0.22);
+    border: 1px solid rgba(0,171,57,0.35);
+    border-radius: 20px;
+    padding: 0.3rem 0.85rem 0.3rem 0.6rem;
+    font-family: var(--font-hand);
+    font-size: 0.84rem;
+    color: var(--gd);
+    font-weight: 600;
+    line-height: 1.3;
+    align-self: flex-start;
+    max-width: 100%;
+    word-break: break-word;
+  }
+  .disp-pill[style*="cursor"] { cursor: pointer; }
+  .disp-pill[style*="cursor"]:hover { background: rgba(0,171,57,0.32); }
+  .disp-pill svg { opacity: 0.65; flex-shrink: 0; color: var(--gm); }
+  .disp-pill a { color: var(--gd); text-decoration: none; font-weight: 600; }
+  .disp-pill a:hover { text-decoration: underline; }
+  .disp-empty { font-family: var(--font-hand); font-size: 0.82rem; color: #bbb; font-style: italic; }
+
+  /* Social logins row */
+  .social-logins-row {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem 0 0.25rem;
+  }
+  .social-chip {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 20px; padding: 0.22rem 0.65rem;
+    font-family: var(--font-hand); font-size: 0.75rem; color: #666;
+  }
+  .social-chip--connected {
+    background: rgba(0,171,57,0.08); border-color: rgba(0,171,57,0.25); color: var(--gd);
+  }
+  .social-chip-icon { font-size: 0.85rem; line-height: 1; }
+
+  .gear-chips-wrap {
+    padding: 0.55rem 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-height: 40px;
+  }
+  .gear-chip {
+    font-family: var(--font-hand);
+    font-size: 0.78rem;
+    background: var(--gl);
+    border: 1px solid rgba(0,171,57,0.3);
+    border-radius: 14px;
+    padding: 0.18rem 0.55rem;
+    color: var(--gd);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .chip-remove { background: none; border: none; color: #aaa; cursor: pointer; font-size: 0.7rem; padding: 0; }
+  .chip-remove:hover { color: #c00; }
+
+  /* Forms */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+  }
+  .field { display: flex; flex-direction: column; gap: 0.2rem; }
+  .field-full { grid-column: span 2; }
+  .field label {
+    font-family: var(--font-hand);
+    font-size: 0.72rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .field input, .field select, .field textarea {
+    border: 1.5px solid rgba(0,171,57,0.25);
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+    font-family: var(--font-hand);
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: #fafafa;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.18s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--g);
+    box-shadow: 0 0 0 2px rgba(0,171,57,0.1);
+    background: #fff;
+  }
+  .field textarea { resize: vertical; min-height: 52px; }
+  .form-actions { display: flex; gap: 0.45rem; margin-top: 0.65rem; }
+
+  /* Buttons */
+  .sketchy-btn {
+    font-family: var(--font-hand);
+    font-size: 0.88rem;
+    font-weight: 700;
+    background: var(--g);
+    color: #fff;
+    border: 2px solid var(--gd);
+    border-radius: 8px;
+    padding: 0.42rem 1rem;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.18s, transform 0.12s;
+    box-shadow: 2px 2px 0 var(--gd);
+  }
+  .sketchy-btn:hover { background: var(--gm); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--gd); }
+  .sketchy-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--gd); }
+
+  .sketchy-btn-ghost {
+    font-family: var(--font-hand);
+    font-size: 0.88rem;
+    background: transparent;
+    color: #666;
+    border: 1.5px solid #ccc;
+    border-radius: 8px;
+    padding: 0.42rem 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .sketchy-btn-ghost:hover { border-color: #999; color: #333; }
+
+  .sketchy-btn-sm {
+    font-size: 0.85rem;
+    padding: 0.22rem 0.55rem;
+    border-radius: 6px;
+  }
+
+  /* Gear sub-tabs */
+  .gear-sub-tabs { display: flex; gap: 0.3rem; margin-bottom: 0.65rem; }
+  .gear-sub-tab {
+    font-family: var(--font-hand);
+    font-size: 0.78rem;
+    padding: 0.22rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid rgba(0,171,57,0.3);
+    background: none;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .gear-sub-tab.active { background: var(--g); color: #fff; border-color: var(--g); }
+
+  /* ══════════════════════════════════════════════════════
+     RIGHT COLUMN
+  ═══════════════════════════════════════════════════════ */
+  .right-col { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  /* Camino panel */
+  .camino-panel {
+    background: #fff;
+    border: 2px solid rgba(0,171,57,0.2);
+    border-radius: 14px;
+    overflow: hidden;
+    filter: url(#sk);
+  }
+  .camino-panel .panel-head { padding: 0.65rem 1rem; background: var(--gl); border-bottom: 1px solid rgba(0,171,57,0.15); }
+
+  .stage-count-pill {
+    font-family: var(--font-sketch);
+    font-size: 0.82rem;
+    background: var(--gd);
+    color: #fff;
+    padding: 0.15rem 0.65rem;
+    border-radius: 14px;
+  }
+
+  .camino-route-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(0,171,57,0.1);
+  }
+  .route-select, .date-input {
+    border: 1.5px solid rgba(0,171,57,0.25);
+    border-radius: 8px;
+    padding: 0.35rem 0.6rem;
+    font-family: var(--font-hand);
+    font-size: 0.85rem;
+    background: #fafafa;
+    color: var(--ink);
+    flex: 1;
+  }
+  .route-select:focus, .date-input:focus { outline: none; border-color: var(--g); }
+
+  .stage-list {
+    max-height: 360px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--g) transparent;
+  }
+  .stage-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.38rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px dotted rgba(0,171,57,0.1);
+    transition: background 0.12s;
+    font-family: var(--font-hand);
+  }
+  .stage-row:hover { background: #f5fdf5; }
+  .stage-row input[type="checkbox"] { display: none; }
+  .stage-mark {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .stage-row:has(input:checked) .stage-mark { background: var(--g); border-color: var(--g); }
+  .stage-row:has(input:checked) .stage-name { color: #aaa; text-decoration: line-through; }
+  .stage-name { font-size: 0.83rem; color: #333; flex: 1; }
+  .stage-km-tag {
+    font-size: 0.72rem;
+    color: #bbb;
+    background: #f5f5f5;
+    padding: 0.08rem 0.4rem;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .stage-hl { background: #f5fdf5; }
+  .stage-hl .stage-name { color: var(--gd); font-weight: 700; }
+  .stage-hl .stage-km-tag { background: var(--gl); color: var(--gd); }
+
+  .camino-actions { padding: 0.7rem 1rem; border-top: 1px solid rgba(0,171,57,0.12); }
+
+  /* ══════════════════════════════════════════════════════
+     BADGE CARD GRID — COLLECTIBLE CARD STYLE
+  ═══════════════════════════════════════════════════════ */
+  .badges-section {
+    background: #fff;
+    border: 2px solid rgba(0,171,57,0.2);
+    border-radius: 14px;
+    padding: 0.85rem 1rem 1.1rem;
+    filter: url(#sk);
+  }
+  .badge-count-pill {
+    font-family: var(--font-sketch);
+    font-size: 0.82rem;
+    background: var(--gd);
+    color: #fff;
+    padding: 0.15rem 0.65rem;
+    border-radius: 14px;
+  }
+
+  .badge-card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+  }
+
+  .badge-card {
+    position: relative;
+    background: var(--parchment);
+    border: 2.5px solid var(--gd);
+    border-radius: 10px;
+    padding: 0.5rem 0.3rem 0.45rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    text-align: center;
+    filter: grayscale(1) opacity(0.4);
+    transition: filter 0.3s, transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+    user-select: none;
+    overflow: hidden;
+  }
+  .badge-card.earned {
+    filter: none;
+    box-shadow: 0 0 0 2px rgba(0,171,57,0.25), 2px 3px 0 var(--gd);
+  }
+  .badge-card.earned:hover {
+    transform: translateY(-3px) rotate(-1deg);
+    box-shadow: 0 4px 0 2px rgba(0,171,57,0.3), 3px 6px 0 var(--gd);
+  }
+  .badge-card.manual-badge:not(.earned) {
+    cursor: pointer;
+    filter: grayscale(0.7) opacity(0.55);
+  }
+  .badge-card.manual-badge:not(.earned):hover {
+    filter: grayscale(0.3) opacity(0.75);
+    transform: translateY(-2px);
+  }
+
+  /* Level color strip at top of each card */
+  .badge-level-strip {
+    font-family: var(--font-sketch);
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gd);
+    background: var(--gl);
+    width: calc(100% + 0.6rem);
+    margin: -0.5rem -0.3rem 0.25rem;
+    padding: 0.12rem 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(0,171,57,0.25);
+  }
+  .badge-card.legendario .badge-level-strip {
+    background: var(--gd);
+    color: #fff;
+  }
+  .badge-card.oro .badge-level-strip { background: rgba(0,171,57,0.25); }
+
+  .badge-glyph {
+    font-family: var(--font-sketch);
+    font-size: 1.5rem;
+    color: var(--gd);
+    line-height: 1.1;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .badge-card-name {
+    font-family: var(--font-hand);
+    font-size: 0.62rem;
+    color: var(--gd);
+    line-height: 1.2;
+    font-weight: 700;
+    max-width: 100%;
+  }
+
+  /* Lock overlay on locked cards */
+  .badge-lock-overlay {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    color: rgba(0,0,0,0.25);
+    line-height: 0;
+  }
+  .badge-card.earned .badge-lock-overlay { display: none; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--gd);
+    color: #fff;
+    font-family: var(--font-hand);
+    font-size: 0.9rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 24px;
+    opacity: 0;
+    transition: opacity 0.22s, transform 0.22s;
+    z-index: 999;
+    pointer-events: none;
+    box-shadow: 2px 3px 0 rgba(0,0,0,0.2);
+    filter: url(#sk);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Responsive ── */
+  @media (max-width: 800px) {
+    .page-wrap { grid-template-columns: 1fr; }
+    .badge-card-grid { grid-template-columns: repeat(3, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    .field-full { grid-column: span 1; }
+  }
+  @media (max-width: 480px) {
+    .badge-card-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Phone picker — personal profile */
+  .phone-outer-p { position: relative; }
+  .phone-wrap-p {
+    display: flex;
+    border: 1.5px solid rgba(0,171,57,0.25);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fafafa;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .phone-wrap-p:focus-within { border-color: var(--g); box-shadow: 0 0 0 2px rgba(0,171,57,0.1); }
+  .phone-prefix-p {
+    display: flex; align-items: center; gap: 0.3rem;
+    padding: 0.45rem 0.65rem;
+    border-right: 1.5px solid rgba(0,171,57,0.15);
+    background: var(--gl);
+    cursor: pointer; flex-shrink: 0;
+    font-family: var(--font-hand); font-size: 0.85rem;
+    border-radius: 0; border-top: none; border-bottom: none; border-left: none;
+    transition: background 0.15s;
+  }
+  .phone-prefix-p:hover { background: rgba(0,171,57,0.12); }
+  .p-prefix-code { font-family: var(--font-hand); font-size: 0.82rem; color: var(--gd); }
+  .phone-input-p {
+    border: none !important; box-shadow: none !important;
+    background: transparent !important;
+    flex: 1; padding: 0.45rem 0.65rem;
+    font-family: var(--font-hand); font-size: 0.88rem; color: var(--ink);
+    outline: none;
+  }
+  .phone-drop-p {
+    display: none; position: absolute; top: calc(100% + 3px); left: 0; z-index: 400;
+    width: 270px; background: #fff;
+    border: 1.5px solid rgba(0,171,57,0.3); border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12); overflow: hidden;
+  }
+  .phone-drop-p.open { display: block; }
+  .phone-drop-search-p {
+    width: 100%; box-sizing: border-box;
+    padding: 0.55rem 0.75rem;
+    border: none; border-bottom: 1.5px solid rgba(0,171,57,0.12);
+    font-family: var(--font-hand); font-size: 0.85rem; color: var(--ink);
+    background: var(--gl); outline: none;
+  }
+  .phone-drop-list-p {
+    max-height: 200px; overflow-y: auto;
+    list-style: none; margin: 0; padding: 0;
+    scrollbar-width: thin; scrollbar-color: var(--g) transparent;
+  }
+  .phone-drop-list-p li {
+    display: flex; align-items: center; gap: 0.55rem;
+    padding: 0.45rem 0.75rem; cursor: pointer;
+    font-family: var(--font-hand); font-size: 0.85rem; color: var(--ink);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  .phone-drop-list-p li:last-child { border-bottom: none; }
+  .phone-drop-list-p li:hover, .phone-drop-list-p li.active { background: var(--gl); }
+  .phone-drop-list-p .pdl-dial-p { margin-left: auto; color: #aaa; font-size: 0.78rem; }
+
+  /* Address autocomplete */
+  .addr-outer { position: relative; }
+  .addr-outer input {
+    border: 1.5px solid rgba(0,171,57,0.25);
+    border-radius: 10px;
+    padding: 0.45rem 0.65rem;
+    font-family: var(--font-hand);
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: #fafafa;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.18s;
+  }
+  .addr-outer input:focus { outline: none; border-color: var(--g); box-shadow: 0 0 0 2px rgba(0,171,57,0.1); background: #fff; }
+  .addr-drop {
+    position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 500;
+    background: #fff;
+    border: 1.5px solid rgba(0,171,57,0.3);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    list-style: none; margin: 0; padding: 0.3rem 0;
+    max-height: 220px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--g) transparent;
+  }
+  .addr-drop[hidden] { display: none; }
+  .addr-drop li {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    font-family: var(--font-hand); font-size: 0.84rem; color: var(--ink);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    line-height: 1.3;
+    transition: background 0.12s;
+  }
+  .addr-drop li:last-child { border-bottom: none; }
+  .addr-drop li:hover, .addr-drop li[aria-selected="true"] { background: var(--gl); }
+  .addr-drop li svg { flex-shrink: 0; margin-top: 2px; color: var(--g); }
+  .addr-drop-loading {
+    padding: 0.65rem 0.85rem;
+    font-family: var(--font-hand); font-size: 0.82rem;
+    color: #aaa; font-style: italic;
+  }
+
+  /* ── Generic modal overlay ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 900; padding: 1rem;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal-box {
+    background: #fff; border-radius: 18px; padding: 1.75rem 1.5rem;
+    max-width: 420px; width: 100%; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-close {
+    position: absolute; top: 0.85rem; right: 1rem;
+    background: none; border: none; font-size: 1.5rem; cursor: pointer;
+    color: #aaa; line-height: 1; transition: color 0.15s;
+  }
+  .modal-close:hover { color: #333; }
+
+  /* ── Stage detail modal ── */
+  .stage-modal-overlay {
+    position: fixed; inset: 0; z-index: 800;
+    background: rgba(26,42,26,0.55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(2px);
+  }
+  .stage-modal-overlay[hidden] { display: none; }
+  .stage-modal {
+    background: var(--parchment);
+    border: 3px solid var(--gd);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 4px 6px 0 var(--gd), 0 12px 40px rgba(0,0,0,0.2);
+    filter: url(#sk);
+    overflow: hidden;
+  }
+  .stage-modal-head {
+    background: linear-gradient(135deg, var(--gd), var(--gm));
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem;
+  }
+  .stage-modal-title {
+    font-family: var(--font-sketch);
+    font-size: 1rem;
+    color: #fff;
+    letter-spacing: 0.02em;
+  }
+  .stage-modal-close {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .stage-modal-close:hover { background: rgba(255,255,255,0.22); }
+  .stage-modal-body { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .sm-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .sm-field { display: flex; flex-direction: column; gap: 0.2rem; }
+  .sm-label {
+    font-family: var(--font-hand);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+  }
+  .sm-input {
+    border: 1.5px solid rgba(0,171,57,0.25);
+    border-radius: 8px;
+    padding: 0.42rem 0.65rem;
+    font-family: var(--font-hand);
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: #fafafa;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.18s;
+  }
+  .sm-input:focus { outline: none; border-color: var(--g); box-shadow: 0 0 0 2px rgba(0,171,57,0.1); background: #fff; }
+  .sm-input textarea { resize: vertical; min-height: 52px; }
+  .stage-modal-foot {
+    display: flex; gap: 0.5rem;
+    padding: 0.75rem 1.1rem 1rem;
+    border-top: 1px dashed rgba(0,171,57,0.2);
+  }
+
+  /* Stage row — show calendar icon if detail exists */
+  .stage-row.has-detail .stage-name::after {
+    content: ' ✦';
+    color: var(--g);
+    font-size: 0.72rem;
+  }
+
+  .stage-info-btn {
+    background: none;
+    border: 1px solid rgba(0,171,57,0.25);
+    border-radius: 6px;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--gm);
+    opacity: 0.55;
+    flex-shrink: 0;
+    transition: opacity 0.15s, background 0.15s;
+    padding: 0;
+  }
+  .stage-info-btn:hover { opacity: 1; background: var(--gl); }
+  .stage-row.has-detail .stage-info-btn { opacity: 0.9; color: var(--g); border-color: var(--g); }
+</style>
+
+<script>
+  // ── Clerk helpers ──────────────────────────────────────────────────────────
+  type ClerkUser = {
+    imageUrl: string;
+    firstName: string | null;
+    lastName:  string | null;
+    unsafeMetadata: Record<string, unknown>;
+    publicMetadata: Record<string, unknown>;
+    update(d: Record<string, unknown>): Promise<void>;
+    setProfileImage(d: { file: File }): Promise<void>;
+  };
+  async function clerkUser(): Promise<ClerkUser | null> {
+    const w = window as any;
+    if (w.Clerk?.user) return w.Clerk.user;
+    try { await w.Clerk?.load?.(); } catch {}
+    return (window as any).Clerk?.user ?? null;
+  }
+  async function loadMeta(): Promise<Record<string, any>> {
+    const u = await clerkUser();
+    // personal/camino/badges from unsafeMetadata (client-writable)
+    const cloud = (u?.unsafeMetadata?.pilgrimProfile as any) ?? {};
+    // safety-critical fields from publicMetadata (server-writable, admin-readable)
+    const pub = (u?.publicMetadata ?? {}) as Record<string, any>;
+    try {
+      const local = JSON.parse(localStorage.getItem('pilgrim_profile') ?? '{}');
+      // publicMetadata wins over unsafeMetadata for overlapping keys
+      return { ...local, ...cloud, ...pub };
+    } catch { return { ...cloud, ...pub }; }
+  }
+  async function saveMeta(patch: Record<string, any>): Promise<void> {
+    const u = await clerkUser();
+    if (!u) { showToast('Sin sesión'); return; }
+    // Clerk's update() overwrites the ENTIRE unsafeMetadata object — spread both
+    // the top-level object (to preserve any other keys Clerk may store there)
+    // and the nested pilgrimProfile (to do a partial-patch of our data).
+    const topLevel    = u.unsafeMetadata ?? {};
+    const curProfile  = (topLevel.pilgrimProfile as Record<string, any>) ?? {};
+    await u.update({
+      unsafeMetadata: { ...topLevel, pilgrimProfile: { ...curProfile, ...patch } },
+    });
+    showToast('Guardado');
+  }
+
+  async function savePublicMeta(section: string, data: unknown): Promise<void> {
+    const res = await fetch('/api/profile/save-public', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section, data }),
+    });
+    if (!res.ok) { showToast('Error al guardar'); return; }
+    showToast('Guardado');
+  }
+
+  function showToast(msg: string) {
+    const t = document.getElementById('toast')!;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // ── Stage / stat helpers ───────────────────────────────────────────────────
+  const KM: Record<string,number> = {
+    s01:20,s02:25,s03:22,s04:18,s05:26,s06:19,s07:22,s08:16,
+    s09:23,s10:24,s11:12,s12:22,s13:21,s14:8, s15:33,s16:14,
+    s17:26,s18:24,s19:20,s20:18,s21:22,s22:26,s23:30,s24:27,
+    s25:22,s26:22,s27:25,s28:29,s29:30,s30:21,s31:32,s32:24,
+    s33:29,s34:21,s35:18,s36:22,s37:25,s38:29,s39:19,s40:20,
+  };
+  const BADGE_AUTO_CRITERIA: Record<string, (s: string[]) => boolean> = {
+    b_first:        s => s.length >= 1,
+    b_5stages:      s => s.length >= 5,
+    b_10stages:     s => s.length >= 10,
+    b_halfway:      s => s.length >= 20,
+    b_carrascalejo: s => s.includes('s13') || s.includes('s14'),
+    b_complete:     s => s.includes('s40'),
+  };
+
+  function updateStats(stages: string[], manual: string[]) {
+    const km  = stages.reduce((a, id) => a + (KM[id] ?? 0), 0);
+    const pct = Math.min(100, Math.round((stages.length / 40) * 100));
+    const kmPct = Math.min(100, Math.round((km / 910) * 100));
+
+    setText('statNumStages', stages.length + '/40');
+    setText('statNumKm',     km + '/910');
+    setWidth('statFillStages', pct);
+    setWidth('statFillKm',     kmPct);
+    setText('stageCountPill', stages.length + '/40');
+    setText('cardKmVal', String(km));
+
+    // Badges stat
+    const earnedCount = Object.entries(BADGE_AUTO_CRITERIA).filter(([,fn]) => fn(stages)).length
+      + manual.length;
+    const badgePct = Math.round((earnedCount / 12) * 100);
+    setText('statNumBadges', earnedCount + '/12');
+    setWidth('statFillBadges', badgePct);
+    setText('badgeCountPill', earnedCount + '/12');
+
+    // Update badge card states
+    document.querySelectorAll<HTMLElement>('[data-badge-id]').forEach(card => {
+      const id   = card.dataset.badgeId!;
+      const isAuto = card.dataset.badgeAuto === 'true';
+      const earned = isAuto ? (BADGE_AUTO_CRITERIA[id]?.(stages) ?? false) : manual.includes(id);
+      card.classList.toggle('earned', earned);
+    });
+  }
+
+  function setText(id: string, val: string) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+  function setWidth(id: string, pct: number) {
+    const el = document.getElementById(id) as HTMLElement | null;
+    if (el) el.style.width = pct + '%';
+  }
+
+  // ── SVG icon builder (DOM API — no innerHTML) ─────────────────────────────
+  type SvgPrimitive = { tag: string; attrs: Record<string, string> };
+  const ICONS: Record<string, SvgPrimitive[]> = {
+    phone: [{ tag: 'path', attrs: { d: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.83 12a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.82 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6.09 6.09l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z' }}],
+    globe: [
+      { tag: 'circle', attrs: { cx: '12', cy: '12', r: '10' }},
+      { tag: 'line', attrs: { x1: '2', y1: '12', x2: '22', y2: '12' }},
+      { tag: 'path', attrs: { d: 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z' }},
+    ],
+    pin: [
+      { tag: 'path', attrs: { d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z' }},
+      { tag: 'circle', attrs: { cx: '12', cy: '10', r: '3' }},
+    ],
+    user: [
+      { tag: 'path', attrs: { d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' }},
+      { tag: 'circle', attrs: { cx: '12', cy: '7', r: '4' }},
+    ],
+    heart: [{ tag: 'path', attrs: { d: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' }}],
+    mail: [
+      { tag: 'path', attrs: { d: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z' }},
+      { tag: 'polyline', attrs: { points: '22,6 12,13 2,6' }},
+    ],
+    text: [
+      { tag: 'line', attrs: { x1: '21', y1: '6', x2: '3', y2: '6' }},
+      { tag: 'line', attrs: { x1: '15', y1: '12', x2: '3', y2: '12' }},
+      { tag: 'line', attrs: { x1: '17', y1: '18', x2: '3', y2: '18' }},
+    ],
+  };
+  const LABEL_ICON: Record<string, string> = {
+    'Teléfono': 'phone', 'Tel': 'phone',
+    'País': 'globe', 'Dirección': 'pin', 'Ciudad': 'pin',
+    'Sobre mí': 'text', 'Bio': 'text', 'Nombre': 'user',
+    'Relación': 'heart', 'Email': 'mail',
+  };
+
+  // Country code → { flag, name } for display
+  const COUNTRY_NAMES: Record<string, { f: string; n: string }> = {
+    ES:{f:'🇪🇸',n:'España'}, FR:{f:'🇫🇷',n:'France'}, DE:{f:'🇩🇪',n:'Germany'},
+    IT:{f:'🇮🇹',n:'Italy'}, PT:{f:'🇵🇹',n:'Portugal'}, GB:{f:'🇬🇧',n:'United Kingdom'},
+    IE:{f:'🇮🇪',n:'Ireland'}, NL:{f:'🇳🇱',n:'Netherlands'}, BE:{f:'🇧🇪',n:'Belgium'},
+    CH:{f:'🇨🇭',n:'Switzerland'}, AT:{f:'🇦🇹',n:'Austria'}, PL:{f:'🇵🇱',n:'Poland'},
+    SE:{f:'🇸🇪',n:'Sweden'}, NO:{f:'🇳🇴',n:'Norway'}, DK:{f:'🇩🇰',n:'Denmark'},
+    FI:{f:'🇫🇮',n:'Finland'}, GR:{f:'🇬🇷',n:'Greece'}, RU:{f:'🇷🇺',n:'Russia'},
+    TR:{f:'🇹🇷',n:'Turkey'}, UA:{f:'🇺🇦',n:'Ukraine'},
+    US:{f:'🇺🇸',n:'United States'}, CA:{f:'🇨🇦',n:'Canada'},
+    MX:{f:'🇲🇽',n:'Mexico'}, BR:{f:'🇧🇷',n:'Brazil'}, AR:{f:'🇦🇷',n:'Argentina'},
+    AU:{f:'🇦🇺',n:'Australia'}, NZ:{f:'🇳🇿',n:'New Zealand'},
+    JP:{f:'🇯🇵',n:'Japan'}, KR:{f:'🇰🇷',n:'South Korea'}, CN:{f:'🇨🇳',n:'China'},
+    IN:{f:'🇮🇳',n:'India'}, ZA:{f:'🇿🇦',n:'South Africa'},
+    MA:{f:'🇲🇦',n:'Morocco'}, EG:{f:'🇪🇬',n:'Egypt'},
+    SA:{f:'🇸🇦',n:'Saudi Arabia'}, AE:{f:'🇦🇪',n:'UAE'},
+    CL:{f:'🇨🇱',n:'Chile'}, CO:{f:'🇨🇴',n:'Colombia'}, PE:{f:'🇵🇪',n:'Peru'},
+  };
+  function countryDisplay(code: string): string {
+    const c = COUNTRY_NAMES[code];
+    return c ? c.f + '\u00a0' + c.n : code;
+  }
+  function makeSvgIcon(type: string): SVGSVGElement {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;
+    svg.setAttribute('width', '13'); svg.setAttribute('height', '13');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    (ICONS[type] ?? ICONS['user']).forEach(({ tag, attrs }) => {
+      const el = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+      svg.appendChild(el);
+    });
+    return svg;
+  }
+
+  // ── Display renderers (DOM API, no innerHTML for user data) ────────────────
+  function renderDispGrid(elId: string, rows: [string, string][]) {
+    const container = document.getElementById(elId)!;
+    while (container.firstChild) container.removeChild(container.firstChild);
+    const hasData = rows.some(([, v]) => v && v !== '—');
+    if (!hasData) {
+      const emp = document.createElement('span');
+      emp.className = 'disp-empty';
+      emp.textContent = 'Sin información';
+      container.appendChild(emp);
+      return;
+    }
+    rows.forEach(([lbl, val]) => {
+      if (!val) return;
+      const pill = document.createElement('span');
+      pill.className = 'disp-pill';
+
+      // Icon only (no label text)
+      pill.appendChild(makeSvgIcon(LABEL_ICON[lbl] ?? 'user'));
+
+      // Value: link for phone/email, clickable for address, plain text otherwise
+      const isPhone = lbl === 'Teléfono' || lbl === 'Tel';
+      const isEmail = lbl === 'Email';
+      const isAddr  = lbl === 'Dirección';
+
+      if (isPhone) {
+        const a = document.createElement('a');
+        a.href = `tel:${val.replace(/\s/g, '')}`;
+        a.textContent = val;
+        pill.appendChild(a);
+      } else if (isEmail) {
+        const a = document.createElement('a');
+        a.href = `mailto:${val}`;
+        a.textContent = val;
+        pill.appendChild(a);
+      } else if (isAddr) {
+        pill.setAttribute('style', 'cursor:pointer');
+        pill.setAttribute('title', 'Ver distancia desde casa');
+        pill.setAttribute('role', 'button');
+        pill.setAttribute('tabindex', '0');
+        pill.appendChild(document.createTextNode(val));
+        pill.addEventListener('click', () => openAddrDistModal(val));
+        pill.addEventListener('keydown', (e) => { if (e.key === 'Enter') openAddrDistModal(val); });
+      } else {
+        pill.appendChild(document.createTextNode(val));
+      }
+
+      container.appendChild(pill);
+    });
+  }
+
+  function renderGear(meta: Record<string, any>) {
+    const wrap = document.getElementById('gearDisplay')!;
+    while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
+    const vehicles: any[] = meta.vehicles   ?? [];
+    const items: any[]    = meta.belongings  ?? [];
+    const locker: string  = meta.lockerNum   ?? '';
+    const all = [];
+    if (locker) all.push({ label: 'Taquilla ' + locker, key: null });
+    vehicles.forEach(v  => all.push({ label: (v.plate || v.type), key: 'v_' + v.id, vid: v.id }));
+    items.forEach   (b  => all.push({ label: b.name + (b.count > 1 ? ' ×' + b.count : ''), key: 'b_' + b.id, bid: b.id }));
+    if (!all.length) {
+      const emp = document.createElement('span');
+      emp.className = 'disp-empty';
+      emp.textContent = 'Sin vehículos ni artículos registrados';
+      wrap.appendChild(emp);
+      return;
+    }
+    all.forEach(item => {
+      const chip = document.createElement('span');
+      chip.className = 'gear-chip';
+      const txt = document.createTextNode(item.label + ' ');
+      chip.appendChild(txt);
+      if (item.vid || item.bid) {
+        const btn = document.createElement('button');
+        btn.className = 'chip-remove';
+        btn.textContent = '×';
+        btn.setAttribute('aria-label', 'Eliminar');
+        btn.addEventListener('click', async () => {
+          const m = await loadMeta();
+          if (item.vid) {
+            m.vehicles = (m.vehicles ?? []).filter((v: any) => v.id !== item.vid);
+            await savePublicMeta('vehicles', m.vehicles);
+          }
+          if (item.bid) {
+            m.belongings = (m.belongings ?? []).filter((b: any) => b.id !== item.bid);
+            await savePublicMeta('belongings', m.belongings);
+          }
+          renderGear(m);
+        });
+        chip.appendChild(btn);
+      }
+      wrap.appendChild(chip);
+    });
+  }
+
+  // ── Countries data (for phone picker) ─────────────────────────────────────
+  const COUNTRIES: { c:string; n:string; f:string; d:string }[] = [
+    {c:'ES',n:'España',f:'🇪🇸',d:'+34'},{c:'FR',n:'France',f:'🇫🇷',d:'+33'},
+    {c:'DE',n:'Germany',f:'🇩🇪',d:'+49'},{c:'IT',n:'Italy',f:'🇮🇹',d:'+39'},
+    {c:'PT',n:'Portugal',f:'🇵🇹',d:'+351'},{c:'GB',n:'United Kingdom',f:'🇬🇧',d:'+44'},
+    {c:'IE',n:'Ireland',f:'🇮🇪',d:'+353'},{c:'NL',n:'Netherlands',f:'🇳🇱',d:'+31'},
+    {c:'BE',n:'Belgium',f:'🇧🇪',d:'+32'},{c:'CH',n:'Switzerland',f:'🇨🇭',d:'+41'},
+    {c:'AT',n:'Austria',f:'🇦🇹',d:'+43'},{c:'PL',n:'Poland',f:'🇵🇱',d:'+48'},
+    {c:'SE',n:'Sweden',f:'🇸🇪',d:'+46'},{c:'NO',n:'Norway',f:'🇳🇴',d:'+47'},
+    {c:'DK',n:'Denmark',f:'🇩🇰',d:'+45'},{c:'FI',n:'Finland',f:'🇫🇮',d:'+358'},
+    {c:'GR',n:'Greece',f:'🇬🇷',d:'+30'},{c:'RU',n:'Russia',f:'🇷🇺',d:'+7'},
+    {c:'TR',n:'Turkey',f:'🇹🇷',d:'+90'},{c:'UA',n:'Ukraine',f:'🇺🇦',d:'+380'},
+    {c:'US',n:'United States',f:'🇺🇸',d:'+1'},{c:'CA',n:'Canada',f:'🇨🇦',d:'+1'},
+    {c:'MX',n:'Mexico',f:'🇲🇽',d:'+52'},{c:'BR',n:'Brazil',f:'🇧🇷',d:'+55'},
+    {c:'AR',n:'Argentina',f:'🇦🇷',d:'+54'},{c:'AU',n:'Australia',f:'🇦🇺',d:'+61'},
+    {c:'NZ',n:'New Zealand',f:'🇳🇿',d:'+64'},{c:'JP',n:'Japan',f:'🇯🇵',d:'+81'},
+    {c:'KR',n:'South Korea',f:'🇰🇷',d:'+82'},{c:'CN',n:'China',f:'🇨🇳',d:'+86'},
+    {c:'IN',n:'India',f:'🇮🇳',d:'+91'},{c:'ZA',n:'South Africa',f:'🇿🇦',d:'+27'},
+    {c:'MA',n:'Morocco',f:'🇲🇦',d:'+212'},{c:'EG',n:'Egypt',f:'🇪🇬',d:'+20'},
+    {c:'SA',n:'Saudi Arabia',f:'🇸🇦',d:'+966'},{c:'AE',n:'UAE',f:'🇦🇪',d:'+971'},
+    {c:'IL',n:'Israel',f:'🇮🇱',d:'+972'},{c:'CL',n:'Chile',f:'🇨🇱',d:'+56'},
+    {c:'CO',n:'Colombia',f:'🇨🇴',d:'+57'},{c:'PE',n:'Peru',f:'🇵🇪',d:'+51'},
+  ];
+
+  // ── Profile phone picker ───────────────────────────────────────────────────
+  function initProfilePhonePicker() {
+    const prefixBtn   = document.getElementById('p-phone-prefix') as HTMLButtonElement | null;
+    const flagEl      = document.getElementById('p-phone-flag') as HTMLElement | null;
+    const dialEl      = document.getElementById('p-phone-dial') as HTMLElement | null;
+    const hiddenCC    = document.getElementById('fPhoneCC') as HTMLInputElement | null;
+    const drop        = document.getElementById('p-phone-drop') as HTMLElement | null;
+    const searchInput = drop?.querySelector('.phone-drop-search-p') as HTMLInputElement | null;
+    const list        = drop?.querySelector('.phone-drop-list-p') as HTMLUListElement | null;
+    if (!prefixBtn || !drop || !list || !searchInput) return;
+
+    function renderList(q: string) {
+      const lq = q.toLowerCase();
+      const filtered = q.length < 1
+        ? COUNTRIES.slice(0, 40)
+        : COUNTRIES.filter(c => c.n.toLowerCase().includes(lq) || c.d.includes(lq) || c.c.toLowerCase().includes(lq));
+      while (list!.firstChild) list!.removeChild(list!.firstChild);
+      filtered.forEach(co => {
+        const li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        const flag = document.createTextNode(co.f + ' ');
+        const name = document.createTextNode(co.n);
+        const dial = document.createElement('span');
+        dial.className = 'pdl-dial-p';
+        dial.textContent = co.d;
+        li.appendChild(flag); li.appendChild(name); li.appendChild(dial);
+        li.addEventListener('click', () => {
+          if (flagEl) flagEl.textContent = co.f;
+          if (dialEl) dialEl.textContent = co.d;
+          if (hiddenCC) hiddenCC.value = co.c;
+          drop!.classList.remove('open');
+          prefixBtn!.setAttribute('aria-expanded', 'false');
+          searchInput!.value = '';
+          renderList('');
+        });
+        list!.appendChild(li);
+      });
+    }
+
+    prefixBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = drop.classList.contains('open');
+      drop.classList.toggle('open', !isOpen);
+      prefixBtn.setAttribute('aria-expanded', String(!isOpen));
+      if (!isOpen) { searchInput.focus(); renderList(''); }
+    });
+    searchInput.addEventListener('input', () => renderList(searchInput.value));
+    document.addEventListener('click', (e) => {
+      if (!drop.contains(e.target as Node) && e.target !== prefixBtn) {
+        drop.classList.remove('open');
+        prefixBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    renderList('');
+  }
+
+  // ── Address autocomplete (Nominatim OSM) ────────────────────────────────
+  function initAddressAutocomplete() {
+    const input = document.getElementById('fAddress') as HTMLInputElement | null;
+    const drop  = document.getElementById('addrDrop') as HTMLUListElement | null;
+    if (!input || !drop) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    function closeDrop() { drop.hidden = true; }
+    function clearDrop() { while (drop.firstChild) drop.removeChild(drop.firstChild); }
+
+    async function fetchSuggestions(q: string) {
+      if (q.length < 3) { closeDrop(); return; }
+      clearDrop();
+      const loading = document.createElement('li');
+      loading.className = 'addr-drop-loading';
+      loading.textContent = 'Buscando…';
+      drop.appendChild(loading);
+      drop.hidden = false;
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=5&accept-language=es`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+        const data = await res.json() as Array<{ display_name: string }>;
+        clearDrop();
+        if (!data.length) { closeDrop(); return; }
+        const NS = 'http://www.w3.org/2000/svg';
+        data.forEach((item) => {
+          const li = document.createElement('li');
+          li.setAttribute('role', 'option');
+          const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;
+          svg.setAttribute('width', '13'); svg.setAttribute('height', '13');
+          svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+          svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2');
+          svg.setAttribute('aria-hidden', 'true');
+          const p1 = document.createElementNS(NS, 'path');
+          p1.setAttribute('d', 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z');
+          const circle = document.createElementNS(NS, 'circle');
+          circle.setAttribute('cx', '12'); circle.setAttribute('cy', '10'); circle.setAttribute('r', '3');
+          svg.appendChild(p1); svg.appendChild(circle);
+          li.appendChild(svg);
+          li.appendChild(document.createTextNode(item.display_name));
+          li.addEventListener('click', () => { input.value = item.display_name; closeDrop(); });
+          drop.appendChild(li);
+        });
+        drop.hidden = false;
+      } catch { closeDrop(); }
+    }
+
+    input.addEventListener('input', () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => fetchSuggestions(input.value), 350);
+    });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrop(); });
+    document.addEventListener('click', (e) => {
+      if (!drop.contains(e.target as Node) && e.target !== input) closeDrop();
+    });
+  }
+
+  // ── Emergency contact phone picker ───────────────────────────────────────
+  function initEmPhonePicker() {
+    const prefixBtn  = document.getElementById('em-phone-prefix') as HTMLButtonElement | null;
+    const flagEl     = document.getElementById('em-phone-flag') as HTMLElement | null;
+    const dialEl     = document.getElementById('em-phone-dial') as HTMLElement | null;
+    const hiddenCC   = document.getElementById('emPhoneCC') as HTMLInputElement | null;
+    const drop       = document.getElementById('em-phone-drop') as HTMLElement | null;
+    if (!prefixBtn || !drop) return;
+    const searchInput = drop.querySelector<HTMLInputElement>('.phone-drop-search-p')!;
+    const list        = drop.querySelector<HTMLUListElement>('.phone-drop-list-p')!;
+    let currentDial   = '+34';
+
+    function renderList(q: string) {
+      while (list.firstChild) list.removeChild(list.firstChild);
+      const filtered = COUNTRIES.filter(c =>
+        c.n.toLowerCase().includes(q.toLowerCase()) ||
+        c.d.includes(q) || c.c.toLowerCase().includes(q.toLowerCase())
+      );
+      filtered.forEach(c => {
+        const li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        li.textContent = `${c.f} ${c.n}  ${c.d}`;
+        li.addEventListener('click', () => {
+          if (flagEl) flagEl.textContent = c.f;
+          if (dialEl) dialEl.textContent = c.d;
+          if (hiddenCC) hiddenCC.value = c.c;
+          currentDial = c.d;
+          drop!.classList.remove('open');
+          prefixBtn!.setAttribute('aria-expanded', 'false');
+          searchInput!.value = '';
+          renderList('');
+        });
+        list!.appendChild(li);
+      });
+    }
+    prefixBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = drop.classList.contains('open');
+      drop.classList.toggle('open', !isOpen);
+      prefixBtn.setAttribute('aria-expanded', String(!isOpen));
+      if (!isOpen) { searchInput.focus(); renderList(''); }
+    });
+    searchInput.addEventListener('input', () => renderList(searchInput.value));
+    document.addEventListener('click', (e) => {
+      if (!drop.contains(e.target as Node) && e.target !== prefixBtn) {
+        drop.classList.remove('open');
+        prefixBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    renderList('');
+  }
+
+  // ── Address distance modal ────────────────────────────────────────────────
+  function openAddrDistModal(addr: string) {
+    const modal   = document.getElementById('addrDistModal') as HTMLElement;
+    const addrEl  = document.getElementById('addrDistAddress') as HTMLElement;
+    const resEl   = document.getElementById('addrDistResult') as HTMLElement;
+    const lblEl   = document.getElementById('addrDistLabel') as HTMLElement;
+    if (!modal) return;
+    addrEl.textContent = addr;
+    resEl.textContent  = '—';
+    lblEl.textContent  = 'Calculando distancia…';
+    modal.hidden = false;
+
+    function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+        const data = await res.json() as Array<{ lat: string; lon: string }>;
+        if (!data.length) { lblEl.textContent = 'No se encontró la dirección'; return; }
+        const homeLat = parseFloat(data[0].lat);
+        const homeLon = parseFloat(data[0].lon);
+        const km = haversine(pos.coords.latitude, pos.coords.longitude, homeLat, homeLon);
+        resEl.textContent = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+        lblEl.textContent = 'de distancia desde tu ubicación actual a casa';
+      } catch {
+        lblEl.textContent = 'Error calculando distancia';
+      }
+    }, () => {
+      lblEl.textContent = 'Permite el acceso a tu ubicación para calcular la distancia';
+    });
+  }
+
+  document.getElementById('addrDistClose')?.addEventListener('click', () => {
+    const m = document.getElementById('addrDistModal') as HTMLElement;
+    if (m) m.hidden = true;
+  });
+  document.getElementById('addrDistModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).hidden = true;
+  });
+
+  // ── Panel toggle (show/hide form) ─────────────────────────────────────────
+  document.querySelectorAll<HTMLButtonElement>('.panel-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const formId = btn.dataset.target!;
+      const form = document.getElementById(formId)!;
+      const open = !form.hidden;
+      form.hidden = open;
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-cancel]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.cancel!;
+      const panels: Record<string,string> = {
+        personal: 'panelPersonalForm', emergency: 'panelEmForm',
+        locker: 'panelGearForm', gear: 'panelGearForm',
+        camino: 'panelGearForm',
+      };
+      const formId = panels[target];
+      if (formId) {
+        const form = document.getElementById(formId);
+        if (form) form.hidden = true;
+      }
+    });
+  });
+
+  // ── Save: personal ────────────────────────────────────────────────────────
+  document.querySelector('[data-save="personal"]')?.addEventListener('click', async () => {
+    const phoneCC   = (document.getElementById('fPhoneCC')  as HTMLInputElement).value;
+    const phoneDial = (document.getElementById('p-phone-dial') as HTMLElement)?.textContent ?? '';
+    const phoneNum  = (document.getElementById('fPhone')    as HTMLInputElement).value.trim();
+    const phone     = phoneNum ? phoneDial + ' ' + phoneNum : '';
+    const address   = (document.getElementById('fAddress')  as HTMLInputElement).value.trim();
+    const bio       = (document.getElementById('fBio')      as HTMLTextAreaElement).value.trim();
+    const meta = await loadMeta();
+    await saveMeta({ phone, phoneCC, address, bio });
+    renderDispGrid('dispPersonal', [
+      ['Teléfono', phone],
+      ['País', meta.country ? countryDisplay(meta.country) : ''],
+      ['Dirección', address],
+      ['Sobre mí', bio],
+    ]);
+    (document.getElementById('panelPersonalForm') as HTMLElement).hidden = true;
+  });
+
+  // ── Save: emergency (→ publicMetadata via API) ────────────────────────────
+  document.querySelector('[data-save="emergency"]')?.addEventListener('click', async () => {
+    const emPhoneDial = (document.getElementById('em-phone-dial') as HTMLElement)?.textContent?.trim() ?? '';
+    const emPhoneNum  = (document.getElementById('emPhoneNum')    as HTMLInputElement).value.trim();
+    const emPhoneCC   = (document.getElementById('emPhoneCC')     as HTMLInputElement).value;
+    const emPhone     = emPhoneNum ? emPhoneDial + ' ' + emPhoneNum : '';
+    const em = {
+      name:     (document.getElementById('emName')     as HTMLInputElement).value.trim(),
+      relation: (document.getElementById('emRelation') as HTMLSelectElement).value,
+      phone:    emPhone,
+      phoneCC:  emPhoneCC,
+      email:    (document.getElementById('emEmail')    as HTMLInputElement).value.trim(),
+    };
+    await savePublicMeta('emergency', em);
+    renderDispGrid('dispEmergency', [
+      ['Nombre', em.name], ['Relación', em.relation], ['Tel', em.phone], ['Email', em.email],
+    ]);
+    (document.getElementById('panelEmForm') as HTMLElement).hidden = true;
+  });
+
+  // ── Save: camino ──────────────────────────────────────────────────────────
+  document.getElementById('saveCaminoBtn')?.addEventListener('click', async () => {
+    const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(c => c.value);
+    const route  = (document.getElementById('cRoute') as HTMLSelectElement).value;
+    const start  = (document.getElementById('cStart') as HTMLInputElement).value;
+    const m = await loadMeta();
+    await saveMeta({ camino: { stages, route, start, origin: m.camino?.origin ?? '' } });
+    updateStats(stages, m.manualBadges ?? []);
+    const routeNames: Record<string,string> = {
+      vdlp:'Vía de la Plata', frances:'Camino Francés', norte:'Camino del Norte',
+      portugues:'Camino Portugués', sana:'Vía de la Plata + Sanabrés', otro:'Otro',
+    };
+    setText('cardRouteName', routeNames[route] ?? route);
+  });
+
+  // ── Stage checkboxes (live stat update) ───────────────────────────────────
+  document.querySelectorAll<HTMLInputElement>('.stage-cb').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(c => c.value);
+      const m = await loadMeta();
+      updateStats(stages, m.manualBadges ?? []);
+    });
+  });
+
+  // ── Manual badge toggle ───────────────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('.manual-badge').forEach(card => {
+    card.addEventListener('click', async () => {
+      const id = card.dataset.badgeId!;
+      const m  = await loadMeta();
+      const mb: string[] = m.manualBadges ?? [];
+      const idx = mb.indexOf(id);
+      if (idx >= 0) mb.splice(idx, 1); else mb.push(id);
+      await saveMeta({ manualBadges: mb });
+      const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(c => c.value);
+      updateStats(stages, mb);
+    });
+  });
+
+  // ── Avatar upload ─────────────────────────────────────────────────────────
+  document.getElementById('cardArtZone')?.addEventListener('click', () =>
+    (document.getElementById('avatarInput') as HTMLInputElement).click()
+  );
+  document.getElementById('avatarInput')?.addEventListener('change', async e => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const u = await clerkUser();
+    if (!u) { showToast('Sin sesión'); return; }
+    try {
+      await u.setProfileImage({ file });
+      const img = document.querySelector<HTMLImageElement>('.card-avatar-img');
+      const init = document.querySelector<HTMLElement>('.card-avatar-initials');
+      if (img) { img.src = u.imageUrl; img.style.display = 'block'; }
+      if (init) init.style.display = 'none';
+      if (!img) {
+        // Create img element if it didn't exist (no avatar before)
+        const newImg = document.createElement('img');
+        newImg.src = u.imageUrl;
+        newImg.alt = 'Foto de perfil';
+        newImg.className = 'card-avatar-img';
+        document.querySelector('.card-art-inner')?.appendChild(newImg);
+      }
+      showToast('Foto actualizada');
+    } catch { showToast('Error al subir la foto'); }
+  });
+
+
+  // ── Gear add buttons (→ publicMetadata via API) ───────────────────────────
+  document.getElementById('addVehicleBtn')?.addEventListener('click', async () => {
+    const type  = (document.getElementById('vType')  as HTMLSelectElement).value;
+    const plate = (document.getElementById('vPlate') as HTMLInputElement).value.trim();
+    const model = (document.getElementById('vModel') as HTMLInputElement).value.trim();
+    const color = (document.getElementById('vColor') as HTMLInputElement).value.trim();
+    if (!plate) { showToast('Introduce la matrícula'); return; }
+    const m = await loadMeta();
+    const vehicles: any[] = m.vehicles ?? [];
+    vehicles.push({ id: 'v' + Date.now(), type, plate, model, color });
+    await savePublicMeta('vehicles', vehicles);
+    m.vehicles = vehicles;
+    (['vPlate','vModel','vColor'] as const).forEach(id =>
+      ((document.getElementById(id) as HTMLInputElement).value = ''));
+    renderGear(m);
+  });
+
+  document.getElementById('addItemBtn')?.addEventListener('click', async () => {
+    const category = (document.getElementById('bCategory') as HTMLSelectElement).value;
+    const name     = (document.getElementById('bName')     as HTMLInputElement).value.trim();
+    const notes    = (document.getElementById('bNotes')    as HTMLInputElement).value.trim();
+    const count    = Math.max(1, Math.min(100, parseInt((document.getElementById('bCount') as HTMLInputElement).value) || 1));
+    if (!name) { showToast('Introduce el nombre del artículo'); return; }
+    const m = await loadMeta();
+    const belongings: any[] = m.belongings ?? [];
+    belongings.push({ id: 'b' + Date.now(), category, name, notes, count });
+    await savePublicMeta('belongings', belongings);
+    m.belongings = belongings;
+    (['bName','bNotes'] as const).forEach(id =>
+      ((document.getElementById(id) as HTMLInputElement).value = ''));
+    (document.getElementById('bCount') as HTMLInputElement).value = '1';
+    renderGear(m);
+  });
+
+  document.querySelector('[data-save="locker"]')?.addEventListener('click', async () => {
+    const lockerNum = (document.getElementById('lockerNum') as HTMLInputElement).value.trim();
+    await savePublicMeta('lockerNum', lockerNum);
+    const m = await loadMeta();
+    m.lockerNum = lockerNum;
+    renderGear(m);
+  });
+
+  // Gear sub-tabs
+  document.querySelectorAll<HTMLButtonElement>('.gear-sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.gear-sub-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      ['gVehicle','gItem','gLocker'].forEach(id => {
+        const el = document.getElementById(id) as HTMLElement | null;
+        if (el) el.hidden = (id !== tab.dataset.sub);
+      });
+    });
+  });
+
+  // ── Stage detail modal ─────────────────────────────────────────────────────
+  let currentStageId: string | null = null;
+
+  function openStageModal(stageId: string, stageName: string) {
+    currentStageId = stageId;
+    const overlay = document.getElementById('stageModal') as HTMLElement;
+    const title   = document.getElementById('stageModalTitle') as HTMLElement;
+    title.textContent = stageName;
+
+    // Load existing detail
+    loadMeta().then(meta => {
+      const details = (meta.stageDetails ?? {}) as Record<string, any>;
+      const d = details[stageId] ?? {};
+      (document.getElementById('smStartDate') as HTMLInputElement).value = d.startDate ?? '';
+      (document.getElementById('smStartTime') as HTMLInputElement).value = d.startTime ?? '06:00';
+      (document.getElementById('smEndDate')   as HTMLInputElement).value = d.endDate   ?? '';
+      (document.getElementById('smEndTime')   as HTMLInputElement).value = d.endTime   ?? '14:00';
+      (document.getElementById('smTransport') as HTMLSelectElement).value = d.transport ?? 'walking';
+      (document.getElementById('smNotes')     as HTMLTextAreaElement).value = d.notes   ?? '';
+    });
+
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeStageModal() {
+    const overlay = document.getElementById('stageModal') as HTMLElement;
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+    currentStageId = null;
+  }
+
+  document.getElementById('stageModalClose')?.addEventListener('click', closeStageModal);
+  document.getElementById('stageModalCancel')?.addEventListener('click', closeStageModal);
+  document.getElementById('stageModal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('stageModal')) closeStageModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !document.getElementById('stageModal')!.hidden) closeStageModal();
+  });
+
+  document.getElementById('stageModalSave')?.addEventListener('click', async () => {
+    if (!currentStageId) return;
+    const detail = {
+      startDate: (document.getElementById('smStartDate') as HTMLInputElement).value,
+      startTime: (document.getElementById('smStartTime') as HTMLInputElement).value,
+      endDate:   (document.getElementById('smEndDate')   as HTMLInputElement).value,
+      endTime:   (document.getElementById('smEndTime')   as HTMLInputElement).value,
+      transport: (document.getElementById('smTransport') as HTMLSelectElement).value,
+      notes:     (document.getElementById('smNotes')     as HTMLTextAreaElement).value.trim(),
+    };
+    const meta = await loadMeta();
+    const stageDetails = (meta.stageDetails ?? {}) as Record<string, any>;
+    stageDetails[currentStageId] = detail;
+    await saveMeta({ stageDetails });
+    // Mark row as having detail
+    const row = document.querySelector<HTMLElement>(`.stage-row[data-id="${currentStageId}"]`);
+    if (row) row.classList.add('has-detail');
+    closeStageModal();
+  });
+
+  // Attach info button to each stage row
+  document.querySelectorAll<HTMLElement>('.stage-row').forEach(row => {
+    const stageId   = row.dataset.id!;
+    const nameEl    = row.querySelector('.stage-name');
+    const stageName = nameEl?.textContent ?? stageId;
+
+    // Add info button to row (after km tag)
+    const infoBtn = document.createElement('button');
+    infoBtn.className = 'stage-info-btn';
+    infoBtn.setAttribute('aria-label', 'Detalles de la etapa');
+    infoBtn.setAttribute('title', 'Añadir fecha y transporte');
+    infoBtn.type = 'button';
+    // Use SVG calendar icon via createElementNS
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;
+    svg.setAttribute('width', '13'); svg.setAttribute('height', '13');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('aria-hidden', 'true');
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('x', '3'); rect.setAttribute('y', '4');
+    rect.setAttribute('width', '18'); rect.setAttribute('height', '18');
+    rect.setAttribute('rx', '2');
+    const line1 = document.createElementNS(NS, 'line');
+    line1.setAttribute('x1', '16'); line1.setAttribute('y1', '2'); line1.setAttribute('x2', '16'); line1.setAttribute('y2', '6');
+    const line2 = document.createElementNS(NS, 'line');
+    line2.setAttribute('x1', '8'); line2.setAttribute('y1', '2'); line2.setAttribute('x2', '8'); line2.setAttribute('y2', '6');
+    const line3 = document.createElementNS(NS, 'line');
+    line3.setAttribute('x1', '3'); line3.setAttribute('y1', '10'); line3.setAttribute('x2', '21'); line3.setAttribute('y2', '10');
+    svg.appendChild(rect); svg.appendChild(line1); svg.appendChild(line2); svg.appendChild(line3);
+    infoBtn.appendChild(svg);
+    infoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openStageModal(stageId, stageName);
+    });
+    row.appendChild(infoBtn);
+  });
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    initProfilePhonePicker();
+    initEmPhonePicker();
+    initAddressAutocomplete();
+    const meta = await loadMeta();
+
+    // Populate personal form
+    if (meta.phone) (document.getElementById('fPhone') as HTMLInputElement).value = meta.phone.replace(/^\+\d+\s*/, '');
+    if (meta.phoneCC) {
+      const co = COUNTRIES.find(c => c.c === meta.phoneCC);
+      if (co) {
+        const flagEl = document.getElementById('p-phone-flag');
+        const dialEl = document.getElementById('p-phone-dial');
+        const hiddenCC = document.getElementById('fPhoneCC') as HTMLInputElement | null;
+        if (flagEl) flagEl.textContent = co.f;
+        if (dialEl) dialEl.textContent = co.d;
+        if (hiddenCC) hiddenCC.value = co.c;
+      }
+    }
+    if (meta.address) (document.getElementById('fAddress') as HTMLInputElement).value   = meta.address;
+    if (meta.bio)     (document.getElementById('fBio')     as HTMLTextAreaElement).value = meta.bio;
+    renderDispGrid('dispPersonal', [
+      ['Teléfono', meta.phone ?? ''],
+      ['País', meta.country ? countryDisplay(meta.country) : ''],
+      ['Dirección', meta.address ?? ''],
+      ['Sobre mí', meta.bio ?? ''],
+    ]);
+
+    // Emergency
+    const em = meta.emergency ?? {};
+    if (em.name)     (document.getElementById('emName')     as HTMLInputElement).value  = em.name;
+    if (em.relation) (document.getElementById('emRelation') as HTMLSelectElement).value = em.relation;
+    if (em.phone)    (document.getElementById('emPhoneNum') as HTMLInputElement).value  = em.phone.replace(/^\+\d+\s*/, '');
+    if (em.phoneCC) {
+      const co = COUNTRIES.find(c => c.c === em.phoneCC);
+      if (co) {
+        const emFlagEl = document.getElementById('em-phone-flag');
+        const emDialEl = document.getElementById('em-phone-dial');
+        const emHiddenCC = document.getElementById('emPhoneCC') as HTMLInputElement | null;
+        if (emFlagEl) emFlagEl.textContent = co.f;
+        if (emDialEl) emDialEl.textContent = co.d;
+        if (emHiddenCC) emHiddenCC.value = co.c;
+      }
+    }
+    if (em.email)    (document.getElementById('emEmail')    as HTMLInputElement).value  = em.email;
+    renderDispGrid('dispEmergency', [
+      ['Nombre', em.name ?? ''], ['Relación', em.relation ?? ''],
+      ['Tel', em.phone ?? ''], ['Email', em.email ?? ''],
+    ]);
+
+    // Camino
+    const cam = meta.camino ?? {};
+    if (cam.route)  (document.getElementById('cRoute') as HTMLSelectElement).value = cam.route;
+    if (cam.start)  (document.getElementById('cStart') as HTMLInputElement).value  = cam.start;
+    const stages: string[] = cam.stages ?? [];
+    stages.forEach(id => {
+      const cb = document.querySelector<HTMLInputElement>(`.stage-cb[value="${id}"]`);
+      if (cb) cb.checked = true;
+    });
+    updateStats(stages, meta.manualBadges ?? []);
+
+    // Gear
+    if (meta.lockerNum) (document.getElementById('lockerNum') as HTMLInputElement).value = meta.lockerNum;
+    renderGear(meta);
+
+    // Mark stage rows that already have details
+    const stageDetails = (meta.stageDetails ?? {}) as Record<string, any>;
+    Object.keys(stageDetails).forEach(id => {
+      const row = document.querySelector<HTMLElement>(`.stage-row[data-id="${id}"]`);
+      if (row && stageDetails[id].startDate) row.classList.add('has-detail');
+    });
+
+    // Avatar from Clerk (in case SSR was stale)
+    const u = await clerkUser();
+    if (u?.imageUrl) {
+      const img  = document.querySelector<HTMLImageElement>('.card-avatar-img');
+      const init = document.querySelector<HTMLElement>('.card-avatar-initials');
+      if (img)  { img.src = u.imageUrl; img.style.display = ''; }
+      if (init) init.style.display = 'none';
+    }
+  });
+</script>

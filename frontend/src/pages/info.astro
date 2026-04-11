@@ -1,159 +1,598 @@
 ---
 export const prerender = true;
 
-import { DoodleCard, SketchyButton } from '../components';
 import Layout from '../layouts/Layout.astro';
+import MapLibre from '../components/MapLibre.astro';
+
+// Albergue GPS — El Carrascalejo
+const INFO_LAT = 39.0237972;
+const INFO_LNG = -6.3373782;
+
+const facilities = [
+  { icon: 'bed', label: 'Dormitorios', desc: '2 salas con 12 literas cada una. Sabanas y mantas incluidas.' },
+  { icon: 'shower', label: 'Duchas Calientes', desc: 'Agua caliente 24h. Aseos accesibles para todos.' },
+  { icon: 'kitchen', label: 'Cocina Equipada', desc: 'Microondas, nevera, fogones y utensilios basicos.' },
+  { icon: 'wifi', label: 'WiFi Gratuito', desc: 'Conexion de alta velocidad en todas las zonas.' },
+  { icon: 'lock', label: 'Taquillas', desc: 'Casilleros individuales con candado en cada cama.' },
+  { icon: 'laundry', label: 'Lavanderia', desc: 'Lavadora y tendedero disponibles todo el dia.' },
+  { icon: 'garden', label: 'Jardin', desc: 'Espacio exterior para descansar y tender ropa.' },
+  { icon: 'bike', label: 'Parking Bicicletas', desc: 'Aparcamiento cubierto y seguro para bicicletas.' },
+];
+
+const accordion = [
+  {
+    q: 'Que es la Via de la Plata?',
+    a: 'La Via de la Plata es la ruta jacobea mas larga de Espana, con 1.000 km desde Sevilla hasta Santiago de Compostela. Discurre por Extremadura, Castilla y Leon y Galicia, siguiendo la antigua calzada romana.'
+  },
+  {
+    q: 'Como llegar a El Carrascalejo?',
+    a: 'A pie: etapa desde Alquesos (12 km) o hasta Alcuescar (21 km). En coche: N-630 desde Merida hacia Caceres, desvio a El Carrascalejo (25 min). En autobus: linea Merida-Caceres con parada en el pueblo.'
+  },
+  {
+    q: 'Que llevar en la mochila?',
+    a: 'Saco de dormir ligero, documentacion (DNI/Pasaporte), credencial de peregrino, ropa de recambio, zapatillas de estar por casa, candado para taquilla, botiquin basico (ampollas, tiritas), esterilla de yoga opcional.'
+  },
+];
 ---
 
-<Layout title="Información - Albergue Municipal Carrascalejo">
-  <main class="container mx-auto px-4 py-8 max-w-4xl">
-    <h1 class="text-3xl font-900 text-center mb-8 text-stone-800">Información del Albergue</h1>
+<Layout title="Informacion — Albergue Municipal de El Carrascalejo">
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+      </filter>
+    </defs>
+  </svg>
 
-    <!-- How to Arrive -->
-    <section class="mb-12">
-      <DoodleCard variant="elevated" padding="lg">
-        <h2 class="text-2xl font-900 mb-6 text-stone-800 flex items-center gap-3">
-          <span class="text-2xl">🚶</span>
-          Cómo llegar
-        </h2>
-        <div class="space-y-4 text-stone-700">
-          <p><strong>Desde Santiago:</strong> Autobús línea 5 hasta Carrascalejo, 45 minutos.</p>
-          <p><strong>Desde el Camino:</strong> A 2 km del desvío en Negreira, señalizado.</p>
-          <p><strong>En coche:</strong> A-8 salida 123, seguir señales a Carrascalejo.</p>
-          <p><strong>Coordenadas:</strong> 42.1234, -8.5678</p>
+  <!-- HERO -->
+  <section class="info-hero reveal-section">
+    <div class="info-hero-inner">
+      <h1 class="info-title">Informacion</h1>
+      <div class="hero-wave" aria-hidden="true">
+        <svg viewBox="0 0 340 16" preserveAspectRatio="none">
+          <path d="M0,8 Q28,0 56,8 T112,8 T168,8 T224,8 T280,8 T340,8" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="info-hero-sub">Todo lo que necesitas saber para tu estancia en el Camino</p>
+    </div>
+  </section>
+
+  <div class="info-content">
+
+    <!-- 1. ABOUT -->
+    <section class="info-section reveal-section" style="--delay:0.05s">
+      <div class="info-section-inner">
+        <div class="section-label">El Albergue</div>
+        <div class="about-grid">
+          <div class="about-text">
+            <h2 class="section-heading">Un hogar en el Camino</h2>
+            <p class="body-text">El Albergue Municipal de El Carrascalejo lleva mas de dos decadas acogiendo peregrinos que recorren la Via de la Plata. Con capacidad para 24 personas en dos dormitorios, ofrecemos un ambiente calido y tranquilo donde recuperar fuerzas para la siguiente etapa.</p>
+            <p class="body-text">Gestionado por el Ayuntamiento de El Carrascalejo, nuestro albergue combina la tradicion hospitalaria del Camino con los servicios modernos que necesita el peregrino de hoy.</p>
+            <div class="about-stats">
+              <div class="about-stat">
+                <span class="about-stat-val">+5.000</span>
+                <span class="about-stat-lbl">Peregrinos al ano</span>
+              </div>
+              <div class="about-stat">
+                <span class="about-stat-val">+20</span>
+                <span class="about-stat-lbl">Anos de historia</span>
+              </div>
+              <div class="about-stat">
+                <span class="about-stat-val">24</span>
+                <span class="about-stat-lbl">Camas disponibles</span>
+              </div>
+            </div>
+          </div>
+          <div class="about-photo">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="16" fill="var(--green-light)" stroke="var(--green)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+            </svg>
+            <div class="photo-placeholder">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <span>Albergue Municipal<br/>El Carrascalejo</span>
+            </div>
+          </div>
         </div>
-      </DoodleCard>
+      </div>
     </section>
 
-    <!-- Services Accordion -->
-    <section class="mb-12">
-      <DoodleCard variant="elevated" padding="lg">
-        <h2 class="text-2xl font-900 mb-6 text-stone-800 flex items-center gap-3">
-          <span class="text-2xl">🏠</span>
-          Servicios
-        </h2>
+    <!-- 2. FACILITIES -->
+    <section class="info-section info-section-alt reveal-section" style="--delay:0.08s">
+      <div class="info-section-inner">
+        <div class="section-label">Instalaciones</div>
+        <h2 class="section-heading text-center">Servicios y comodidades</h2>
+        <div class="facilities-grid">
+          {facilities.map((f, i) => (
+            <div class="facility-card reveal-section" style={`--delay:${0.05 + i * 0.04}s`}>
+              <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+                <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke="var(--black)" stroke-width="2" filter="url(#sketchy-filter)"/>
+              </svg>
+              <div class="facility-inner">
+                <div class="facility-icon" aria-hidden="true">
+                  {f.icon === 'bed' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M2 4v16M2 8h20M2 16h20M22 4v16"/></svg>
+                  )}
+                  {f.icon === 'shower' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M4 12l1.41-1.41a2 2 0 0 1 2.83 0L10 12"/><path d="M9 7V3a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1"/><path d="M4 20h16"/></svg>
+                  )}
+                  {f.icon === 'kitchen' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                  )}
+                  {f.icon === 'wifi' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="var(--green)"/></svg>
+                  )}
+                  {f.icon === 'lock' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  )}
+                  {f.icon === 'laundry' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="var(--green-light)"/></svg>
+                  )}
+                  {f.icon === 'garden' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M12 22V12M12 12C12 12 8 8 4 9s-1 8 4 7M12 12c0 0 4-4 8-3s1 8-4 7"/></svg>
+                  )}
+                  {f.icon === 'bike' && (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-5l-3 6 5 .5M9 12l4-6"/></svg>
+                  )}
+                </div>
+                <h3 class="facility-title">{f.label}</h3>
+                <p class="facility-desc">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
 
-        <div class="space-y-3">
-          {
-            [
-              {
-                title: 'Alojamiento',
-                content:
-                  '24 camas en dormitorios mixtos con taquillas individuales. Ropa de cama incluida.',
-              },
-              {
-                title: 'Cocina',
-                content:
-                  'Cocina equipada con nevera, microondas, utensilios y especias básicas. Zona de comedor.',
-              },
-              {
-                title: 'Baños',
-                content: 'Duchas calientes 24h, secadores de pelo, jabón y champú ecológicos.',
-              },
-              {
-                title: 'Lavandería',
-                content: 'Lavadora y secadora (€3 ciclo), tendedero exterior. Detergente incluido.',
-              },
-              {
-                title: 'WiFi y carga',
-                content:
-                  'WiFi gratuito en todas las instalaciones. Puntos de carga USB y enchufes.',
-              },
-              {
-                title: 'Bicicletas',
-                content:
-                  'Alquiler de bicicletas €10/día. Incluye casco y candado. Reserva anticipada.',
-              },
-            ].map((item, index) => (
-              <div x-data="{ open: false }" class="border border-stone-200 rounded-lg">
-                <button
-                  x-on:click="open = !open"
-                  class="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-stone-50 transition-colors"
-                >
-                  <span class="font-600 text-stone-800">{item.title}</span>
-                  <span
-                    x-bind:class="{ 'rotate-180': open }"
-                    class="transform transition-transform"
-                  >
-                    ▼
-                  </span>
-                </button>
-                <div x-show="open" x-transition class="px-4 pb-3 text-stone-700">
-                  {item.content}
+    <!-- 3. LOCATION -->
+    <section class="info-section reveal-section" style="--delay:0.1s">
+      <div class="info-section-inner">
+        <div class="section-label">Ubicacion</div>
+        <h2 class="section-heading">Como llegar</h2>
+        <div class="location-grid">
+          <div class="map-card-big">
+            <!-- Sketch border on top of the map (fill:none so map shows through) -->
+            <svg class="map-sketch-border" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="16" fill="none" stroke="var(--green)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+            </svg>
+            <!-- MapLibre GL JS map via reusable Astro 6 component -->
+            <MapLibre
+              latitude={INFO_LAT}
+              longitude={INFO_LNG}
+              zoom={14}
+              height="100%"
+              markerTitle="Albergue Municipal El Carrascalejo"
+              markerSubtitle="Calle Principal s/n · 06891 Badajoz"
+              class="info-map-inner"
+            />
+            <!-- Address + OSM link overlay at the bottom -->
+            <div class="map-bottom-overlay">
+              <span class="map-overlay-addr">Calle Principal s/n · El Carrascalejo, 06891</span>
+              <a href={`https://www.openstreetmap.org/?mlat=${INFO_LAT}&mlon=${INFO_LNG}&zoom=15`} target="_blank" rel="noopener noreferrer" class="map-overlay-link">Ver en OpenStreetMap ↗</a>
+            </div>
+          </div>
+          <div class="location-info">
+            <div class="via-badge">Via de la Plata — Km 482</div>
+            <div class="location-rows">
+              <div class="loc-row reveal-section" style="--delay:0.1s">
+                <div class="loc-row-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div>
+                  <strong>Check-in</strong>
+                  <p>14:00 — 22:00</p>
                 </div>
               </div>
-            ))
-          }
-        </div>
-      </DoodleCard>
-    </section>
-
-    <!-- Rules -->
-    <section class="mb-12">
-      <DoodleCard variant="elevated" padding="lg">
-        <h2 class="text-2xl font-900 mb-6 text-stone-800 flex items-center gap-3">
-          <span class="text-2xl">📋</span>
-          Normas del albergue
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 class="font-900 text-stone-800 mb-3">Horarios</h3>
-            <ul class="space-y-2 text-stone-700 text-sm">
-              <li>• Entrada: 15:00 - 22:00</li>
-              <li>• Salida: antes 11:00</li>
-              <li>• Silencio: 22:00 - 07:00</li>
-              <li>• Cocina cierra: 21:30</li>
-            </ul>
-          </div>
-          <div>
-            <h3 class="font-900 text-stone-800 mb-3">Convivencia</h3>
-            <ul class="space-y-2 text-stone-700 text-sm">
-              <li>• Zonas comunes limpias</li>
-              <li>• Respetar el descanso</li>
-              <li>• No fumar en interiores</li>
-              <li>• Mascotas no permitidas</li>
-            </ul>
-          </div>
-          <div>
-            <h3 class="font-900 text-stone-800 mb-3">Seguridad</h3>
-            <ul class="space-y-2 text-stone-700 text-sm">
-              <li>• Taquillas con candado</li>
-              <li>• No dejar objetos de valor</li>
-              <li>• Extintores señalizados</li>
-              <li>• Teléfono emergencia: 112</li>
-            </ul>
-          </div>
-          <div>
-            <h3 class="font-900 text-stone-800 mb-3">Servicios</h3>
-            <ul class="space-y-2 text-stone-700 text-sm">
-              <li>• WiFi gratuito</li>
-              <li>• Ropa de cama incluida</li>
-              <li>• Uso de cocina</li>
-              <li>• Consigna equipaje</li>
-            </ul>
+              <div class="loc-row reveal-section" style="--delay:0.13s">
+                <div class="loc-row-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div>
+                  <strong>Check-out</strong>
+                  <p>Antes de las 10:00</p>
+                </div>
+              </div>
+              <div class="loc-row reveal-section" style="--delay:0.16s">
+                <div class="loc-row-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                </div>
+                <div>
+                  <strong>Estancia maxima</strong>
+                  <p>2 noches (excepciones posibles)</p>
+                </div>
+              </div>
+              <div class="loc-row reveal-section" style="--delay:0.19s">
+                <div class="loc-row-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                </div>
+                <div>
+                  <strong>Precio</strong>
+                  <p id="info-price-locrow">15 EUR / noche por persona</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </DoodleCard>
+      </div>
     </section>
 
-    <!-- Contact -->
-    <section class="text-center">
-      <DoodleCard variant="elevated" padding="lg">
-        <h2 class="text-2xl font-900 mb-6 text-stone-800 flex items-center gap-3">
-          <span class="text-2xl">📞</span>
-          Contacto
-        </h2>
-        <div class="space-y-4 text-stone-700">
-          <p><strong>Teléfono:</strong> +34 123 456 789</p>
-          <p><strong>Email:</strong> info@alberguecarrascalejo.com</p>
-          <p><strong>Dirección:</strong> Rúa do Camiño 123, 15890 Carrascalejo, A Coruña</p>
-          <div class="flex gap-4 justify-center mt-6">
-            <SketchyButton href="/book" text="Reservar Ahora" variant="primary" />
-            <SketchyButton href="/" text="Volver al Inicio" variant="outline" />
-          </div>
+    <!-- 4. ACCORDION -->
+    <section class="info-section info-section-alt reveal-section" style="--delay:0.1s">
+      <div class="info-section-inner">
+        <div class="section-label">Camino Info</div>
+        <h2 class="section-heading">Preguntas frecuentes</h2>
+        <div class="accordion" id="accordion">
+          {accordion.map((item, i) => (
+            <div class="acc-item reveal-section" style={`--delay:${0.05 + i * 0.06}s`} data-index={i}>
+              <button class="acc-trigger" aria-expanded="false" aria-controls={`acc-body-${i}`}>
+                <span class="acc-q">{item.q}</span>
+                <svg class="acc-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              <div class="acc-body" id={`acc-body-${i}`} role="region">
+                <p class="acc-text">{item.a}</p>
+              </div>
+            </div>
+          ))}
         </div>
-      </DoodleCard>
+      </div>
     </section>
-  </main>
+
+    <!-- 5. PRICING RULES -->
+    <section class="info-section reveal-section" style="--delay:0.08s">
+      <div class="info-section-inner">
+        <div class="section-label">Tarifas y Normas</div>
+        <h2 class="section-heading text-center">Informacion practica</h2>
+        <div class="pricing-stats">
+          {[
+            { val: '15 EUR', lbl: 'por noche', id: 'info-price-stat' },
+            { val: '14:00', lbl: 'check-in',   id: undefined },
+            { val: '10:00', lbl: 'check-out',   id: undefined },
+            { val: '2',     lbl: 'noches max.', id: undefined },
+          ].map((s, i) => (
+            <div class="pricing-stat reveal-section" style={`--delay:${0.06 + i * 0.05}s`}>
+              <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+                <rect x="0" y="0" width="100%" height="100%" rx="14" fill="var(--green-light)" stroke="var(--green)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+              </svg>
+              <span class="pricing-val" id={s.id}>{s.val}</span>
+              <span class="pricing-lbl">{s.lbl}</span>
+            </div>
+          ))}
+        </div>
+        <div class="rules-list reveal-section" style="--delay:0.25s">
+          <h3 class="rules-heading">Normas del albergue</h3>
+          <ul class="rules-ul">
+            {[
+              'Horario de silencio: 22:00 — 07:00',
+              'No se permite fumar dentro del albergue',
+              'Documento de identidad obligatorio',
+              'Respeta a los demas peregrinos',
+              'Mantener el orden y la limpieza',
+              'Cancelacion gratuita 24h antes',
+              'Pago en efectivo en el albergue',
+              'Llegadas tardias: avisar previamente',
+            ].map(rule => (
+              <li class="rule-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                {rule}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CTA -->
+    <section class="info-cta reveal-section" style="--delay:0.05s">
+      <div class="cta-inner">
+        <h2 class="cta-heading">Listo para empezar tu Camino?</h2>
+        <p class="cta-sub">Reserva tu cama ahora y asegura tu plaza en El Carrascalejo</p>
+        <a href="/book" class="btn-sketchy-cta">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+            <rect x="5" y="7" width="calc(100% - 10px)" height="calc(100% - 10px)" rx="14" fill="black" filter="blur(5px)" opacity="0.2"/>
+            <rect x="0" y="0" width="100%" height="100%" rx="14" fill="var(--green)" stroke="var(--black)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+          </svg>
+          <span class="cta-btn-label">Reservar ahora</span>
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <style>
+    /* Hero */
+    .info-hero { padding: 3rem 1rem 2rem; text-align: center; background: linear-gradient(135deg, var(--green-light) 0%, white 100%); }
+    .info-hero-inner { max-width: 640px; margin: 0 auto; }
+    .info-title { font-family: var(--font-display); font-size: clamp(2.5rem,6vw,4rem); color: var(--green); margin: 0 0 0.25rem; }
+    .hero-wave { width: min(340px,85vw); height: 16px; margin: 0 auto 0.75rem; }
+    .info-hero-sub { font-family: var(--font-hand); font-size: 1.1rem; color: #555; margin: 0; }
+
+    /* Content wrapper */
+    .info-content { max-width: 1060px; margin: 0 auto; padding: 0 1rem 4rem; }
+    .info-section { padding: 3.5rem 0; border-bottom: 2px dashed rgba(0,171,57,0.2); }
+    .info-section-alt { background: var(--green-light); margin: 0 -1rem; padding: 3.5rem 1rem; }
+    .info-section-inner { max-width: 1060px; margin: 0 auto; }
+    .section-label {
+      font-family: var(--font-sketch); font-size: 0.78rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--green); margin-bottom: 0.4rem;
+    }
+    .section-heading {
+      font-family: var(--font-display); font-size: clamp(1.6rem,4vw,2.4rem);
+      color: var(--black); margin: 0 0 1.75rem; line-height: 1.15;
+    }
+    .text-center { text-align: center; }
+    .body-text { font-family: var(--font-hand); font-size: 1rem; color: #444; line-height: 1.7; margin: 0 0 1rem; }
+
+    /* About grid */
+    .about-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: center; }
+    .about-stats { display: flex; gap: 1.5rem; margin-top: 1.5rem; }
+    .about-stat { text-align: center; }
+    .about-stat-val { display: block; font-family: var(--font-display); font-size: 1.8rem; color: var(--green); }
+    .about-stat-lbl { display: block; font-family: var(--font-hand); font-size: 0.8rem; color: #666; }
+    .about-photo {
+      position: relative; border-radius: 16px;
+      aspect-ratio: 4/3; min-height: 220px; overflow: hidden;
+    }
+    .photo-placeholder {
+      position: absolute; inset: 0; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 0.75rem; text-align: center;
+      font-family: var(--font-hand); font-size: 0.9rem; color: var(--green-dark); line-height: 1.5;
+    }
+
+    /* Facilities */
+    .facilities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 1.25rem; }
+    .facility-card {
+      position: relative; border-radius: 14px;
+      transition: transform 250ms ease, box-shadow 250ms ease;
+      cursor: default;
+    }
+    .facility-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,171,57,0.15); }
+    .facility-inner { position: relative; z-index: 2; padding: 1.5rem; }
+    .facility-icon { margin-bottom: 0.75rem; }
+    .facility-title { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; color: var(--black); margin: 0 0 0.4rem; }
+    .facility-desc { font-family: var(--font-hand); font-size: 0.85rem; color: #555; margin: 0; line-height: 1.5; }
+
+    /* Location */
+    .location-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+
+    /* Map card — contains the MapLibre component + overlays */
+    .map-card-big {
+      position: relative;
+      border-radius: 16px;
+      min-height: 320px;
+      height: 320px;
+      overflow: hidden;
+    }
+
+    /* SVG sketch border — sits on top of everything, pointer-events:none */
+    .map-sketch-border {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 10;
+    }
+
+    /* The MapLibre host element fills the card */
+    .info-map-inner {
+      position: absolute !important;
+      inset: 0 !important;
+      border-radius: 16px;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    /* Bottom gradient overlay with address + OSM link */
+    .map-bottom-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
+      background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%);
+      padding: 2rem 1.25rem 1rem;
+      display: flex; flex-direction: column; gap: 0.3rem;
+      border-radius: 0 0 16px 16px;
+      pointer-events: none;
+    }
+    .map-bottom-overlay a { pointer-events: auto; }
+    .map-overlay-addr {
+      font-family: var(--font-hand); font-size: 0.82rem; color: rgba(255,255,255,0.88);
+    }
+    .map-overlay-link {
+      font-family: var(--font-sketch); font-size: 0.78rem; font-weight: 700;
+      color: #6ee7a0; text-decoration: none; letter-spacing: 0.03em;
+      text-transform: uppercase; width: fit-content;
+    }
+    .map-overlay-link:hover { color: white; text-decoration: underline; }
+
+    .via-badge {
+      background: var(--green); color: white;
+      font-family: var(--font-sketch); font-weight: 700; font-size: 0.85rem;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.4rem 1rem; border-radius: 50px;
+      display: inline-block; margin-bottom: 1rem;
+    }
+    .location-rows { display: flex; flex-direction: column; gap: 0.75rem; }
+    .loc-row {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.75rem;
+      background: white;
+      border-radius: var(--r-md);
+      border: 1.5px solid rgba(0,171,57,0.15);
+    }
+    .loc-row-icon {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--green); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .loc-row strong { font-family: var(--font-sketch); font-weight: 700; font-size: 0.9rem; color: var(--black); display: block; }
+    .loc-row p { font-family: var(--font-hand); font-size: 0.85rem; color: #555; margin: 0.1rem 0 0; }
+
+    /* Accordion */
+    .accordion { display: flex; flex-direction: column; gap: 0.75rem; }
+    .acc-item {
+      border-radius: var(--r-md);
+      border: 2px solid rgba(0,171,57,0.25);
+      overflow: hidden;
+      background: white;
+      transition: border-color 200ms;
+    }
+    .acc-item.open { border-color: var(--green); }
+    .acc-trigger {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 1.1rem 1.25rem;
+      background: none; border: none; cursor: pointer;
+      text-align: left; gap: 0.75rem;
+      transition: background 200ms ease;
+    }
+    .acc-trigger:hover { background: rgba(0,171,57,0.04); }
+    .acc-q { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; color: var(--black); }
+    .acc-arrow { flex-shrink: 0; transition: transform 300ms ease; }
+    .acc-item.open .acc-arrow { transform: rotate(180deg); }
+    .acc-body { max-height: 0; overflow: hidden; transition: max-height 400ms cubic-bezier(0.4,0,0.2,1); }
+    .acc-item.open .acc-body { max-height: 220px; }
+    .acc-text {
+      font-family: var(--font-hand); font-size: 0.95rem; color: #444; line-height: 1.7; margin: 0; padding: 0 1.25rem 1.25rem;
+      opacity: 0; transition: opacity 300ms ease 200ms;
+    }
+    .acc-item.open .acc-text { opacity: 1; }
+
+    /* Pricing stats */
+    .pricing-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2.5rem; }
+    .pricing-stat {
+      position: relative; border-radius: 14px;
+      padding: 1.5rem 1rem; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+      transition: transform 250ms ease;
+    }
+    .pricing-stat:hover { transform: translateY(-3px); }
+    .pricing-val {
+      position: relative; z-index: 2; font-family: var(--font-display); font-size: 1.8rem; color: var(--green);
+      animation: pricing-pulse 3s ease-in-out infinite;
+    }
+    @keyframes pricing-pulse {
+      0%, 100% { text-shadow: none; }
+      50%       { text-shadow: 0 0 12px rgba(0,171,57,0.5); }
+    }
+    .pricing-lbl { position: relative; z-index: 2; font-family: var(--font-hand); font-size: 0.8rem; color: var(--green-dark); }
+
+    .rules-heading { font-family: var(--font-sketch); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--black); margin: 0 0 1rem; }
+    .rules-ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .rule-item {
+      display: flex; align-items: flex-start; gap: 0.5rem;
+      font-family: var(--font-hand); font-size: 0.9rem; color: #444;
+    }
+    .rule-item svg { flex-shrink: 0; margin-top: 3px; }
+
+    /* CTA */
+    .info-cta { padding: 4rem 1rem; text-align: center; }
+    .cta-inner { max-width: 520px; margin: 0 auto; }
+    .cta-heading { font-family: var(--font-display); font-size: clamp(1.8rem,4vw,2.6rem); color: var(--black); margin: 0 0 0.5rem; }
+    .cta-sub { font-family: var(--font-hand); font-size: 1rem; color: #555; margin: 0 0 2rem; }
+    @keyframes cta-rock-info {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      20%       { transform: rotate(-2.5deg) translateY(-2px); }
+      40%       { transform: rotate(2.5deg) translateY(-3px); }
+      60%       { transform: rotate(-1.5deg) translateY(-1px); }
+      80%       { transform: rotate(1deg); }
+    }
+    .btn-sketchy-cta {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      padding: 1rem 2.5rem; text-decoration: none;
+      transition: transform 200ms ease;
+      animation: cta-rock-info 3.5s ease-in-out infinite;
+    }
+    .btn-sketchy-cta:hover { animation: none; transform: translateY(-3px); }
+    .btn-sketchy-cta:active { animation: none; transform: scale(0.98); }
+    .cta-btn-label {
+      position: relative; z-index: 2;
+      font-family: var(--font-sketch); font-weight: 700; font-size: 1.1rem;
+      color: white; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    /* Scroll reveal */
+    .reveal-section { opacity: 0; transform: translateY(28px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
+    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .about-grid, .location-grid { grid-template-columns: 1fr; }
+      .pricing-stats { grid-template-columns: repeat(2,1fr); }
+      .rules-ul { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .pricing-stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); observer.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal-section').forEach(el => observer.observe(el));
+
+    // Accordion
+    document.querySelectorAll('.acc-trigger').forEach(trigger => {
+      trigger.addEventListener('click', function() {
+        const item   = this.closest('.acc-item') as HTMLElement;
+        const isOpen = item.classList.contains('open');
+        // Close all
+        document.querySelectorAll('.acc-item').forEach(i => {
+          i.classList.remove('open');
+          (i.querySelector('.acc-trigger') as HTMLButtonElement).setAttribute('aria-expanded','false');
+        });
+        // Open clicked (if was closed)
+        if (!isOpen) {
+          item.classList.add('open');
+          (this as HTMLButtonElement).setAttribute('aria-expanded','true');
+        }
+      });
+    });
+
+    // Card hover ripple
+    document.querySelectorAll('.facility-card').forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        (this as HTMLElement).style.zIndex = '2';
+      });
+      card.addEventListener('mouseleave', function() {
+        (this as HTMLElement).style.zIndex = '';
+      });
+    });
+
+    // Wave underline draw-on-scroll for hero wave
+    const heroWavePath = document.querySelector('.hero-wave path') as SVGPathElement | null;
+    if (heroWavePath) {
+      const len = heroWavePath.getTotalLength?.() || 340;
+      heroWavePath.style.strokeDasharray = String(len);
+      heroWavePath.style.strokeDashoffset = String(len);
+      heroWavePath.style.transition = 'stroke-dashoffset 800ms ease 300ms';
+      const waveObs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          heroWavePath.style.strokeDashoffset = '0';
+          waveObs.disconnect();
+        }
+      }, { threshold: 0.2 });
+      waveObs.observe(heroWavePath.closest('.hero-wave') as Element);
+    }
+  </script>
+
+  <!-- Fetch live price from /api/pricing and update displayed values -->
+  <script>
+    (async () => {
+      try {
+        const res = await fetch('/api/pricing');
+        if (!res.ok) return;
+        const data = await res.json() as { price_eur?: number; price_cents?: number };
+        const priceEur = data.price_eur ?? (data.price_cents ? data.price_cents / 100 : 15);
+        const label = `${priceEur} EUR`;
+
+        const locRow = document.getElementById('info-price-locrow');
+        if (locRow) locRow.textContent = `${label} / noche por persona`;
+
+        const statEl = document.getElementById('info-price-stat');
+        if (statEl) statEl.textContent = label;
+      } catch { /* keep default 15 EUR */ }
+    })();
+  </script>
 </Layout>

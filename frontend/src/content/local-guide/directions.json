@@ -1,0 +1,50 @@
+[
+  {
+    "id": "foot",
+    "type": "direction",
+    "icon": "🥾",
+    "name": "A Pie",
+    "subtitle": "Via de la Plata · GR-66",
+    "detail1": "12 km desde La Aldea del Cano",
+    "detail2": "21 km hasta Alcuescar",
+    "description": "El Camino discurre por la calzada romana N-630. Sigue las flechas amarillas y las marcas de conchas.",
+    "color": "#059669",
+    "order": 1
+  },
+  {
+    "id": "car",
+    "type": "direction",
+    "icon": "🚗",
+    "name": "En Coche",
+    "subtitle": "Carretera N-630",
+    "detail1": "25 min desde Merida",
+    "detail2": "35 min desde Caceres",
+    "description": "Toma la N-630 en direccion norte desde Merida. El albergue esta en el centro del pueblo.",
+    "color": "#2563eb",
+    "order": 2
+  },
+  {
+    "id": "bus",
+    "type": "direction",
+    "icon": "🚌",
+    "name": "En Autobus",
+    "subtitle": "Avanza · Linea regional",
+    "detail1": "2 servicios diarios",
+    "detail2": "Parada: Plaza Mayor",
+    "description": "Autobus Merida–Caceres con parada en El Carrascalejo. Consulta horarios en avanzabus.com.",
+    "color": "#7c3aed",
+    "order": 3
+  },
+  {
+    "id": "bike",
+    "type": "direction",
+    "icon": "🚲",
+    "name": "En Bicicleta",
+    "subtitle": "Via de la Plata ciclable",
+    "detail1": "Parking cubierto disponible",
+    "detail2": "Sin desnivel significativo",
+    "description": "La N-630 tiene carril bici en tramos urbanos. El albergue tiene guarda-bicicletas cerrado.",
+    "color": "#d97706",
+    "order": 4
+  }
+]

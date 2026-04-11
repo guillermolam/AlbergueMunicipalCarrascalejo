@@ -1,0 +1,934 @@
+---
+// On-demand rendering: admin-role required
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getDashboardStats } from '../../lib/api/hostel';
+
+const { userId: _uid } = Astro.locals.auth();
+if (!_uid || Astro.locals.role !== 'admin') {
+  return Astro.redirect(`/auth?from=${Astro.url.pathname}&reason=unauthorized`, 302);
+}
+
+const adminToken = (Astro.locals as Record<string, unknown>).token as string | undefined
+  ?? import.meta.env.API_SERVICE_TOKEN
+  ?? '';
+
+const stats = await getDashboardStats(adminToken).catch(() => null);
+
+const todayCheckins     = stats?.upcomingCheckIns    ?? 2;
+const currentlyCheckedIn = stats?.currentGuests       ?? 3;
+const confirmedUpcoming  = stats?.confirmedBookings    ?? 8;
+const pendingCount       = stats?.pendingBookings      ?? 1;
+---
+
+<AdminLayout title="Bookings — Admin" activeSection="bookings">
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold">Bookings</h1>
+        <p class="text-base-content/60 mt-1">Manage active bookings, review past stays, and view analytics.</p>
+      </div>
+    </div>
+
+    <!-- Tab navigation -->
+    <div class="tabs tabs-boxed bg-base-200 p-1" role="tablist">
+      <button class="tab tab-active" data-tab="active" role="tab">Active Bookings</button>
+      <button class="tab" data-tab="past" role="tab">Past Bookings</button>
+      <button class="tab" data-tab="analytics" role="tab">&#x1F4CA; Analytics</button>
+    </div>
+
+    <!-- ===== TAB: ACTIVE BOOKINGS ===== -->
+    <div id="tab-active" class="tab-panel space-y-4">
+
+      <!-- Summary stats -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Today's Check-ins</div>
+          <div class="stat-value text-primary text-2xl">{todayCheckins}</div>
+          <div class="stat-desc">Arriving today</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Currently Checked-in</div>
+          <div class="stat-value text-info text-2xl">{currentlyCheckedIn}</div>
+          <div class="stat-desc">In-house guests</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Confirmed Upcoming</div>
+          <div class="stat-value text-success text-2xl">{confirmedUpcoming}</div>
+          <div class="stat-desc">Future bookings</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Pending</div>
+          <div class="stat-value text-warning text-2xl">{pendingCount}</div>
+          <div class="stat-desc">Awaiting confirmation</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="card bg-base-200">
+        <div class="card-body p-4">
+          <div class="flex flex-wrap gap-3 items-end">
+            <div class="form-control flex-1 min-w-48">
+              <label class="label py-0"><span class="label-text text-xs">Search guest</span></label>
+              <input id="active-search" type="text" placeholder="Name, ID..." class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text text-xs">Status</span></label>
+              <select id="active-status-filter" class="select select-bordered select-sm">
+                <option value="all">All Statuses</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="checked-in">Checked-in</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text text-xs">From</span></label>
+              <input id="active-date-from" type="date" class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text text-xs">To</span></label>
+              <input id="active-date-to" type="date" class="input input-bordered input-sm" />
+            </div>
+            <button class="btn btn-sm btn-ghost" onclick="resetActiveFilters()">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active table -->
+      <div class="card bg-base-200">
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="table table-zebra w-full" id="active-table">
+              <thead>
+                <tr id="active-thead">
+                  <th class="cursor-pointer select-none" data-col="id">Booking ID <span class="sort-indicator"></span></th>
+                  <th class="cursor-pointer select-none" data-col="name">Guest Name <span class="sort-indicator"></span></th>
+                  <th>Country</th>
+                  <th class="cursor-pointer select-none" data-col="checkin">Check-in <span class="sort-indicator"></span></th>
+                  <th class="cursor-pointer select-none" data-col="checkout">Check-out <span class="sort-indicator"></span></th>
+                  <th class="cursor-pointer select-none" data-col="nights">Nights <span class="sort-indicator"></span></th>
+                  <th>Bed</th>
+                  <th>Status</th>
+                  <th class="cursor-pointer select-none" data-col="total">Total <span class="sort-indicator"></span></th>
+                  <th>Payment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="active-tbody"></tbody>
+            </table>
+          </div>
+          <div id="active-empty" class="hidden p-8 text-center text-base-content/50">No bookings match your filters.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: PAST BOOKINGS ===== -->
+    <div id="tab-past" class="tab-panel hidden space-y-4">
+
+      <!-- Filters -->
+      <div class="card bg-base-200">
+        <div class="card-body p-4">
+          <div class="flex flex-wrap gap-3 items-end">
+            <div class="form-control flex-1 min-w-48">
+              <label class="label py-0"><span class="label-text text-xs">Search guest</span></label>
+              <input id="past-search" type="text" placeholder="Name, ID..." class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text text-xs">Country</span></label>
+              <select id="past-country-filter" class="select select-bordered select-sm">
+                <option value="all">All Countries</option>
+                <option value="ES">Spain</option>
+                <option value="FR">France</option>
+                <option value="DE">Germany</option>
+                <option value="PT">Portugal</option>
+                <option value="GB">UK</option>
+                <option value="IT">Italy</option>
+                <option value="NO">Norway</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text text-xs">Status</span></label>
+              <select id="past-status-filter" class="select select-bordered select-sm">
+                <option value="all">All</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text text-xs">From</span></label>
+              <input id="past-date-from" type="date" class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text text-xs">To</span></label>
+              <input id="past-date-to" type="date" class="input input-bordered input-sm" />
+            </div>
+            <button class="btn btn-sm btn-ghost" onclick="resetPastFilters()">Reset</button>
+            <button class="btn btn-sm btn-outline" onclick="exportCSV()">Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Past table -->
+      <div class="card bg-base-200">
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="table table-zebra w-full" id="past-table">
+              <thead>
+                <tr id="past-thead">
+                  <th class="cursor-pointer select-none" data-col="id">Booking ID <span class="sort-indicator"></span></th>
+                  <th class="cursor-pointer select-none" data-col="name">Guest Name <span class="sort-indicator"></span></th>
+                  <th>Country</th>
+                  <th class="cursor-pointer select-none" data-col="checkin">Check-in <span class="sort-indicator"></span></th>
+                  <th class="cursor-pointer select-none" data-col="checkout">Check-out <span class="sort-indicator"></span></th>
+                  <th class="cursor-pointer select-none" data-col="nights">Nights <span class="sort-indicator"></span></th>
+                  <th>Bed</th>
+                  <th>Status</th>
+                  <th class="cursor-pointer select-none" data-col="total">Total <span class="sort-indicator"></span></th>
+                  <th>Payment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="past-tbody"></tbody>
+            </table>
+          </div>
+          <div id="past-empty" class="hidden p-8 text-center text-base-content/50">No past bookings match your filters.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: ANALYTICS ===== -->
+    <div id="tab-analytics" class="tab-panel hidden space-y-6">
+
+      <!-- Key stats 2x2 -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Avg Stay Duration</div>
+          <div class="stat-value text-primary text-2xl">3.2</div>
+          <div class="stat-desc">nights per guest</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Most Popular Month</div>
+          <div class="stat-value text-secondary text-xl">August</div>
+          <div class="stat-desc">highest occupancy</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Total Guests YTD</div>
+          <div class="stat-value text-success text-2xl">847</div>
+          <div class="stat-desc">year to date</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box p-4">
+          <div class="stat-title text-xs">Avg Revenue / Guest</div>
+          <div class="stat-value text-accent text-2xl">&#x20AC;28.40</div>
+          <div class="stat-desc">average spend</div>
+        </div>
+      </div>
+
+      <!-- Occupancy line chart -->
+      <div class="card bg-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-base">Occupancy Rate — Last 30 Days</h2>
+          <p class="text-base-content/60 text-sm">Daily occupancy percentage (24 beds total).</p>
+          <div class="mt-4 overflow-x-auto">
+            <svg id="occupancy-chart" viewBox="0 0 600 150" width="100%" height="150"
+              preserveAspectRatio="xMidYMid meet" aria-label="Occupancy rate chart">
+              <!-- Rendered by JS -->
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue bar chart -->
+      <div class="card bg-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-base">Revenue by Month (&#x20AC;)</h2>
+          <p class="text-base-content/60 text-sm">Total revenue collected per month.</p>
+          <div class="mt-4 overflow-x-auto">
+            <svg id="revenue-chart" viewBox="0 0 600 220" width="100%" height="220"
+              preserveAspectRatio="xMidYMid meet" aria-label="Monthly revenue chart">
+              <!-- Rendered by JS -->
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guests by country -->
+      <div class="card bg-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-base">Guests by Country</h2>
+          <p class="text-base-content/60 text-sm">Distribution of guests by nationality.</p>
+          <div id="country-chart" class="mt-4 space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- Recent trends table -->
+      <div class="card bg-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-base">Check-in Day of Week Popularity</h2>
+          <p class="text-base-content/60 text-sm">Top 5 most common check-in days.</p>
+          <div class="overflow-x-auto mt-4">
+            <table class="table w-full">
+              <thead>
+                <tr><th>Rank</th><th>Day</th><th>Avg Check-ins</th><th>Popularity</th></tr>
+              </thead>
+              <tbody id="trends-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Booking detail modal -->
+  <dialog id="booking-modal" class="modal">
+    <div class="modal-box w-11/12 max-w-2xl">
+      <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">&#x2715;</button>
+      </form>
+      <h3 class="font-bold text-lg mb-4" id="modal-title">Booking Details</h3>
+      <div id="modal-body" class="space-y-4"></div>
+      <div class="modal-action">
+        <form method="dialog"><button class="btn">Close</button></form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  </dialog>
+</AdminLayout>
+
+<script is:inline>
+// =====================================================
+// BOOKINGS PAGE — VANILLA JS
+// Note: All dynamic rendering uses developer-controlled
+// constant mock data only. Guest names are set via
+// textContent (not HTML injection) to prevent XSS.
+// =====================================================
+
+var TODAY = '2026-04-05';
+
+var MOCK_BOOKINGS = [
+  { id: 'BK001', name: 'Jean-Pierre Dubois', country: 'FR', checkin: '2026-04-05', checkout: '2026-04-08', nights: 3,  bed: 'Dorm 1 \u00B7 Bunk 3 \u00B7 Top',    status: 'confirmed',  total: 30, paid: 'card',    docType: 'passport' },
+  { id: 'BK002', name: 'Mar\u00EDa Garc\u00EDa L\u00F3pez', country: 'ES', checkin: '2026-04-05', checkout: '2026-04-06', nights: 1,  bed: 'Dorm 1 \u00B7 Bunk 1 \u00B7 Bottom', status: 'confirmed',  total:  8, paid: 'bizum',   docType: 'dni'      },
+  { id: 'BK003', name: 'Hans M\u00FCller',    country: 'DE', checkin: '2026-04-06', checkout: '2026-04-10', nights: 4,  bed: 'Dorm 2 \u00B7 Bunk 7 \u00B7 Top',    status: 'checked-in', total: 36, paid: 'cash',    docType: 'passport' },
+  { id: 'BK004', name: 'Sophie Martin',       country: 'FR', checkin: '2026-04-07', checkout: '2026-04-09', nights: 2,  bed: 'Dorm 1 \u00B7 Bunk 2 \u00B7 Top',    status: 'confirmed',  total: 20, paid: 'card',    docType: 'passport' },
+  { id: 'BK005', name: 'Carlos Pereira',      country: 'PT', checkin: '2026-04-07', checkout: '2026-04-12', nights: 5,  bed: 'Dorm 2 \u00B7 Bunk 9 \u00B7 Bottom', status: 'confirmed',  total: 45, paid: 'bank',    docType: 'passport' },
+  { id: 'BK006', name: 'Emma Johnson',        country: 'GB', checkin: '2026-04-08', checkout: '2026-04-10', nights: 2,  bed: 'Dorm 1 \u00B7 Bunk 4 \u00B7 Bottom', status: 'pending',    total: 20, paid: 'pending', docType: 'passport' },
+  { id: 'BK007', name: 'Luca Rossi',          country: 'IT', checkin: '2026-03-28', checkout: '2026-03-31', nights: 3,  bed: 'Dorm 1 \u00B7 Bunk 5 \u00B7 Top',    status: 'completed',  total: 24, paid: 'card',    docType: 'passport' },
+  { id: 'BK008', name: 'Ana Mart\u00EDnez',   country: 'ES', checkin: '2026-03-25', checkout: '2026-03-27', nights: 2,  bed: 'Dorm 2 \u00B7 Bunk 8 \u00B7 Bottom', status: 'completed',  total: 16, paid: 'bizum',   docType: 'dni'      },
+  { id: 'BK009', name: 'Pierre Lefevre',      country: 'FR', checkin: '2026-03-20', checkout: '2026-03-25', nights: 5,  bed: 'Dorm 1 \u00B7 Bunk 6 \u00B7 Bottom', status: 'completed',  total: 40, paid: 'card',    docType: 'passport' },
+  { id: 'BK010', name: 'Ingrid Larsen',       country: 'NO', checkin: '2026-03-15', checkout: '2026-03-17', nights: 2,  bed: 'Dorm 2 \u00B7 Bunk 10 \u00B7 Top',   status: 'completed',  total: 16, paid: 'cash',    docType: 'passport' },
+  { id: 'BK011', name: 'Miguel Santos',       country: 'PT', checkin: '2026-03-10', checkout: '2026-03-14', nights: 4,  bed: 'Dorm 1 \u00B7 Bunk 2 \u00B7 Bottom', status: 'cancelled',  total:  0, paid: 'refunded',docType: 'passport' },
+  { id: 'BK012', name: 'Klaus Weber',         country: 'DE', checkin: '2026-03-05', checkout: '2026-03-08', nights: 3,  bed: 'Dorm 2 \u00B7 Bunk 11 \u00B7 Top',   status: 'completed',  total: 24, paid: 'card',    docType: 'passport' },
+];
+
+var COUNTRY_FLAGS = { FR: '\uD83C\uDDEB\uD83C\uDDF7', ES: '\uD83C\uDDEA\uD83C\uDDF8', DE: '\uD83C\uDDE9\uD83C\uDDEA', PT: '\uD83C\uDDF5\uD83C\uDDF9', GB: '\uD83C\uDDEC\uD83C\uDDE7', IT: '\uD83C\uDDEE\uD83C\uDDF9', NO: '\uD83C\uDDF3\uD83C\uDDF4' };
+var COUNTRY_NAMES = { FR: 'France', ES: 'Spain', DE: 'Germany', PT: 'Portugal', GB: 'UK', IT: 'Italy', NO: 'Norway' };
+
+var ACTIVE_STATUSES  = ['confirmed','checked-in','pending'];
+var PAST_STATUSES    = ['completed','cancelled'];
+
+var activeSort = { col: 'checkin', dir: 'asc' };
+var pastSort   = { col: 'checkin', dir: 'desc' };
+
+// ---- Tab switching ----
+function initTabs() {
+  var tabs = document.querySelectorAll('[data-tab]');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t) { t.classList.remove('tab-active'); });
+      tab.classList.add('tab-active');
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.add('hidden'); });
+      var panel = document.getElementById('tab-' + tab.dataset.tab);
+      if (panel) panel.classList.remove('hidden');
+    });
+  });
+}
+
+// ---- Helpers ----
+function statusBadgeClass(status) {
+  if (status === 'confirmed')  return 'badge-success';
+  if (status === 'checked-in') return 'badge-info';
+  if (status === 'pending')    return 'badge-warning';
+  if (status === 'completed')  return 'badge-ghost';
+  if (status === 'cancelled')  return 'badge-error';
+  return 'badge-ghost';
+}
+
+function paymentLabel(paid) {
+  var map = { card: 'Card', bizum: 'Bizum', cash: 'Cash', bank: 'Transfer', pending: 'Pending', refunded: 'Refunded' };
+  return map[paid] || paid;
+}
+
+function createStatusBadge(status) {
+  var badge = document.createElement('span');
+  badge.className = 'badge badge-sm ' + statusBadgeClass(status);
+  badge.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('-', '-');
+  return badge;
+}
+
+// ---- Filter helpers ----
+function getActiveFilters() {
+  return {
+    search: (document.getElementById('active-search').value || '').toLowerCase().trim(),
+    status: document.getElementById('active-status-filter').value,
+    from:   document.getElementById('active-date-from').value,
+    to:     document.getElementById('active-date-to').value,
+  };
+}
+
+function getPastFilters() {
+  return {
+    search:  (document.getElementById('past-search').value || '').toLowerCase().trim(),
+    country: document.getElementById('past-country-filter').value,
+    status:  document.getElementById('past-status-filter').value,
+    from:    document.getElementById('past-date-from').value,
+    to:      document.getElementById('past-date-to').value,
+  };
+}
+
+function filterActive(f) {
+  return MOCK_BOOKINGS.filter(function(b) {
+    if (!ACTIVE_STATUSES.includes(b.status)) return false;
+    if (f.search && !b.name.toLowerCase().includes(f.search) && !b.id.toLowerCase().includes(f.search)) return false;
+    if (f.status !== 'all' && b.status !== f.status) return false;
+    if (f.from && b.checkin < f.from) return false;
+    if (f.to   && b.checkin > f.to)   return false;
+    return true;
+  });
+}
+
+function filterPast(f) {
+  return MOCK_BOOKINGS.filter(function(b) {
+    if (!PAST_STATUSES.includes(b.status)) return false;
+    if (f.search  && !b.name.toLowerCase().includes(f.search) && !b.id.toLowerCase().includes(f.search)) return false;
+    if (f.country !== 'all' && b.country !== f.country) return false;
+    if (f.status  !== 'all' && b.status  !== f.status)  return false;
+    if (f.from && b.checkin < f.from) return false;
+    if (f.to   && b.checkin > f.to)   return false;
+    return true;
+  });
+}
+
+function sortRows(rows, sort) {
+  return rows.slice().sort(function(a, b) {
+    var av = a[sort.col], bv = b[sort.col];
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return sort.dir === 'asc' ? -1 : 1;
+    if (av > bv) return sort.dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+}
+
+// ---- Render tables ----
+function renderTable(tbodyId, rows) {
+  var tbody = document.getElementById(tbodyId);
+  var emptyId = tbodyId === 'active-tbody' ? 'active-empty' : 'past-empty';
+  var emptyEl = document.getElementById(emptyId);
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+  if (rows.length === 0) {
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  rows.forEach(function(b) {
+    var tr = document.createElement('tr');
+
+    function td(content) {
+      var cell = document.createElement('td');
+      if (typeof content === 'string' || typeof content === 'number') {
+        cell.textContent = content;
+      } else if (content instanceof Node) {
+        cell.appendChild(content);
+      }
+      return cell;
+    }
+
+    // ID
+    var idSpan = document.createElement('span');
+    idSpan.className = 'font-mono text-xs';
+    idSpan.textContent = b.id;
+    tr.appendChild(td(idSpan));
+
+    // Name
+    var nameTd = document.createElement('td');
+    nameTd.className = 'font-medium whitespace-nowrap';
+    nameTd.textContent = b.name;
+    tr.appendChild(nameTd);
+
+    // Country flag
+    var flagTd = document.createElement('td');
+    var flagSpan = document.createElement('span');
+    flagSpan.className = 'text-lg';
+    flagSpan.title = COUNTRY_NAMES[b.country] || b.country;
+    flagSpan.textContent = (COUNTRY_FLAGS[b.country] || '') + ' ' + b.country;
+    flagTd.appendChild(flagSpan);
+    tr.appendChild(flagTd);
+
+    tr.appendChild(td(b.checkin));
+    tr.appendChild(td(b.checkout));
+    tr.appendChild(td(b.nights));
+
+    // Bed
+    var bedTd = document.createElement('td');
+    bedTd.className = 'text-xs whitespace-nowrap';
+    bedTd.textContent = b.bed;
+    tr.appendChild(bedTd);
+
+    // Status badge
+    var statusTd = document.createElement('td');
+    statusTd.appendChild(createStatusBadge(b.status));
+    tr.appendChild(statusTd);
+
+    // Total
+    var totalTd = document.createElement('td');
+    totalTd.className = 'font-semibold';
+    totalTd.textContent = b.total > 0 ? '\u20AC' + b.total : '\u2014';
+    tr.appendChild(totalTd);
+
+    // Payment
+    var payTd = document.createElement('td');
+    var payBadge = document.createElement('span');
+    payBadge.className = 'badge badge-outline badge-sm';
+    payBadge.textContent = paymentLabel(b.paid);
+    payTd.appendChild(payBadge);
+    tr.appendChild(payTd);
+
+    // Actions
+    var actionsTd = document.createElement('td');
+    actionsTd.className = 'flex gap-1 flex-wrap';
+
+    var viewBtn = document.createElement('button');
+    viewBtn.className = 'btn btn-xs btn-ghost';
+    viewBtn.textContent = 'View';
+    viewBtn.addEventListener('click', function() { openModal(b); });
+    actionsTd.appendChild(viewBtn);
+
+    if (b.status === 'confirmed') {
+      var ciBtn = document.createElement('button');
+      ciBtn.className = 'btn btn-xs btn-primary';
+      ciBtn.textContent = 'Check In';
+      ciBtn.addEventListener('click', function() { handleCheckIn(b.id); });
+      actionsTd.appendChild(ciBtn);
+    }
+    if (b.status === 'checked-in') {
+      var coBtn = document.createElement('button');
+      coBtn.className = 'btn btn-xs btn-outline';
+      coBtn.textContent = 'Check Out';
+      coBtn.addEventListener('click', function() { handleCheckOut(b.id); });
+      actionsTd.appendChild(coBtn);
+    }
+
+    tr.appendChild(actionsTd);
+    tbody.appendChild(tr);
+  });
+}
+
+function handleCheckIn(id) {
+  console.log('[Mock] Check-in booking:', id);
+  showNotification('Check-in recorded for ' + id + ' (mock)');
+}
+function handleCheckOut(id) {
+  console.log('[Mock] Check-out booking:', id);
+  showNotification('Check-out recorded for ' + id + ' (mock)');
+}
+
+function showNotification(msg) {
+  // Reuse a simple alert for mock actions
+  var div = document.createElement('div');
+  div.className = 'alert alert-success shadow-lg';
+  div.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:9999;max-width:300px;';
+  var span = document.createElement('span');
+  span.textContent = msg;
+  div.appendChild(span);
+  document.body.appendChild(div);
+  setTimeout(function() { if (div.parentNode) div.parentNode.removeChild(div); }, 3000);
+}
+
+// ---- Refresh functions ----
+function refreshActive() {
+  var rows = sortRows(filterActive(getActiveFilters()), activeSort);
+  renderTable('active-tbody', rows);
+  updateSortIndicators('active-thead', activeSort);
+}
+
+function refreshPast() {
+  var rows = sortRows(filterPast(getPastFilters()), pastSort);
+  renderTable('past-tbody', rows);
+  updateSortIndicators('past-thead', pastSort);
+}
+
+function updateSortIndicators(theadId, sort) {
+  var thead = document.getElementById(theadId);
+  if (!thead) return;
+  thead.querySelectorAll('th[data-col]').forEach(function(th) {
+    var ind = th.querySelector('.sort-indicator');
+    if (ind) ind.textContent = th.dataset.col === sort.col ? (sort.dir === 'asc' ? ' \u25B2' : ' \u25BC') : '';
+  });
+}
+
+// ---- Sort click handlers ----
+function initSortHeaders(theadId, sortState, refreshFn) {
+  var thead = document.getElementById(theadId);
+  if (!thead) return;
+  thead.querySelectorAll('th[data-col]').forEach(function(th) {
+    th.addEventListener('click', function() {
+      if (sortState.col === th.dataset.col) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.col = th.dataset.col;
+        sortState.dir = 'asc';
+      }
+      refreshFn();
+    });
+  });
+}
+
+// ---- Filter event bindings ----
+function initFilterListeners() {
+  ['active-search','active-status-filter','active-date-from','active-date-to'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', refreshActive);
+  });
+  ['past-search','past-country-filter','past-status-filter','past-date-from','past-date-to'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', refreshPast);
+  });
+}
+
+function resetActiveFilters() {
+  ['active-search','active-date-from','active-date-to'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('active-status-filter').value = 'all';
+  refreshActive();
+}
+
+function resetPastFilters() {
+  ['past-search','past-date-from','past-date-to'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('past-country-filter').value = 'all';
+  document.getElementById('past-status-filter').value  = 'all';
+  refreshPast();
+}
+
+// ---- Export CSV (mock) ----
+function exportCSV() {
+  var rows = filterPast(getPastFilters());
+  var header = ['ID','Name','Country','Check-in','Check-out','Nights','Bed','Status','Total','Payment'];
+  var lines = [header.join(',')].concat(rows.map(function(b) {
+    return [b.id, '"' + b.name + '"', b.country, b.checkin, b.checkout, b.nights, '"' + b.bed + '"', b.status, b.total, b.paid].join(',');
+  }));
+  console.log('[Mock CSV Export]\n' + lines.join('\n'));
+  showNotification('CSV exported to console (mock)');
+}
+
+// ---- Modal ----
+function openModal(b) {
+  var modal = document.getElementById('booking-modal');
+  var title = document.getElementById('modal-title');
+  var body  = document.getElementById('modal-body');
+  title.textContent = 'Booking ' + b.id + ' \u2014 ' + b.name;
+  while (body.firstChild) body.removeChild(body.firstChild);
+
+  function row(label, value) {
+    var div = document.createElement('div');
+    div.className = 'flex justify-between items-center py-1 border-b border-base-300';
+    var lbl = document.createElement('span');
+    lbl.className = 'text-base-content/60 text-sm font-medium';
+    lbl.textContent = label;
+    var val = document.createElement('span');
+    val.className = 'text-sm font-semibold';
+    if (value instanceof Node) {
+      val.appendChild(value);
+    } else {
+      val.textContent = value;
+    }
+    div.appendChild(lbl);
+    div.appendChild(val);
+    return div;
+  }
+
+  body.appendChild(row('Booking ID', b.id));
+  body.appendChild(row('Guest Name', b.name));
+
+  var flagWrap = document.createElement('span');
+  flagWrap.textContent = (COUNTRY_FLAGS[b.country] || '') + ' ' + (COUNTRY_NAMES[b.country] || b.country);
+  body.appendChild(row('Country', flagWrap));
+
+  body.appendChild(row('Check-in', b.checkin));
+  body.appendChild(row('Check-out', b.checkout));
+  body.appendChild(row('Nights', b.nights + ' night' + (b.nights !== 1 ? 's' : '')));
+  body.appendChild(row('Bed Assignment', b.bed));
+
+  var statusNode = createStatusBadge(b.status);
+  body.appendChild(row('Status', statusNode));
+
+  body.appendChild(row('Total', b.total > 0 ? '\u20AC' + b.total : 'Refunded / N/A'));
+
+  var payBadge = document.createElement('span');
+  payBadge.className = 'badge badge-outline badge-sm';
+  payBadge.textContent = paymentLabel(b.paid);
+  body.appendChild(row('Payment Method', payBadge));
+
+  body.appendChild(row('ID Type', b.docType.toUpperCase()));
+
+  modal.showModal();
+}
+
+// =====================================================
+// SVG CHARTS (pure SVG, no libraries)
+// =====================================================
+
+function renderOccupancyChart() {
+  var svg = document.getElementById('occupancy-chart');
+  if (!svg) return;
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  var W = 600, H = 150, padL = 45, padR = 20, padT = 15, padB = 30;
+  var chartW = W - padL - padR;
+  var chartH = H - padT - padB;
+
+  // Mock data: 30 days of occupancy %
+  var data = [65,70,58,75,80,85,72,68,90,88,76,65,70,82,95,88,72,60,75,80,85,90,78,65,72,80,88,76,70,68];
+
+  var minVal = 0, maxVal = 100;
+
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs).forEach(function(k) { el.setAttribute(k, attrs[k]); });
+    return el;
+  }
+
+  // Grid lines
+  [0, 25, 50, 75, 100].forEach(function(pct) {
+    var y = padT + chartH - (pct / maxVal) * chartH;
+    svg.appendChild(svgEl('line', { x1: padL, y1: y, x2: padL + chartW, y2: y, stroke: 'rgba(128,128,128,0.2)', 'stroke-width': '1' }));
+    var lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    lbl.setAttribute('x', padL - 4);
+    lbl.setAttribute('y', y + 4);
+    lbl.setAttribute('text-anchor', 'end');
+    lbl.setAttribute('font-size', '10');
+    lbl.setAttribute('fill', 'rgba(128,128,128,0.8)');
+    lbl.textContent = pct + '%';
+    svg.appendChild(lbl);
+  });
+
+  var xStep = chartW / (data.length - 1);
+
+  // Fill area
+  var areaPoints = 'M ' + padL + ',' + (padT + chartH);
+  data.forEach(function(val, i) {
+    var x = padL + i * xStep;
+    var y = padT + chartH - ((val - minVal) / (maxVal - minVal)) * chartH;
+    areaPoints += ' L ' + x + ',' + y;
+  });
+  areaPoints += ' L ' + (padL + chartW) + ',' + (padT + chartH) + ' Z';
+  svg.appendChild(svgEl('path', { d: areaPoints, fill: 'rgba(34,197,94,0.15)' }));
+
+  // Line
+  var linePoints = data.map(function(val, i) {
+    var x = padL + i * xStep;
+    var y = padT + chartH - ((val - minVal) / (maxVal - minVal)) * chartH;
+    return x + ',' + y;
+  }).join(' L ');
+  svg.appendChild(svgEl('polyline', {
+    points: data.map(function(val, i) {
+      return (padL + i * xStep) + ',' + (padT + chartH - ((val - minVal) / (maxVal - minVal)) * chartH);
+    }).join(' '),
+    fill: 'none',
+    stroke: 'rgb(34,197,94)',
+    'stroke-width': '2',
+    'stroke-linejoin': 'round',
+  }));
+
+  // X axis labels (every 5 days)
+  for (var i = 0; i < 30; i += 5) {
+    var x = padL + i * xStep;
+    var lbl2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    lbl2.setAttribute('x', x);
+    lbl2.setAttribute('y', H - 5);
+    lbl2.setAttribute('text-anchor', 'middle');
+    lbl2.setAttribute('font-size', '9');
+    lbl2.setAttribute('fill', 'rgba(128,128,128,0.8)');
+    lbl2.textContent = 'Day ' + (i + 1);
+    svg.appendChild(lbl2);
+  }
+}
+
+function renderRevenueChart() {
+  var svg = document.getElementById('revenue-chart');
+  if (!svg) return;
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  var months  = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
+  var revenues = [180, 220, 160, 195, 280, 340];
+  var W = 600, H = 220, padL = 50, padR = 20, padT = 20, padB = 40;
+  var chartW = W - padL - padR;
+  var chartH = H - padT - padB;
+  var maxRev  = 400;
+  var barW    = Math.floor(chartW / months.length * 0.55);
+  var spacing = chartW / months.length;
+
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs).forEach(function(k) { el.setAttribute(k, attrs[k]); });
+    return el;
+  }
+
+  // Grid lines
+  [0, 100, 200, 300, 400].forEach(function(val) {
+    var y = padT + chartH - (val / maxRev) * chartH;
+    svg.appendChild(svgEl('line', { x1: padL, y1: y, x2: padL + chartW, y2: y, stroke: 'rgba(128,128,128,0.2)', 'stroke-width': '1' }));
+    var lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    lbl.setAttribute('x', padL - 4);
+    lbl.setAttribute('y', y + 4);
+    lbl.setAttribute('text-anchor', 'end');
+    lbl.setAttribute('font-size', '10');
+    lbl.setAttribute('fill', 'rgba(128,128,128,0.8)');
+    lbl.textContent = '\u20AC' + val;
+    svg.appendChild(lbl);
+  });
+
+  // Bars
+  months.forEach(function(month, i) {
+    var rev = revenues[i];
+    var barH = (rev / maxRev) * chartH;
+    var x = padL + i * spacing + (spacing - barW) / 2;
+    var y = padT + chartH - barH;
+
+    svg.appendChild(svgEl('rect', {
+      x: x, y: y, width: barW, height: barH,
+      fill: 'rgb(34,197,94)', rx: '3',
+    }));
+
+    // Euro label on top
+    var topLbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    topLbl.setAttribute('x', x + barW / 2);
+    topLbl.setAttribute('y', y - 4);
+    topLbl.setAttribute('text-anchor', 'middle');
+    topLbl.setAttribute('font-size', '10');
+    topLbl.setAttribute('font-weight', 'bold');
+    topLbl.setAttribute('fill', 'rgb(34,197,94)');
+    topLbl.textContent = '\u20AC' + rev;
+    svg.appendChild(topLbl);
+
+    // Month label
+    var mLbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    mLbl.setAttribute('x', x + barW / 2);
+    mLbl.setAttribute('y', H - 10);
+    mLbl.setAttribute('text-anchor', 'middle');
+    mLbl.setAttribute('font-size', '11');
+    mLbl.setAttribute('fill', 'rgba(128,128,128,0.9)');
+    mLbl.textContent = month;
+    svg.appendChild(mLbl);
+  });
+}
+
+function renderCountryChart() {
+  var container = document.getElementById('country-chart');
+  if (!container) return;
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  var data = [
+    { flag: '\uD83C\uDDEA\uD83C\uDDF8', name: 'Spain',    pct: 35 },
+    { flag: '\uD83C\uDDEB\uD83C\uDDF7', name: 'France',   pct: 28 },
+    { flag: '\uD83C\uDDE9\uD83C\uDDEA', name: 'Germany',  pct: 15 },
+    { flag: '\uD83C\uDDF5\uD83C\uDDF9', name: 'Portugal', pct: 12 },
+    { flag: '\uD83C\uDDEC\uD83C\uDDE7', name: 'UK',       pct:  5 },
+    { flag: '\uD83C\uDF0D',             name: 'Other',    pct:  5 },
+  ];
+
+  data.forEach(function(d) {
+    var row = document.createElement('div');
+    row.className = 'flex items-center gap-3';
+
+    var label = document.createElement('div');
+    label.className = 'w-32 flex items-center gap-2 text-sm flex-shrink-0';
+    var flagEl = document.createElement('span');
+    flagEl.textContent = d.flag;
+    var nameEl = document.createElement('span');
+    nameEl.textContent = d.name;
+    label.appendChild(flagEl);
+    label.appendChild(nameEl);
+
+    var barWrap = document.createElement('div');
+    barWrap.className = 'flex-1 bg-base-300 rounded-full h-4 overflow-hidden';
+    var bar = document.createElement('div');
+    bar.className = 'h-full bg-success rounded-full transition-all';
+    bar.style.width = d.pct + '%';
+    barWrap.appendChild(bar);
+
+    var pctEl = document.createElement('span');
+    pctEl.className = 'text-sm font-semibold w-10 text-right flex-shrink-0';
+    pctEl.textContent = d.pct + '%';
+
+    row.appendChild(label);
+    row.appendChild(barWrap);
+    row.appendChild(pctEl);
+    container.appendChild(row);
+  });
+}
+
+function renderTrendsTable() {
+  var tbody = document.getElementById('trends-tbody');
+  if (!tbody) return;
+  var days = [
+    { rank: 1, day: 'Monday',    avg: 4.2, pct: 92 },
+    { rank: 2, day: 'Friday',    avg: 3.8, pct: 84 },
+    { rank: 3, day: 'Saturday',  avg: 3.5, pct: 78 },
+    { rank: 4, day: 'Sunday',    avg: 3.1, pct: 69 },
+    { rank: 5, day: 'Wednesday', avg: 2.7, pct: 60 },
+  ];
+  days.forEach(function(d) {
+    var tr = document.createElement('tr');
+
+    var tdRank = document.createElement('td');
+    var rankBadge = document.createElement('span');
+    rankBadge.className = 'badge ' + (d.rank === 1 ? 'badge-warning' : d.rank === 2 ? 'badge-ghost' : 'badge-ghost') + ' badge-sm';
+    rankBadge.textContent = '#' + d.rank;
+    tdRank.appendChild(rankBadge);
+
+    var tdDay = document.createElement('td');
+    tdDay.className = 'font-medium';
+    tdDay.textContent = d.day;
+
+    var tdAvg = document.createElement('td');
+    tdAvg.textContent = d.avg.toFixed(1) + '/day';
+
+    var tdBar = document.createElement('td');
+    var barWrap = document.createElement('div');
+    barWrap.className = 'w-24 bg-base-300 rounded-full h-3 overflow-hidden';
+    var bar = document.createElement('div');
+    bar.className = 'h-full bg-success rounded-full';
+    bar.style.width = d.pct + '%';
+    barWrap.appendChild(bar);
+    tdBar.appendChild(barWrap);
+
+    tr.appendChild(tdRank);
+    tr.appendChild(tdDay);
+    tr.appendChild(tdAvg);
+    tr.appendChild(tdBar);
+    tbody.appendChild(tr);
+  });
+}
+
+// =====================================================
+// INIT
+// =====================================================
+document.addEventListener('DOMContentLoaded', function() {
+  initTabs();
+  initFilterListeners();
+  initSortHeaders('active-thead', activeSort, refreshActive);
+  initSortHeaders('past-thead',   pastSort,   refreshPast);
+  refreshActive();
+  refreshPast();
+  renderOccupancyChart();
+  renderRevenueChart();
+  renderCountryChart();
+  renderTrendsTable();
+});
+</script>

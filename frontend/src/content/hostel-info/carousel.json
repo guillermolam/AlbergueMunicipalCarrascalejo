@@ -1,0 +1,7 @@
+[
+  {"id": "c1", "type": "carousel", "title": "The Journey",       "subtitle": "Hiking & Nature",         "image": "/images/carousel/journey-hiking.jpg",    "order": 1},
+  {"id": "c2", "type": "carousel", "title": "Merida",            "subtitle": "Roman Ruins & Amphitheater","image": "/images/carousel/merida-roman-ruins.jpg","description": "35 km away", "order": 2},
+  {"id": "c3", "type": "carousel", "title": "Extremadura",       "subtitle": "Natural Landscapes",      "image": "/images/carousel/extremadura-landscape.jpg","order": 3},
+  {"id": "c4", "type": "carousel", "title": "El Carrascalejo",   "subtitle": "Your Destination",        "image": "/images/carousel/carrascalejo-village.jpg", "order": 4},
+  {"id": "c5", "type": "carousel", "title": "Via de la Plata",   "subtitle": "Historic Route",          "image": "/images/carousel/via-plata-route.jpg",    "order": 5}
+]

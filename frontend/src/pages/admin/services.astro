@@ -1,7 +1,11 @@
 ---
-export const prerender = true;
-
+// On-demand rendering: admin-role required
 import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const { userId: _uid } = Astro.locals.auth();
+if (!_uid || Astro.locals.role !== 'admin') {
+  return Astro.redirect(`/auth?from=${Astro.url.pathname}&reason=unauthorized`, 302);
+}
 
 // Service health data (mock for now)
 const services = [

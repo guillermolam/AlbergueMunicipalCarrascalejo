@@ -1,138 +1,1423 @@
 ---
-import '../styles/figma-design.css';
 import '../styles/global.css';
+import '../styles/figma-design.css';
+import { getD1, db, hostelConfig } from '../db/helpers';
+import { eq } from 'drizzle-orm';
 
 export interface Props {
   title?: string;
   description?: string;
   showHeader?: boolean;
   showFooter?: boolean;
+  lang?: string;
 }
 
 const {
-  title = 'Albergue Municipal Carrascalejo',
-  description = 'Albergue de peregrinos en el Camino de Santiago',
+  title = 'Albergue Municipal de El Carrascalejo',
+  description = 'Tu refugio en el Camino de Santiago — Vía de la Plata. Alojamiento para peregrinos en Extremadura.',
   showHeader = true,
   showFooter = true,
+  lang = 'es',
 } = Astro.props;
+
+// Auth state for header pill.
+// Prerendered pages bypass the middleware so locals.auth may not be a function.
+const authState = typeof Astro.locals.auth === 'function' ? Astro.locals.auth() : null;
+const userId = authState?.userId ?? null;
+const role = Astro.locals.role ?? 'guest';
+const localUser = Astro.locals.user ?? null;
+const dashboardHref = role === 'admin' ? '/admin' : '/dashboard';
+
+// Fetch Clerk avatar + display name when signed in (non-prerendered pages only)
+let avatarUrl: string | null = null;
+let displayName = localUser?.name?.split(' ')[0] ?? 'Mi cuenta';
+let userInitials = displayName.slice(0, 2).toUpperCase();
+if (userId && typeof Astro.locals.currentUser === 'function') {
+  try {
+    const clerkUser = await Astro.locals.currentUser();
+    avatarUrl = clerkUser?.imageUrl ?? null;
+    const first = clerkUser?.firstName ?? '';
+    const last  = clerkUser?.lastName  ?? '';
+    displayName = first || last
+      ? [first, last].filter(Boolean).join(' ')
+      : (localUser?.name ?? 'Mi cuenta');
+    userInitials = [first?.[0], last?.[0]].filter(Boolean).join('').toUpperCase() || 'U';
+  } catch { /* non-critical */ }
+}
+
+// ── Hostel config from D1 — queried on every SSR request ─────────────────────
+// Falls back to real known values so the footer is never empty in dev mode.
+const d1 = await getD1();
+let hostel: typeof hostelConfig.$inferSelect | null = null;
+if (d1) {
+  try {
+    const rows = await db(d1).select().from(hostelConfig).where(eq(hostelConfig.id, 1)).limit(1);
+    hostel = rows[0] ?? null;
+  } catch { /* non-critical — use fallbacks */ }
+}
+
+// Fallbacks match the real data so local Vite dev without wrangler still shows correct info
+const footerPhone          = hostel?.phone          ?? '+34 695 90 43 44';
+const footerEmail          = hostel?.email          ?? 'elcarrascalejoalbergue@gmail.com';
+const footerCif            = hostel?.cif            ?? null;
+const footerTourismLicense = hostel?.tourismLicense ?? 'H-CC-0023';
+const footerInsurance      = hostel?.insurancePolicy ?? null;
+const footerAddressStreet  = hostel?.addressStreet   ?? 'Paraje Cuesta, s/n';
+const footerAddressPost    = hostel?.addressPostcode ?? '06894';
+const footerAddressTown    = hostel?.addressTown     ?? 'El Carrascalejo';
+const footerAddressProv    = hostel?.addressProvince ?? 'Badajoz';
+const footerLat            = hostel?.latitude        ?? 39.023831;
+const footerLng            = hostel?.longitude       ?? -6.337627;
+
+// WhatsApp deep-link — strip spaces and leading + for wa.me format
+const footerPhoneDigits    = footerPhone.replace(/[\s\-()]/g, '').replace(/^\+/, '');
+const footerWhatsApp       = `https://wa.me/${footerPhoneDigits}`;
+const footerOsmUrl         = `https://www.openstreetmap.org/?mlat=${footerLat}&mlon=${footerLng}&zoom=16`;
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#00AB39" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_ES" />
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script type="module" src="/src/scripts/runtime.ts"></script>
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <script>
+      import '../scripts/runtime.ts';
+    </script>
+
+    <style>
+      /* Header pill buttons - SVG stroke based */
+      .pill-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.1rem;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.95rem;
+        color: #1A1A1A;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        /* Spec: whileHover: { scale: 1.05 }, whileTap: { scale: 0.95 } */
+        transition: transform 200ms ease, filter 200ms ease;
+      }
+      .pill-btn:hover {
+        transform: scale(1.05);
+      }
+      .pill-btn:active {
+        transform: scale(0.95);
+      }
+      .pill-btn svg.pill-border {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      .pill-btn svg.pill-border rect {
+        fill: #FFFFFF;
+        rx: 20;
+        stroke: #00AB39;
+        stroke-width: 2.5;
+        transition: all 200ms ease;
+      }
+      .pill-btn .pill-label {
+        position: relative;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      /* Entrar pill fill: white → #00AB39 */
+      .pill-entrar svg.pill-border rect {
+        transition: fill 200ms ease, stroke 200ms ease;
+      }
+      .pill-entrar:hover svg.pill-border rect {
+        fill: #00AB39 !important;
+        stroke: #00AB39 !important;
+      }
+      /* Language pill same */
+      .pill-lang:hover svg.pill-border rect {
+        fill: #00AB39 !important;
+        stroke: #00AB39 !important;
+      }
+      .pill-lang:hover .pill-label,
+      .pill-entrar:hover .pill-label {
+        color: #FFFFFF !important;
+      }
+      .pill-lang:hover .pill-label svg,
+      .pill-entrar:hover .pill-label svg {
+        stroke: #FFFFFF !important;
+      }
+
+      /* User dropdown pill */
+      .user-pill-wrap {
+        position: relative;
+        display: inline-flex;
+      }
+      .user-pill-btn {
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0.45rem 0.9rem 0.45rem 0.5rem;
+        font-family: 'Patrick Hand', sans-serif;
+        font-size: 0.9rem;
+        color: #1A1A1A;
+      }
+      .user-avatar-circle {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #00AB39;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #fff;
+        font-family: 'Cabin Sketch', sans-serif;
+      }
+      .user-avatar-circle img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .user-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 180px;
+        background: #fff;
+        border: 1.5px solid #e0e0e0;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        z-index: 9999;
+        overflow: hidden;
+      }
+      .user-dropdown.open {
+        display: block;
+      }
+      .user-dropdown-name {
+        padding: 10px 16px 6px;
+        font-size: 0.78rem;
+        color: #888;
+        border-bottom: 1px solid #f0f0f0;
+        font-family: 'Patrick Hand', sans-serif;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .user-dropdown a,
+      .user-dropdown button.dd-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        color: #1A1A1A;
+        text-decoration: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: 'Patrick Hand', sans-serif;
+        transition: background 150ms;
+        text-align: left;
+      }
+      .user-dropdown a:hover,
+      .user-dropdown button.dd-item:hover {
+        background: #f5fdf7;
+        color: #00AB39;
+      }
+      .user-dropdown .dd-logout {
+        color: #c0392b;
+        border-top: 1px solid #f0f0f0;
+      }
+      .user-dropdown .dd-logout:hover {
+        background: #fff5f5;
+        color: #c0392b;
+      }
+
+      /* Pulsing green dot */
+      @keyframes pulse-indicator {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.3); opacity: 0.7; }
+      }
+      .pulse-indicator {
+        width: 8px;
+        height: 8px;
+        background: #00AB39;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        z-index: 3;
+        animation: pulse-indicator 2s ease-in-out infinite;
+      }
+
+      /* Wobble logo — Exact spec: rotate: [0, 4, -4, 0], y: [0, -2, 0], duration: 4s, repeat: Infinity */
+      .wobble-logo {
+        animation: logo-wobble 4s ease-in-out infinite;
+        transform-origin: center;
+        flex-shrink: 0;
+      }
+      @keyframes logo-wobble {
+        0%, 100% { transform: rotate(0deg) translateY(0); }
+        25%       { transform: rotate(4deg) translateY(-2px); }
+        50%       { transform: rotate(0deg) translateY(0); }
+        75%       { transform: rotate(-4deg) translateY(-1px); }
+      }
+      /* Logo group hover/tap */
+      .header-left:hover .wobble-logo { transform: rotate(0deg) scale(1.03); animation-play-state: paused; }
+
+      /* Header spring entrance — spec: initial: { y: -100, opacity: 0 }, transition: spring stiffness:100 */
+      /* Header */
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: rgba(255, 255, 255, 0.80);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        animation: header-enter 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        transition: box-shadow 200ms ease;
+      }
+      .site-header.scrolled {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      @keyframes header-enter {
+        from { transform: translateY(-100%); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
+      }
+      .header-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 68px;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+      }
+      .header-title {
+        font-family: 'Shadows Into Light', cursive;
+        font-size: 1.15rem;
+        color: #1A1A1A;
+        line-height: 1.2;
+        font-weight: 400;
+      }
+      .header-subtitle {
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.82rem;
+        color: #6B7280;
+        line-height: 1;
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      /* Nav link underline animation */
+      .nav-link {
+        position: relative;
+        color: #1A1A1A;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.95rem;
+        text-decoration: none;
+        padding: 0.25rem 0.375rem;
+        transition: color 200ms ease;
+      }
+      .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #00AB39;
+        transition: width 200ms ease;
+        border-radius: 1px;
+      }
+      .nav-link:hover { color: #00AB39; }
+      .nav-link:hover::after { width: 100%; }
+      .nav-link.active { color: #00AB39; }
+      .nav-link.active::after { width: 100%; }
+
+      /* Mobile hamburger */
+      .hamburger-btn {
+        display: none;
+        padding: 0.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .ham-bar {
+        display: block;
+        width: 22px;
+        height: 2px;
+        background: #1A1A1A;
+        border-radius: 2px;
+        transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 200ms ease,
+                    width 200ms ease;
+        transform-origin: center;
+      }
+      /* When nav is open, morph to X */
+      .hamburger-btn.active .ham-bar-1 {
+        transform: translateY(7px) rotate(45deg);
+      }
+      .hamburger-btn.active .ham-bar-2 {
+        opacity: 0;
+        transform: scaleX(0);
+      }
+      .hamburger-btn.active .ham-bar-3 {
+        transform: translateY(-7px) rotate(-45deg);
+      }
+
+      /* Mobile nav dropdown */
+      .mobile-nav {
+        display: block;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-8px);
+        transition: max-height 350ms cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 250ms ease,
+                    transform 250ms ease;
+        padding: 0 1rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+      }
+      .mobile-nav.open {
+        max-height: 400px;
+        opacity: 1;
+        transform: translateY(0);
+        padding: 0.75rem 1rem 1rem;
+      }
+      .mobile-nav-link {
+        display: block;
+        padding: 0.6rem 1rem;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 1.05rem;
+        color: #1A1A1A;
+        text-decoration: none;
+        border-radius: 8px;
+        opacity: 0;
+        transform: translateX(-12px);
+        transition: opacity 200ms ease, transform 200ms ease, background 200ms ease;
+      }
+      .mobile-nav.open .mobile-nav-link {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .mobile-nav.open .mobile-nav-link:nth-child(1) { transition-delay: 50ms; }
+      .mobile-nav.open .mobile-nav-link:nth-child(2) { transition-delay: 100ms; }
+      .mobile-nav.open .mobile-nav-link:nth-child(3) { transition-delay: 150ms; }
+      .mobile-nav.open .mobile-nav-link:nth-child(4) { transition-delay: 200ms; }
+      .mobile-nav.open .mobile-nav-link:nth-child(5) { transition-delay: 250ms; }
+      .mobile-nav-link:hover {
+        background: rgba(0, 171, 57, 0.08);
+        text-decoration: none;
+      }
+      .mobile-nav-bottom {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        opacity: 0;
+        transform: translateX(-12px);
+        transition: opacity 200ms ease 300ms, transform 200ms ease 300ms;
+      }
+      .mobile-nav.open .mobile-nav-bottom {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .mobile-acceso-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.6rem;
+        background: #00AB39;
+        color: #FFFFFF;
+        border-radius: 20px;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+      }
+      .mobile-lang-toggle {
+        display: flex;
+        border: 2px solid #00AB39;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      .mobile-lang-toggle button {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.8rem;
+        font-family: 'Patrick Hand', cursive;
+        border: none;
+        cursor: pointer;
+      }
+      .mobile-lang-toggle .lang-active {
+        background: #00AB39;
+        color: #FFFFFF;
+        font-weight: 600;
+      }
+      .mobile-lang-toggle .lang-inactive {
+        background: transparent;
+        color: #00AB39;
+      }
+
+      /* Desktop pills hidden on mobile */
+      .desktop-pills {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      /* Background pattern */
+      .bg-pattern-layer {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .bg-pattern-layer svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Footer styles */
+      .footer-main {
+        background: #006b24;
+        color: #FFFFFF;
+        padding: 3rem 0 0;
+        font-family: 'Patrick Hand', cursive;
+      }
+      .footer-container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+      .footer-section-1 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        padding-bottom: 2.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .footer-section-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        padding: 2.5rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .footer-heading {
+        font-family: 'Shadows Into Light', cursive;
+        font-size: 1.2rem;
+        color: #FFFFFF;
+        margin-bottom: 1rem;
+      }
+      .footer-text {
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        opacity: 0.85;
+      }
+      .footer-link {
+        color: #A5D6A7;
+        text-decoration: none;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.95rem;
+        transition: color 200ms ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .footer-link:hover {
+        color: #EAC102;
+        text-decoration: none;
+      }
+      .footer-links-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .footer-links-list li {
+        padding: 0.3rem 0;
+      }
+
+      /* Footer logo stamp */
+      .footer-stamp {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        /* Subtle outer glow ring matching the footer tone */
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.15), 0 4px 20px rgba(0,0,0,0.35);
+        overflow: hidden;
+      }
+      .footer-stamp-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        /* logo-dark.png is already white-on-dark — no filter needed */
+        opacity: 0.95;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+      .footer-stamp:hover .footer-stamp-logo {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+
+      /* Footer badges */
+      .flag-badge {
+        display: inline-block;
+        width: 28px;
+        height: 20px;
+        border-radius: 3px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .registro-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.75rem;
+        background: rgba(0, 171, 57, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.8rem;
+        color: #A5D6A7;
+        margin-top: 0.75rem;
+      }
+
+      /* Footer social icons */
+      .social-icons {
+        display: flex;
+        gap: 0.6rem;
+        margin-top: 0.75rem;
+      }
+      .social-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        background: transparent;
+        transition: all 200ms ease;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .social-icon:hover {
+        background: #FFFFFF;
+        color: #006b24;
+        border-color: #FFFFFF;
+        text-decoration: none;
+      }
+      .social-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* Footer certification pills */
+      .cert-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.75rem;
+        background: rgba(0, 171, 57, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.82rem;
+        color: #A5D6A7;
+        margin: 0.2rem;
+      }
+      .compliance-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.6rem;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.78rem;
+        color: #A5D6A7;
+        margin: 0.2rem;
+      }
+      .legal-links {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.25rem;
+      }
+      .legal-link {
+        color: rgba(255, 255, 255, 0.6);
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.82rem;
+        text-decoration: none;
+        transition: color 200ms ease;
+      }
+      .legal-link:hover {
+        color: #EAC102;
+        text-decoration: none;
+      }
+
+      /* Footer bottom bar */
+      .footer-bottom-stripe {
+        height: 6px;
+        background: linear-gradient(90deg, #00AB39, #66BB6A, #00AB39);
+      }
+      .footer-bottom {
+        background: #004d1f;
+        padding: 1.5rem 0 1rem;
+      }
+      .footer-bottom-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+      .footer-bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 1rem;
+      }
+      .footer-bottom-heading {
+        font-family: 'Shadows Into Light', cursive;
+        font-size: 0.95rem;
+        color: #FFFFFF;
+        margin-bottom: 0.6rem;
+      }
+      .footer-bottom-text {
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.5;
+      }
+      .footer-bottom-link {
+        color: #A5D6A7;
+        text-decoration: none;
+        font-size: 0.82rem;
+        transition: color 200ms ease;
+      }
+      .footer-bottom-link:hover {
+        color: #EAC102;
+        text-decoration: none;
+      }
+      .footer-copyright {
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.5);
+        text-align: center;
+      }
+      .footer-accessibility {
+        font-family: 'Patrick Hand', cursive;
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.35);
+        text-align: center;
+        margin-top: 0.75rem;
+      }
+
+      /* Contact info with icons */
+      .contact-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.85);
+      }
+      .contact-item svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        margin-top: 3px;
+        opacity: 0.7;
+      }
+      .contact-item a {
+        color: #A5D6A7;
+        text-decoration: none;
+      }
+      .contact-item a:hover {
+        color: #EAC102;
+        text-decoration: none;
+      }
+      .whatsapp-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        color: #25D366 !important;
+        font-size: 0.85rem;
+      }
+      .whatsapp-link:hover {
+        color: #1ebe57 !important;
+      }
+      .whatsapp-link svg {
+        width: 13px;
+        height: 13px;
+        margin-top: 0 !important;
+        opacity: 1 !important;
+        flex-shrink: 0;
+      }
+
+      /* Back to top */
+      .back-to-top {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 44px;
+        height: 44px;
+        background: #00AB39;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 171, 57, 0.3);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 300ms ease, transform 300ms ease, background-color 200ms ease;
+        z-index: 40;
+      }
+      .back-to-top.visible {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transform: translateY(0) !important;
+      }
+      .back-to-top:hover {
+        background: #006b24;
+        transform: translateY(-2px);
+      }
+
+      /* Responsive */
+      @media (max-width: 767px) {
+        .desktop-pills {
+          display: none !important;
+        }
+        .hamburger-btn {
+          display: flex !important;
+        }
+        .footer-section-1,
+        .footer-section-2 {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+        .footer-bottom-grid {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+        .header-title {
+          font-size: 1rem;
+        }
+        .header-subtitle {
+          font-size: 0.75rem;
+        }
+      }
+
+      @media (min-width: 768px) {
+        .hamburger-btn {
+          display: none !important;
+        }
+        .desktop-pills {
+          display: flex !important;
+        }
+      }
+
+      /* Footer logo wobble — spec: rotate: [0, 5, -5, 0], duration: 4s, repeat: Infinity */
+      .footer-stamp {
+        animation: logo-wobble 4s ease-in-out infinite;
+      }
+
+      /* Footer column scroll reveal */
+      .footer-col-reveal {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      .footer-col-reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .footer-col-reveal:nth-child(2) { transition-delay: 0.1s; }
+      .footer-col-reveal:nth-child(3) { transition-delay: 0.2s; }
+      .footer-col-reveal:nth-child(4) { transition-delay: 0.3s; }
+    </style>
   </head>
-  <body class="bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900 min-h-screen">
-    {
-      showHeader && (
-        <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
-          <nav class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <div class="text-2xl font-bold text-slate-800">🚶‍♂️</div>
-                <div>
-                  <h1 class="text-xl font-bold text-slate-800">Camino Dashboard</h1>
-                  <p class="text-xs text-slate-600">Tu progreso en el Camino</p>
-                </div>
-              </div>
 
-              <div class="hidden md:flex items-center gap-6">
-                <a
-                  href="/"
-                  class="text-slate-700 hover:text-slate-900 font-medium transition-colors"
-                >
-                  Inicio
-                </a>
-                <a
-                  href="/camino"
-                  class="text-slate-700 hover:text-slate-900 font-medium transition-colors"
-                >
-                  Dashboard
-                </a>
-                <a
-                  href="/book"
-                  class="text-slate-700 hover:text-slate-900 font-medium transition-colors"
-                >
-                  Reservas
-                </a>
-                <a
-                  href="/auth"
-                  class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition-colors font-medium"
-                >
-                  Iniciar Sesión
-                </a>
-              </div>
+  <body style="margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(180deg, #FFFFFF 0%, #f5f5f5 50%, #E8F5E9 100%); color: #1A1A1A; font-family: 'Patrick Hand', cursive;">
 
-              <button class="md:hidden p-2 rounded-lg hover:bg-slate-100">
-                <span class="text-slate-700">☰</span>
-              </button>
+    <!-- Hidden SVG Filters -->
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+      <defs>
+        <filter id="sketchy-filter">
+          <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+        </filter>
+        <filter id="sketchy-filter-strong">
+          <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="5" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" />
+        </filter>
+      </defs>
+    </svg>
+
+    <!-- Background Pattern: 15 SVG circles -->
+    <div class="bg-pattern-layer" aria-hidden="true">
+      <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+        <circle cx="120" cy="80" r="40" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 22s ease-in-out infinite;" />
+        <circle cx="350" cy="200" r="60" fill="none" stroke="#1A1A1A" stroke-width="2" opacity="0.1" style="animation: bg-drift 28s ease-in-out infinite; animation-delay: -3s;" />
+        <circle cx="600" cy="100" r="35" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 24s ease-in-out infinite; animation-delay: -6s;" />
+        <circle cx="900" cy="150" r="50" fill="none" stroke="#1A1A1A" stroke-width="2" opacity="0.1" style="animation: bg-drift 26s ease-in-out infinite; animation-delay: -2s;" />
+        <circle cx="1100" cy="80" r="30" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 20s ease-in-out infinite; animation-delay: -8s;" />
+        <circle cx="1300" cy="250" r="45" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 30s ease-in-out infinite; animation-delay: -4s;" />
+        <circle cx="200" cy="400" r="55" fill="none" stroke="#1A1A1A" stroke-width="2" opacity="0.1" style="animation: bg-drift 25s ease-in-out infinite; animation-delay: -7s;" />
+        <circle cx="500" cy="350" r="25" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 21s ease-in-out infinite; animation-delay: -1s;" />
+        <circle cx="750" cy="450" r="65" fill="none" stroke="#1A1A1A" stroke-width="2" opacity="0.1" style="animation: bg-drift 27s ease-in-out infinite; animation-delay: -5s;" />
+        <circle cx="1000" cy="400" r="38" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 23s ease-in-out infinite; animation-delay: -9s;" />
+        <circle cx="100" cy="650" r="42" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 29s ease-in-out infinite; animation-delay: -3s;" />
+        <circle cx="400" cy="700" r="33" fill="none" stroke="#1A1A1A" stroke-width="2" opacity="0.1" style="animation: bg-drift 22s ease-in-out infinite; animation-delay: -6s;" />
+        <circle cx="700" cy="650" r="48" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 26s ease-in-out infinite; animation-delay: -2s;" />
+        <circle cx="1050" cy="700" r="28" fill="none" stroke="#1A1A1A" stroke-width="2" opacity="0.1" style="animation: bg-drift 24s ease-in-out infinite; animation-delay: -8s;" />
+        <circle cx="1350" cy="600" r="52" fill="none" stroke="#00AB39" stroke-width="2" opacity="0.1" style="animation: bg-drift 28s ease-in-out infinite; animation-delay: -4s;" />
+      </svg>
+    </div>
+
+    {showHeader && (
+      <header class="site-header">
+        <div class="header-inner">
+          <!-- Left: Logo + Title -->
+          <a href="/" class="header-left">
+            <img
+              src="/logos/logo.png"
+              alt="Albergue Municipal El Carrascalejo"
+              class="wobble-logo"
+              width="44"
+              height="44"
+              style="border-radius:50%; object-fit:cover; width:44px; height:44px;"
+            />
+            <div>
+              <div class="header-title">Albergue Municipal de El Carrascalejo</div>
+              <div class="header-subtitle">Camino de Santiago</div>
             </div>
-          </nav>
-        </header>
-      )
-    }
+          </a>
 
-    <main>
+          <!-- Right: Pills (desktop) + Hamburger (mobile) -->
+          <div class="header-right">
+            <div class="desktop-pills">
+              <!-- Espanol Pill -->
+              <button class="pill-btn pill-lang" type="button" style="position: relative;">
+                <svg class="pill-border" aria-hidden="true">
+                  <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="20" />
+                </svg>
+                <span class="pulse-indicator"></span>
+                <span class="pill-label">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                  Espa&ntilde;ol
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </button>
+
+              <!-- Entrar / User Pill -->
+              {userId ? (
+                <div class="user-pill-wrap">
+                  <button class="pill-btn pill-entrar user-pill-btn" id="userPillBtn" aria-haspopup="true" aria-expanded="false" type="button">
+                    <svg class="pill-border" aria-hidden="true">
+                      <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="20" />
+                    </svg>
+                    <span class="pill-label" style="gap:0.5rem;">
+                      <span class="user-avatar-circle">
+                        {avatarUrl
+                          ? <img src={avatarUrl} alt={displayName} referrerpolicy="no-referrer" />
+                          : userInitials
+                        }
+                      </span>
+                      {displayName.split(' ')[0]}
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                  </button>
+                  <div class="user-dropdown" id="userDropdown" role="menu">
+                    <div class="user-dropdown-name">{displayName}{localUser?.email ? ` · ${localUser.email}` : ''}</div>
+                    <a href={dashboardHref} role="menuitem">
+                      {role === 'admin' ? (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          Panel Admin
+                        </>
+                      ) : (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          Mi Dashboard
+                        </>
+                      )}
+                    </a>
+                    <a href="/profile" role="menuitem">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Perfil
+                    </a>
+                    <button class="dd-item dd-logout" id="headerSignOutBtn" role="menuitem" type="button">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <a href="/auth" class="pill-btn pill-entrar">
+                  <svg class="pill-border" aria-hidden="true">
+                    <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="20" />
+                  </svg>
+                  <span class="pill-label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: stroke 200ms ease;">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Entrar
+                  </span>
+                </a>
+              )}
+            </div>
+
+            <!-- Mobile hamburger -->
+            <button class="hamburger-btn" id="mobile-menu-btn" aria-label="Abrir menu" aria-expanded="false">
+              <span class="ham-bar ham-bar-1"></span>
+              <span class="ham-bar ham-bar-2"></span>
+              <span class="ham-bar ham-bar-3"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile Nav Dropdown -->
+        <div class="mobile-nav" id="mobile-nav">
+          <a href="/" class="mobile-nav-link">Inicio</a>
+          <a href="/book" class="mobile-nav-link">Reservar</a>
+          <a href="/camino" class="mobile-nav-link">El Camino</a>
+          <a href="/info" class="mobile-nav-link">Informaci&oacute;n</a>
+          {userId ? (
+            <a href={dashboardHref} class="mobile-nav-link">
+              {role === 'admin' ? 'Panel Admin' : 'Mi Dashboard'}
+            </a>
+          ) : (
+            <a href="/dashboard" class="mobile-nav-link">Dashboard</a>
+          )}
+          <div class="mobile-nav-bottom">
+            {userId ? (
+              <button class="mobile-acceso-btn" id="mobileSignOutBtn" type="button" style="cursor:pointer;border:none;background:none;width:100%;text-align:left;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Cerrar sesión
+              </button>
+            ) : (
+              <a href="/auth" class="mobile-acceso-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Acceso
+              </a>
+            )}
+            <div class="mobile-lang-toggle">
+              <button class="lang-active">ES</button>
+              <button class="lang-inactive">EN</button>
+            </div>
+          </div>
+        </div>
+      </header>
+    )}
+
+    <main style="flex: 1; position: relative; z-index: 1;">
       <slot />
     </main>
 
-    {
-      showFooter && (
-        <footer class="bg-slate-800 text-white py-8 mt-16">
-          <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div>
-                <h3 class="text-lg font-bold mb-4">Camino Dashboard</h3>
-                <p class="text-slate-300 text-sm">
-                  Tu compañero de viaje en el Camino de Santiago. Registra tu progreso y comparte tu
-                  experiencia.
+    {showFooter && (
+      <footer>
+        <!-- Main footer -->
+        <div class="footer-main">
+          <div class="footer-container">
+
+            <!-- Section 1: Info + Quick Links -->
+            <div class="footer-section-1">
+              <!-- Left: Logo, description, flags, registro -->
+              <div class="footer-col-reveal">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                  <div class="footer-stamp">
+                    <img
+                      src="/logos/logo-dark.png"
+                      alt="Albergue de Peregrinos El Carrascalejo"
+                      class="footer-stamp-logo"
+                    />
+                  </div>
+                  <div>
+                    <div class="footer-heading" style="margin-bottom: 0;">Albergue Municipal de Carrascalejo</div>
+                  </div>
+                </div>
+                <p class="footer-text" style="margin-bottom: 1rem;">
+                  Tu refugio en el Camino de Santiago — V&iacute;a de la Plata. Alojamiento para peregrinos en el coraz&oacute;n de Extremadura, con ambiente familiar y todas las comodidades para el descanso del caminante.
                 </p>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <div class="flag-badge" style="background: linear-gradient(180deg, #ED1C24 33%, #EAC102 33%, #EAC102 66%, #ED1C24 66%);"></div>
+                  <div class="flag-badge" style="background: linear-gradient(180deg, #006b24 50%, #FFFFFF 50%);"></div>
+                  <div class="flag-badge" style="background: linear-gradient(90deg, #0071BC 33%, #FFFFFF 33%, #FFFFFF 66%, #ED1C24 66%);"></div>
+                </div>
+                <div class="registro-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                  Registro Tur&iacute;stico {footerTourismLicense}
+                </div>
               </div>
-              <div>
-                <h4 class="font-semibold mb-4">Enlaces útiles</h4>
-                <ul class="space-y-2 text-slate-300 text-sm">
-                  <li>
-                    <a href="#" class="hover:text-white transition-colors">
-                      Guía del peregrino
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" class="hover:text-white transition-colors">
-                      Albergues
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" class="hover:text-white transition-colors">
-                      Rutas
-                    </a>
-                  </li>
+
+              <!-- Right: Enlaces Rapidos -->
+              <div class="footer-col-reveal">
+                <div class="footer-heading">Enlaces R&aacute;pidos</div>
+                <ul class="footer-links-list">
+                  <li><a href="/" class="footer-link"><span>&rarr;</span> Inicio</a></li>
+                  <li><a href="/book" class="footer-link"><span>&rarr;</span> Reservar</a></li>
+                  <li><a href="/dashboard" class="footer-link"><span>&rarr;</span> Mi Reserva</a></li>
+                  <li><a href="https://www.gronze.com" target="_blank" rel="noopener noreferrer" class="footer-link"><span>&rarr;</span> Info del Camino <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></li>
+                  <li><a href="https://www.turismoextremadura.com" target="_blank" rel="noopener noreferrer" class="footer-link"><span>&rarr;</span> Turismo Extremadura <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></li>
+                  <li><a href="https://www.consumo.gob.es" target="_blank" rel="noopener noreferrer" class="footer-link"><span>&rarr;</span> Derechos del Consumidor <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></li>
                 </ul>
               </div>
-              <div>
-                <h4 class="font-semibold mb-4">Contacto</h4>
-                <p class="text-slate-300 text-sm">
-                  ¿Preguntas o sugerencias?
-                  <br />
-                  <a
-                    href="mailto:info@camino.com"
-                    class="text-slate-300 hover:text-white transition-colors"
-                  >
-                    info@camino.com
+            </div>
+
+            <!-- Section 2: Contact + Certifications -->
+            <div class="footer-section-2">
+              <!-- Left: Contacto + Siguenos -->
+              <div class="footer-col-reveal">
+                <div class="footer-heading">Contacto</div>
+                <!-- Address — links to OpenStreetMap -->
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <a href={footerOsmUrl} target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;">
+                    {footerAddressStreet}<br/>
+                    {footerAddressPost} {footerAddressTown}<br/>
+                    {footerAddressProv}, Espa&ntilde;a
                   </a>
-                </p>
+                </div>
+
+                <!-- Phone + WhatsApp -->
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <span style="display:flex;flex-direction:column;gap:0.2rem;">
+                    <a href={`tel:${footerPhone.replace(/[\s\-]/g,'')}`}>{footerPhone}</a>
+                    <a
+                      href={footerWhatsApp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="whatsapp-link"
+                      aria-label="Contactar por WhatsApp"
+                    >
+                      <!-- WhatsApp logo SVG (official brand shape, no innerHTML) -->
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+                      </svg>
+                      WhatsApp
+                    </a>
+                  </span>
+                </div>
+
+                <!-- Email -->
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <a href={`mailto:${footerEmail}`}>{footerEmail}</a>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                  <div class="footer-heading" style="font-size: 1.05rem;">S&iacute;guenos</div>
+                  <div class="social-icons">
+                    <!-- Facebook -->
+                    <a href="#" class="social-icon" aria-label="Facebook">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                    </a>
+                    <!-- Instagram -->
+                    <a href="#" class="social-icon" aria-label="Instagram">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                    </a>
+                    <!-- Twitter -->
+                    <a href="#" class="social-icon" aria-label="Twitter">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+                    </a>
+                    <!-- YouTube -->
+                    <a href="#" class="social-icon" aria-label="YouTube">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                    </a>
+                    <!-- Star -->
+                    <a href="#" class="social-icon" aria-label="Favoritos">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Certificaciones -->
+              <div class="footer-col-reveal">
+                <div class="footer-heading">Certificaciones</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1rem;">
+                  <span class="cert-pill">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                    Albergue Oficial del Camino de Santiago
+                  </span>
+                  <span class="cert-pill">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                    Turismo de Extremadura
+                  </span>
+                  <span class="cert-pill">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                    Sello de Calidad Tur&iacute;stica
+                  </span>
+                  <span class="cert-pill">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                    Accesibilidad Universal
+                  </span>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1rem;">
+                  <span class="compliance-badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Cumplimiento RGPD
+                  </span>
+                  <span class="compliance-badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Cumplimiento LSSI
+                  </span>
+                  <span class="compliance-badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Cumplimiento LOPD
+                  </span>
+                  <span class="compliance-badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Conexi&oacute;n Segura SSL
+                  </span>
+                </div>
+
+                <div class="legal-links">
+                  <a href="/privacidad" class="legal-link">Pol&iacute;tica de Privacidad</a>
+                  <a href="/terminos" class="legal-link">T&eacute;rminos y Condiciones</a>
+                  <a href="/cookies" class="legal-link">Pol&iacute;tica de Cookies</a>
+                  <a href="/aviso-legal" class="legal-link">Aviso Legal</a>
+                </div>
               </div>
             </div>
-            <div class="border-t border-slate-700 mt-8 pt-8 text-center text-slate-400 text-sm">
-              © 2024 Camino Dashboard. Hecho con ❤️ para peregrinos.
+          </div>
+        </div>
+
+        <!-- Bottom stripe -->
+        <div class="footer-bottom-stripe"></div>
+
+        <!-- Bottom bar -->
+        <div class="footer-bottom">
+          <div class="footer-bottom-inner">
+            <div class="footer-bottom-grid">
+              <!-- Informacion Legal -->
+              <div>
+                <div class="footer-bottom-heading">Informaci&oacute;n Legal</div>
+                <div class="footer-bottom-text">
+                  CIF: {footerCif}<br/>
+                  Licencia Tur&iacute;stica: {footerTourismLicense}<br/>
+                  Seguro RC: P&oacute;liza n&ordm; {footerInsurance}
+                </div>
+              </div>
+
+              <!-- Derechos del Consumidor -->
+              <div>
+                <div class="footer-bottom-heading">Derechos del Consumidor</div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                  <a href="https://www.consumo.gob.es" target="_blank" rel="noopener noreferrer" class="footer-bottom-link">Oficina de Consumo <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+                  <a href="https://www.juntaex.es/consejerias/consumo" target="_blank" rel="noopener noreferrer" class="footer-bottom-link">Junta de Extremadura <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+                  <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" class="footer-bottom-link">Resoluci&oacute;n de Litigios en L&iacute;nea (UE) <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+                </div>
+              </div>
+
+              <!-- Copyright -->
+              <div style="display: flex; flex-direction: column; justify-content: center; text-align: right;">
+                <div class="footer-bottom-text">
+                  &copy; {new Date().getFullYear()} Albergue Municipal<br/>de El Carrascalejo.<br/>Todos los derechos reservados.
+                </div>
+              </div>
+            </div>
+
+            <div class="footer-copyright">
+              Hecho con &#10084; para los peregrinos del Camino de Santiago
+            </div>
+            <div class="footer-accessibility">
+              Este sitio web cumple con las directrices de accesibilidad WCAG 2.1 nivel AA y con la normativa europea de accesibilidad web.
             </div>
           </div>
-        </footer>
-      )
-    }
+        </div>
+      </footer>
+    )}
+
+    <!-- Back to top -->
+    <button
+      id="back-to-top"
+      class="back-to-top"
+      aria-label="Volver arriba"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15" />
+      </svg>
+    </button>
+
+    <script>
+      // Mobile hamburger toggle — animated max-height slide + X morph
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+      const mobileNav = document.getElementById('mobile-nav');
+
+      mobileMenuBtn?.addEventListener('click', () => {
+        const isOpen = mobileNav?.classList.contains('open');
+        mobileNav?.classList.toggle('open', !isOpen);
+        mobileMenuBtn?.classList.toggle('active', !isOpen);
+        mobileMenuBtn?.setAttribute('aria-expanded', String(!isOpen));
+      });
+
+      // Back to top — class-based fade
+      const backBtn = document.getElementById('back-to-top');
+      window.addEventListener('scroll', () => {
+        backBtn?.classList.toggle('visible', window.scrollY > 300);
+        document.querySelector('.site-header')?.classList.toggle('scrolled', window.scrollY > 10);
+      }, { passive: true });
+      backBtn?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // Footer logo wobble — spec: rotate: [0, 5, -5, 0], duration: 4s, repeat: Infinity
+      // (handled via CSS animation on .footer-stamp)
+
+      // Footer reveal
+      const footerCols = document.querySelectorAll('.footer-col-reveal');
+      if (footerCols.length) {
+        const footerObs = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              e.target.classList.add('visible');
+              footerObs.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        footerCols.forEach(el => footerObs.observe(el));
+      }
+
+      // Mark active nav link based on current URL
+      const currentPath = window.location.pathname;
+      document.querySelectorAll('.nav-link').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && (currentPath === href || (href !== '/' && currentPath.startsWith(href)))) {
+          link.classList.add('active');
+        }
+      });
+      document.querySelectorAll('.mobile-nav-link').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && (currentPath === href || (href !== '/' && currentPath.startsWith(href)))) {
+          (link as HTMLElement).style.color = '#00AB39';
+          (link as HTMLElement).style.background = 'rgba(0,171,57,0.08)';
+        }
+      });
+
+      // Ripple click effect on pill buttons
+      document.querySelectorAll('.pill-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const ripple = document.createElement('span');
+          const mouseEvent = e as MouseEvent;
+          ripple.style.cssText = `
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            transform: scale(0);
+            animation: ripple 0.6s ease-out forwards;
+            pointer-events: none;
+            width: 100px; height: 100px;
+            left: ${mouseEvent.offsetX - 50}px;
+            top: ${mouseEvent.offsetY - 50}px;
+          `;
+          (btn as HTMLElement).style.overflow = 'hidden';
+          btn.appendChild(ripple);
+          setTimeout(() => ripple.remove(), 600);
+        });
+      });
+
+      // User pill dropdown
+      const userPillBtn = document.getElementById('userPillBtn');
+      const userDropdown = document.getElementById('userDropdown');
+      if (userPillBtn && userDropdown) {
+        userPillBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = userDropdown.classList.contains('open');
+          userDropdown.classList.toggle('open', !isOpen);
+          userPillBtn.setAttribute('aria-expanded', String(!isOpen));
+        });
+        document.addEventListener('click', () => {
+          userDropdown.classList.remove('open');
+          userPillBtn.setAttribute('aria-expanded', 'false');
+        });
+        userDropdown.addEventListener('click', (e) => e.stopPropagation());
+      }
+
+      // Sign-out buttons (header dropdown + mobile)
+      async function handleSignOut() {
+        try {
+          if (typeof window !== 'undefined' && (window as unknown as {Clerk?: {signOut: (opts: object) => Promise<void>}}).Clerk?.signOut) {
+            await (window as unknown as {Clerk: {signOut: (opts: object) => Promise<void>}}).Clerk.signOut({ redirectUrl: '/' });
+          } else {
+            window.location.href = '/';
+          }
+        } catch {
+          window.location.href = '/';
+        }
+      }
+      document.getElementById('headerSignOutBtn')?.addEventListener('click', handleSignOut);
+      document.getElementById('mobileSignOutBtn')?.addEventListener('click', handleSignOut);
+    </script>
   </body>
 </html>

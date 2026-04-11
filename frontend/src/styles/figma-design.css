@@ -1,616 +1,89 @@
-/* Figma Design System - Modern Camino Dashboard */
+/* ==========================================================================
+   Figma Design System — Hand-Drawn Sketch Aesthetic
+   SVG-based components, animations, and Extremadura-themed styling
+   Pixel-perfect replica of https://curve-swoop-02687575.figma.site/
+   ========================================================================== */
 
-/* Modern Color Palette */
-:root {
-  --primary-50: #f8fafc;
-  --primary-100: #f1f5f9;
-  --primary-200: #e2e8f0;
-  --primary-300: #cbd5e1;
-  --primary-400: #94a3b8;
-  --primary-500: #64748b;
-  --primary-600: #475569;
-  --primary-700: #334155;
-  --primary-800: #1e293b;
-  --primary-900: #0f172a;
+/* ==========================================================================
+   SVG Filter Definitions (referenced inline or via hidden SVG in HTML)
+   These CSS classes assume a hidden SVG filter block in the document:
 
-  --accent-green-50: #ecfdf5;
-  --accent-green-100: #d1fae5;
-  --accent-green-200: #a7f3d0;
-  --accent-green-300: #6ee7b7;
-  --accent-green-400: #34d399;
-  --accent-green-500: #10b981;
-  --accent-green-600: #059669;
-  --accent-green-700: #047857;
-  --accent-green-800: #065f46;
-  --accent-green-900: #064e3b;
+   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+     <defs>
+       <filter id="sketchy-filter">
+         <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise" seed="2" />
+         <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G" />
+       </filter>
+       <filter id="sketchy-filter-strong">
+         <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="5" result="noise" seed="5" />
+         <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+       </filter>
+       <filter id="sketchy-filter-subtle">
+         <feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="3" result="noise" seed="8" />
+         <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
+       </filter>
+     </defs>
+   </svg>
+   ========================================================================== */
 
-  --accent-blue-50: #eff6ff;
-  --accent-blue-100: #dbeafe;
-  --accent-blue-200: #bfdbfe;
-  --accent-blue-300: #93c5fd;
-  --accent-blue-400: #60a5fa;
-  --accent-blue-500: #3b82f6;
-  --accent-blue-600: #2563eb;
-  --accent-blue-700: #1d4ed8;
-  --accent-blue-800: #1e40af;
-  --accent-blue-900: #1e3a8a;
+/* ==========================================================================
+   KEYFRAME ANIMATIONS — Complete set for Figma design
+   ========================================================================== */
 
-  --accent-yellow-50: #fffbeb;
-  --accent-yellow-100: #fef3c7;
-  --accent-yellow-200: #fde68a;
-  --accent-yellow-300: #fcd34d;
-  --accent-yellow-400: #fbbf24;
-  --accent-yellow-500: #f59e0b;
-  --accent-yellow-600: #d97706;
-  --accent-yellow-700: #b45309;
-  --accent-yellow-800: #92400e;
-  --accent-yellow-900: #78350f;
-
-  --accent-red-50: #fef2f2;
-  --accent-red-100: #fee2e2;
-  --accent-red-200: #fecaca;
-  --accent-red-300: #fca5a5;
-  --accent-red-400: #f87171;
-  --accent-red-500: #ef4444;
-  --accent-red-600: #dc2626;
-  --accent-red-700: #b91c1c;
-  --accent-red-800: #991b1b;
-  --accent-red-900: #7f1d1d;
-
-  /* Typography */
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-
-  /* Borders */
-  --border-radius-sm: 0.375rem;
-  --border-radius-md: 0.5rem;
-  --border-radius-lg: 0.75rem;
-  --border-radius-xl: 1rem;
-  --border-radius-2xl: 1.5rem;
-
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, var(--accent-green-500), var(--accent-blue-500));
-  --gradient-secondary: linear-gradient(135deg, var(--accent-yellow-400), var(--accent-orange-400));
-}
-
-/* Modern Base Styles */
-@layer base {
-  html {
-    font-size: 16px;
-    scroll-behavior: smooth;
+/* Wobble — continuous gentle rocking on logo, heart, stat boxes, buttons */
+@keyframes wobble {
+  0%, 100% {
+    transform: translateY(0) rotateZ(0deg);
   }
-
-  body {
-    font-family: var(--font-display);
-    line-height: 1.6;
-    color: var(--primary-900);
-    background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+  25% {
+    transform: translateY(-3px) rotateZ(-0.5deg);
   }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-weight: 700;
-    line-height: 1.2;
-    margin: 0 0 var(--space-2) 0;
-  }
-
-  p {
-    margin: 0 0 var(--space-4) 0;
-  }
-
-  a {
-    color: var(--accent-blue-600);
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  a:hover {
-    color: var(--accent-blue-800);
-    text-decoration: underline;
+  75% {
+    transform: translateY(2px) rotateZ(0.5deg);
   }
 }
 
-/* Modern Components */
-@layer components {
-  /* Cards */
-  .card {
-    background: white;
-    border-radius: var(--border-radius-xl);
-    box-shadow: var(--shadow-md);
-    padding: var(--space-6);
-    border: 1px solid var(--primary-200);
-    transition: all 0.3s ease;
+/* Pulse glow — stat values and green dots */
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
   }
-
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary-300);
-  }
-
-  .card-compact {
-    padding: var(--space-4);
-  }
-
-  .card-elevated {
-    box-shadow: var(--shadow-xl);
-    border-color: var(--primary-300);
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--border-radius-lg);
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-  }
-
-  .btn-primary {
-    background: var(--gradient-primary);
-    color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
-  }
-
-  .btn-secondary {
-    background: var(--gradient-secondary);
-    color: var(--primary-900);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-  }
-
-  .btn-secondary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-  }
-
-  .btn-outline {
-    background: transparent;
-    border: 2px solid var(--primary-300);
-    color: var(--primary-700);
-  }
-
-  .btn-outline:hover {
-    border-color: var(--primary-400);
-    background: var(--primary-50);
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--primary-600);
-  }
-
-  .btn-ghost:hover {
-    background: var(--primary-100);
-    color: var(--primary-800);
-  }
-
-  /* Inputs */
-  .input {
-    width: 100%;
-    padding: var(--space-3);
-    border-radius: var(--border-radius-lg);
-    border: 2px solid var(--primary-200);
-    font-size: 1rem;
-    font-family: var(--font-display);
-    background: white;
-    transition: all 0.2s ease;
-  }
-
-  .input:focus {
-    outline: none;
-    border-color: var(--accent-blue-500);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .input::placeholder {
-    color: var(--primary-400);
-  }
-
-  /* Badges */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    padding: var(--space-1) var(--space-3);
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .badge-green {
-    background: var(--accent-green-100);
-    color: var(--accent-green-800);
-  }
-
-  .badge-blue {
-    background: var(--accent-blue-100);
-    color: var(--accent-blue-800);
-  }
-
-  .badge-yellow {
-    background: var(--accent-yellow-100);
-    color: var(--accent-yellow-800);
-  }
-
-  .badge-red {
-    background: var(--accent-red-100);
-    color: var(--accent-red-800);
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
   }
 }
 
-/* Modern Utilities */
-@layer utilities {
-  /* Layout */
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 var(--space-4);
-  }
-
-  .grid-cols-12 {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: var(--space-4);
-  }
-
-  .col-span-1 {
-    grid-column: span 1;
-  }
-  .col-span-2 {
-    grid-column: span 2;
-  }
-  .col-span-3 {
-    grid-column: span 3;
-  }
-  .col-span-4 {
-    grid-column: span 4;
-  }
-  .col-span-6 {
-    grid-column: span 6;
-  }
-  .col-span-8 {
-    grid-column: span 8;
-  }
-  .col-span-12 {
-    grid-column: span 12;
-  }
-
-  /* Flexbox */
-  .flex-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .flex-between {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .flex-col-center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Spacing */
-  .p-1 {
-    padding: var(--space-1);
-  }
-  .p-2 {
-    padding: var(--space-2);
-  }
-  .p-3 {
-    padding: var(--space-3);
-  }
-  .p-4 {
-    padding: var(--space-4);
-  }
-  .p-6 {
-    padding: var(--space-6);
-  }
-  .p-8 {
-    padding: var(--space-8);
-  }
-
-  .px-1 {
-    padding-left: var(--space-1);
-    padding-right: var(--space-1);
-  }
-  .px-2 {
-    padding-left: var(--space-2);
-    padding-right: var(--space-2);
-  }
-  .px-3 {
-    padding-left: var(--space-3);
-    padding-right: var(--space-3);
-  }
-  .px-4 {
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
-  }
-  .px-6 {
-    padding-left: var(--space-6);
-    padding-right: var(--space-6);
-  }
-  .px-8 {
-    padding-left: var(--space-8);
-    padding-right: var(--space-8);
-  }
-
-  .py-1 {
-    padding-top: var(--space-1);
-    padding-bottom: var(--space-1);
-  }
-  .py-2 {
-    padding-top: var(--space-2);
-    padding-bottom: var(--space-2);
-  }
-  .py-3 {
-    padding-top: var(--space-3);
-    padding-bottom: var(--space-3);
-  }
-  .py-4 {
-    padding-top: var(--space-4);
-    padding-bottom: var(--space-4);
-  }
-  .py-6 {
-    padding-top: var(--space-6);
-    padding-bottom: var(--space-6);
-  }
-  .py-8 {
-    padding-top: var(--space-8);
-    padding-bottom: var(--space-8);
-  }
-
-  .m-1 {
-    margin: var(--space-1);
-  }
-  .m-2 {
-    margin: var(--space-2);
-  }
-  .m-3 {
-    margin: var(--space-3);
-  }
-  .m-4 {
-    margin: var(--space-4);
-  }
-  .m-6 {
-    margin: var(--space-6);
-  }
-  .m-8 {
-    margin: var(--space-8);
-  }
-
-  .mx-1 {
-    margin-left: var(--space-1);
-    margin-right: var(--space-1);
-  }
-  .mx-2 {
-    margin-left: var(--space-2);
-    margin-right: var(--space-2);
-  }
-  .mx-3 {
-    margin-left: var(--space-3);
-    margin-right: var(--space-3);
-  }
-  .mx-4 {
-    margin-left: var(--space-4);
-    margin-right: var(--space-4);
-  }
-  .mx-6 {
-    margin-left: var(--space-6);
-    margin-right: var(--space-6);
-  }
-  .mx-8 {
-    margin-left: var(--space-8);
-    margin-right: var(--space-8);
-  }
-
-  .my-1 {
-    margin-top: var(--space-1);
-    margin-bottom: var(--space-1);
-  }
-  .my-2 {
-    margin-top: var(--space-2);
-    margin-bottom: var(--space-2);
-  }
-  .my-3 {
-    margin-top: var(--space-3);
-    margin-bottom: var(--space-3);
-  }
-  .my-4 {
-    margin-top: var(--space-4);
-    margin-bottom: var(--space-4);
-  }
-  .my-6 {
-    margin-top: var(--space-6);
-    margin-bottom: var(--space-6);
-  }
-  .my-8 {
-    margin-top: var(--space-8);
-    margin-bottom: var(--space-8);
-  }
-
-  /* Typography */
-  .text-xs {
-    font-size: 0.75rem;
-  }
-  .text-sm {
-    font-size: 0.875rem;
-  }
-  .text-base {
-    font-size: 1rem;
-  }
-  .text-lg {
-    font-size: 1.125rem;
-  }
-  .text-xl {
-    font-size: 1.25rem;
-  }
-  .text-2xl {
-    font-size: 1.5rem;
-  }
-  .text-3xl {
-    font-size: 1.875rem;
-  }
-  .text-4xl {
-    font-size: 2.25rem;
-  }
-  .text-5xl {
-    font-size: 3rem;
-  }
-  .text-6xl {
-    font-size: 3.75rem;
-  }
-
-  .font-light {
-    font-weight: 300;
-  }
-  .font-normal {
-    font-weight: 400;
-  }
-  .font-medium {
-    font-weight: 500;
-  }
-  .font-semibold {
-    font-weight: 600;
-  }
-  .font-bold {
-    font-weight: 700;
-  }
-  .font-extrabold {
-    font-weight: 800;
-  }
-  .font-black {
-    font-weight: 900;
-  }
-
-  .text-primary-50 {
-    color: var(--primary-50);
-  }
-  .text-primary-100 {
-    color: var(--primary-100);
-  }
-  .text-primary-200 {
-    color: var(--primary-200);
-  }
-  .text-primary-300 {
-    color: var(--primary-300);
-  }
-  .text-primary-400 {
-    color: var(--primary-400);
-  }
-  .text-primary-500 {
-    color: var(--primary-500);
-  }
-  .text-primary-600 {
-    color: var(--primary-600);
-  }
-  .text-primary-700 {
-    color: var(--primary-700);
-  }
-  .text-primary-800 {
-    color: var(--primary-800);
-  }
-  .text-primary-900 {
-    color: var(--primary-900);
-  }
-
-  .bg-primary-50 {
-    background-color: var(--primary-50);
-  }
-  .bg-primary-100 {
-    background-color: var(--primary-100);
-  }
-  .bg-primary-200 {
-    background-color: var(--primary-200);
-  }
-  .bg-primary-300 {
-    background-color: var(--primary-300);
-  }
-  .bg-primary-400 {
-    background-color: var(--primary-400);
-  }
-  .bg-primary-500 {
-    background-color: var(--primary-500);
-  }
-  .bg-primary-600 {
-    background-color: var(--primary-600);
-  }
-  .bg-primary-700 {
-    background-color: var(--primary-700);
-  }
-  .bg-primary-800 {
-    background-color: var(--primary-800);
-  }
-  .bg-primary-900 {
-    background-color: var(--primary-900);
-  }
-
-  /* Responsive */
-  @media (min-width: 768px) {
-    .container {
-      padding: 0 var(--space-6);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .container {
-      padding: 0 var(--space-8);
-    }
+/* Pulse dot — small indicator dots pulse with shadow ring */
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(0, 171, 57, 0.4);
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+    box-shadow: 0 0 0 6px rgba(0, 171, 57, 0);
   }
 }
 
-/* Animations */
-@keyframes fadeInUp {
+/* Float — floating particles and decorative elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* Fade in — opacity + subtle up movement */
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -618,30 +91,23 @@
   }
 }
 
-@keyframes fadeIn {
+/* Fade in up — more dramatic entrance */
+@keyframes fade-in-up {
   from {
     opacity: 0;
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes slideInLeft {
+/* Slide in from left */
+@keyframes slide-in-left {
   from {
     opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(-32px);
   }
   to {
     opacity: 1;
@@ -649,82 +115,1721 @@
   }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out;
+/* Slide in from right */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out;
+/* Background SVG circle drift — slow ambient movement */
+@keyframes bg-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(8px, -12px) scale(1.05) rotate(3deg);
+  }
+  66% {
+    transform: translate(-8px, 6px) scale(0.97) rotate(-2deg);
+  }
 }
 
+/* Sparkle spin — corner sparkle stars on carousel */
+@keyframes sparkle-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* Stroke draw — SVG stroke-dashoffset animation for stat box borders and wave underlines */
+@keyframes stroke-draw {
+  from {
+    stroke-dashoffset: 400;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Shimmer — shimmer effect on loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Ripple — click ripple effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Bounce in — element appears with spring bounce and slight rotation */
+@keyframes bounce-in {
+  0%   { transform: scale(0.5) rotateZ(-5deg); opacity: 0; }
+  40%  { transform: scale(1.1) rotateZ(2deg);  opacity: 1; }
+  70%  { transform: scale(0.95) rotateZ(-1deg); }
+  100% { transform: scale(1) rotateZ(0deg); }
+}
+
+/* Heartbeat — for the heart icon */
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+  }
+  14% {
+    transform: scale(1.15) translateY(-2px);
+  }
+  28% {
+    transform: scale(1) translateY(0);
+  }
+  42% {
+    transform: scale(1.1) translateY(-1px);
+  }
+  70% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* CTA rock — subtle idle rocking for call-to-action buttons */
+@keyframes cta-rock {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  20%       { transform: rotate(-1deg) translateY(-1px); }
+  40%       { transform: rotate(1deg) translateY(0); }
+  60%       { transform: rotate(-0.5deg) translateY(-1px); }
+  80%       { transform: rotate(0.5deg) translateY(0); }
+}
+
+/* Wave underline — wave SVG underline animates in */
+@keyframes wave-underline {
+  0% {
+    stroke-dashoffset: 200;
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Mobile nav dropdown slides in */
+@keyframes mobile-nav-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   ANIMATION UTILITY CLASSES
+   ========================================================================== */
+
+/* Continuous wobble — applied to logo, heart, stat boxes, buttons */
+.wobble {
+  display: inline-block;
+  transform-origin: center bottom;
+  animation: wobble 3s ease-in-out infinite;
+}
+
+/* Heartbeat — applied to heart SVG icon */
+.heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: center center;
+}
+
+/* Fade in entrance */
+.fade-in {
+  animation: fade-in 0.6s ease forwards;
+}
+
+/* Stagger children of .fade-in */
+.fade-in > *:nth-child(1) { animation-delay: 0ms; }
+.fade-in > *:nth-child(2) { animation-delay: 80ms; }
+.fade-in > *:nth-child(3) { animation-delay: 160ms; }
+.fade-in > *:nth-child(4) { animation-delay: 240ms; }
+.fade-in > *:nth-child(5) { animation-delay: 320ms; }
+.fade-in > *:nth-child(6) { animation-delay: 400ms; }
+.fade-in > *:nth-child(7) { animation-delay: 480ms; }
+.fade-in > *:nth-child(8) { animation-delay: 560ms; }
+
+/* Fade in up — initial hidden state; JS adds .in-view */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in-up.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Slide in utilities */
 .animate-slide-in-left {
-  animation: slideInLeft 0.5s ease-out;
+  animation: slide-in-left 0.5s ease-out forwards;
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.5s ease-out;
+  animation: slide-in-right 0.5s ease-out forwards;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
+/* Bounce in */
+.animate-bounce-in {
+  animation: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ==========================================================================
+   SCROLL REVEAL ANIMATIONS — IntersectionObserver driven
+   ========================================================================== */
+
+/* Base reveal — fades up */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Slide in from left */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Slide in from right */
+.reveal-right {
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* reveal-section — used by booking-confirmed and similar pages (paired with .revealed) */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal-section.visible,
+.reveal-section.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Stagger via --delay CSS variable */
+.reveal-section[style*="--delay"] {
+  transition-delay: var(--delay, 0s);
+}
+
+/* Stagger delays for reveal groups */
+.reveal:nth-child(1), .reveal-left:nth-child(1), .reveal-right:nth-child(1) { transition-delay: 0ms; }
+.reveal:nth-child(2), .reveal-left:nth-child(2), .reveal-right:nth-child(2) { transition-delay: 80ms; }
+.reveal:nth-child(3), .reveal-left:nth-child(3), .reveal-right:nth-child(3) { transition-delay: 160ms; }
+.reveal:nth-child(4), .reveal-left:nth-child(4), .reveal-right:nth-child(4) { transition-delay: 240ms; }
+.reveal:nth-child(5), .reveal-left:nth-child(5), .reveal-right:nth-child(5) { transition-delay: 320ms; }
+.reveal:nth-child(6), .reveal-left:nth-child(6), .reveal-right:nth-child(6) { transition-delay: 400ms; }
+
+/* ==========================================================================
+   FLOATING PARTICLES
+   ========================================================================== */
+
+.float-particle {
+  animation: float 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Staggered delays via nth-child */
+.float-particle:nth-child(2n)  { animation-delay: 1s; }
+.float-particle:nth-child(3n)  { animation-delay: 2s; }
+.float-particle:nth-child(4n)  { animation-delay: 0.5s; }
+.float-particle:nth-child(5n)  { animation-delay: 1.5s; }
+.float-particle:nth-child(6n)  { animation-delay: 2.5s; }
+.float-particle:nth-child(7n)  { animation-delay: 0.8s; }
+.float-particle:nth-child(8n)  { animation-delay: 1.8s; }
+
+/* ==========================================================================
+   PULSING DOT — Green indicator
+   ========================================================================== */
+
+.pulse-dot {
   width: 8px;
   height: 8px;
+  background: #00AB39;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 3;
+  flex-shrink: 0;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--primary-100);
-  border-radius: 4px;
+/* Inline variant (not absolutely positioned) */
+.pulse-dot-inline {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #00AB39;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--primary-300);
-  border-radius: 4px;
+/* ==========================================================================
+   BACKGROUND PATTERN — Fixed decorative SVG circles
+   ========================================================================== */
+
+.bg-pattern {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-400);
+/* All circles/shapes inside bg-pattern drift */
+.bg-pattern circle,
+.bg-pattern ellipse,
+.bg-pattern .bg-circle {
+  opacity: 0.1;
+  animation: bg-drift 20s ease-in-out infinite;
 }
 
-/* Focus styles for accessibility */
-.focus-visible:focus {
-  outline: 2px solid var(--accent-blue-500);
-  outline-offset: 2px;
+.bg-pattern .bg-circle:nth-child(1),
+.bg-pattern circle:nth-child(1) {
+  animation-duration: 22s;
+  animation-delay: 0s;
+  fill: #00AB39;
 }
 
-/* Print styles */
+.bg-pattern .bg-circle:nth-child(2),
+.bg-pattern circle:nth-child(2) {
+  animation-duration: 26s;
+  animation-delay: -5s;
+  fill: #00AB39;
+}
+
+.bg-pattern .bg-circle:nth-child(3),
+.bg-pattern circle:nth-child(3) {
+  animation-duration: 30s;
+  animation-delay: -10s;
+  fill: #00AB39;
+}
+
+.bg-pattern .bg-circle:nth-child(4),
+.bg-pattern circle:nth-child(4) {
+  animation-duration: 24s;
+  animation-delay: -3s;
+  fill: #EAC102;
+  opacity: 0.07;
+}
+
+.bg-pattern .bg-circle:nth-child(5),
+.bg-pattern circle:nth-child(5) {
+  animation-duration: 28s;
+  animation-delay: -7s;
+  fill: #EAC102;
+  opacity: 0.07;
+}
+
+.bg-pattern .bg-circle:nth-child(6),
+.bg-pattern circle:nth-child(6) {
+  animation-duration: 32s;
+  animation-delay: -14s;
+  fill: #ED1C24;
+  opacity: 0.05;
+}
+
+.bg-pattern .bg-circle:nth-child(7),
+.bg-pattern circle:nth-child(7) {
+  animation-duration: 20s;
+  animation-delay: -2s;
+  fill: #0071BC;
+  opacity: 0.05;
+}
+
+/* ==========================================================================
+   SKETCHY BUTTON — SVG-based with hand-drawn borders + wobble
+   ========================================================================== */
+
+.sketchy-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  font-family: "Cabin Sketch", cursive;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #FFFFFF;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  animation: wobble 4s ease-in-out infinite;
+  transition: transform 200ms ease, filter 200ms ease;
+  overflow: visible;
+}
+
+/* SVG background layer — the hand-drawn rect */
+.sketchy-btn svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.sketchy-btn svg rect.btn-shadow {
+  fill: rgba(0, 0, 0, 0.15);
+  rx: 10;
+  filter: blur(4px);
+  transform: translate(3px, 3px);
+}
+
+.sketchy-btn svg rect.btn-fill {
+  fill: #00AB39;
+  rx: 10;
+  stroke: #006b24;
+  stroke-width: 2;
+  filter: url(#sketchy-filter);
+  transition: fill 200ms ease;
+}
+
+.sketchy-btn svg rect.btn-outline {
+  fill: none;
+  rx: 10;
+  stroke: #006b24;
+  stroke-width: 2.5;
+  filter: url(#sketchy-filter);
+}
+
+.sketchy-btn span,
+.sketchy-btn > *:not(svg) {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ripple pseudo-element */
+.sketchy-btn::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+.sketchy-btn:active::after {
+  width: 200%;
+  height: 200%;
+  animation: ripple 0.6s ease-out forwards;
+}
+
+/* Hover */
+.sketchy-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  filter: brightness(1.05);
+}
+
+.sketchy-btn:hover svg rect.btn-fill {
+  fill: #006b24;
+}
+
+.sketchy-btn:hover svg rect.btn-shadow {
+  filter: blur(6px);
+  fill: rgba(0, 0, 0, 0.2);
+}
+
+/* Active / mousedown */
+.sketchy-btn:active {
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(0.97);
+}
+
+/* Gold variant */
+.sketchy-btn-gold svg rect.btn-fill,
+.sketchy-btn--gold svg rect.btn-fill {
+  fill: #EAC102;
+  stroke: #b89700;
+}
+
+.sketchy-btn-gold,
+.sketchy-btn--gold {
+  color: #1A1A1A;
+}
+
+.sketchy-btn-gold:hover svg rect.btn-fill,
+.sketchy-btn--gold:hover svg rect.btn-fill {
+  fill: #c9a800;
+}
+
+/* Outline variant */
+.sketchy-btn-outline svg rect.btn-fill,
+.sketchy-btn--outline svg rect.btn-fill {
+  fill: transparent;
+  stroke: #00AB39;
+}
+
+.sketchy-btn-outline,
+.sketchy-btn--outline {
+  color: #00AB39;
+}
+
+.sketchy-btn-outline:hover,
+.sketchy-btn--outline:hover {
+  color: #FFFFFF;
+}
+
+.sketchy-btn-outline:hover svg rect.btn-fill,
+.sketchy-btn--outline:hover svg rect.btn-fill {
+  fill: #00AB39;
+}
+
+/* Red variant */
+.sketchy-btn--red svg rect.btn-fill {
+  fill: #ED1C24;
+  stroke: #b81620;
+}
+
+.sketchy-btn--red:hover svg rect.btn-fill {
+  fill: #c4181f;
+}
+
+/* Small size variant */
+.sketchy-btn-sm,
+.sketchy-btn--sm {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   SKETCHY CARD — Card with SVG border and hover lift
+   ========================================================================== */
+
+.sketchy-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: visible;
+  background: #FFFFFF;
+  transition: transform 300ms ease, box-shadow 300ms ease;
+}
+
+.sketchy-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* SVG border overlay */
+.sketchy-card > svg.card-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.sketchy-card > svg.card-border rect.card-shadow {
+  fill: rgba(0, 0, 0, 0.08);
+  rx: 10;
+  filter: blur(6px);
+  transform: translate(3px, 3px);
+}
+
+.sketchy-card > svg.card-border rect.card-stroke {
+  fill: none;
+  rx: 10;
+  stroke: #1A1A1A;
+  stroke-width: 2;
+  filter: url(#sketchy-filter);
+  transition: stroke 200ms ease;
+}
+
+.sketchy-card > svg.card-border rect.card-stroke-inner {
+  fill: none;
+  rx: 10;
+  stroke: #1A1A1A;
+  stroke-width: 1;
+  opacity: 0.3;
+  filter: url(#sketchy-filter);
+}
+
+.sketchy-card:hover > svg.card-border rect.card-shadow {
+  filter: blur(10px);
+  fill: rgba(0, 0, 0, 0.12);
+}
+
+/* Card inner content layer */
+.card-inner,
+.sketchy-card > .card-content,
+.sketchy-card > .card-inner {
+  padding: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* Card typography */
+.sketchy-card .card-title {
+  font-family: "Shadows Into Light", cursive;
+  font-size: 1.25rem;
+  color: #1A1A1A;
+  margin-bottom: 0.5rem;
+}
+
+.sketchy-card .card-text {
+  font-family: "Patrick Hand", cursive;
+  font-size: 1rem;
+  color: #1A1A1A;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   SKETCHY PILL — Pill shape with sketchy border
+   ========================================================================== */
+
+.sketchy-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-family: "Patrick Hand", cursive;
+  font-size: 0.875rem;
+  color: #00AB39;
+  background: transparent;
+  transition: all 200ms ease;
+}
+
+.sketchy-pill:hover {
+  transform: translateY(-1px);
+}
+
+.sketchy-pill svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.sketchy-pill svg rect {
+  fill: none;
+  rx: 20;
+  stroke: #00AB39;
+  stroke-width: 2;
+  filter: url(#sketchy-filter);
+}
+
+.sketchy-pill span {
+  position: relative;
+  z-index: 2;
+}
+
+/* ==========================================================================
+   STAT BOX — Statistics with animated SVG border, wobble, pulse
+   ========================================================================== */
+
+.stat-box {
+  position: relative;
+  padding: 1.25rem 1.5rem;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  animation: wobble 3s ease-in-out infinite;
+  cursor: default;
+  border-radius: 12px;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.stat-box:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(0, 171, 57, 0.18);
+}
+
+/* SVG animated border */
+.stat-border,
+.stat-box > svg.stat-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.stat-box > svg.stat-border rect.stat-shadow {
+  fill: rgba(0, 171, 57, 0.08);
+  rx: 10;
+  stroke: none;
+  filter: blur(8px);
+  transform: translate(2px, 2px);
+}
+
+.stat-box > svg.stat-border rect,
+.stat-box > svg.stat-border rect.stat-stroke {
+  fill: #FFFFFF;
+  rx: 10;
+  stroke: #00AB39;
+  stroke-width: 2.5;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 0;
+  filter: url(#sketchy-filter);
+  animation: stroke-draw 1.5s ease forwards;
+}
+
+/* Stat value — large pulsing number */
+.stat-value {
+  position: relative;
+  z-index: 2;
+  font-family: "Shadows Into Light", cursive;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #00AB39;
+  line-height: 1;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Stat label */
+.stat-label {
+  position: relative;
+  z-index: 2;
+  font-family: "Cabin Sketch", cursive;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #6b7280;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+/* Stat sub-label */
+.stat-sublabel {
+  position: relative;
+  z-index: 2;
+  font-family: "Patrick Hand", cursive;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.125rem;
+}
+
+/* Pulsing dot inside stat box */
+.stat-box .pulse-dot {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 3;
+}
+
+/* Stagger wobble delays for multiple stat boxes */
+.stat-box:nth-child(1) { animation-delay: 0s; }
+.stat-box:nth-child(2) { animation-delay: 0.4s; }
+.stat-box:nth-child(3) { animation-delay: 0.8s; }
+.stat-box:nth-child(4) { animation-delay: 1.2s; }
+
+/* ==========================================================================
+   WAVE UNDERLINE — SVG wavy underline decoration
+   ========================================================================== */
+
+.wave-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.wave-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%2300AB39' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Gold wave variant */
+.wave-underline--gold::after {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23EAC102' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+}
+
+/* Red wave variant */
+.wave-underline--red::after {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23ED1C24' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+}
+
+/* White wave variant (for dark backgrounds) */
+.wave-underline--white::after {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23FFFFFF' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+}
+
+/* ==========================================================================
+   PARALLAX FRAME — 3D mouse-tracking container
+   ========================================================================== */
+
+.parallax-frame {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.parallax-frame .parallax-content {
+  transition: transform 100ms ease-out;
+  transform: rotateX(0deg) rotateY(0deg);
+  transform-style: preserve-3d;
+}
+
+/* Carousel card within parallax */
+.parallax-frame .carousel-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.parallax-frame .carousel-card > svg.carousel-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.parallax-frame .carousel-card > svg.carousel-border rect {
+  fill: none;
+  rx: 20;
+  stroke: #00AB39;
+  stroke-width: 2.5;
+  filter: url(#sketchy-filter);
+}
+
+.parallax-frame .carousel-card > svg.carousel-border rect.carousel-shadow {
+  fill: rgba(0, 0, 0, 0.1);
+  stroke: none;
+  rx: 24;
+  filter: blur(8px);
+  transform: translate(4px, 4px);
+}
+
+.parallax-frame .carousel-card .carousel-card-title {
+  font-family: "Shadows Into Light", cursive;
+  font-size: 1.375rem;
+}
+
+/* Sparkle stars on carousel corners */
+.carousel-sparkle {
+  animation: sparkle-spin 4s linear infinite;
+  transform-origin: center center;
+}
+
+.carousel-sparkle:nth-child(2) { animation-delay: -1s; animation-duration: 3s; }
+.carousel-sparkle:nth-child(3) { animation-delay: -2s; animation-duration: 5s; }
+.carousel-sparkle:nth-child(4) { animation-delay: -3s; animation-duration: 4.5s; }
+
+/* ==========================================================================
+   NAVIGATION LINKS — Underline hover effect
+   ========================================================================== */
+
+.nav-link {
+  position: relative;
+  color: #1A1A1A;
+  font-family: "Patrick Hand", cursive;
+  font-size: 0.95rem;
+  text-decoration: none;
+  padding: 0.25rem 0;
+  transition: color 200ms ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #00AB39;
+  transition: width 200ms ease;
+}
+
+.nav-link:hover {
+  color: #00AB39;
+  text-decoration: none;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.nav-link.active {
+  color: #00AB39;
+}
+
+.nav-link.active::after {
+  width: 100%;
+}
+
+/* Mobile nav animation */
+.mobile-nav {
+  animation: mobile-nav-slide 0.25s ease forwards;
+}
+
+/* ==========================================================================
+   RIPPLE CLICK EFFECT
+   ========================================================================== */
+
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(0);
+  animation: ripple 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   INPUT FIELDS — Sketchy style with focus states
+   ========================================================================== */
+
+.input-sketchy {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1rem;
+  color: #1A1A1A;
+  background: #FFFFFF;
+  border: 2px solid #d1d5db;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 150ms ease;
+  filter: url(#sketchy-filter-subtle);
+}
+
+.input-sketchy::placeholder {
+  color: #9ca3af;
+  font-family: "Patrick Hand", cursive;
+}
+
+.input-sketchy:focus {
+  border-color: #00AB39;
+  box-shadow: 0 0 0 3px rgba(0, 171, 57, 0.15);
+  transform: translateY(-1px);
+}
+
+.input-sketchy:valid:not(:placeholder-shown) {
+  border-color: rgba(0, 171, 57, 0.5);
+}
+
+.input-sketchy:invalid:not(:placeholder-shown) {
+  border-color: rgba(237, 28, 36, 0.5);
+}
+
+/* Textarea variant */
+textarea.input-sketchy {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* ==========================================================================
+   CAROUSEL DOTS
+   ========================================================================== */
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.carousel-dot.active {
+  transform: scale(1.4);
+  background: #00AB39;
+}
+
+.carousel-dot:hover:not(.active) {
+  background: #9ca3af;
+  transform: scale(1.15);
+}
+
+/* ==========================================================================
+   BACK TO TOP BUTTON
+   ========================================================================== */
+
+.back-to-top {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 300ms ease, transform 300ms ease, background 200ms ease;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.back-to-top:hover {
+  transform: translateY(-4px) !important;
+  background: #006b24;
+}
+
+/* ==========================================================================
+   SHIMMER LOADING STATE
+   ========================================================================== */
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 25%,
+    #f0f0f0 50%,
+    #e0e0e0 75%,
+    #f0f0f0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   SITE TITLE — Display font with wobble
+   ========================================================================== */
+
+.site-title {
+  font-family: "Shadows Into Light", cursive;
+  font-size: 2.5rem;
+  color: #00AB39;
+  animation: wobble 4s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: center bottom;
+}
+
+@media (min-width: 768px) {
+  .site-title {
+    font-size: 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-title {
+    font-size: 4rem;
+  }
+}
+
+/* ==========================================================================
+   SECTION SUBTITLE
+   ========================================================================== */
+
+.section-subtitle {
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.125rem;
+  color: #1A1A1A;
+  opacity: 0.85;
+}
+
+/* ==========================================================================
+   PEREGRINO LABEL — Sketch font h3
+   ========================================================================== */
+
+.peregrino-label {
+  font-family: "Cabin Sketch", cursive;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #006b24;
+}
+
+/* ==========================================================================
+   HEART ICON — Heartbeat animation
+   ========================================================================== */
+
+.heart-wobble {
+  display: inline-block;
+  animation: heartbeat 1.5s ease-in-out infinite;
+  color: #ED1C24;
+  transform-origin: center center;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+
+.footer {
+  background: #004d1f;
+  color: #FFFFFF;
+  padding: 2rem 1rem;
+}
+
+.footer a {
+  color: #E8F5E9;
+  transition: color 200ms ease;
+}
+
+.footer a:hover {
+  color: #EAC102;
+  text-decoration: none;
+}
+
+.footer .footer-title {
+  font-family: "Shadows Into Light", cursive;
+  font-size: 1.25rem;
+  color: #FFFFFF;
+}
+
+.footer .footer-text {
+  font-family: "Patrick Hand", cursive;
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+/* ==========================================================================
+   HIGHLIGHT / ACCENT DOODLE
+   ========================================================================== */
+
+.highlight-doodle {
+  background: linear-gradient(transparent 60%, rgba(234, 193, 2, 0.5) 60%);
+  padding: 0 0.2em;
+}
+
+/* ==========================================================================
+   SKETCHY BACKGROUND — Cross-hatch texture
+   ========================================================================== */
+
+.sketchy-bg {
+  background-image:
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 11px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 11px);
+}
+
+/* Paper texture overlay */
+.paper-texture {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   DOODLE BORDER — Organic sketch radius (CSS fallback)
+   ========================================================================== */
+
+.doodle-border {
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  position: relative;
+}
+
+.doodle-shadow {
+  box-shadow:
+    2px 2px rgba(0, 0, 0, 0.2),
+    4px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sketch underline (CSS fallback for wave-underline) */
+.sketch-underline {
+  position: relative;
+}
+
+.sketch-underline::after {
+  content: '';
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='3' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,2 Q5,0 10,2 T20,2 T30,2 T40,2 T50,2 T60,2 T70,2 T80,2 T90,2 T100,2' stroke='%2300AB39' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 100px 3px;
+  height: 3px;
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  right: 0;
+  opacity: 0.9;
+}
+
+/* ==========================================================================
+   SQUIGGLE DECORATIONS
+   ========================================================================== */
+
+.squiggle-top {
+  position: relative;
+}
+
+.squiggle-top::before {
+  content: '';
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,2.5 Q5,0 10,2.5 T20,2.5 T30,2.5 T40,2.5 T50,2.5 T60,2.5 T70,2.5 T80,2.5 T90,2.5 T100,2.5' stroke='%2300AB39' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  height: 5px;
+  position: absolute;
+  top: -10px;
+  left: 10%;
+  right: 10%;
+}
+
+/* Arrow doodle */
+.arrow-doodle::after {
+  content: '\2192';
+  margin-left: 0.3em;
+  font-size: 1.25em;
+  display: inline-block;
+  transform: rotate(-5deg);
+}
+
+/* ==========================================================================
+   WIRED BORDER — Double pseudo-element sketch border (CSS fallback)
+   ========================================================================== */
+
+.wired-border {
+  position: relative;
+}
+
+.wired-border::before,
+.wired-border::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border: 2px solid #00AB39;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  opacity: 0.18;
+}
+
+.wired-border::after {
+  border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
+  opacity: 0.1;
+}
+
+/* ==========================================================================
+   BADGE VARIANTS
+   ========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-family: "Cabin Sketch", cursive;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-green {
+  background: #E8F5E9;
+  color: #006b24;
+}
+
+.badge-gold {
+  background: #fef9e7;
+  color: #8a7000;
+}
+
+.badge-red {
+  background: #fdecea;
+  color: #ED1C24;
+}
+
+.badge-blue {
+  background: #e6f2fa;
+  color: #0071BC;
+}
+
+/* ==========================================================================
+   STANDARD BUTTON STYLES (non-SVG fallback)
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-family: "Cabin Sketch", cursive;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #00AB39;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 171, 57, 0.3);
+}
+
+.btn-primary:hover {
+  background: #006b24;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 171, 57, 0.4);
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background: #EAC102;
+  color: #1A1A1A;
+  box-shadow: 0 4px 12px rgba(234, 193, 2, 0.3);
+}
+
+.btn-secondary:hover {
+  background: #c9a800;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(234, 193, 2, 0.4);
+  text-decoration: none;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid #00AB39;
+  color: #00AB39;
+}
+
+.btn-outline:hover {
+  background: #00AB39;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #006b24;
+}
+
+.btn-ghost:hover {
+  background: #E8F5E9;
+  color: #004d1f;
+  text-decoration: none;
+}
+
+/* ==========================================================================
+   SECTION DIVIDER — Animated wavy line
+   ========================================================================== */
+
+.section-divider {
+  width: 100%;
+  height: 4px;
+  border: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='200' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,2 Q10,0 20,2 T40,2 T60,2 T80,2 T100,2 T120,2 T140,2 T160,2 T180,2 T200,2' stroke='%2300AB39' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 200px 4px;
+  opacity: 0.4;
+  margin: 2rem 0;
+}
+
+/* ==========================================================================
+   CARD VARIANTS (standard CSS)
+   ========================================================================== */
+
+.card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  transition: all 200ms ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.card-compact {
+  padding: 1rem;
+}
+
+.card-elevated {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   RESPONSIVE COMPONENT ADJUSTMENTS
+   ========================================================================== */
+
+/* SM: 640px */
+@media (min-width: 640px) {
+  .stat-value {
+    font-size: 1.75rem;
+  }
+
+  .sketchy-btn {
+    padding: 0.75rem 1.75rem;
+    font-size: 1rem;
+  }
+}
+
+/* MD: 768px */
+@media (min-width: 768px) {
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .sketchy-card .card-inner,
+  .sketchy-card .card-content {
+    padding: 1.75rem;
+  }
+}
+
+/* LG: 1024px */
+@media (min-width: 1024px) {
+  .stat-value {
+    font-size: 2.5rem;
+  }
+
+  .sketchy-card .card-inner,
+  .sketchy-card .card-content {
+    padding: 2rem;
+  }
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE — Reduced motion amplitudes on small screens
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  /* Reduce wobble amplitude on mobile */
+  @keyframes wobble {
+    0%, 100% {
+      transform: translateY(0) rotateZ(0deg);
+    }
+    25% {
+      transform: translateY(-1.5px) rotateZ(-0.25deg);
+    }
+    75% {
+      transform: translateY(1px) rotateZ(0.25deg);
+    }
+  }
+
+  /* Reduce float range on mobile */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  /* Reduce parallax on touch devices */
+  .parallax-frame .parallax-content {
+    transition: none;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .site-title {
+    font-size: 2rem;
+  }
+
+  .sketchy-btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* ==========================================================================
+   TOUCH DEVICE — Disable parallax
+   ========================================================================== */
+
+@media (hover: none) and (pointer: coarse) {
+  .parallax-frame .parallax-content {
+    transform: none !important;
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY — Focus styles
+   ========================================================================== */
+
+.sketchy-btn:focus-visible,
+.sketchy-card:focus-visible,
+.input-sketchy:focus-visible,
+.nav-link:focus-visible {
+  outline: 3px solid rgba(0, 171, 57, 0.4);
+  outline-offset: 3px;
+}
+
+/* ==========================================================================
+   PRINT
+   ========================================================================== */
+
 @media print {
-  .no-print {
+  .bg-pattern,
+  .float-particle,
+  .pulse-dot,
+  .pulse-dot-inline,
+  .back-to-top {
     display: none !important;
   }
 
-  body {
-    background: white !important;
-    color: black !important;
+  .wobble,
+  .heartbeat,
+  .heart-wobble,
+  .site-title,
+  .sketchy-btn,
+  .stat-box {
+    animation: none !important;
   }
 
+  .sketchy-card,
+  .stat-box,
   .card {
     box-shadow: none;
     border: 1px solid #ccc;
   }
-}
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  :root {
-    --primary-200: #000000;
-    --primary-300: #333333;
-    --primary-400: #666666;
-    --primary-500: #999999;
-    --primary-600: #cccccc;
-    --primary-700: #ffffff;
+  body {
+    background: white !important;
   }
 }
 
-/* Reduced motion support */
+/* ==========================================================================
+   HIGH CONTRAST
+   ========================================================================== */
+
+@media (prefers-contrast: high) {
+  .sketchy-btn svg rect.btn-fill {
+    stroke-width: 4;
+  }
+
+  .sketchy-card > svg.card-border rect.card-stroke {
+    stroke-width: 4;
+  }
+
+  .stat-box > svg.stat-border rect {
+    stroke-width: 4;
+  }
+
+  .nav-link::after {
+    height: 3px;
+  }
+}
+
+/* ==========================================================================
+   REDUCED MOTION — Disable ALL animations and transitions
+   ========================================================================== */
+
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
+  /* Kill all keyframe animations */
+  .wobble,
+  .heartbeat,
+  .heart-wobble,
+  .float-particle,
+  .pulse-dot,
+  .pulse-dot-inline,
+  .stat-box,
+  .stat-value,
+  .sketchy-btn,
+  .site-title,
+  .carousel-sparkle,
+  .shimmer,
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .fade-in,
+  .fade-in-up,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-bounce-in {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Keep opacity for reveal elements */
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .fade-in-up {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Background pattern stays static */
+  .bg-pattern circle,
+  .bg-pattern ellipse,
+  .bg-pattern .bg-circle {
+    animation: none !important;
+  }
+
+  /* SVG border stays static */
+  .stat-box > svg.stat-border rect,
+  .stat-box > svg.stat-border rect.stat-stroke {
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
+
+  /* Transitions kept minimal */
+  .sketchy-card,
+  .nav-link,
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .carousel-dot,
+  .back-to-top {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================
+   Toast / Notification (Sonner-style — spec §30)
+
+   JavaScript API (add a <script> that defines window.showToast):
+     showToast(icon, title, message, duration = 4000)
+     icon     — emoji or HTML string shown in .toast-icon
+     title    — bold line in .toast-title
+     message  — secondary line in .toast-msg (optional)
+     duration — ms before auto-dismiss (default 4000)
+
+   Example:
+     showToast('✅', 'Reserva guardada', 'Se ha añadido al calendario.', 5000)
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  background: white;
+  border: 1.5px solid rgba(0, 171, 57, 0.3);
+  border-radius: 12px;
+  padding: 0.875rem 1.25rem;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 0.95rem;
+  color: #1A1A1A;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 260px;
+  max-width: 380px;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast.hide {
+  transform: translateY(40%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+.toast-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.toast-body {
+  flex: 1;
+}
+
+.toast-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.toast-msg {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #9ca3af;
+  font-size: 1rem;
+  line-height: 1;
+  transition: color 200ms ease, transform 200ms ease;
+}
+
+.toast-close:hover {
+  color: #ED1C24;
+  transform: rotate(90deg);
+}
+
+/* Toast type variants */
+.toast--error   { border-color: rgba(237, 28, 36, 0.3); }
+.toast--warning { border-color: rgba(234, 193, 2, 0.4); }
+.toast--info    { border-color: rgba(0, 113, 188, 0.3); }

@@ -1,0 +1,497 @@
+---
+/**
+ * /terminos — Términos y Condiciones de Reserva y Estancia
+ * Hostel-specific T&Cs covering booking, cancellation, stay rules, pricing, liability.
+ * Based on the municipal contract (Exp. 2/2024) and standard pilgrim hostel practice.
+ */
+import Layout from '../layouts/Layout.astro';
+
+const UPDATED         = '11 de abril de 2026';
+const TITULAR         = 'SERGIO GUILLÉN BARRENA';
+const ADDRESS         = 'Paraje Cuesta, s/n, 06894 El Carrascalejo (Badajoz), España';
+const PHONE           = '+34 695 90 43 44';
+const EMAIL           = 'elcarrascalejoalbergue@gmail.com';
+const PRICE_BED       = 15;
+const PRICE_PRIVATE   = 40;
+const PRICE_LAUNDRY   = 3;
+const TOURISM_LICENSE = 'H-CC-0023';
+const CHECKIN_FROM    = '14:00';
+const CHECKOUT_BY     = '09:00';
+const RECEPTION_HOURS = '14:00–22:00';
+---
+
+<Layout
+  title="Términos y Condiciones — Albergue Municipal El Carrascalejo"
+  description="Condiciones generales de reserva y estancia en el Albergue Municipal de El Carrascalejo, Vía de la Plata."
+>
+  <main class="legal-page">
+    <!-- Hero -->
+    <header class="legal-hero">
+      <div class="legal-hero-inner">
+        <div class="legal-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </div>
+        <h1>Términos y Condiciones</h1>
+        <p class="legal-subtitle">Reserva y estancia · Última actualización: {UPDATED}</p>
+      </div>
+    </header>
+
+    <!-- Intro note -->
+    <div class="terms-intro-banner">
+      <div class="terms-intro-inner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <p>Bienvenido/a al <strong>Albergue Municipal de El Carrascalejo</strong> (Licencia turística {TOURISM_LICENSE}), situado en la <em>Vía de la Plata</em>, Camino de Santiago. Los presentes Términos regulan toda reserva y estancia en nuestra instalación.</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <article class="legal-content">
+
+      <section>
+        <h2>1. Identificación del prestador</h2>
+        <table class="legal-table">
+          <tbody>
+            <tr><th>Gestor</th><td>{TITULAR}</td></tr>
+            <tr><th>Domicilio</th><td>{ADDRESS}</td></tr>
+            <tr><th>Teléfono</th><td><a href={`tel:${PHONE.replace(/\s/g,'')}`}>{PHONE}</a></td></tr>
+            <tr><th>Email</th><td><a href={`mailto:${EMAIL}`}>{EMAIL}</a></td></tr>
+            <tr><th>Licencia turística</th><td>{TOURISM_LICENSE}</td></tr>
+            <tr><th>Propietario del inmueble</th><td>Ayuntamiento de El Carrascalejo (Exp. 2/2024)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>2. Tarifas vigentes</h2>
+        <table class="legal-table">
+          <thead>
+            <tr><th>Servicio</th><th>Precio</th><th>Incluye</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Cama en dormitorio compartido</td>
+              <td><strong>€{PRICE_BED}/noche</strong></td>
+              <td>Ropa de cama, WiFi, uso de cocina compartida y terraza</td>
+            </tr>
+            <tr>
+              <td>Habitación privada</td>
+              <td><strong>€{PRICE_PRIVATE}/noche</strong></td>
+              <td>Ropa de cama, baño privado, WiFi, acceso a instalaciones comunes</td>
+            </tr>
+            <tr>
+              <td>Lavadora</td>
+              <td>€{PRICE_LAUNDRY}/ciclo</td>
+              <td>Por uso</td>
+            </tr>
+            <tr>
+              <td>Secadora</td>
+              <td>€{PRICE_LAUNDRY}/ciclo</td>
+              <td>Por uso</td>
+            </tr>
+            <tr>
+              <td>Mascotas</td>
+              <td>€40/estancia</td>
+              <td>Previa solicitud; sujeto a disponibilidad</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="terms-note">Los precios incluyen IVA. Las tarifas pueden revisarse anualmente conforme al IPC. El precio aplicable es el vigente en el momento de confirmar la reserva.</p>
+      </section>
+
+      <section>
+        <h2>3. Horarios</h2>
+        <div class="schedule-grid">
+          <div class="schedule-card">
+            <div class="schedule-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <strong>Recepción</strong>
+              <span>{RECEPTION_HOURS}</span>
+            </div>
+          </div>
+          <div class="schedule-card">
+            <div class="schedule-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <div>
+              <strong>Check-in</strong>
+              <span>Desde las {CHECKIN_FROM} h</span>
+            </div>
+          </div>
+          <div class="schedule-card">
+            <div class="schedule-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            </div>
+            <div>
+              <strong>Check-out</strong>
+              <span>Antes de las {CHECKOUT_BY} h</span>
+            </div>
+          </div>
+        </div>
+        <p>El albergue permanece abierto todo el año (1 de enero – 31 de diciembre). Las llegadas fuera del horario de recepción deben coordinarse previamente por teléfono o correo electrónico.</p>
+      </section>
+
+      <section>
+        <h2>4. Proceso de reserva</h2>
+        <h3>4.1 Reserva directa (sitio web)</h3>
+        <p>La reserva queda confirmada cuando el sistema emite un correo de confirmación con número de referencia. Para ello:</p>
+        <ol>
+          <li>Seleccione fechas y tipo de alojamiento.</li>
+          <li>Facilite sus datos de contacto.</li>
+          <li>Abone el importe íntegro de la estancia mediante tarjeta bancaria (procesado por Stripe con cifrado TLS).</li>
+          <li>Recibirá un email de confirmación en los minutos siguientes.</li>
+        </ol>
+
+        <h3>4.2 Reserva a través de Booking.com</h3>
+        <p>Si reserva a través de Booking.com, aplican adicionalmente las condiciones de dicha plataforma. En caso de conflicto entre estas condiciones y las de Booking.com, prevalecerán las de Booking.com en lo relativo al pago y la cancelación por su plataforma.</p>
+
+        <h3>4.3 Capacidad máxima</h3>
+        <p>El albergue dispone de <strong>24 camas</strong> distribuidas en 3 dormitorios de 8 literas. Las reservas se confirman por orden de solicitud. Le recomendamos reservar con antelación en temporada alta (marzo–octubre).</p>
+      </section>
+
+      <section>
+        <h2>5. Política de cancelación y modificación</h2>
+        <p>Para reservas realizadas directamente a través de este sitio web:</p>
+        <ul>
+          <li><strong>Cancelación gratuita</strong> hasta <strong>48 horas antes</strong> de la fecha de llegada → reembolso íntegro.</li>
+          <li><strong>Cancelación con menos de 48 horas de antelación</strong> → se retendrá el importe de <strong>1 noche</strong> como penalización.</li>
+          <li><strong>No-show</strong> (no presentación sin cancelar) → se factura la estancia completa.</li>
+          <li><strong>Modificación</strong> de fechas: sujeta a disponibilidad, sin coste si se solicita con más de 48 horas de antelación.</li>
+        </ul>
+        <p>Para cancelaciones derivadas de fuerza mayor (enfermedad grave, fallecimiento de familiar directo, causa judicial) estudiaremos cada caso de forma individual. Contacte con nosotros lo antes posible.</p>
+      </section>
+
+      <section>
+        <h2>6. Normas de estancia</h2>
+        <p>Al realizar la reserva, el huésped acepta cumplir las siguientes normas:</p>
+
+        <h3>6.1 Normas generales</h3>
+        <ul>
+          <li>Se prohíbe fumar en el interior de las instalaciones (incluyendo dormitorios, baños y zonas comunes interiores).</li>
+          <li>El albergue mantiene <strong>silencio nocturno a partir de las 22:00 h</strong>.</li>
+          <li>No se permite el consumo de alcohol propio en zonas comunes (sí en terraza).</li>
+          <li>Queda prohibida la presencia de personas no alojadas en las instalaciones pasadas las 22:00 h.</li>
+          <li>Los huéspedes son responsables del cuidado de las instalaciones y del equipamiento puesto a su disposición.</li>
+        </ul>
+
+        <h3>6.2 Dormitorios</h3>
+        <ul>
+          <li>Se proporcionan ropa de cama y almohada; el uso de saco de dormir es opcional.</li>
+          <li>Cada cama dispone de taquilla con llave para objetos de valor (llave entregada en recepción).</li>
+          <li>Las luces de los dormitorios se apagarán a las 22:30 h.</li>
+          <li>No se permite comer ni beber en los dormitorios.</li>
+        </ul>
+
+        <h3>6.3 Instalaciones comunes</h3>
+        <ul>
+          <li>La cocina compartida debe dejarse limpia y ordenada después de cada uso.</li>
+          <li>No se guardarán alimentos en la nevera más de 24 horas sin identificar; el personal retirará los no identificados.</li>
+          <li>Los baños y duchas deben dejarse limpios tras su uso.</li>
+        </ul>
+
+        <h3>6.4 Mascotas</h3>
+        <ul>
+          <li>Se admiten mascotas previa solicitud y pago de la tarifa correspondiente (€40/estancia).</li>
+          <li>Las mascotas deben estar vacunadas y tener documentación en regla.</li>
+          <li>No se permite el acceso de mascotas a dormitorios ni a la zona de restaurante/bar.</li>
+        </ul>
+
+        <h3>6.5 Incumplimiento</h3>
+        <p>El incumplimiento grave o reiterado de las normas de estancia podrá dar lugar al abandono inmediato del albergue sin derecho a reembolso, a criterio del personal.</p>
+      </section>
+
+      <section>
+        <h2>7. Servicios incluidos y adicionales</h2>
+        <h3>Incluidos en la tarifa de alojamiento</h3>
+        <ul>
+          <li>Ropa de cama (sábanas y funda de almohada).</li>
+          <li>WiFi de alta velocidad en todas las instalaciones.</li>
+          <li>Uso de cocina equipada (nevera, microondas, cocina, cafetera).</li>
+          <li>Acceso a terraza, jardín y zona de descanso exterior.</li>
+          <li>Almacenamiento seguro para bicicletas y bastones.</li>
+          <li>Información turística y del Camino (mapa de etapas, puntos de interés).</li>
+        </ul>
+        <h3>Servicios adicionales (coste aparte)</h3>
+        <ul>
+          <li>Desayuno, menú del peregrino y cena (bar-restaurante en instalaciones).</li>
+          <li>Lavadora y secadora (€{PRICE_LAUNDRY} cada servicio).</li>
+          <li>Sello de la credencial del peregrino (gratuito).</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>8. Responsabilidad sobre objetos personales</h2>
+        <p>El albergue no se hace responsable de la pérdida, robo o daño de objetos personales de los huéspedes. Se recomienda encarecidamente utilizar las taquillas con llave disponibles en los dormitorios para guardar objetos de valor.</p>
+        <p>Los objetos olvidados se custodiarán durante <strong>30 días</strong> y, si no son reclamados, se entregarán a organismos benéficos.</p>
+      </section>
+
+      <section>
+        <h2>9. Resolución de quejas y reclamaciones</h2>
+        <p>En caso de disconformidad, el huésped puede:</p>
+        <ol>
+          <li>Comunicarlo verbalmente al responsable del albergue.</li>
+          <li>Solicitar y cumplimentar la <strong>hoja de quejas y reclamaciones</strong>, disponible en recepción conforme a la normativa de turismo de Extremadura.</li>
+          <li>Enviar su reclamación por escrito a <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Le responderemos en un plazo máximo de <strong>10 días hábiles</strong>.</li>
+        </ol>
+        <p>Si no obtiene una respuesta satisfactoria, puede acudir al Servicio de Consumo de la Junta de Extremadura o a la <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">Plataforma de Resolución de Litigios en Línea de la UE</a>.</p>
+      </section>
+
+      <section>
+        <h2>10. Tratamiento de datos en las reservas</h2>
+        <p>Los datos facilitados al realizar una reserva se tratan conforme a la <a href="/privacidad">Política de Privacidad</a>. La reserva no puede gestionarse sin proporcionar los datos obligatorios (nombre, contacto, fechas).</p>
+      </section>
+
+      <section>
+        <h2>11. Modificaciones de estas condiciones</h2>
+        <p>Nos reservamos el derecho a modificar estas condiciones en cualquier momento. Los cambios se publicarán en este sitio web con al menos <strong>15 días</strong> de antelación a su entrada en vigor. Las reservas realizadas antes de los cambios se regirán por las condiciones vigentes en el momento de la confirmación.</p>
+      </section>
+
+      <section>
+        <h2>12. Ley aplicable y jurisdicción</h2>
+        <p>Estos Términos se rigen por la legislación española, en particular:</p>
+        <ul>
+          <li>Ley General para la Defensa de los Consumidores y Usuarios (RDL 1/2007).</li>
+          <li>Ley de Ordenación del Turismo de Extremadura (Ley 2/2011).</li>
+          <li>Decreto 182/2016 sobre Alojamientos Turísticos de Extremadura.</li>
+          <li>Ley de Servicios de la Sociedad de la Información (LSSI-CE).</li>
+        </ul>
+        <p>Para la resolución de controversias, las partes se someten a los Juzgados y Tribunales de <strong>Badajoz</strong>, salvo que la normativa de consumo establezca un fuero diferente en beneficio del consumidor.</p>
+      </section>
+
+      <div class="legal-contact-box">
+        <h3>¿Necesita ayuda o tiene alguna consulta?</h3>
+        <p>Llámenos al <a href={`tel:${PHONE.replace(/\s/g,'')}`}>{PHONE}</a> (horario de recepción {RECEPTION_HOURS}) o escriba a <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Estaremos encantados de ayudarle.</p>
+      </div>
+
+    </article>
+  </main>
+</Layout>
+
+<style>
+  .legal-page {
+    min-height: 80vh;
+    background: #faf9f7;
+  }
+  .legal-hero {
+    background: linear-gradient(135deg, #1a3a2e 0%, #2d5a3d 60%, #3a7a52 100%);
+    color: white;
+    padding: 4rem 1.5rem 3rem;
+    text-align: center;
+  }
+  .legal-hero-inner {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .legal-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 50%;
+    margin-bottom: 1rem;
+  }
+  .legal-hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .legal-subtitle {
+    font-size: 0.95rem;
+    opacity: 0.75;
+    margin: 0;
+  }
+
+  /* Intro banner */
+  .terms-intro-banner {
+    background: #f0f4f0;
+    border-bottom: 1px solid #d4e4d4;
+    padding: 1.25rem 1.5rem;
+  }
+  .terms-intro-inner {
+    max-width: 820px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    color: #2d5a3d;
+  }
+  .terms-intro-inner svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .terms-intro-inner p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #2d5a3d;
+  }
+
+  .legal-content {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+  .legal-content section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e8e4de;
+  }
+  .legal-content section:last-of-type {
+    border-bottom: none;
+  }
+  .legal-content h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a3a2e;
+    margin: 0 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #00AB39;
+    display: inline-block;
+  }
+  .legal-content h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d5a3d;
+    margin: 1.25rem 0 0.6rem;
+  }
+  .legal-content p {
+    color: #444;
+    line-height: 1.75;
+    margin: 0.6rem 0;
+  }
+  .legal-content ol,
+  .legal-content ul {
+    padding-left: 1.4rem;
+    color: #444;
+    line-height: 1.8;
+  }
+  .legal-content li {
+    margin-bottom: 0.4rem;
+  }
+  .legal-content a {
+    color: #00AB39;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .legal-content a:hover {
+    text-decoration: underline;
+    color: #1a3a2e;
+  }
+
+  /* Tables */
+  .legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 0.75rem 0;
+  }
+  .legal-table th,
+  .legal-table td {
+    padding: 0.55rem 0.85rem;
+    text-align: left;
+    border: 1px solid #ddd;
+    vertical-align: top;
+  }
+  .legal-table thead th {
+    background: #1a3a2e;
+    color: white;
+    font-weight: 600;
+  }
+  .legal-table tbody th {
+    background: #f0f4f0;
+    font-weight: 600;
+    color: #1a3a2e;
+    white-space: nowrap;
+    width: 180px;
+  }
+  .legal-table tbody tr:nth-child(even) td {
+    background: #fafaf9;
+  }
+
+  /* Schedule grid */
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .schedule-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: white;
+    border: 1px solid #dde8dd;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .schedule-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: #e8f5e9;
+    border-radius: 50%;
+    flex-shrink: 0;
+    color: #00AB39;
+  }
+  .schedule-card strong {
+    display: block;
+    font-size: 0.82rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.1rem;
+  }
+  .schedule-card span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a3a2e;
+  }
+
+  .terms-note {
+    font-size: 0.88rem !important;
+    color: #666 !important;
+    font-style: italic;
+    margin-top: 0.5rem !important;
+  }
+
+  .legal-contact-box {
+    margin-top: 2.5rem;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    border-left: 4px solid #00AB39;
+    border-radius: 0 8px 8px 0;
+  }
+  .legal-contact-box h3 {
+    color: #1a3a2e;
+    font-size: 1.05rem;
+    margin: 0 0 0.4rem;
+  }
+  .legal-contact-box p {
+    margin: 0;
+    color: #444;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 600px) {
+    .legal-content {
+      padding: 2rem 1rem 4rem;
+    }
+    .schedule-grid {
+      grid-template-columns: 1fr;
+    }
+    .legal-table tbody th {
+      width: 110px;
+      font-size: 0.82rem;
+    }
+  }
+</style>

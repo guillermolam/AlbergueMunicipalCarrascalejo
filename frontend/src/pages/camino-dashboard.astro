@@ -1,10 +1,6 @@
-﻿---
+---
 export const prerender = true;
-
-import BaseLayout from '../layouts/BaseLayout.astro';
-import CaminoDashboard from '../components/CaminoDashboard.astro';
 ---
 
-<BaseLayout title="Camino Dashboard">
-  <CaminoDashboard />
-</BaseLayout>
+<meta http-equiv="refresh" content="0;url=/camino" />
+<script>window.location.href = '/camino';</script>

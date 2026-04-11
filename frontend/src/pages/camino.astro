@@ -1,378 +1,591 @@
 ---
-export const prerender = true;
-
 import Layout from '../layouts/Layout.astro';
+import { serverFetch } from '../lib/api/core';
+
+// Types for camino API responses
+interface CaminoStage {
+  num: number;
+  name: string;
+  km: number;
+  difficulty: string;
+  towns: string[];
+  hours: string;
+  completed?: boolean;
+  current?: boolean;
+  highlight?: boolean;
+}
+
+interface CaminoTip {
+  q: string;
+  a: string;
+}
+
+// Fallback data (used when API is unavailable)
+const FALLBACK_STAGES: CaminoStage[] = [
+  { num: 1,  name: 'Sevilla — Guillena',               km: 22.2, difficulty: 'easy',   towns: ['Guillena'],              hours: '5-6h',  completed: true  },
+  { num: 2,  name: 'Guillena — Castilblanco',          km: 18.5, difficulty: 'easy',   towns: ['Castilblanco de Arroyos'],hours: '4-5h',  completed: true  },
+  { num: 3,  name: 'Castilblanco — Almaden',           km: 25.8, difficulty: 'medium', towns: ['Almaden de la Plata'],    hours: '6-7h',  completed: true  },
+  { num: 4,  name: 'Almaden — El Real de la Jara',     km: 19.3, difficulty: 'medium', towns: ['El Real de la Jara'],     hours: '5-6h',  completed: true  },
+  { num: 5,  name: 'El Real — Monesterio',             km: 21.7, difficulty: 'hard',   towns: ['Monesterio'],             hours: '5-6h',  completed: true  },
+  { num: 6,  name: 'Monesterio — Fuente de Cantos',    km: 22.0, difficulty: 'medium', towns: ['Fuente de Cantos'],       hours: '5-6h',  completed: true  },
+  { num: 7,  name: 'Fuente de Cantos — Zafra',         km: 24.5, difficulty: 'easy',   towns: ['Zafra'],                 hours: '6-7h',  current: true    },
+  { num: 8,  name: 'Zafra — Villafranca',              km: 20.1, difficulty: 'medium', towns: ['Villafranca de los B.'], hours: '5h' },
+  { num: 9,  name: 'Villafranca — Torremejia',         km: 19.8, difficulty: 'easy',   towns: ['Torremejia'],            hours: '4-5h' },
+  { num: 10, name: 'Torremejia — Merida',              km: 16.5, difficulty: 'easy',   towns: ['Merida'],                hours: '4h'  },
+  { num: 11, name: 'Merida — El Carrascalejo',         km: 23.0, difficulty: 'medium', towns: ['El Carrascalejo'],        hours: '5-6h', highlight: true },
+  { num: 12, name: 'El Carrascalejo — Alcuescar',      km: 21.0, difficulty: 'medium', towns: ['Alcuescar'],              hours: '5-6h' },
+];
+
+const FALLBACK_TIPS: CaminoTip[] = [
+  { q: 'Cuando salir cada manana?', a: 'Lo ideal es salir entre las 6:00 y 7:30. En verano mucho antes para evitar el calor de Extremadura, que puede superar los 40C. Aprovecha las primeras horas de luz.' },
+  { q: 'Cuanto agua llevar?', a: 'Minimo 2 litros en invierno, 3-4 litros en verano. Hay fuentes en la mayoria de los pueblos pero en tramos rurales pueden distanciarse hasta 15 km. Siempre mejor llevar de mas.' },
+  { q: 'Que hacer si sale una ampolla?', a: 'Limpia bien la zona, desinfecta con povidona yodada y pincha con aguja esterilizada. No quites la piel. Usa apitos especiales o esparadrapo. El albergue tiene botiquin.' },
+  { q: 'Es necesaria la credencial del peregrino?', a: 'Si, es imprescindible para alojarte en albergues de peregrinos y para obtener la Compostela al final. Puedes conseguirla en las asociaciones de amigos del Camino o en la primera iglesia del recorrido.' },
+];
+
+// Fetch stages and tips from the backend; fall back to static data if unavailable
+const stagesResult = await serverFetch<CaminoStage[]>(
+  '/api/camino/stages', {}, import.meta.env.API_SERVICE_TOKEN ?? ''
+).catch(() => null);
+
+const tipsResult = await serverFetch<CaminoTip[]>(
+  '/api/camino/recommendations', {}, import.meta.env.API_SERVICE_TOKEN ?? ''
+).catch(() => null);
+
+const stages: CaminoStage[] = (stagesResult?.ok && Array.isArray(stagesResult.data) && stagesResult.data.length > 0)
+  ? stagesResult.data
+  : FALLBACK_STAGES;
+
+const tips: CaminoTip[] = (tipsResult?.ok && Array.isArray(tipsResult.data) && tipsResult.data.length > 0)
+  ? tipsResult.data
+  : FALLBACK_TIPS;
+
+const difficultyColor: Record<string, string> = {
+  easy:   '#00AB39',
+  medium: '#EAC102',
+  hard:   '#ED1C24',
+};
+const difficultyLabel: Record<string, string> = {
+  easy:   'Facil',
+  medium: 'Moderada',
+  hard:   'Dificil',
+};
 ---
 
-<Layout
-  title="Mi Camino - Camino Dashboard"
-  description="Tu progreso y estadísticas del Camino de Santiago"
->
-  <main class="container mx-auto px-4 py-8">
-    <!-- Hero Section -->
-    <section class="text-center mb-12 animate-fade-in-up">
-      <div class="card mx-auto max-w-4xl">
-        <div class="flex flex-col items-center text-center">
-          <div class="text-6xl mb-4">🥾</div>
-          <h1 class="text-4xl md:text-5xl font-bold text-primary-900 mb-4">Mi Camino</h1>
-          <p class="text-lg text-primary-600 mb-6 max-w-2xl">
-            Tu viaje personal por el Camino de Santiago con estadísticas detalladas y progreso en
-            tiempo real
-          </p>
-          <div class="flex flex-wrap justify-center gap-4">
-            <div class="badge badge-blue">📍 Etapa Actual: Mérida → Alcuéscar</div>
-            <div class="badge badge-green">🎯 127 km recorridos</div>
-            <div class="badge badge-yellow">⏱️ 7 días en camino</div>
-          </div>
+<Layout title="Via de la Plata — Albergue Municipal de El Carrascalejo">
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- HERO -->
+  <section class="camino-hero reveal-section">
+    <div class="camino-hero-inner">
+      <div class="hero-route-map" aria-hidden="true">
+        <svg viewBox="0 0 600 160" class="route-illustration">
+          <!-- Scenic route path -->
+          <path class="route-bg-line" d="M30,130 Q80,60 130,100 Q180,140 230,90 Q280,40 330,80 Q380,120 430,70 Q480,30 530,60 Q560,75 570,65"/>
+          <path class="route-fill-line" d="M30,130 Q80,60 130,100 Q180,140 230,90 Q280,40 330,80 Q380,120 430,70 Q480,30 530,60 Q560,75 570,65"/>
+          <!-- City markers -->
+          <circle cx="30" cy="130" r="7" fill="#00AB39"/>
+          <text x="30" y="148" font-family="Patrick Hand,cursive" font-size="11" fill="#444" text-anchor="middle">Sevilla</text>
+          <circle cx="230" cy="90" r="5" fill="#00AB39" opacity="0.7"/>
+          <circle cx="330" cy="80" r="6" fill="#00AB39"/>
+          <text x="330" y="98" font-family="Patrick Hand,cursive" font-size="10" fill="#444" text-anchor="middle">Merida</text>
+          <!-- El Carrascalejo highlight -->
+          <circle cx="370" cy="72" r="9" fill="#EAC102" stroke="#1A1A1A" stroke-width="2.5"/>
+          <text x="370" y="58" font-family="Cabin Sketch,cursive" font-size="10" fill="#1A1A1A" text-anchor="middle" font-weight="700">Carrascalejo</text>
+          <circle cx="430" cy="70" r="5" fill="#006b24" opacity="0.6"/>
+          <circle cx="570" cy="65" r="8" fill="#004d1f"/>
+          <text x="570" y="53" font-family="Patrick Hand,cursive" font-size="11" fill="#444" text-anchor="middle">Santiago</text>
+          <!-- Pilgrim current position -->
+          <circle class="pilgrim-pos" cx="200" cy="110" r="10" fill="#00AB39"/>
+          <circle cx="200" cy="110" r="5" fill="white"/>
+          <text x="200" y="128" font-family="Patrick Hand,cursive" font-size="9" fill="#00AB39" text-anchor="middle">Tu posicion</text>
+        </svg>
+      </div>
+      <h1 class="camino-title">Via de la Plata</h1>
+      <div class="hero-wave" aria-hidden="true">
+        <svg viewBox="0 0 340 16" preserveAspectRatio="none">
+          <path d="M0,8 Q28,0 56,8 T112,8 T168,8 T224,8 T280,8 T340,8" fill="none" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="camino-subtitle">La ruta jacobea mas larga de Espana — 1.000 km de historia</p>
+      <div class="hero-stats-row">
+        <div class="hero-stat">
+          <span class="hs-val">1.000</span>
+          <span class="hs-lbl">km totales</span>
         </div>
+        <div class="hero-stat">
+          <span class="hs-val">46</span>
+          <span class="hs-lbl">etapas</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hs-val">30+</span>
+          <span class="hs-lbl">albergues</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hs-val">2000+</span>
+          <span class="hs-lbl">anos de historia</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="camino-content">
+
+    <!-- STAGE CARDS -->
+    <section class="stages-section reveal-section" style="--delay:0.05s">
+      <div class="section-label">Las Etapas</div>
+      <h2 class="section-heading">Etapas de la Ruta</h2>
+      <div class="stages-grid">
+        {stages.map((stage, i) => (
+          <div
+            class={`stage-card reveal-section ${stage.current ? 'stage-current' : ''} ${stage.completed ? 'stage-done' : ''} ${stage.highlight ? 'stage-highlight' : ''}`}
+            style={`--delay:${0.04 + i * 0.035}s`}
+            data-stage={stage.num}
+          >
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="14"
+                fill={stage.highlight ? 'rgba(234,193,2,0.08)' : stage.current ? 'rgba(0,171,57,0.06)' : 'white'}
+                stroke={stage.highlight ? 'var(--gold)' : stage.current ? 'var(--green)' : 'var(--black)'}
+                stroke-width={stage.current || stage.highlight ? '2.5' : '1.5'}
+                filter="url(#sketchy-filter)"/>
+            </svg>
+            <div class="stage-inner">
+              <div class="stage-header">
+                <div class="stage-num-wrap">
+                  <span class="stage-num">{stage.num < 10 ? '0' + stage.num : stage.num}</span>
+                  {stage.completed && (
+                    <svg class="stage-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                </div>
+                <span class="difficulty-badge" style={`background:${difficultyColor[stage.difficulty]}22;color:${difficultyColor[stage.difficulty]};border-color:${difficultyColor[stage.difficulty]}44`}>
+                  {difficultyLabel[stage.difficulty]}
+                </span>
+              </div>
+              <h3 class="stage-name">{stage.name}</h3>
+              <div class="stage-meta">
+                <span class="stage-km">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/></svg>
+                  {stage.km} km
+                </span>
+                <span class="stage-time">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {stage.hours}
+                </span>
+              </div>
+              <div class="stage-towns">
+                {stage.towns.map(t => <span class="town-tag">{t}</span>)}
+              </div>
+              {stage.current && <div class="current-badge">Tu etapa actual</div>}
+              {stage.highlight && <div class="highlight-badge">Nuestro albergue</div>}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
 
-    <!-- Progress Overview -->
-    <section class="mb-12">
-      <h2 class="text-3xl font-bold text-primary-900 mb-8 text-center">Progreso General</h2>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Overall Progress -->
-        <div class="lg:col-span-2">
-          <div class="card">
-            <div class="flex items-center gap-4 mb-6">
-              <div class="text-3xl">📊</div>
-              <div>
-                <h3 class="text-xl font-bold text-primary-900">Avance Total</h3>
-                <p class="text-sm text-primary-600">Tu progreso en el Camino de Santiago</p>
-              </div>
-            </div>
-
-            <div class="space-y-6">
-              <!-- Progress Bar -->
-              <div>
-                <div class="flex justify-between items-center mb-3">
-                  <span class="text-sm font-semibold text-primary-700">Total del Camino</span>
-                  <span class="text-sm font-bold text-accent-green-600">15%</span>
-                </div>
-                <div class="w-full bg-primary-200 rounded-full h-3">
-                  <div class="bg-gradient-primary h-3 rounded-full w-15"></div>
-                </div>
-                <div class="flex justify-between text-sm text-primary-600 mt-2">
-                  <span>127 km recorridos</span>
-                  <span>720 km restantes</span>
-                  <span>847 km total</span>
-                </div>
-              </div>
-
-              <!-- Stats Grid -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-primary-50 p-4 rounded-lg text-center">
-                  <div class="text-2xl mb-2">📅</div>
-                  <div class="text-2xl font-bold text-primary-900">7</div>
-                  <div class="text-sm text-primary-600">Días</div>
-                </div>
-                <div class="bg-primary-50 p-4 rounded-lg text-center">
-                  <div class="text-2xl mb-2">🏃</div>
-                  <div class="text-2xl font-bold text-primary-900">18.1</div>
-                  <div class="text-sm text-primary-600">km/día</div>
-                </div>
-                <div class="bg-primary-50 p-4 rounded-lg text-center">
-                  <div class="text-2xl mb-2">⏱️</div>
-                  <div class="text-2xl font-bold text-primary-900">4.2</div>
-                  <div class="text-sm text-primary-600">h/día</div>
-                </div>
-                <div class="bg-primary-50 p-4 rounded-lg text-center">
-                  <div class="text-2xl mb-2">🔥</div>
-                  <div class="text-2xl font-bold text-primary-900">18,932</div>
-                  <div class="text-sm text-primary-600">calorías</div>
-                </div>
-              </div>
+    <!-- TIPS ACCORDION -->
+    <section class="tips-section reveal-section" style="--delay:0.08s">
+      <div class="section-label">Consejos</div>
+      <h2 class="section-heading">Guia del Peregrino</h2>
+      <div class="acc-list" id="tips-accordion">
+        {tips.map((tip, i) => (
+          <div class="acc-item reveal-section" style={`--delay:${0.06 + i * 0.05}s`}>
+            <button class="acc-trigger" aria-expanded="false" aria-controls={`tip-body-${i}`}>
+              <span class="acc-q">{tip.q}</span>
+              <svg class="acc-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="acc-body" id={`tip-body-${i}`} role="region">
+              <p class="acc-text">{tip.a}</p>
             </div>
           </div>
-        </div>
+        ))}
+      </div>
+    </section>
 
-        <!-- Quick Stats -->
-        <div class="space-y-6">
-          <div class="card">
-            <div class="flex items-center gap-4 mb-4">
-              <div class="text-2xl">⚡</div>
-              <h3 class="text-lg font-bold text-primary-900">Estadísticas Rápidas</h3>
-            </div>
-            <div class="space-y-4">
-              <div class="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
-                <div class="flex items-center gap-3">
-                  <span class="text-xl">📅</span>
-                  <div>
-                    <div class="font-semibold text-primary-900">7</div>
-                    <div class="text-sm text-primary-600">Días en camino</div>
+    <!-- WEATHER + NEARBY -->
+    <div class="bottom-grid reveal-section" style="--delay:0.1s">
+
+      <!-- Weather placeholder -->
+      <div class="weather-widget">
+        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+          <rect x="0" y="0" width="100%" height="100%" rx="16" fill="white" stroke="var(--black)" stroke-width="2" filter="url(#sketchy-filter)"/>
+        </svg>
+        <div class="weather-inner">
+          <div class="weather-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <h3 class="weather-title">Tiempo en El Carrascalejo</h3>
+          </div>
+          <div class="weather-body">
+            <span class="weather-temp">18C</span>
+            <span class="weather-cond">Soleado y agradable</span>
+          </div>
+          <div class="weather-week">
+            {['Lun','Mar','Mie','Jue','Vie'].map((d, i) => (
+              <div class="weather-day">
+                <span class="wd-name">{d}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={i < 3 ? 'var(--gold)' : '#aaa'} stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                </svg>
+                <span class="wd-temp">{16 + i}C</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Nearby albergues -->
+      <div class="nearby-widget">
+        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+          <rect x="0" y="0" width="100%" height="100%" rx="16" fill="white" stroke="var(--black)" stroke-width="2" filter="url(#sketchy-filter)"/>
+        </svg>
+        <div class="nearby-inner">
+          <h3 class="nearby-title">Albergues Cercanos</h3>
+          <ul class="nearby-list">
+            {[
+              { name: 'Albergue El Carrascalejo', km: 0, price: 15, rating: 5 },
+              { name: 'Albergue de Merida', km: 23, price: 12, rating: 4 },
+              { name: 'Albergue de Alcuescar', km: 21, price: 8,  rating: 4 },
+              { name: 'Albergue de Caceres', km: 65, price: 12, rating: 5 },
+            ].map(a => (
+              <li class="nearby-item">
+                <div class="nearby-item-info">
+                  <span class="nearby-name">{a.name}</span>
+                  <div class="nearby-meta">
+                    <span class="nearby-km">{a.km === 0 ? 'Aqui' : a.km + ' km'}</span>
+                    <span class="nearby-price">{a.price} EUR/noche</span>
+                    <span class="nearby-stars" aria-label={`${a.rating} estrellas`}>{'★'.repeat(a.rating)}{'☆'.repeat(5 - a.rating)}</span>
                   </div>
                 </div>
-              </div>
-              <div class="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
-                <div class="flex items-center gap-3">
-                  <span class="text-xl">🏃</span>
-                  <div>
-                    <div class="font-semibold text-primary-900">18.1 km/día</div>
-                    <div class="text-sm text-primary-600">Promedio</div>
-                  </div>
-                </div>
-              </div>
-              <div class="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
-                <div class="flex items-center gap-3">
-                  <span class="text-xl">⏱️</span>
-                  <div>
-                    <div class="font-semibold text-primary-900">4.2 h/día</div>
-                    <div class="text-sm text-primary-600">Caminando</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="flex items-center gap-4 mb-4">
-              <div class="text-2xl">🏆</div>
-              <h3 class="text-lg font-bold text-primary-900">Logros</h3>
-            </div>
-            <div class="space-y-3">
-              <div class="flex items-center gap-3 p-3 bg-accent-green-50 rounded-lg">
-                <span class="text-xl">🌅</span>
-                <div>
-                  <div class="font-semibold text-primary-900">Amanecer Mágico</div>
-                  <div class="text-sm text-primary-600">Primer amanecer en el camino</div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-accent-green-50 rounded-lg">
-                <span class="text-xl">🦶</span>
-                <div>
-                  <div class="font-semibold text-primary-900">100km Club</div>
-                  <div class="text-sm text-primary-600">Más de 100 km completados</div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-primary-100 rounded-lg opacity-50">
-                <span class="text-xl">🏔️</span>
-                <div>
-                  <div class="font-semibold text-primary-700">Montañero</div>
-                  <div class="text-sm text-primary-500">Próximamente</div>
-                </div>
-              </div>
-            </div>
-          </div>
+                {a.km === 0 ? (
+                  <span class="here-badge">Aqui</span>
+                ) : (
+                  <a href="/book" class="nearby-book-btn">Reservar</a>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-    </section>
 
-    <!-- Current Stage -->
-    <section class="mb-12">
-      <div class="card">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="text-3xl">🗺️</div>
-          <div>
-            <h2 class="text-2xl font-bold text-primary-900">Etapa Actual</h2>
-            <p class="text-sm text-primary-600">Mérida → Alcuéscar (38.2 km)</p>
-          </div>
-        </div>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            <div class="flex justify-between items-center mb-4">
-              <span class="text-sm font-semibold text-primary-700">Progreso de Etapa</span>
-              <span class="text-sm font-bold text-accent-green-600">68%</span>
-            </div>
-            <div class="w-full bg-primary-200 rounded-full h-3 mb-4">
-              <div class="bg-gradient-primary h-3 rounded-full w-17/25"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 text-sm text-primary-600">
-              <div class="bg-primary-50 p-3 rounded-lg">
-                <div class="font-semibold">26 km</div>
-                <div class="text-xs">Completados</div>
-              </div>
-              <div class="bg-primary-50 p-3 rounded-lg">
-                <div class="font-semibold">12.2 km</div>
-                <div class="text-xs">Restantes</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-primary-50 p-4 rounded-lg">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="text-xl">📍</span>
-                <div class="font-semibold text-primary-900">Punto de Partida</div>
-              </div>
-              <div class="text-sm text-primary-600">Mérida</div>
-              <div class="text-xs text-primary-500">08:30 AM</div>
-            </div>
-            <div class="bg-primary-50 p-4 rounded-lg">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="text-xl">🎯</span>
-                <div class="font-semibold text-primary-900">Destino</div>
-              </div>
-              <div class="text-sm text-primary-600">Alcuéscar</div>
-              <div class="text-xs text-primary-500">Est. 4:30 PM</div>
-            </div>
-            <div class="bg-primary-50 p-4 rounded-lg">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="text-xl">⏱️</span>
-                <div class="font-semibold text-primary-900">Tiempo Caminando</div>
-              </div>
-              <div class="text-sm text-primary-600">5h 15m</div>
-              <div class="text-xs text-primary-500">2h 45m restantes</div>
-            </div>
-            <div class="bg-primary-50 p-4 rounded-lg">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="text-xl">📈</span>
-                <div class="font-semibold text-primary-900">Ritmo Actual</div>
-              </div>
-              <div class="text-sm text-primary-600">4.9 km/h</div>
-              <div class="text-xs text-primary-500">Buen ritmo</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Recommendations -->
-    <section class="mb-12">
-      <div class="card">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="text-3xl">💡</div>
-          <div>
-            <h2 class="text-2xl font-bold text-primary-900">Recomendaciones Inteligentes</h2>
-            <p class="text-sm text-primary-600">Basadas en tu progreso y condición</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-accent-red-50 border border-accent-red-200 rounded-lg p-6">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="text-2xl">🚨</span>
-              <h3 class="text-lg font-bold text-accent-red-800">Importante</h3>
-            </div>
-            <p class="text-accent-red-700 mb-4">
-              Considera tomarte un día de descanso en Alcuéscar. Tu ritmo ha sido constante pero
-              exigente.
-            </p>
-            <div class="flex gap-2">
-              <span class="badge badge-red">7 días seguidos</span>
-              <span class="badge badge-red">18.1 km/día</span>
-            </div>
-          </div>
-
-          <div class="bg-accent-green-50 border border-accent-green-200 rounded-lg p-6">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="text-2xl">🌟</span>
-              <h3 class="text-lg font-bold text-accent-green-800">Optimización</h3>
-            </div>
-            <p class="text-accent-green-700 mb-4">
-              Tu ritmo actual es excelente. Podrías alcanzar Santiago en 34 días si mantienes este
-              ritmo.
-            </p>
-            <div class="flex gap-2">
-              <span class="badge badge-green">Est. 34 días</span>
-              <span class="badge badge-green">Ritmo óptimo</span>
-            </div>
-          </div>
-
-          <div class="bg-accent-blue-50 border border-accent-blue-200 rounded-lg p-6">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="text-2xl">🏃</span>
-              <h3 class="text-lg font-bold text-accent-blue-800">Próxima Etapa</h3>
-            </div>
-            <p class="text-accent-blue-700 mb-4">
-              Alcuéscar → Cáceres (23.1 km). Etapa más corta, perfecta para recuperar energías.
-            </p>
-            <div class="flex gap-2">
-              <span class="badge badge-blue">23.1 km</span>
-              <span class="badge badge-blue">Est. 5-6 horas</span>
-            </div>
-          </div>
-
-          <div class="bg-accent-yellow-50 border border-accent-yellow-200 rounded-lg p-6">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="text-2xl">⚡</span>
-              <h3 class="text-lg font-bold text-accent-yellow-800">Rendimiento</h3>
-            </div>
-            <p class="text-accent-yellow-700 mb-4">
-              Has mantenido un ritmo constante. Tu velocidad promedio de 4.9 km/h es ideal para el
-              Camino.
-            </p>
-            <div class="flex gap-2">
-              <span class="badge badge-yellow">4.9 km/h</span>
-              <span class="badge badge-yellow">Ritmo estable</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Fun Facts -->
-    <section class="mb-12">
-      <div class="card">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="text-3xl">🎉</div>
-          <div>
-            <h2 class="text-2xl font-bold text-primary-900">Curiosidades Camperas</h2>
-            <p class="text-sm text-primary-600">Datos fascinantes sobre tu viaje</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-primary-50 p-6 rounded-lg">
-            <div class="flex items-center gap-4 mb-4">
-              <span class="text-3xl">🌍</span>
-              <h3 class="text-lg font-bold text-primary-900">Has caminado el equivalente a...</h3>
-            </div>
-            <p class="text-primary-700">
-              ¡Cruzar la península ibérica de este a oeste! Tu distancia recorrida (127 km) es
-              similar a la anchura de España en su punto más estrecho.
-            </p>
-          </div>
-
-          <div class="bg-primary-50 p-6 rounded-lg">
-            <div class="flex items-center gap-4 mb-4">
-              <span class="text-3xl">🔥</span>
-              <h3 class="text-lg font-bold text-primary-900">Calorías quemadas</h3>
-            </div>
-            <p class="text-primary-700">
-              Las 18,932 calorías que has quemado equivalen a aproximadamente 37 bocadillos de
-              tortilla española o 75 cafés con leche. ¡Eso es mucha energía!
-            </p>
-          </div>
-
-          <div class="bg-primary-50 p-6 rounded-lg">
-            <div class="flex items-center gap-4 mb-4">
-              <span class="text-3xl">👣</span>
-              <h3 class="text-lg font-bold text-primary-900">Pasos dados</h3>
-            </div>
-            <p class="text-primary-700">
-              Tus 168,420 pasos equivalen a subir y bajar la Torre Eiffel aproximadamente 28 veces.
-              ¡Qué altura!
-            </p>
-          </div>
-
-          <div class="bg-primary-50 p-6 rounded-lg">
-            <div class="flex items-center gap-4 mb-4">
-              <span class="text-3xl">⏰</span>
-              <h3 class="text-lg font-bold text-primary-900">Tiempo de calidad</h3>
-            </div>
-            <p class="text-primary-700">
-              Has pasado 29.4 horas caminando, lo que equivale a ver 14 películas largas o leer
-              aproximadamente 147 páginas de un buen libro.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Action Buttons -->
-    <section class="text-center">
-      <div class="card mx-auto max-w-2xl">
-        <h3 class="text-xl font-bold text-primary-900 mb-4">¿Qué te gustaría hacer?</h3>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/book" class="btn btn-primary text-white"> 🏨 Reservar Albergue </a>
-          <a href="/camino" class="btn btn-outline text-primary-700 border-primary-300">
-            📊 Ver Más Estadísticas
+    <!-- CTA -->
+    <section class="camino-cta reveal-section" style="--delay:0.05s">
+      <div class="cta-card">
+        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+          <rect x="0" y="0" width="100%" height="100%" rx="16" fill="var(--green)" stroke="var(--black)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+        </svg>
+        <div class="cta-inner">
+          <h2 class="cta-heading">Reserva tu cama en El Carrascalejo</h2>
+          <p class="cta-sub" id="camino-price-sub">Etapa 11 de la Via de la Plata — 15 EUR/noche</p>
+          <a href="/book" class="cta-btn">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="12" fill="white" stroke="var(--black)" stroke-width="2" filter="url(#sketchy-filter)"/>
+            </svg>
+            <span class="cta-btn-label" style="color:var(--green)">Reservar Ahora</span>
           </a>
-          <button class="btn btn-ghost text-primary-600"> 🔄 Actualizar Progreso </button>
         </div>
       </div>
     </section>
-  </main>
+
+  </div>
+
+  <style>
+    /* Hero */
+    .camino-hero {
+      background: linear-gradient(160deg, var(--green-darker) 0%, var(--green-dark) 50%, var(--green) 100%);
+      padding: 2rem 1rem 2.5rem; color: white; overflow: hidden;
+    }
+    .camino-hero-inner { max-width: 1020px; margin: 0 auto; }
+
+    .route-illustration { width: 100%; max-height: 160px; display: block; margin-bottom: 1.5rem; }
+    .route-bg-line { fill: none; stroke: rgba(255,255,255,0.2); stroke-width: 5; stroke-linecap: round; }
+    .route-fill-line {
+      fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round;
+      stroke-dasharray: 700; stroke-dashoffset: 700;
+      animation: draw-route 2s ease 400ms forwards;
+    }
+    .pilgrim-pos { animation: pulse-dot 2.5s ease-in-out infinite; }
+
+    .camino-title { font-family: var(--font-display); font-size: clamp(2.5rem,6vw,4rem); color: white; margin: 0 0 0.2rem; text-align: center; }
+    .hero-wave { width: min(300px,80vw); height: 16px; margin: 0 auto 0.75rem; }
+    .camino-subtitle { font-family: var(--font-hand); font-size: 1.05rem; opacity: 0.85; text-align: center; margin: 0 0 1.5rem; }
+
+    @keyframes stat-entrance {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-stats-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .hero-stat {
+      background: rgba(255,255,255,0.12);
+      border-radius: var(--r-md); padding: 0.75rem 1.25rem;
+      text-align: center; backdrop-filter: blur(4px);
+      opacity: 0;
+      animation: stat-entrance 500ms ease forwards;
+    }
+    .hero-stat:nth-child(1) { animation-delay: 600ms; }
+    .hero-stat:nth-child(2) { animation-delay: 700ms; }
+    .hero-stat:nth-child(3) { animation-delay: 800ms; }
+    .hero-stat:nth-child(4) { animation-delay: 900ms; }
+    .hs-val { display: block; font-family: var(--font-display); font-size: 1.5rem; color: var(--gold); }
+    .hs-lbl { display: block; font-family: var(--font-hand); font-size: 0.78rem; opacity: 0.8; }
+
+    /* Content */
+    .camino-content { max-width: 1060px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+    .section-label {
+      font-family: var(--font-sketch); font-size: 0.78rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); margin-bottom: 0.3rem;
+    }
+    .section-heading {
+      font-family: var(--font-display); font-size: clamp(1.6rem,4vw,2.4rem);
+      color: var(--black); margin: 0 0 1.5rem; line-height: 1.15;
+    }
+
+    /* Stages grid */
+    .stages-section { margin-bottom: 3rem; }
+    .stages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 1rem; }
+    .stage-card {
+      position: relative; border-radius: 14px;
+      cursor: pointer;
+      transition: transform 250ms ease, box-shadow 250ms ease;
+    }
+    .stage-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
+    .stage-card.stage-active {
+      border-color: #00AB39;
+      box-shadow: 0 0 0 3px rgba(0,171,57,0.2), 0 8px 24px rgba(0,171,57,0.15);
+      transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .stage-card.stage-active .stage-num-wrap {
+      background: #00AB39;
+      transform: scale(1.1);
+      transition: all 200ms ease;
+    }
+    .stage-current { z-index: 2; }
+    .stage-inner { position: relative; z-index: 2; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .stage-header { display: flex; justify-content: space-between; align-items: flex-start; }
+
+    .stage-num-wrap {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--green); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; position: relative;
+    }
+    .stage-done .stage-num-wrap { background: var(--green-dark); }
+    .stage-num { font-family: var(--font-sketch); font-weight: 700; font-size: 0.75rem; color: white; }
+    .stage-check { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .stage-done .stage-num { opacity: 0; }
+
+    .difficulty-badge {
+      font-family: var(--font-hand); font-size: 0.72rem; font-weight: 600;
+      padding: 0.15rem 0.6rem; border-radius: 50px; border: 1.5px solid;
+      transition: transform 200ms ease, filter 200ms ease;
+      cursor: default;
+    }
+    .difficulty-badge:hover { transform: scale(1.05); filter: brightness(0.88) saturate(1.3); }
+
+    .stage-name { font-family: var(--font-sketch); font-weight: 700; font-size: 0.95rem; color: var(--black); margin: 0; line-height: 1.3; }
+    .stage-meta { display: flex; gap: 1rem; }
+    .stage-km, .stage-time {
+      display: flex; align-items: center; gap: 0.3rem;
+      font-family: var(--font-hand); font-size: 0.8rem; color: #666;
+    }
+    .stage-towns { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .town-tag {
+      font-family: var(--font-hand); font-size: 0.72rem; color: var(--green-dark);
+      background: var(--green-light); padding: 0.1rem 0.4rem; border-radius: 50px;
+    }
+    .current-badge {
+      font-family: var(--font-sketch); font-weight: 700; font-size: 0.72rem;
+      color: var(--green); text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.25rem 0; margin-top: 0.25rem;
+    }
+    .highlight-badge {
+      font-family: var(--font-sketch); font-weight: 700; font-size: 0.72rem;
+      color: var(--gold); text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.25rem 0; margin-top: 0.25rem;
+    }
+
+    /* Tips accordion */
+    .tips-section { margin-bottom: 3rem; }
+    .acc-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .acc-item {
+      border: 2px solid rgba(0,171,57,0.2); border-radius: var(--r-md);
+      background: white; transition: border-color 200ms; overflow: hidden;
+    }
+    .acc-item.open { border-color: var(--green); }
+    .acc-trigger {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 1.1rem 1.25rem; background: none; border: none; cursor: pointer; text-align: left; gap: 0.75rem;
+    }
+    .acc-q { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; color: var(--black); }
+    .acc-arrow { flex-shrink: 0; transition: transform 300ms ease; }
+    .acc-item.open .acc-arrow { transform: rotate(180deg); }
+    .acc-body { max-height: 0; overflow: hidden; transition: max-height 450ms cubic-bezier(0.4,0,0.2,1); }
+    .acc-item.open .acc-body { max-height: 220px; }
+    .acc-text {
+      font-family: var(--font-hand); font-size: 0.95rem; color: #444; line-height: 1.7; margin: 0; padding: 0 1.25rem 1.25rem;
+      opacity: 0; transition: opacity 300ms ease 200ms;
+    }
+    .acc-item.open .acc-text { opacity: 1; }
+
+    /* Bottom grid */
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }
+    .weather-widget, .nearby-widget { position: relative; border-radius: 16px; }
+    .weather-inner, .nearby-inner { position: relative; z-index: 2; padding: 1.5rem; }
+
+    .weather-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+    .weather-title { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--black); margin: 0; }
+    .weather-body { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1rem; }
+    .weather-temp { font-family: var(--font-display); font-size: 3rem; color: var(--gold); }
+    .weather-cond { font-family: var(--font-hand); font-size: 0.95rem; color: #555; }
+    .weather-week { display: flex; justify-content: space-between; }
+    .weather-day { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+    .wd-name { font-family: var(--font-hand); font-size: 0.72rem; color: #888; }
+    .wd-temp { font-family: var(--font-hand); font-size: 0.8rem; color: #444; }
+
+    .nearby-title { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--black); margin: 0 0 0.75rem; }
+    .nearby-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+    .nearby-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.6rem 0.75rem; background: var(--green-light);
+      border-radius: var(--r-md); border: 1.5px solid rgba(0,171,57,0.15);
+      transition: background 200ms ease, transform 200ms ease;
+      cursor: default;
+    }
+    .nearby-item:hover { background: rgba(0,171,57,0.06); transform: translateX(4px); }
+    .nearby-item-info { display: flex; flex-direction: column; gap: 0.15rem; }
+    .nearby-name { font-family: var(--font-sketch); font-weight: 700; font-size: 0.85rem; color: var(--black); }
+    .nearby-meta { display: flex; gap: 0.5rem; align-items: center; }
+    .nearby-km, .nearby-price { font-family: var(--font-hand); font-size: 0.75rem; color: #666; }
+    .nearby-stars { color: var(--gold); font-size: 0.75rem; }
+    .here-badge { font-family: var(--font-sketch); font-weight: 700; font-size: 0.72rem; color: var(--green); text-transform: uppercase; }
+    .nearby-book-btn {
+      font-family: var(--font-sketch); font-weight: 700; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      color: white; background: var(--green); padding: 0.3rem 0.7rem;
+      border-radius: 50px; text-decoration: none;
+      transition: background 200ms;
+    }
+    .nearby-book-btn:hover { background: var(--green-dark); }
+
+    /* CTA */
+    .camino-cta { margin-top: 1rem; }
+    .cta-card { position: relative; border-radius: 16px; }
+    .cta-inner {
+      position: relative; z-index: 2; padding: 2.5rem;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.75rem;
+    }
+    .cta-heading { font-family: var(--font-display); font-size: clamp(1.6rem,4vw,2.4rem); color: white; margin: 0; }
+    .cta-sub { font-family: var(--font-hand); font-size: 1rem; color: rgba(255,255,255,0.85); margin: 0; }
+    .cta-btn {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.875rem 2.5rem; text-decoration: none; margin-top: 0.5rem;
+      transition: transform 200ms ease;
+    }
+    .cta-btn:hover { transform: translateY(-3px); }
+    .cta-btn:active { transform: scale(0.97); }
+    .cta-btn-label { position: relative; z-index: 2; font-family: var(--font-sketch); font-weight: 700; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* City marker pulse for route SVG circles */
+    @keyframes city-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.5; }
+    }
+    .route-illustration circle { animation: city-pulse 3s ease-in-out infinite; }
+    .route-illustration circle:nth-child(odd)  { animation-delay: 0.4s; }
+    .route-illustration circle:nth-child(even) { animation-delay: 1.2s; }
+    /* Pilgrim pos overrides city-pulse intentionally */
+    .pilgrim-pos { animation: pulse-dot 2.5s ease-in-out infinite !important; }
+
+    /* Weather shimmer */
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+    .weather-temp, .wd-temp {
+      background: linear-gradient(90deg, var(--gold) 25%, #ffe87c 50%, var(--gold) 75%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
+    }
+
+    /* Animations */
+    @keyframes draw-route { to { stroke-dashoffset: 0; } }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.25); }
+    }
+
+    .reveal-section { opacity: 0; transform: translateY(24px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
+    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 768px) {
+      .bottom-grid { grid-template-columns: 1fr; }
+      .stages-grid { grid-template-columns: 1fr; }
+      .hero-stats-row { gap: 0.5rem; }
+    }
+    @media (max-width: 480px) {
+      .stages-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); observer.unobserve(e.target); } });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.reveal-section').forEach(el => observer.observe(el));
+
+    // Accordion
+    document.querySelectorAll('#tips-accordion .acc-trigger').forEach(trigger => {
+      trigger.addEventListener('click', function() {
+        const item = this.closest('.acc-item') as HTMLElement;
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('#tips-accordion .acc-item').forEach(i => {
+          i.classList.remove('open');
+          (i.querySelector('.acc-trigger') as HTMLButtonElement).setAttribute('aria-expanded','false');
+        });
+        if (!isOpen) {
+          item.classList.add('open');
+          (this as HTMLButtonElement).setAttribute('aria-expanded','true');
+        }
+      });
+    });
+
+    // Stage card click (show info)
+    document.querySelectorAll('.stage-card').forEach(card => {
+      card.addEventListener('click', function() {
+        document.querySelectorAll('.stage-card').forEach(c => c.classList.remove('stage-active'));
+        (this as HTMLElement).classList.add('stage-active');
+      });
+    });
+
+    // Hover lift effect ripple on stage cards
+    document.querySelectorAll('.stage-card').forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        (this as HTMLElement).style.zIndex = '3';
+      });
+      card.addEventListener('mouseleave', function() {
+        (this as HTMLElement).style.zIndex = '';
+      });
+    });
+  </script>
 </Layout>

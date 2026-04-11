@@ -1,34 +1,681 @@
 ---
 export const prerender = true;
-
-import { RoughFrame, SketchyButton } from '../components';
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Página no encontrada - Albergue Municipal Carrascalejo">
-  <main class="container mx-auto px-4 py-8 max-w-2xl min-h-screen flex items-center justify-center">
-    <div class="text-center w-full">
-      <RoughFrame padding="lg" texture="cross-hatch" class="mb-8">
-        <div class="text-8xl mb-4">🚶‍♂️</div>
-        <h1 class="text-4xl font-900 text-brand-green mb-4">¡Uy! Parece que te has perdido</h1>
-        <p class="text-lg text-stone-600 mb-6">
-          La página que buscas no existe. Pero no te preocupes, el Camino continúa.
-        </p>
-      </RoughFrame>
+<Layout title="Página no encontrada — Albergue Municipal de El Carrascalejo">
 
-      <div class="space-y-4">
-        <p class="text-stone-700">Error 404 - Página no encontrada</p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <SketchyButton href="/" text="Volver al Inicio" variant="primary" size="lg" />
-          <SketchyButton href="/info" text="Más Información" variant="outline" size="lg" />
+  <!-- Hidden SVG filter definitions -->
+  <svg style="position:absolute;width:0;height:0" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+      </filter>
+      <filter id="sketchy-filter-strong">
+        <feTurbulence type="turbulence" baseFrequency="0.05" numOctaves="5" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Main centered container -->
+  <section style="
+    min-height: calc(100vh - 140px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    background: #FFFFFF;
+  ">
+    <div style="
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    ">
+
+      <!-- 1. Floating pilgrim emoji -->
+      <div
+        id="pilgrim-icon"
+        style="
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 6rem;
+          height: 6rem;
+          border-radius: 50%;
+          background: rgba(0, 171, 57, 0.08);
+          border: 2px solid rgba(0, 171, 57, 0.2);
+          font-size: 3rem;
+          margin-bottom: 1.5rem;
+          cursor: default;
+          animation: pilgrim-float 3s ease-in-out infinite;
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        "
+        aria-hidden="true"
+      >
+        🚶
+      </div>
+
+      <!-- 2. "404" number -->
+      <div
+        id="num-404"
+        style="
+          font-family: 'Cabin Sketch', cursive;
+          font-size: 7rem;
+          font-weight: 700;
+          color: #00AB39;
+          line-height: 1;
+          margin-bottom: 0.5rem;
+          animation: bounce-in 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms both;
+        "
+        aria-label="Error 404"
+      >
+        404
+      </div>
+
+      <!-- 3. Heading + 4. Wave underline -->
+      <div style="margin-bottom: 1rem; position: relative; display: inline-block;">
+        <h1
+          style="
+            font-family: 'Shadows Into Light', cursive;
+            font-size: 2rem;
+            color: #1A1A1A;
+            margin: 0 0 0.35rem;
+            line-height: 1.2;
+            animation: fade-in-up 600ms ease both;
+            animation-delay: 400ms;
+          "
+        >
+          ¡Uy! Parece que te has perdido
+        </h1>
+
+        <!-- 4. Wave underline SVG -->
+        <svg
+          viewBox="0 0 220 12"
+          xmlns="http://www.w3.org/2000/svg"
+          style="
+            display: block;
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+            overflow: visible;
+          "
+          aria-hidden="true"
+        >
+          <path
+            id="wave-path"
+            d="M2 6 Q28 1 55 6 Q82 11 110 6 Q138 1 165 6 Q192 11 218 6"
+            fill="none"
+            stroke="#00AB39"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            style="
+              stroke-dasharray: 200;
+              stroke-dashoffset: 200;
+              animation: wave-draw 1s ease 600ms both;
+            "
+          />
+        </svg>
+      </div>
+
+      <!-- 5. Description text -->
+      <p
+        style="
+          font-family: 'Patrick Hand', cursive;
+          font-size: 1.05rem;
+          color: #555555;
+          line-height: 1.7;
+          margin: 0.75rem auto 1.75rem;
+          max-width: 420px;
+          animation: fade-in-up 600ms ease both;
+          animation-delay: 500ms;
+        "
+      >
+        La página que buscas no existe o ha sido movida. Pero no te preocupes — el Camino siempre continúa.
+      </p>
+
+      <!-- 6. Error badge (green pill with sketchy SVG border) -->
+      <div
+        style="
+          display: inline-block;
+          position: relative;
+          margin-bottom: 2rem;
+          animation: bounce-in 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 600ms both;
+        "
+      >
+        <svg
+          width="220"
+          height="38"
+          viewBox="0 0 220 38"
+          style="display: block; filter: url(#sketchy-filter);"
+          aria-hidden="true"
+        >
+          <rect
+            x="2" y="2" width="216" height="34" rx="17" ry="17"
+            fill="rgba(0,171,57,0.08)"
+            stroke="#00AB39"
+            stroke-width="1.5"
+          />
+        </svg>
+        <span style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-family: 'Patrick Hand', cursive;
+          font-size: 0.875rem;
+          color: #006b24;
+          white-space: nowrap;
+          pointer-events: none;
+        ">
+          Error 404 — Página no encontrada
+        </span>
+      </div>
+
+      <!-- 7. Action buttons -->
+      <div style="
+        display: flex;
+        gap: 1.25rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 2.75rem;
+      ">
+
+        <!-- Primary button: Volver al Inicio -->
+        <a
+          href="/"
+          id="btn-home"
+          style="
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            overflow: hidden;
+            animation: cta-rock 4s ease-in-out infinite;
+          "
+          aria-label="Volver al Inicio"
+        >
+          <svg
+            width="190"
+            height="48"
+            viewBox="0 0 190 48"
+            style="display:block; filter: url(#sketchy-filter);"
+            aria-hidden="true"
+          >
+            <rect x="2" y="2" width="186" height="44" rx="22" ry="22"
+              fill="#00AB39"
+              stroke="#006b24"
+              stroke-width="2"
+            />
+          </svg>
+          <span style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Patrick Hand', cursive;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #FFFFFF;
+            white-space: nowrap;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+          ">
+            🏠 Volver al Inicio
+          </span>
+          <!-- Ripple container -->
+          <span class="btn-ripple-zone" style="position:absolute;inset:0;overflow:hidden;border-radius:22px;pointer-events:none;" aria-hidden="true"></span>
+        </a>
+
+        <!-- Secondary button: Más Información -->
+        <a
+          href="/info"
+          id="btn-info"
+          style="
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            overflow: hidden;
+            animation: cta-rock 4s ease-in-out infinite;
+            animation-delay: 0.5s;
+          "
+          aria-label="Más Información"
+        >
+          <svg
+            width="190"
+            height="48"
+            viewBox="0 0 190 48"
+            style="display:block; filter: url(#sketchy-filter);"
+            aria-hidden="true"
+          >
+            <rect x="2" y="2" width="186" height="44" rx="22" ry="22"
+              fill="#FFFFFF"
+              stroke="#00AB39"
+              stroke-width="2.5"
+            />
+          </svg>
+          <span style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Patrick Hand', cursive;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #006b24;
+            white-space: nowrap;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+          ">
+            ℹ️ Más Información
+          </span>
+          <!-- Ripple container -->
+          <span class="btn-ripple-zone" style="position:absolute;inset:0;overflow:hidden;border-radius:22px;pointer-events:none;" aria-hidden="true"></span>
+        </a>
+
+      </div>
+
+      <!-- 8. Inspirational quote card with 9. corner sparkles -->
+      <div
+        id="quote-card"
+        style="
+          position: relative;
+          padding: 1.5rem 1.75rem;
+          background: #FFFFFF;
+          border-radius: 12px;
+          animation: fade-in-up 700ms ease both;
+          animation-delay: 700ms;
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+          cursor: default;
+        "
+      >
+        <!-- Sketchy SVG border overlay -->
+        <svg
+          style="
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            filter: url(#sketchy-filter);
+            border-radius: 12px;
+            overflow: visible;
+          "
+          preserveAspectRatio="none"
+          viewBox="0 0 100 100"
+          aria-hidden="true"
+        >
+          <rect
+            x="1" y="1" width="98" height="98" rx="8" ry="8"
+            fill="none"
+            stroke="#00AB39"
+            stroke-width="1.5"
+            vector-effect="non-scaling-stroke"
+          />
+        </svg>
+
+        <!-- 9. Corner sparkle stars -->
+        <!-- Top-left (CW) -->
+        <svg
+          class="corner-sparkle sparkle-tl"
+          width="20" height="20"
+          viewBox="0 0 24 24"
+          style="position:absolute; top:-10px; left:-10px; z-index:6; fill:#00AB39;"
+          aria-hidden="true"
+        >
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+        </svg>
+        <!-- Top-right (CCW) -->
+        <svg
+          class="corner-sparkle sparkle-tr"
+          width="20" height="20"
+          viewBox="0 0 24 24"
+          style="position:absolute; top:-10px; right:-10px; z-index:6; fill:#00AB39;"
+          aria-hidden="true"
+        >
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+        </svg>
+        <!-- Bottom-left (CW) -->
+        <svg
+          class="corner-sparkle sparkle-bl"
+          width="16" height="16"
+          viewBox="0 0 24 24"
+          style="position:absolute; bottom:-8px; left:-8px; z-index:6; fill:#00AB39;"
+          aria-hidden="true"
+        >
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+        </svg>
+        <!-- Bottom-right (CCW) -->
+        <svg
+          class="corner-sparkle sparkle-br"
+          width="16" height="16"
+          viewBox="0 0 24 24"
+          style="position:absolute; bottom:-8px; right:-8px; z-index:6; fill:#00AB39;"
+          aria-hidden="true"
+        >
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+        </svg>
+
+        <!-- Quote text -->
+        <p style="
+          font-family: 'Shadows Into Light', cursive;
+          font-size: 1.15rem;
+          color: #1A1A1A;
+          font-style: italic;
+          margin: 0 0 0.6rem;
+          line-height: 1.6;
+          position: relative;
+          z-index: 1;
+        ">
+          "El Camino no se termina aquí. Cada paso es una nueva oportunidad."
+        </p>
+        <div style="
+          font-family: 'Patrick Hand', cursive;
+          font-size: 0.82rem;
+          color: #888888;
+          position: relative;
+          z-index: 1;
+        ">
+          — Dicho del Camino
         </div>
       </div>
 
-      <div class="mt-12 text-center">
-        <p class="text-sm text-stone-500 italic">
-          "El Camino no se termina aquí. Cada paso es una nueva oportunidad."
-        </p>
-      </div>
     </div>
-  </main>
+  </section>
+
+  <!-- Toast notification (hidden initially) -->
+  <div
+    id="lost-toast"
+    role="status"
+    aria-live="polite"
+    style="
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1A1A1A;
+      color: #FFFFFF;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 0.9rem;
+      padding: 0.875rem 1.25rem;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      border-left: 4px solid #00AB39;
+      max-width: 300px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+      z-index: 9999;
+    "
+  >
+    ¿Perdiste el camino? Reserva tu cama →&nbsp;<a
+      href="/book"
+      style="color: #00AB39; text-decoration: underline; pointer-events: auto;"
+    >/book</a>
+  </div>
+
+  <style>
+    /* ============================================================
+       KEYFRAME ANIMATIONS
+    ============================================================ */
+
+    @keyframes pilgrim-float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50%       { transform: translateY(-15px) rotate(3deg); }
+    }
+
+    @keyframes bounce-in {
+      0%   { transform: scale(0.5); opacity: 0; }
+      60%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes fade-in-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes wave-draw {
+      from { stroke-dashoffset: 200; opacity: 0; }
+      30%  { opacity: 1; }
+      to   { stroke-dashoffset: 0; }
+    }
+
+    @keyframes cta-rock {
+      0%, 100% { transform: rotateZ(0deg) translateY(0); }
+      25%       { transform: rotateZ(-1deg) translateY(-2px); }
+      75%       { transform: rotateZ(1deg) translateY(-1px); }
+    }
+
+    @keyframes sparkle-spin-cw  {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes sparkle-spin-ccw {
+      0%   { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    @keyframes ripple {
+      0%   { transform: scale(0); opacity: 1; }
+      100% { transform: scale(4); opacity: 0; }
+    }
+
+    /* ============================================================
+       404 NUMBER — wobble after bounce completes
+    ============================================================ */
+    @keyframes num-wobble {
+      0%, 100% { transform: rotate(0deg); }
+      20%       { transform: rotate(-2deg); }
+      40%       { transform: rotate(2deg); }
+      60%       { transform: rotate(-1.5deg); }
+      80%       { transform: rotate(1.5deg); }
+    }
+
+    #num-404 {
+      display: inline-block;
+    }
+
+    /* Wobble kicks in after bounce (0.8s total) */
+    #num-404 {
+      animation:
+        bounce-in 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms both,
+        num-wobble 3.5s ease-in-out 1.2s infinite;
+    }
+
+    /* ============================================================
+       PILGRIM HOVER
+    ============================================================ */
+    #pilgrim-icon:hover {
+      transform: scale(1.1);
+    }
+
+    /* ============================================================
+       CORNER SPARKLES
+    ============================================================ */
+    .sparkle-tl,
+    .sparkle-bl {
+      animation: sparkle-spin-cw  20s linear infinite;
+      transform-origin: center center;
+    }
+    .sparkle-tr,
+    .sparkle-br {
+      animation: sparkle-spin-ccw 20s linear infinite;
+      transform-origin: center center;
+    }
+
+    /* ============================================================
+       RIPPLE ELEMENT
+    ============================================================ */
+    .btn-ripple {
+      position: absolute;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      margin-top: -20px;
+      margin-left: -20px;
+      background: rgba(255, 255, 255, 0.45);
+      animation: ripple 600ms ease-out forwards;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       REDUCED MOTION — respect user preference
+    ============================================================ */
+    @media (prefers-reduced-motion: reduce) {
+      #pilgrim-icon,
+      #num-404,
+      #btn-home,
+      #btn-info,
+      .corner-sparkle,
+      h1,
+      p,
+      #quote-card {
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
+      #wave-path {
+        stroke-dashoffset: 0 !important;
+        animation: none !important;
+        opacity: 1 !important;
+      }
+    }
+  </style>
+
+  <script>
+    // ============================================================
+    // Helper: apply transform string to element
+    // ============================================================
+    function setTransform(el: HTMLElement, value: string) {
+      el.style.transform = value;
+    }
+
+    // ============================================================
+    // CTA button interactions
+    // ============================================================
+    const buttons = document.querySelectorAll<HTMLAnchorElement>('#btn-home, #btn-info');
+
+    buttons.forEach((btn) => {
+      let isHovered = false;
+
+      btn.addEventListener('mouseenter', () => {
+        isHovered = true;
+        btn.style.animation = 'none';
+        setTransform(btn, 'scale(1.05) rotateZ(-3deg) translateY(-3px)');
+        btn.style.transition = 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        // Deepen shadow on primary button SVG rect
+        btn.style.filter = 'drop-shadow(0 6px 16px rgba(0,171,57,0.35))';
+      });
+
+      btn.addEventListener('mouseleave', () => {
+        isHovered = false;
+        btn.style.filter = '';
+        setTransform(btn, 'scale(1) rotateZ(0deg) translateY(0)');
+        // Re-enable the rocking animation after transition settles
+        setTimeout(() => {
+          if (!isHovered) {
+            btn.style.animation = '';
+          }
+        }, 300);
+      });
+
+      btn.addEventListener('mousedown', () => {
+        btn.style.animation = 'none';
+        setTransform(btn, 'scale(0.95)');
+      });
+
+      btn.addEventListener('mouseup', () => {
+        // Restore hover state
+        setTransform(btn, 'scale(1.05) rotateZ(-3deg) translateY(-3px)');
+      });
+
+      // Ripple on click
+      btn.addEventListener('click', (e: MouseEvent) => {
+        const rippleZone = btn.querySelector<HTMLElement>('.btn-ripple-zone');
+        if (!rippleZone) return;
+
+        const rect = btn.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'btn-ripple';
+        ripple.style.left = `${e.clientX - rect.left}px`;
+        ripple.style.top  = `${e.clientY - rect.top}px`;
+        rippleZone.appendChild(ripple);
+
+        ripple.addEventListener('animationend', () => ripple.remove());
+      });
+    });
+
+    // ============================================================
+    // Quote card hover lift
+    // ============================================================
+    const quoteCard = document.getElementById('quote-card');
+    if (quoteCard) {
+      quoteCard.addEventListener('mouseenter', () => {
+        quoteCard.style.transform = 'translateY(-4px)';
+        quoteCard.style.boxShadow = '0 12px 32px rgba(0,171,57,0.15)';
+      });
+      quoteCard.addEventListener('mouseleave', () => {
+        quoteCard.style.transform = 'translateY(0)';
+        quoteCard.style.boxShadow = '';
+      });
+    }
+
+    // ============================================================
+    // Pilgrim icon hover spring
+    // ============================================================
+    const pilgrim = document.getElementById('pilgrim-icon');
+    if (pilgrim) {
+      pilgrim.addEventListener('mouseenter', () => {
+        pilgrim.style.animationPlayState = 'paused';
+        pilgrim.style.transform = 'scale(1.1)';
+        pilgrim.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      });
+      pilgrim.addEventListener('mouseleave', () => {
+        pilgrim.style.transform = '';
+        pilgrim.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        // Re-enable float after spring back
+        setTimeout(() => {
+          pilgrim.style.animationPlayState = 'running';
+        }, 350);
+      });
+    }
+
+    // ============================================================
+    // Toast: show after 3 seconds
+    // ============================================================
+    const toast = document.getElementById('lost-toast');
+    if (toast) {
+      setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        toast.style.pointerEvents = 'auto';
+
+        // Auto-hide after 6 more seconds
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(12px)';
+          toast.style.pointerEvents = 'none';
+        }, 6000);
+      }, 3000);
+
+      // Allow manual dismiss on click
+      toast.addEventListener('click', () => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+        toast.style.pointerEvents = 'none';
+      });
+    }
+  </script>
+
 </Layout>

@@ -1,0 +1,250 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getServices } from '../../lib/api/hostel';
+
+// Fallback list used when the backend is unavailable
+const FALLBACK_SERVICES = [
+  { id: '1', icon: '🧺', name: 'Lavadora',          price: 1,    unit: 'por uso',      description: 'Detergente incluido. Capacidad 7 kg.',        available: true  },
+  { id: '2', icon: '🌀', name: 'Secadora',           price: 2,    unit: 'por uso',      description: 'Ciclo de 60 min. Ropa seca garantizada.',     available: true  },
+  { id: '3', icon: '🛁', name: 'Toalla',             price: 1,    unit: 'por dia',      description: 'Toalla de bano limpia y seca.',               available: true  },
+  { id: '4', icon: '🔒', name: 'Taquilla',           price: 1,    unit: 'por noche',    description: 'Candado con clave. Tamano mochila grande.',   available: true  },
+  { id: '5', icon: '🥐', name: 'Desayuno',           price: 3.5,  unit: 'por dia',      description: 'Cafe, tostadas, fruta y zumo. 7:00–9:30h.',  available: false },
+  { id: '6', icon: '🚲', name: 'Parking Bicicleta',  price: 2,    unit: 'por noche',    description: 'Zona cubierta y vigilada.',                   available: true  },
+  { id: '7', icon: '📦', name: 'Guardar Mochila',    price: 1,    unit: 'tarifa unica', description: 'Deja la mochila y explora el pueblo.',        available: true  },
+  { id: '8', icon: '⚡', name: 'Carga Dispositivos', price: 0.5,  unit: 'por hora',     description: 'Enchufes USB-A y USB-C en recepcion.',        available: false },
+  { id: '9', icon: '🧼', name: 'Kit Higiene',        price: 1.5,  unit: 'por kit',      description: 'Champu, gel, pasta y cepillo de dientes.',   available: true  },
+  { id:'10', icon: '🩹', name: 'Botiquin',            price: 0,    unit: 'gratuito',     description: 'Tiritas, Compeed y vendas disponibles.',     available: true  },
+];
+
+const apiServices = await getServices(import.meta.env.API_SERVICE_TOKEN ?? '').catch(() => []);
+// Use API data when available; fall back to the hardcoded list
+const services = apiServices.length > 0
+  ? apiServices.map(s => ({ ...s, desc: s.description }))
+  : FALLBACK_SERVICES.map(s => ({ ...s, desc: s.description }));
+---
+
+<Layout title="Servicios — Albergue Municipal de El Carrascalejo">
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="sketchy-filter">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <section class="page-hero reveal-section">
+    <div class="page-hero-inner">
+      <a href="/dashboard" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al Panel
+      </a>
+      <div class="hero-emoji" aria-hidden="true">🛁</div>
+      <h1 class="page-title">Servicios del Albergue</h1>
+      <p class="page-subtitle">Todo lo que necesitas para tu etapa</p>
+    </div>
+  </section>
+
+  <div class="page-content">
+
+    <!-- Opening hours -->
+    <section class="hours-bar reveal-section" style="--delay:0.04s">
+      {[
+        { icon: '🏠', label: 'Check-in',   time: '14:00 – 22:00' },
+        { icon: '👋', label: 'Check-out',  time: 'hasta 09:00' },
+        { icon: '📞', label: 'Recepcion',  time: '08:00 – 22:00' },
+        { icon: '🔑', label: 'Llave',      time: '24h disponible' },
+      ].map(h => (
+        <div class="hour-chip">
+          <span class="hour-icon" aria-hidden="true">{h.icon}</span>
+          <div>
+            <span class="hour-label">{h.label}</span>
+            <span class="hour-time">{h.time}</span>
+          </div>
+        </div>
+      ))}
+    </section>
+
+    <!-- Services grid -->
+    <section class="services-section reveal-section" style="--delay:0.08s">
+      <h2 class="section-title">Todos los Servicios</h2>
+      <div class="services-grid">
+        {services.map((svc, i) => (
+          <div class={`svc-card ${svc.available ? '' : 'svc-unavailable'} reveal-section`} style={`--delay:${0.1 + i * 0.04}s`}>
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke={svc.available ? '#00AB39' : '#ccc'} stroke-width="1.5" filter="url(#sketchy-filter)" stroke-opacity="0.35"/>
+            </svg>
+            <div class="svc-inner">
+              <span class="svc-emoji" aria-hidden="true">{svc.icon}</span>
+              <div class="svc-body">
+                <span class="svc-name">{svc.name}</span>
+                <span class="svc-desc">{svc.desc}</span>
+              </div>
+              <div class="svc-price-wrap">
+                {svc.price === 0
+                  ? <span class="svc-free">Gratis</span>
+                  : <>
+                      <span class="svc-price">{svc.price} €</span>
+                      <span class="svc-unit">{svc.unit}</span>
+                    </>
+                }
+                {!svc.available && <span class="svc-badge-off">Temp. no disp.</span>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- WiFi info -->
+    <section class="wifi-section reveal-section" style="--delay:0.12s">
+      <h2 class="section-title">WiFi Gratuito</h2>
+      <div class="wifi-card">
+        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+          <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke="#2563eb" stroke-width="1.5" filter="url(#sketchy-filter)" stroke-opacity="0.35"/>
+        </svg>
+        <div class="wifi-inner">
+          <span class="wifi-big-icon" aria-hidden="true">📶</span>
+          <div class="wifi-details">
+            <div class="wifi-row">
+              <span class="wifi-key">Red (SSID)</span>
+              <span class="wifi-val wifi-mono">AlbergueMunicipal</span>
+            </div>
+            <div class="wifi-row">
+              <span class="wifi-key">Contraseña</span>
+              <span class="wifi-val wifi-locked">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Inicia sesión para verla
+              </span>
+            </div>
+            <div class="wifi-row">
+              <span class="wifi-key">Cobertura</span>
+              <span class="wifi-val">Dormitorios, salón y jardín</span>
+            </div>
+          </div>
+          <a href="/login?from=/info/services&reason=wifi" class="wifi-login-btn">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
+              <rect x="0" y="0" width="100%" height="100%" rx="8" fill="#2563eb" filter="url(#sketchy-filter)"/>
+            </svg>
+            <span class="wifi-btn-label">Ver contraseña</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <style>
+    .page-hero {
+      background: linear-gradient(135deg, #065f46 0%, #059669 60%, #10b981 100%);
+      padding: 2.5rem 1rem 2rem; color: white;
+      position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.06); border-radius: 50%;
+    }
+    .page-hero-inner { max-width: 1020px; margin: 0 auto; position: relative; z-index: 1; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: rgba(255,255,255,0.8); text-decoration: none;
+      font-family: var(--font-hand, sans-serif); font-size: 0.85rem;
+      margin-bottom: 1rem; transition: color 200ms ease;
+    }
+    .back-link:hover { color: white; }
+    .hero-emoji { font-size: 2.8rem; margin-bottom: 0.4rem; }
+    .page-title {
+      font-family: var(--font-display, sans-serif);
+      font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 0.25rem; color: white;
+    }
+    .page-subtitle { font-family: var(--font-hand, sans-serif); font-size: 1rem; opacity: 0.85; margin: 0; }
+
+    .page-content { max-width: 1020px; margin: 0 auto; padding: 2rem 1rem 4rem; display: flex; flex-direction: column; gap: 2.5rem; }
+    .section-title { font-family: var(--font-display, sans-serif); font-size: 1.4rem; color: #1a1a1a; margin: 0 0 1rem; }
+
+    /* Hours bar */
+    .hours-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .hour-chip {
+      display: flex; align-items: center; gap: 0.55rem;
+      background: white; border: 1.5px solid rgba(0,171,57,0.2); border-radius: 12px;
+      padding: 0.65rem 1rem; flex: 1; min-width: 150px;
+    }
+    .hour-icon { font-size: 1.4rem; }
+    .hour-label { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.72rem; color: #888; }
+    .hour-time { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.88rem; color: #1a1a1a; }
+
+    /* Services grid */
+    .services-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
+    .svc-card {
+      position: relative; border-radius: 14px;
+      transition: transform 250ms ease;
+    }
+    .svc-card:hover { transform: translateY(-3px); }
+    .svc-unavailable { opacity: 0.55; }
+    .svc-inner {
+      position: relative; z-index: 2; padding: 1rem 1.1rem;
+      display: flex; align-items: flex-start; gap: 0.75rem;
+    }
+    .svc-emoji { font-size: 1.7rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .svc-body { flex: 1; }
+    .svc-name { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.9rem; color: #1a1a1a; margin-bottom: 0.2rem; }
+    .svc-desc { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.78rem; color: #666; line-height: 1.4; }
+    .svc-price-wrap { text-align: right; flex-shrink: 0; }
+    .svc-price { display: block; font-family: var(--font-display, sans-serif); font-size: 1.25rem; color: #059669; }
+    .svc-unit { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.68rem; color: #aaa; white-space: nowrap; }
+    .svc-free { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.85rem; color: #059669; text-transform: uppercase; }
+    .svc-badge-off {
+      display: inline-block; margin-top: 0.3rem;
+      font-family: var(--font-hand, sans-serif); font-size: 0.65rem;
+      background: #f3f4f6; color: #9ca3af; border-radius: 50px;
+      padding: 0.1rem 0.45rem; white-space: nowrap;
+    }
+
+    /* WiFi */
+    .wifi-card { position: relative; border-radius: 14px; }
+    .wifi-inner {
+      position: relative; z-index: 2; padding: 1.25rem 1.5rem;
+      display: flex; align-items: center; gap: 1.25rem;
+    }
+    .wifi-big-icon { font-size: 2.5rem; flex-shrink: 0; }
+    .wifi-details { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+    .wifi-row { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
+    .wifi-key { font-family: var(--font-hand, sans-serif); font-size: 0.8rem; color: #888; min-width: 90px; }
+    .wifi-val { font-family: var(--font-hand, sans-serif); font-size: 0.88rem; color: #1a1a1a; }
+    .wifi-mono { font-family: monospace; font-size: 0.9rem; background: #f0f7ff; padding: 0.1rem 0.4rem; border-radius: 6px; color: #1e40af; }
+
+    /* WiFi lock */
+    .wifi-locked {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-family: var(--font-hand, sans-serif); font-size: 0.85rem;
+      color: #9ca3af; font-style: italic;
+    }
+    .wifi-login-btn {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.5rem 1rem; text-decoration: none; flex-shrink: 0;
+      transition: transform 200ms ease; margin-left: auto;
+    }
+    .wifi-login-btn:hover { transform: translateY(-2px); }
+    .wifi-btn-label {
+      position: relative; z-index: 2;
+      font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.8rem;
+      color: white; white-space: nowrap;
+    }
+
+    /* Animations */
+    .reveal-section { opacity: 0; transform: translateY(24px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
+    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 560px) {
+      .services-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script>
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); } });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.reveal-section').forEach(el => obs.observe(el));
+  </script>
+</Layout>

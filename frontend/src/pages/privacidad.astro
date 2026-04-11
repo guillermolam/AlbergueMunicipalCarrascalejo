@@ -1,0 +1,306 @@
+---
+/**
+ * /privacidad — Política de Privacidad
+ * RGPD (UE 2016/679) + LOPDGDD (LO 3/2018) compliant
+ */
+import Layout from '../layouts/Layout.astro';
+
+const UPDATED = '11 de abril de 2026';
+const TITULAR = 'SERGIO GUILLÉN BARRENA';
+const NIF     = '09205891A';
+const ADDRESS = 'Paraje Cuesta, s/n, 06894 El Carrascalejo (Badajoz), España';
+const PHONE   = '+34 695 90 43 44';
+const EMAIL   = 'elcarrascalejoalbergue@gmail.com';
+const WEB     = 'https://alberguecarrascalejo.es';
+---
+
+<Layout
+  title="Política de Privacidad — Albergue Municipal El Carrascalejo"
+  description="Información sobre el tratamiento de datos personales en el Albergue Municipal de El Carrascalejo, de conformidad con el RGPD y la LOPDGDD."
+>
+  <main class="legal-page">
+    <!-- Hero -->
+    <header class="legal-hero">
+      <div class="legal-hero-inner">
+        <div class="legal-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h1>Política de Privacidad</h1>
+        <p class="legal-subtitle">Última actualización: {UPDATED}</p>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <article class="legal-content">
+
+      <section>
+        <h2>1. Responsable del Tratamiento</h2>
+        <table class="legal-table">
+          <tbody>
+            <tr><th>Titular</th><td>{TITULAR}</td></tr>
+            <tr><th>NIF</th><td>{NIF}</td></tr>
+            <tr><th>Domicilio</th><td>{ADDRESS}</td></tr>
+            <tr><th>Teléfono</th><td><a href={`tel:${PHONE.replace(/\s/g,'')}`}>{PHONE}</a></td></tr>
+            <tr><th>Correo electrónico</th><td><a href={`mailto:${EMAIL}`}>{EMAIL}</a></td></tr>
+            <tr><th>Sitio web</th><td><a href={WEB} target="_blank" rel="noopener noreferrer">{WEB}</a></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>2. Datos que recogemos</h2>
+        <p>Recopilamos únicamente los datos necesarios para prestar nuestros servicios:</p>
+        <ul>
+          <li><strong>Datos de reserva:</strong> nombre y apellidos, correo electrónico, teléfono de contacto, fechas de estancia y número de personas.</li>
+          <li><strong>Datos de pago:</strong> procesados íntegramente por proveedores externos certificados (Stripe). No almacenamos datos de tarjeta.</li>
+          <li><strong>Datos de contacto:</strong> nombre, correo electrónico y mensaje cuando utiliza el formulario de contacto.</li>
+          <li><strong>Datos de navegación:</strong> cookies técnicas estrictamente necesarias. Consulte nuestra <a href="/cookies">Política de Cookies</a>.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>3. Finalidad y base jurídica del tratamiento</h2>
+        <table class="legal-table">
+          <thead>
+            <tr><th>Finalidad</th><th>Base jurídica (art. 6 RGPD)</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Gestión y confirmación de reservas</td>
+              <td>Ejecución de contrato (6.1.b)</td>
+            </tr>
+            <tr>
+              <td>Facturación y obligaciones fiscales</td>
+              <td>Cumplimiento de obligación legal (6.1.c)</td>
+            </tr>
+            <tr>
+              <td>Atención al cliente y gestión de consultas</td>
+              <td>Interés legítimo / ejecución de contrato (6.1.b/f)</td>
+            </tr>
+            <tr>
+              <td>Envío de comunicaciones comerciales (sólo con consentimiento)</td>
+              <td>Consentimiento del interesado (6.1.a)</td>
+            </tr>
+            <tr>
+              <td>Seguridad e integridad de las instalaciones</td>
+              <td>Interés legítimo (6.1.f)</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>4. Conservación de los datos</h2>
+        <p>Los datos se conservan durante los siguientes plazos:</p>
+        <ul>
+          <li><strong>Reservas y facturación:</strong> 6 años (obligación fiscal, art. 30 CCom).</li>
+          <li><strong>Formulario de contacto:</strong> hasta resolver la consulta y, como máximo, 1 año.</li>
+          <li><strong>Comunicaciones comerciales:</strong> hasta que revoque el consentimiento.</li>
+        </ul>
+        <p>Transcurridos estos plazos, los datos serán eliminados o anonimizados de forma irreversible.</p>
+      </section>
+
+      <section>
+        <h2>5. Destinatarios y encargados del tratamiento</h2>
+        <p>Sus datos podrán ser comunicados a:</p>
+        <ul>
+          <li><strong>Proveedores de servicios tecnológicos:</strong> plataformas de alojamiento web (Cloudflare Workers), bases de datos (Cloudflare D1) y procesamiento de pagos (Stripe) que actúan como encargados del tratamiento bajo acuerdo de confidencialidad.</li>
+          <li><strong>Administraciones públicas:</strong> cuando exista obligación legal (Hacienda, Seguridad Social, Fuerzas y Cuerpos de Seguridad).</li>
+          <li><strong>Booking.com:</strong> si realiza su reserva a través de dicha plataforma, aplica también la política de privacidad de Booking.com B.V.</li>
+        </ul>
+        <p>No cedemos sus datos a terceros con fines comerciales sin su consentimiento explícito. No realizamos transferencias internacionales de datos fuera del Espacio Económico Europeo.</p>
+      </section>
+
+      <section>
+        <h2>6. Sus derechos</h2>
+        <p>De conformidad con el RGPD y la LOPDGDD, usted tiene derecho a:</p>
+        <ul>
+          <li><strong>Acceso:</strong> conocer qué datos tratamos sobre usted.</li>
+          <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
+          <li><strong>Supresión («derecho al olvido»):</strong> solicitar la eliminación de sus datos cuando ya no sean necesarios.</li>
+          <li><strong>Limitación del tratamiento:</strong> restringir el uso de sus datos en determinadas circunstancias.</li>
+          <li><strong>Portabilidad:</strong> recibir sus datos en formato estructurado y de uso común.</li>
+          <li><strong>Oposición:</strong> oponerse al tratamiento basado en interés legítimo o finalidades de marketing directo.</li>
+          <li><strong>Retirada del consentimiento:</strong> en cualquier momento, sin afectar a la licitud del tratamiento previo.</li>
+        </ul>
+        <p>Para ejercer cualquiera de estos derechos, envíe un escrito a <a href={`mailto:${EMAIL}`}>{EMAIL}</a> indicando su nombre, DNI/pasaporte y el derecho que desea ejercitar. Le responderemos en el plazo máximo de <strong>30 días</strong>.</p>
+        <p>Si considera que el tratamiento de sus datos no se ajusta a la normativa vigente, tiene derecho a presentar una reclamación ante la <strong>Agencia Española de Protección de Datos (AEPD)</strong>: <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">www.aepd.es</a> — C/ Jorge Juan, 6, 28001 Madrid.</p>
+      </section>
+
+      <section>
+        <h2>7. Seguridad</h2>
+        <p>Adoptamos medidas técnicas y organizativas adecuadas para proteger sus datos frente a acceso no autorizado, alteración, divulgación o destrucción, incluidas:</p>
+        <ul>
+          <li>Comunicaciones cifradas mediante TLS/HTTPS.</li>
+          <li>Acceso restringido a los datos mediante autenticación fuerte.</li>
+          <li>Contratos de confidencialidad y encargados del tratamiento con terceros.</li>
+          <li>Revisiones periódicas de seguridad.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>8. Menores de edad</h2>
+        <p>Nuestros servicios no están dirigidos a menores de 14 años. Si detectamos que hemos recogido datos de un menor sin el consentimiento del titular de la patria potestad, procederemos a su eliminación inmediata.</p>
+      </section>
+
+      <section>
+        <h2>9. Modificaciones de esta política</h2>
+        <p>Podemos actualizar esta Política de Privacidad para adaptarla a cambios legislativos o de servicio. Le notificaremos los cambios relevantes mediante un aviso en el sitio web. El uso continuado del sitio tras la publicación de los cambios implica su aceptación.</p>
+      </section>
+
+      <div class="legal-contact-box">
+        <h3>¿Tiene preguntas sobre sus datos?</h3>
+        <p>Contacte con nosotros en <a href={`mailto:${EMAIL}`}>{EMAIL}</a> o en {ADDRESS}.</p>
+      </div>
+
+    </article>
+  </main>
+</Layout>
+
+<style>
+  /* ── Layout ── */
+  .legal-page {
+    min-height: 80vh;
+    background: #faf9f7;
+  }
+
+  /* ── Hero ── */
+  .legal-hero {
+    background: linear-gradient(135deg, #1a3a2e 0%, #2d5a3d 60%, #3a7a52 100%);
+    color: white;
+    padding: 4rem 1.5rem 3rem;
+    text-align: center;
+  }
+  .legal-hero-inner {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .legal-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 50%;
+    margin-bottom: 1rem;
+  }
+  .legal-hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .legal-subtitle {
+    font-size: 0.95rem;
+    opacity: 0.75;
+    margin: 0;
+  }
+
+  /* ── Content ── */
+  .legal-content {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+  .legal-content section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e8e4de;
+  }
+  .legal-content section:last-of-type {
+    border-bottom: none;
+  }
+  .legal-content h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a3a2e;
+    margin: 0 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #00AB39;
+    display: inline-block;
+  }
+  .legal-content p {
+    color: #444;
+    line-height: 1.75;
+    margin: 0.6rem 0;
+  }
+  .legal-content ul {
+    padding-left: 1.4rem;
+    color: #444;
+    line-height: 1.8;
+  }
+  .legal-content ul li {
+    margin-bottom: 0.4rem;
+  }
+  .legal-content a {
+    color: #00AB39;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .legal-content a:hover {
+    text-decoration: underline;
+    color: #1a3a2e;
+  }
+
+  /* ── Table ── */
+  .legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    margin: 0.75rem 0;
+  }
+  .legal-table th,
+  .legal-table td {
+    padding: 0.55rem 0.85rem;
+    text-align: left;
+    border: 1px solid #ddd;
+    vertical-align: top;
+  }
+  .legal-table thead th {
+    background: #1a3a2e;
+    color: white;
+    font-weight: 600;
+  }
+  .legal-table tbody th {
+    background: #f0f4f0;
+    font-weight: 600;
+    color: #1a3a2e;
+    white-space: nowrap;
+    width: 180px;
+  }
+  .legal-table tbody tr:nth-child(even) td {
+    background: #fafaf9;
+  }
+
+  /* ── Contact box ── */
+  .legal-contact-box {
+    margin-top: 2.5rem;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    border-left: 4px solid #00AB39;
+    border-radius: 0 8px 8px 0;
+  }
+  .legal-contact-box h3 {
+    color: #1a3a2e;
+    font-size: 1.05rem;
+    margin: 0 0 0.4rem;
+  }
+  .legal-contact-box p {
+    margin: 0;
+    color: #444;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 600px) {
+    .legal-content {
+      padding: 2rem 1rem 4rem;
+    }
+    .legal-table tbody th {
+      width: 120px;
+      font-size: 0.82rem;
+    }
+  }
+</style>

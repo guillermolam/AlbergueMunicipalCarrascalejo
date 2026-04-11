@@ -1,10 +1,14 @@
 ---
+import { UserButton } from '@clerk/astro/components';
+
 export interface Props {
   title?: string;
   activeSection?: string;
 }
 
 const { title = 'Admin Dashboard', activeSection = 'services' } = Astro.props;
+const clerkUser = await Astro.locals.currentUser();
+const adminName = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ') || 'Admin';
 
 const menuItems = [
   { id: 'services', label: 'Services', icon: 'server', path: '/admin/services' },
@@ -33,12 +37,10 @@ const menuItems = [
         <aside class="bg-base-200 w-64 min-h-screen border-r border-base-300">
           <div class="p-4">
             <div class="flex items-center gap-3 mb-8">
-              <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span class="text-primary-content font-bold text-lg">A</span>
-              </div>
+              <UserButton afterSignOutUrl="/" />
               <div>
                 <h1 class="text-lg font-bold">Admin Panel</h1>
-                <p class="text-sm text-base-content/70">Albergue Municipal</p>
+                <p class="text-sm text-base-content/70">{adminName}</p>
               </div>
             </div>
 

@@ -1,66 +1,45 @@
-// SSR-safe configuration management with Supabase integration
-// Handles secrets, environment variables, and runtime configuration
+/**
+ * Server-side configuration for the Albergue frontend.
+ *
+ * SECURITY RULES enforced here:
+ *  1. Secrets (JWT, encryption keys, service passwords) are read ONLY from
+ *     server-side env vars (process.env / Cloudflare Secrets).  They must
+ *     NEVER use the `PUBLIC_` prefix — that prefix inlines values into the
+ *     client-side JS bundle.
+ *  2. Supabase is NOT used in this project; the backend uses Cloudflare D1.
+ *     The previous Supabase import has been removed to avoid shipping a
+ *     ~500 KB unused library.
+ *  3. Redis is not available in Cloudflare Workers; use KV instead.
+ *
+ * Only call functions from this module inside Astro server components
+ * (frontmatter) or Astro Actions — never in client-side scripts.
+ */
 
-import { createClient } from '@supabase/supabase-js';
+// ── Environment helpers ────────────────────────────────────────────────────
 
-// SSR-safe environment check
 const isServer = typeof window === 'undefined';
-const getServerEnv = (name: string): string | undefined =>
-  import.meta.env.SSR ? process.env[name] : undefined;
 
-// Configuration interface
-export interface AppConfig {
-  // Database & API
-  supabase: {
-    url: string;
-    anonKey: string;
-    serviceKey?: string;
-  };
+/**
+ * Read a value that must stay server-side only.
+ * Returns undefined on the client so secrets are never leaked.
+ */
+const serverEnv = (name: string): string | undefined =>
+  isServer ? (process.env[name] ?? import.meta.env[name]) : undefined;
 
-  // Application settings
-  app: {
-    name: string;
-    version: string;
-    environment: 'development' | 'staging' | 'production';
-    baseUrl: string;
-    apiUrl: string;
-  };
+// ── Public (non-secret) env vars — safe to expose in the browser ───────────
 
-  // Security settings
-  security: {
-    jwtSecret: string;
-    encryptionKey: string;
-    sessionTimeout: number;
-    maxLoginAttempts: number;
-  };
+/** Base URL for the backend API gateway. Defaults to relative `/api`. */
+export const API_BASE_URL: string = import.meta.env.PUBLIC_API_URL ?? '/api';
 
-  // Feature flags
-  features: {
-    enable2FA: boolean;
-    enableNotifications: boolean;
-    enableAnalytics: boolean;
-    enableCache: boolean;
-  };
+/** Mock mode flag — set PUBLIC_API_MODE=mock to skip real API calls. */
+export const API_MODE: string = import.meta.env.PUBLIC_API_MODE ?? 'real';
 
-  // External services
-  services: {
-    redis: {
-      url: string;
-      password?: string;
-    };
-    email: {
-      provider: string;
-      apiKey: string;
-      fromAddress: string;
-    };
-    sms: {
-      provider: string;
-      apiKey: string;
-      fromNumber: string;
-    };
-  };
+// ── Server-only configuration (never exposed to the browser) ──────────────
 
-  // Camino-specific settings
+export interface ServerConfig {
+  /** Internal service-to-service bearer token for server-side API calls. */
+  apiServiceToken: string;
+  /** Camino-specific hostel settings. */
   camino: {
     maxBookingDays: number;
     minBookingDays: number;
@@ -71,262 +50,49 @@ export interface AppConfig {
   };
 }
 
-// Default configuration (fallback values)
-const DEFAULT_CONFIG: Partial<AppConfig> = {
-  app: {
-    name: 'Albergue Municipal Carrascalejo',
-    version: '1.0.0',
-    environment: 'development',
-    baseUrl: 'https://alberguecarrascalejo.fermyon.app',
-    apiUrl: '/api',
-  },
-  security: {
-    jwtSecret: 'dev-secret-key',
-    encryptionKey: 'dev-encryption-key',
-    sessionTimeout: 24 * 60 * 60 * 1000, // 24 hours
-    maxLoginAttempts: 5,
-  },
-  features: {
-    enable2FA: true,
-    enableNotifications: true,
-    enableAnalytics: true,
-    enableCache: true,
-  },
-  camino: {
-    maxBookingDays: 30,
-    minBookingDays: 1,
-    checkInTime: '14:00',
-    checkOutTime: '11:00',
-    maxGuestsPerRoom: 8,
-    emergencyContact: '+34-924-123-456',
-  },
-};
-
-// Configuration cache
-let configCache: AppConfig | null = null;
-let configLoaded = false;
-
-// Supabase client (initialized lazily)
-let supabaseClient: ReturnType<typeof createClient> | null = null;
+let _serverConfig: ServerConfig | null = null;
 
 /**
- * Initialize Supabase client (SSR-safe)
+ * Returns server-only config. Safe to call in Astro frontmatter or Actions.
+ * Throws if called on the client side.
  */
-function getSupabaseClient() {
-  if (!supabaseClient && isServer) {
-    const supabaseUrl = getServerEnv('SUPABASE_URL') || import.meta.env.PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey =
-      getServerEnv('SUPABASE_ANON_KEY') || import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-
-    if (supabaseUrl && supabaseAnonKey) {
-      supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-    }
-  }
-  return supabaseClient;
-}
-
-/**
- * Load configuration from Supabase (server-side only)
- */
-async function loadConfigFromSupabase(): Promise<Partial<AppConfig>> {
+export function getServerConfig(): ServerConfig {
   if (!isServer) {
-    console.warn('Configuration loading from Supabase is server-side only');
-    return {};
+    throw new Error('getServerConfig() must only be called server-side.');
   }
 
-  const client = getSupabaseClient();
-  if (!client) {
-    console.warn('Supabase client not available');
-    return {};
-  }
+  if (_serverConfig) return _serverConfig;
 
-  try {
-    const { data, error } = await client
-      .from('app_config')
-      .select('key, value, category')
-      .eq('environment', getEnvironment())
-      .eq('is_active', true);
-
-    if (error) {
-      console.error('Error loading configuration from Supabase:', error);
-      return {};
-    }
-
-    // Transform database rows into config object
-    const config: Partial<AppConfig> = {};
-    data?.forEach((row: { key: string; value: any }) => {
-      const keys = row.key.split('.');
-      let current: any = config;
-
-      // Navigate nested structure
-      for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]]) {
-          current[keys[i]] = {};
-        }
-        current = current[keys[i]];
-      }
-
-      // Set final value
-      current[keys[keys.length - 1]] = row.value;
-    });
-
-    return config;
-  } catch (error) {
-    console.error('Exception loading configuration from Supabase:', error);
-    return {};
-  }
-}
-
-/**
- * Get current environment
- */
-export function getEnvironment(): 'development' | 'staging' | 'production' {
-  if (isServer) {
-    return (getServerEnv('NODE_ENV') || getServerEnv('ENVIRONMENT') || 'development') as any;
-  }
-  return (import.meta.env.MODE || 'development') as any;
-}
-
-/**
- * Check if we're running in production
- */
-export function isProduction(): boolean {
-  return getEnvironment() === 'production';
-}
-
-/**
- * Check if we're running in development
- */
-export function isDevelopment(): boolean {
-  return getEnvironment() === 'development';
-}
-
-/**
- * Load and merge configuration (SSR-safe)
- */
-export async function loadConfiguration(): Promise<AppConfig> {
-  if (configLoaded && configCache) {
-    return configCache;
-  }
-
-  // Start with default configuration
-  let mergedConfig: AppConfig = {
-    ...DEFAULT_CONFIG,
-    supabase: {
-      url: getServerEnv('SUPABASE_URL') || import.meta.env.PUBLIC_SUPABASE_URL || '',
-      anonKey: getServerEnv('SUPABASE_ANON_KEY') || import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '',
-      serviceKey: getServerEnv('SUPABASE_SERVICE_KEY'),
+  _serverConfig = {
+    apiServiceToken: serverEnv('API_SERVICE_TOKEN') ?? '',
+    camino: {
+      maxBookingDays: Number(serverEnv('CAMINO_MAX_BOOKING_DAYS') ?? 30),
+      minBookingDays: Number(serverEnv('CAMINO_MIN_BOOKING_DAYS') ?? 1),
+      checkInTime:    serverEnv('CAMINO_CHECK_IN_TIME')    ?? '14:00',
+      checkOutTime:   serverEnv('CAMINO_CHECK_OUT_TIME')   ?? '11:00',
+      maxGuestsPerRoom: Number(serverEnv('CAMINO_MAX_GUESTS_PER_ROOM') ?? 8),
+      emergencyContact: serverEnv('CAMINO_EMERGENCY_CONTACT') ?? '+34-924-000-000',
     },
-    security: {
-      jwtSecret:
-        getServerEnv('JWT_SECRET') || import.meta.env.PUBLIC_JWT_SECRET || 'fallback-secret-key',
-      encryptionKey:
-        getServerEnv('ENCRYPTION_KEY') ||
-        import.meta.env.PUBLIC_ENCRYPTION_KEY ||
-        'fallback-encryption-key',
-      sessionTimeout: DEFAULT_CONFIG.security?.sessionTimeout || 24 * 60 * 60 * 1000,
-      maxLoginAttempts: DEFAULT_CONFIG.security?.maxLoginAttempts || 5,
-    },
-    services: {
-      redis: {
-        url:
-          getServerEnv('REDIS_URL') || import.meta.env.PUBLIC_REDIS_URL || 'redis://localhost:6379',
-        password: getServerEnv('REDIS_PASSWORD') || import.meta.env.PUBLIC_REDIS_PASSWORD,
-      },
-      email: {
-        provider: getServerEnv('EMAIL_PROVIDER') || 'smtp',
-        apiKey: getServerEnv('EMAIL_API_KEY') || '',
-        fromAddress: getServerEnv('EMAIL_FROM') || 'noreply@alberguecarrascalejo.es',
-      },
-      sms: {
-        provider: getServerEnv('SMS_PROVIDER') || 'twilio',
-        apiKey: getServerEnv('SMS_API_KEY') || '',
-        fromNumber: getServerEnv('SMS_FROM') || '+1234567890',
-      },
-    },
-  } as AppConfig;
+  };
 
-  // Load from Supabase (server-side only)
-  if (isServer) {
-    const supabaseConfig = await loadConfigFromSupabase();
-    mergedConfig = { ...mergedConfig, ...supabaseConfig };
-  }
-
-  // Cache the configuration
-  configCache = mergedConfig;
-  configLoaded = true;
-
-  return mergedConfig;
+  return _serverConfig;
 }
 
-/**
- * Get configuration (with caching)
- */
-export async function getConfig(): Promise<AppConfig> {
-  return await loadConfiguration();
-}
-
-/**
- * Get specific configuration value (SSR-safe)
- */
-export function getConfigValue<T = any>(path: string, defaultValue?: T): T {
-  if (!configCache) {
-    console.warn('Configuration not loaded yet, using default value');
-    return defaultValue as T;
-  }
-
-  const keys = path.split('.');
-  let current: any = configCache;
-
-  for (const key of keys) {
-    if (current[key] === undefined) {
-      return defaultValue as T;
-    }
-    current = current[key];
-  }
-
-  return current as T;
-}
-
-/**
- * Update configuration at runtime (server-side only)
- */
-export async function updateConfig(updates: Partial<AppConfig>): Promise<void> {
-  if (!isServer) {
-    throw new Error('Configuration updates are server-side only');
-  }
-
-  const currentConfig = await getConfig();
-  configCache = { ...currentConfig, ...updates };
-}
-
-/**
- * Clear configuration cache (useful for testing)
- */
+/** Clears the config cache — useful in tests. */
 export function clearConfigCache(): void {
-  configCache = null;
-  configLoaded = false;
-  supabaseClient = null;
+  _serverConfig = null;
 }
 
-/**
- * Validate configuration completeness
- */
-export function validateConfig(config: AppConfig): string[] {
-  const errors: string[] = [];
+// ── Environment helpers re-exported for convenience ───────────────────────
 
-  // Required fields
-  if (!config.supabase?.url) errors.push('Supabase URL is required');
-  if (!config.supabase?.anonKey) errors.push('Supabase anon key is required');
-  if (!config.security?.jwtSecret || config.security.jwtSecret === 'fallback-secret-key') {
-    errors.push('JWT secret must be properly configured');
-  }
-  if (
-    !config.security?.encryptionKey ||
-    config.security.encryptionKey === 'fallback-encryption-key'
-  ) {
-    errors.push('Encryption key must be properly configured');
-  }
-
-  return errors;
+export function getEnvironment(): 'development' | 'staging' | 'production' {
+  const env = isServer
+    ? (serverEnv('NODE_ENV') ?? serverEnv('ENVIRONMENT') ?? 'development')
+    : (import.meta.env.MODE ?? 'development');
+  if (env === 'production') return 'production';
+  if (env === 'staging') return 'staging';
+  return 'development';
 }
+
+export const isProduction  = () => getEnvironment() === 'production';
+export const isDevelopment = () => getEnvironment() === 'development';

@@ -1,7 +1,12 @@
 ---
-export const prerender = true;
-
+// On-demand rendering: admin-role required (Clerk publicMetadata.role === 'admin')
 import AdminLayout from '../../layouts/AdminLayout.astro';
+
+// Middleware already redirects non-admins — double-check here for safety
+const { userId } = Astro.locals.auth();
+if (!userId || Astro.locals.role !== 'admin') {
+  return Astro.redirect(`/auth?from=${Astro.url.pathname}&reason=unauthorized`, 302);
+}
 ---
 
 <AdminLayout title="Admin Dashboard" activeSection="dashboard">

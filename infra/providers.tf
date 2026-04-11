@@ -7,11 +7,13 @@ provider "github" {
   token = var.github_token
 }
 
-# Cloudflare - needs scoped API Token (not API Key or cfk_ key)
-# Create at: dash.cloudflare.com/profile/api-tokens > "Edit Cloudflare Pages" template
-# provider "cloudflare" {
-#   api_token = var.cloudflare_api_token
-# }
+# Cloudflare - scoped API Token required.
+# Create at: dash.cloudflare.com/profile/api-tokens
+# Template: "Edit Cloudflare Pages" + add Workers KV Storage:Edit + D1:Edit scopes.
+# Set cloudflare_api_token as a sensitive variable in the TFC workspace.
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
 
 # Neon - needs org-level API key with project access
 # provider "neon" {
