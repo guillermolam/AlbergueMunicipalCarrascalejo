@@ -1,36 +1,358 @@
 ---
-export const prerender = true;
+// SSR — data fetched from D1 at request time via internal API routes
+export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
 import MapLibre from '../components/MapLibre.astro';
+import {
+  getD1,
+  db,
+  hostelConfig,
+  hostelServices,
+  hostelRules,
+  nearbyAttractions,
+  reviewScores,
+} from '../db/helpers';
+import { eq, asc } from 'drizzle-orm';
 
-// Albergue GPS — El Carrascalejo
-const INFO_LAT = 39.0237972;
-const INFO_LNG = -6.3373782;
+// ── Defaults (mirror migration seed / fallback when D1 not available) ─────────
+const DEFAULT_CONFIG = {
+  name: 'Albergue Municipal de El Carrascalejo',
+  tagline: 'Acogida en el Camino de Santiago — Vía de la Plata',
+  addressStreet: 'Paraje la cuesta, s/n',
+  addressPostcode: '06894',
+  addressTown: 'El Carrascalejo',
+  addressProvince: 'Badajoz',
+  addressCountry: 'España',
+  phone: '+34 695 90 43 44',
+  email: 'elcarrascalejoalbergue@gmail.com',
+  latitude: 39.0237972,
+  longitude: -6.3373782,
+  checkInOpen: '10:00',
+  checkInClose: '21:00',
+  checkOutOpen: '09:00',
+  checkOutClose: '11:00',
+  maxNights: 2,
+  totalBeds: 24,
+  tourismLicense: 'AL-BA-0034',
+  languages: ['es', 'en'] as string[],
+  accessibility: { wheelchair: true, ground_floor: true, adapted_bathroom: true, grab_rails: true },
+  caminoKm: '482',
+  caminoRoute: 'Via de la Plata',
+};
+
+const DEFAULT_RULES = [
+  'Horario de silencio: 22:00 — 07:00',
+  'Zona de fumadores habilitada en el exterior',
+  'No se permiten fiestas ni eventos',
+  'No se admiten ninos (albergue para adultos peregrinos)',
+  'Mascotas permitidas — consultar sin cargo adicional',
+  'Documento de identidad obligatorio al llegar',
+  'Respeta a los demas peregrinos',
+  'Cancelacion gratuita 24h antes',
+  'Pago en efectivo en el albergue',
+  'Llegadas tardias: avisar previamente al hospitalero',
+];
+
+const DEFAULT_ATTRACTIONS = [
+  {
+    name: 'Acueducto Romano de Los Milagros',
+    distanceKm: 13,
+    icon: '🏛️',
+    description:
+      'Impresionante acueducto romano del siglo I d.C., Patrimonio de la Humanidad UNESCO.',
+  },
+  {
+    name: 'Basilica de Santa Eulalia',
+    distanceKm: 14,
+    icon: '⛪',
+    description: 'Imponente basilica gotica del siglo XIV dedicada a la martir patrona de Merida.',
+  },
+  {
+    name: 'Teatro Romano y Anfiteatro',
+    distanceKm: 15,
+    icon: '🎭',
+    description: 'Teatro del siglo I a.C. perfectamente conservado y anfiteatro de gladiadores.',
+  },
+  {
+    name: 'Aeropuerto de Badajoz',
+    distanceKm: 57,
+    icon: '✈️',
+    description: 'Aeropuerto internacional con conexiones a Madrid, Barcelona y Canarias.',
+  },
+];
+
+const DEFAULT_REVIEW_SCORES = {
+  source: 'booking',
+  overall: 9.1,
+  staff: 9.6,
+  cleanliness: 9.4,
+  comfort: 9.3,
+  valueForMoney: 9.6,
+  facilities: 9.0,
+  location: 9.0,
+  totalCount: 71,
+  label: 'Sobresaliente',
+};
+
+// ── Load from D1 ──────────────────────────────────────────────────────────────
+let hostelData = DEFAULT_CONFIG;
+let rules: string[] = DEFAULT_RULES;
+let attractions = DEFAULT_ATTRACTIONS;
+let reviewData = DEFAULT_REVIEW_SCORES;
+let servicePriceCents: Record<string, number> = {};
+
+try {
+  const d1 = await getD1();
+  if (d1) {
+    const drizzle = db(d1);
+
+    // Config row
+    const [cfgRow] = await drizzle
+      .select()
+      .from(hostelConfig)
+      .where(eq(hostelConfig.id, 1))
+      .limit(1);
+    const extRow = await d1
+      .prepare(
+        'SELECT check_in_open, check_in_close, check_out_open, check_out_close, max_nights, total_beds, languages, accessibility, camino_km, camino_route FROM hostel_config WHERE id = 1'
+      )
+      .first<{
+        check_in_open: string;
+        check_in_close: string;
+        check_out_open: string;
+        check_out_close: string;
+        max_nights: number;
+        total_beds: number;
+        languages: string;
+        accessibility: string;
+        camino_km: string;
+        camino_route: string;
+      }>();
+
+    if (cfgRow) {
+      hostelData = {
+        name: cfgRow.name,
+        tagline: cfgRow.tagline ?? DEFAULT_CONFIG.tagline,
+        addressStreet: cfgRow.addressStreet ?? DEFAULT_CONFIG.addressStreet,
+        addressPostcode: cfgRow.addressPostcode ?? DEFAULT_CONFIG.addressPostcode,
+        addressTown: cfgRow.addressTown ?? DEFAULT_CONFIG.addressTown,
+        addressProvince: cfgRow.addressProvince ?? DEFAULT_CONFIG.addressProvince,
+        addressCountry: cfgRow.addressCountry ?? DEFAULT_CONFIG.addressCountry,
+        phone: cfgRow.phone ?? DEFAULT_CONFIG.phone,
+        email: cfgRow.email ?? DEFAULT_CONFIG.email,
+        latitude: cfgRow.latitude ?? DEFAULT_CONFIG.latitude,
+        longitude: cfgRow.longitude ?? DEFAULT_CONFIG.longitude,
+        checkInOpen: extRow?.check_in_open ?? DEFAULT_CONFIG.checkInOpen,
+        checkInClose: extRow?.check_in_close ?? DEFAULT_CONFIG.checkInClose,
+        checkOutOpen: extRow?.check_out_open ?? DEFAULT_CONFIG.checkOutOpen,
+        checkOutClose: extRow?.check_out_close ?? DEFAULT_CONFIG.checkOutClose,
+        maxNights: extRow?.max_nights ?? DEFAULT_CONFIG.maxNights,
+        totalBeds: extRow?.total_beds ?? DEFAULT_CONFIG.totalBeds,
+        tourismLicense: cfgRow.tourismLicense ?? DEFAULT_CONFIG.tourismLicense,
+        languages: extRow?.languages ? JSON.parse(extRow.languages) : DEFAULT_CONFIG.languages,
+        accessibility: extRow?.accessibility
+          ? JSON.parse(extRow.accessibility)
+          : DEFAULT_CONFIG.accessibility,
+        caminoKm: extRow?.camino_km ?? DEFAULT_CONFIG.caminoKm,
+        caminoRoute: extRow?.camino_route ?? DEFAULT_CONFIG.caminoRoute,
+      };
+    }
+
+    // House rules
+    const rulesRows = await drizzle
+      .select()
+      .from(hostelRules)
+      .where(eq(hostelRules.active, 1))
+      .orderBy(asc(hostelRules.sortOrder));
+    if (rulesRows.length > 0) rules = rulesRows.map((r) => r.rule);
+
+    // Nearby attractions
+    const attrRows = await drizzle
+      .select()
+      .from(nearbyAttractions)
+      .where(eq(nearbyAttractions.active, 1))
+      .orderBy(asc(nearbyAttractions.sortOrder));
+    if (attrRows.length > 0) attractions = attrRows.map((r) => ({ ...r, description: r.description ?? '' }));
+
+    // Review scores
+    const [scoreRow] = await drizzle
+      .select()
+      .from(reviewScores)
+      .where(eq(reviewScores.source, 'all'))
+      .limit(1);
+    if (scoreRow?.overall) {
+      reviewData = {
+        source: scoreRow.source,
+        overall: scoreRow.overall ?? DEFAULT_REVIEW_SCORES.overall,
+        staff: scoreRow.staff ?? DEFAULT_REVIEW_SCORES.staff,
+        cleanliness: scoreRow.cleanliness ?? DEFAULT_REVIEW_SCORES.cleanliness,
+        comfort: scoreRow.comfort ?? DEFAULT_REVIEW_SCORES.comfort,
+        valueForMoney: scoreRow.valueForMoney ?? DEFAULT_REVIEW_SCORES.valueForMoney,
+        facilities: scoreRow.facilities ?? DEFAULT_REVIEW_SCORES.facilities,
+        location: scoreRow.location ?? DEFAULT_REVIEW_SCORES.location,
+        totalCount: scoreRow.totalCount,
+        label: scoreRow.label ?? DEFAULT_REVIEW_SCORES.label,
+      };
+    }
+
+    // Service prices (for display in facilities cards)
+    const svcRows = await drizzle
+      .select()
+      .from(hostelServices)
+      .where(eq(hostelServices.available, 1));
+    for (const s of svcRows) servicePriceCents[s.name] = s.priceCents;
+  }
+} catch (e) {
+  console.warn('[info.astro] D1 load failed, using defaults:', e);
+}
+
+// ── Derived display values ─────────────────────────────────────────────────────
+const INFO_LAT = hostelData.latitude;
+const INFO_LNG = hostelData.longitude;
+const addressDisplay = `${hostelData.addressStreet} · ${hostelData.addressTown}, ${hostelData.addressPostcode}`;
+const addressMapMarker = `${hostelData.addressStreet} · ${hostelData.addressPostcode} ${hostelData.addressTown}`;
+
+// ── Static page data (presentation-only, not in DB) ───────────────────────────
+
+// Booking.com real photos (hotel ID 12983893)
+const PHOTOS = [
+  {
+    id: '606951419',
+    hash: '1d218a9c07fd4868d8dfd33d8e4ad425dbcd86d5a4c6a5d014f323d988e21638',
+    alt: 'Vista exterior del Albergue',
+  },
+  {
+    id: '611459101',
+    hash: '0c34fc9a8944869c2fc447af28a1bacb60abdb38c1712c2cde2774a9ef0eb3e6',
+    alt: 'Taquillas individuales',
+  },
+  {
+    id: '611459099',
+    hash: '0aee37511510817d18a45e21508eb4c6678d8d443c0ede1f75a973953bdeedbb',
+    alt: 'Dormitorio con literas',
+  },
+  {
+    id: '611459100',
+    hash: 'd365f2a54b22abfd0d76899a76e0a6cf9b3e16dc1873389bd32cad04a9e67481',
+    alt: 'Salon y cocina equipada',
+  },
+  {
+    id: '611461035',
+    hash: '12cbd3f361015698323a4490aceed3c39228f62e6f4ff1cf9ceb902947310c01',
+    alt: 'Sala de estar',
+  },
+  {
+    id: '611462188',
+    hash: '8faae85df4f7bef1dbf301a1c2b38115419ad1d588860eaf39ed243380b3ff57',
+    alt: 'Zona exterior y patio',
+  },
+  {
+    id: '606951412',
+    hash: 'b0bf171cd75cd368cfc5dd88c41dc0bbb077db47ec0a518e6f4b2ed5855dd5a0',
+    alt: 'Zona comun',
+  },
+  {
+    id: '611452555',
+    hash: 'da95432f70b5e8233f1e246111300c0d8e15356385c84a24834f40abaf8cd50b',
+    alt: 'Banos con ducha',
+  },
+  {
+    id: '650733575',
+    hash: 'ccb98b1497e57555b350854d076097159adfaa64a8f475449ca0a6a1af9918fd',
+    alt: 'Cafeteria del Albergue',
+  },
+  {
+    id: '618323334',
+    hash: 'a311ea255ba92d313cf11962fb550fef02c0a2aefce4569deff4d80c212dd537',
+    alt: 'Zona de comedor',
+  },
+  {
+    id: '611452569',
+    hash: '8c90f1241d38641a250d5f969412df968cde73656393d9050d279e6d322fff2f',
+    alt: 'Aseos y duchas',
+  },
+];
 
 const facilities = [
-  { icon: 'bed', label: 'Dormitorios', desc: '2 salas con 12 literas cada una. Sabanas y mantas incluidas.' },
-  { icon: 'shower', label: 'Duchas Calientes', desc: 'Agua caliente 24h. Aseos accesibles para todos.' },
-  { icon: 'kitchen', label: 'Cocina Equipada', desc: 'Microondas, nevera, fogones y utensilios basicos.' },
-  { icon: 'wifi', label: 'WiFi Gratuito', desc: 'Conexion de alta velocidad en todas las zonas.' },
-  { icon: 'lock', label: 'Taquillas', desc: 'Casilleros individuales con candado en cada cama.' },
-  { icon: 'laundry', label: 'Lavanderia', desc: 'Lavadora y tendedero disponibles todo el dia.' },
-  { icon: 'garden', label: 'Jardin', desc: 'Espacio exterior para descansar y tender ropa.' },
-  { icon: 'bike', label: 'Parking Bicicletas', desc: 'Aparcamiento cubierto y seguro para bicicletas.' },
+  {
+    icon: 'bed',
+    label: 'Dormitorios',
+    desc: '2 salas con 12 literas cada una. Sabanas y mantas incluidas.',
+    photos: [2, 1, 0],
+    details:
+      '2 dormitorios mixtos con capacidad para 12 personas cada uno. Literas con colchon comodo, sabanas limpias y manta incluidas. Taquillas individuales en cada cama.',
+  },
+  {
+    icon: 'shower',
+    label: 'Duchas Calientes',
+    desc: 'Agua caliente 24h. Aseos accesibles para todos.',
+    photos: [7, 10, 6],
+    details: 'Aseos y duchas con agua caliente las 24 horas. Completamente accesibles.',
+  },
+  {
+    icon: 'kitchen',
+    label: 'Cocina Equipada',
+    desc: 'Microondas, nevera, fogones y utensilios basicos.',
+    photos: [3, 4],
+    details: 'Cocina completamente equipada para uso de los huespedes.',
+  },
+  {
+    icon: 'wifi',
+    label: 'WiFi Gratuito',
+    desc: 'Conexion de alta velocidad en todas las zonas.',
+    photos: [0, 5],
+    details: 'Conexion WiFi gratuita en todo el albergue. Contrasena en recepcion.',
+  },
+  {
+    icon: 'lock',
+    label: 'Taquillas',
+    desc: 'Casilleros individuales con candado en cada cama.',
+    photos: [1, 2],
+    details: 'Casilleros de metal por cama. Candado propio recomendado.',
+  },
+  {
+    icon: 'laundry',
+    label: 'Lavanderia',
+    desc: 'Lavadora y tendedero disponibles todo el dia.',
+    photos: [6, 3],
+    details: `Lavadora y secadora a ${(servicePriceCents['Lavadora'] ?? 250) / 100}€/lavado.`,
+  },
+  {
+    icon: 'garden',
+    label: 'Jardin y Patio',
+    desc: 'Espacio exterior para descansar y tender ropa.',
+    photos: [5, 4, 0],
+    details: 'Zona exterior con jardin y mesas de picnic.',
+  },
+  {
+    icon: 'bike',
+    label: 'Parking Bicicletas',
+    desc: 'Aparcamiento cubierto y seguro para bicicletas.',
+    photos: [0, 5],
+    details: 'Parking cubierto con herramientas basicas para reparaciones.',
+  },
+  {
+    icon: 'cafe',
+    label: 'Cafeteria',
+    desc: 'Desayunos, bocadillos y menu del peregrino disponibles.',
+    photos: [8, 9],
+    details: `Desayuno continental desde ${(servicePriceCents['Desayuno'] ?? 350) / 100}€. Cena peregrino desde ${(servicePriceCents['Cena peregrino'] ?? 1000) / 100}€.`,
+  },
 ];
 
 const accordion = [
   {
     q: 'Que es la Via de la Plata?',
-    a: 'La Via de la Plata es la ruta jacobea mas larga de Espana, con 1.000 km desde Sevilla hasta Santiago de Compostela. Discurre por Extremadura, Castilla y Leon y Galicia, siguiendo la antigua calzada romana.'
+    a: 'La Via de la Plata es la ruta jacobea mas larga de Espana, con 1.000 km desde Sevilla hasta Santiago de Compostela. Discurre por Extremadura, Castilla y Leon y Galicia, siguiendo la antigua calzada romana.',
   },
   {
     q: 'Como llegar a El Carrascalejo?',
-    a: 'A pie: etapa desde Alquesos (12 km) o hasta Alcuescar (21 km). En coche: N-630 desde Merida hacia Caceres, desvio a El Carrascalejo (25 min). En autobus: linea Merida-Caceres con parada en el pueblo.'
+    a: 'A pie: etapa desde Alquesos (12 km) o hasta Alcuescar (21 km). En coche: N-630 desde Merida hacia Caceres, desvio a El Carrascalejo (25 min). En autobus: linea Merida-Caceres con parada en el pueblo.',
   },
   {
     q: 'Que llevar en la mochila?',
-    a: 'Saco de dormir ligero, documentacion (DNI/Pasaporte), credencial de peregrino, ropa de recambio, zapatillas de estar por casa, candado para taquilla, botiquin basico (ampollas, tiritas), esterilla de yoga opcional.'
+    a: 'Saco de dormir ligero, documentacion (DNI/Pasaporte), credencial de peregrino, ropa de recambio, zapatillas de estar por casa, candado para taquilla, botiquin basico (ampollas, tiritas), esterilla de yoga opcional.',
   },
 ];
 ---
@@ -39,8 +361,9 @@ const accordion = [
   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <defs>
       <filter id="sketchy-filter">
-        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"
+        ></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"></feDisplacementMap>
       </filter>
     </defs>
   </svg>
@@ -51,7 +374,12 @@ const accordion = [
       <h1 class="info-title">Informacion</h1>
       <div class="hero-wave" aria-hidden="true">
         <svg viewBox="0 0 340 16" preserveAspectRatio="none">
-          <path d="M0,8 Q28,0 56,8 T112,8 T168,8 T224,8 T280,8 T340,8" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round"/>
+          <path
+            d="M0,8 Q28,0 56,8 T112,8 T168,8 T224,8 T280,8 T340,8"
+            fill="none"
+            stroke="var(--green)"
+            stroke-width="3"
+            stroke-linecap="round"></path>
         </svg>
       </div>
       <p class="info-hero-sub">Todo lo que necesitas saber para tu estancia en el Camino</p>
@@ -59,7 +387,6 @@ const accordion = [
   </section>
 
   <div class="info-content">
-
     <!-- 1. ABOUT -->
     <section class="info-section reveal-section" style="--delay:0.05s">
       <div class="info-section-inner">
@@ -67,8 +394,17 @@ const accordion = [
         <div class="about-grid">
           <div class="about-text">
             <h2 class="section-heading">Un hogar en el Camino</h2>
-            <p class="body-text">El Albergue Municipal de El Carrascalejo lleva mas de dos decadas acogiendo peregrinos que recorren la Via de la Plata. Con capacidad para 24 personas en dos dormitorios, ofrecemos un ambiente calido y tranquilo donde recuperar fuerzas para la siguiente etapa.</p>
-            <p class="body-text">Gestionado por el Ayuntamiento de El Carrascalejo, nuestro albergue combina la tradicion hospitalaria del Camino con los servicios modernos que necesita el peregrino de hoy.</p>
+            <p class="body-text">
+              El Albergue Municipal de El Carrascalejo lleva mas de dos decadas acogiendo peregrinos
+              que recorren la Via de la Plata. Con capacidad para 24 personas en dos dormitorios,
+              ofrecemos un ambiente calido y tranquilo donde recuperar fuerzas para la siguiente
+              etapa.
+            </p>
+            <p class="body-text">
+              Gestionado por el Ayuntamiento de El Carrascalejo, nuestro albergue combina la
+              tradicion hospitalaria del Camino con los servicios modernos que necesita el peregrino
+              de hoy.
+            </p>
             <div class="about-stats">
               <div class="about-stat">
                 <span class="about-stat-val">+5.000</span>
@@ -85,17 +421,62 @@ const accordion = [
             </div>
           </div>
           <div class="about-photo">
-            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-              <rect x="0" y="0" width="100%" height="100%" rx="16" fill="var(--green-light)" stroke="var(--green)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
-            </svg>
-            <div class="photo-placeholder">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-              <span>Albergue Municipal<br/>El Carrascalejo</span>
-            </div>
+            <img
+              src={`https://cf.bstatic.com/xdata/images/hotel/max1280x900/${PHOTOS[0].id}.jpg?k=${PHOTOS[0].hash}&o=`}
+              alt={PHOTOS[0].alt}
+              class="about-real-photo"
+              loading="eager"
+            />
+            <div class="about-photo-badge">📸 Booking.com · 9.1 ★</div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PHOTO GALLERY CAROUSEL -->
+    <section
+      class="info-gallery reveal-section"
+      style="--delay:0.07s"
+      aria-label="Galeria de fotos"
+    >
+      <div class="gallery-header">
+        <div class="section-label">Galeria</div>
+        <h2 class="section-heading">Fotos del Albergue</h2>
+      </div>
+      <div class="gallery-track-outer" id="gallery-outer">
+        <div class="gallery-track" id="gallery-track">
+          {
+            PHOTOS.map((p, i) => (
+              <figure class="gallery-slide" data-index={i}>
+                <img
+                  src={`https://cf.bstatic.com/xdata/images/hotel/max1280x900/${p.id}.jpg?k=${p.hash}&o=`}
+                  alt={p.alt}
+                  class="gallery-img"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                />
+                <figcaption class="gallery-caption">{p.alt}</figcaption>
+              </figure>
+            ))
+          }
+        </div>
+        <button class="gallery-btn gallery-prev" id="gallery-prev" aria-label="Foto anterior"
+          >&#8249;</button
+        >
+        <button class="gallery-btn gallery-next" id="gallery-next" aria-label="Foto siguiente"
+          >&#8250;</button
+        >
+        <div class="gallery-dots" id="gallery-dots" role="tablist">
+          {
+            PHOTOS.map((_, i) => (
+              <button
+                class={`gallery-dot${i === 0 ? ' active' : ''}`}
+                data-idx={i}
+                role="tab"
+                aria-label={`Foto ${i + 1}`}
+                aria-selected={i === 0 ? 'true' : 'false'}
+              />
+            ))
+          }
         </div>
       </div>
     </section>
@@ -106,46 +487,217 @@ const accordion = [
         <div class="section-label">Instalaciones</div>
         <h2 class="section-heading text-center">Servicios y comodidades</h2>
         <div class="facilities-grid">
-          {facilities.map((f, i) => (
-            <div class="facility-card reveal-section" style={`--delay:${0.05 + i * 0.04}s`}>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-                <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke="var(--black)" stroke-width="2" filter="url(#sketchy-filter)"/>
-              </svg>
-              <div class="facility-inner">
-                <div class="facility-icon" aria-hidden="true">
-                  {f.icon === 'bed' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M2 4v16M2 8h20M2 16h20M22 4v16"/></svg>
-                  )}
-                  {f.icon === 'shower' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M4 12l1.41-1.41a2 2 0 0 1 2.83 0L10 12"/><path d="M9 7V3a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1"/><path d="M4 20h16"/></svg>
-                  )}
-                  {f.icon === 'kitchen' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                  )}
-                  {f.icon === 'wifi' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="var(--green)"/></svg>
-                  )}
-                  {f.icon === 'lock' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  )}
-                  {f.icon === 'laundry' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="var(--green-light)"/></svg>
-                  )}
-                  {f.icon === 'garden' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M12 22V12M12 12C12 12 8 8 4 9s-1 8 4 7M12 12c0 0 4-4 8-3s1 8-4 7"/></svg>
-                  )}
-                  {f.icon === 'bike' && (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-5l-3 6 5 .5M9 12l4-6"/></svg>
-                  )}
+          {
+            facilities.map((f, i) => (
+              <button
+                class="facility-card reveal-section"
+                style={`--delay:${0.05 + i * 0.04}s`}
+                data-facility-idx={i}
+                aria-label={`Ver detalles: ${f.label}`}
+              >
+                <svg
+                  style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="0"
+                    y="0"
+                    width="100%"
+                    height="100%"
+                    rx="14"
+                    fill="white"
+                    stroke="var(--black)"
+                    stroke-width="2"
+                    filter="url(#sketchy-filter)"
+                  />
+                </svg>
+                <div class="facility-inner">
+                  <div class="facility-icon" aria-hidden="true">
+                    {f.icon === 'bed' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <path d="M2 4v16M2 8h20M2 16h20M22 4v16" />
+                      </svg>
+                    )}
+                    {f.icon === 'shower' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <path d="M4 12l1.41-1.41a2 2 0 0 1 2.83 0L10 12" />
+                        <path d="M9 7V3a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1" />
+                        <path d="M4 20h16" />
+                      </svg>
+                    )}
+                    {f.icon === 'kitchen' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <rect x="2" y="3" width="20" height="14" rx="2" />
+                        <path d="M8 21h8M12 17v4" />
+                      </svg>
+                    )}
+                    {f.icon === 'wifi' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0" />
+                        <circle cx="12" cy="20" r="1" fill="var(--green)" />
+                      </svg>
+                    )}
+                    {f.icon === 'lock' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    )}
+                    {f.icon === 'laundry' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <rect x="2" y="2" width="20" height="20" rx="3" />
+                        <circle cx="12" cy="12" r="5" />
+                        <circle cx="12" cy="12" r="2" fill="var(--green-light)" />
+                      </svg>
+                    )}
+                    {f.icon === 'garden' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <path d="M12 22V12M12 12C12 12 8 8 4 9s-1 8 4 7M12 12c0 0 4-4 8-3s1 8-4 7" />
+                      </svg>
+                    )}
+                    {f.icon === 'bike' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <circle cx="5.5" cy="17.5" r="3.5" />
+                        <circle cx="18.5" cy="17.5" r="3.5" />
+                        <path d="M15 6h-5l-3 6 5 .5M9 12l4-6" />
+                      </svg>
+                    )}
+                    {f.icon === 'cafe' && (
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--green)"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                        <line x1="6" y1="1" x2="6" y2="4" />
+                        <line x1="10" y1="1" x2="10" y2="4" />
+                        <line x1="14" y1="1" x2="14" y2="4" />
+                      </svg>
+                    )}
+                  </div>
+                  <h3 class="facility-title">{f.label}</h3>
+                  <p class="facility-desc">{f.desc}</p>
+                  <span class="facility-cta">Ver fotos ›</span>
                 </div>
-                <h3 class="facility-title">{f.label}</h3>
-                <p class="facility-desc">{f.desc}</p>
-              </div>
-            </div>
-          ))}
+              </button>
+            ))
+          }
         </div>
       </div>
     </section>
+
+    <!-- FACILITY MODAL -->
+    <div
+      id="facility-modal"
+      class="fac-modal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fac-modal-title"
+    >
+      <div class="fac-modal-backdrop" id="fac-modal-backdrop"></div>
+      <div class="fac-modal-box">
+        <button class="fac-modal-close" id="fac-modal-close" aria-label="Cerrar">&#10005;</button>
+        <h3 class="fac-modal-title" id="fac-modal-title"></h3>
+        <div class="fac-modal-carousel">
+          <div class="fac-modal-track" id="fac-modal-track"></div>
+          <button class="gallery-btn fac-prev" id="fac-prev" aria-label="Foto anterior"
+            >&#8249;</button
+          >
+          <button class="gallery-btn fac-next" id="fac-next" aria-label="Foto siguiente"
+            >&#8250;</button
+          >
+          <div class="gallery-dots" id="fac-dots" role="tablist"></div>
+        </div>
+        <p class="fac-modal-desc" id="fac-modal-desc"></p>
+      </div>
+    </div>
+
+    <!-- Data island: photos + facility photo mappings -->
+    <script
+      type="application/json"
+      id="photos-data"
+      set:html={JSON.stringify(PHOTOS.map((p) => ({ id: p.id, hash: p.hash, alt: p.alt }))).replace(
+        /</g,
+        '\\u003c'
+      )}
+    />
+    <script
+      type="application/json"
+      id="facilities-data"
+      set:html={JSON.stringify(
+        facilities.map((f) => ({ label: f.label, photos: f.photos, details: f.details }))
+      ).replace(/</g, '\\u003c')}
+    />
 
     <!-- 3. LOCATION -->
     <section class="info-section reveal-section" style="--delay:0.1s">
@@ -156,7 +708,16 @@ const accordion = [
           <div class="map-card-big">
             <!-- Sketch border on top of the map (fill:none so map shows through) -->
             <svg class="map-sketch-border" aria-hidden="true">
-              <rect x="0" y="0" width="100%" height="100%" rx="16" fill="none" stroke="var(--green)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+              <rect
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                rx="16"
+                fill="none"
+                stroke="var(--green)"
+                stroke-width="2.5"
+                filter="url(#sketchy-filter)"></rect>
             </svg>
             <!-- MapLibre GL JS map via reusable Astro 6 component -->
             <MapLibre
@@ -165,13 +726,18 @@ const accordion = [
               zoom={14}
               height="100%"
               markerTitle="Albergue Municipal El Carrascalejo"
-              markerSubtitle="Calle Principal s/n · 06891 Badajoz"
+              markerSubtitle={addressMapMarker}
               class="info-map-inner"
             />
             <!-- Address + OSM link overlay at the bottom -->
             <div class="map-bottom-overlay">
-              <span class="map-overlay-addr">Calle Principal s/n · El Carrascalejo, 06891</span>
-              <a href={`https://www.openstreetmap.org/?mlat=${INFO_LAT}&mlon=${INFO_LNG}&zoom=15`} target="_blank" rel="noopener noreferrer" class="map-overlay-link">Ver en OpenStreetMap ↗</a>
+              <span class="map-overlay-addr">{addressDisplay}</span>
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${INFO_LAT}&mlon=${INFO_LNG}&zoom=15`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="map-overlay-link">Ver en OpenStreetMap ↗</a
+              >
             </div>
           </div>
           <div class="location-info">
@@ -179,34 +745,70 @@ const accordion = [
             <div class="location-rows">
               <div class="loc-row reveal-section" style="--delay:0.1s">
                 <div class="loc-row-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    stroke-width="2.5"
+                    ><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"
+                    ></polyline></svg
+                  >
                 </div>
                 <div>
                   <strong>Check-in</strong>
-                  <p>14:00 — 22:00</p>
+                  <p>{hostelData.checkInOpen} — {hostelData.checkInClose}</p>
                 </div>
               </div>
               <div class="loc-row reveal-section" style="--delay:0.13s">
                 <div class="loc-row-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+                  >
                 </div>
                 <div>
                   <strong>Check-out</strong>
-                  <p>Antes de las 10:00</p>
+                  <p>{hostelData.checkOutOpen} — {hostelData.checkOutClose}</p>
                 </div>
               </div>
               <div class="loc-row reveal-section" style="--delay:0.16s">
                 <div class="loc-row-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    stroke-width="2.5"
+                    ><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg
+                  >
                 </div>
                 <div>
                   <strong>Estancia maxima</strong>
-                  <p>2 noches (excepciones posibles)</p>
+                  <p>{hostelData.maxNights} noches (excepciones posibles)</p>
                 </div>
               </div>
               <div class="loc-row reveal-section" style="--delay:0.19s">
                 <div class="loc-row-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    stroke-width="2.5"
+                    ><rect x="2" y="5" width="20" height="14" rx="2"></rect><line
+                      x1="2"
+                      y1="10"
+                      x2="22"
+                      y2="10"></line></svg
+                  >
                 </div>
                 <div>
                   <strong>Precio</strong>
@@ -225,19 +827,35 @@ const accordion = [
         <div class="section-label">Camino Info</div>
         <h2 class="section-heading">Preguntas frecuentes</h2>
         <div class="accordion" id="accordion">
-          {accordion.map((item, i) => (
-            <div class="acc-item reveal-section" style={`--delay:${0.05 + i * 0.06}s`} data-index={i}>
-              <button class="acc-trigger" aria-expanded="false" aria-controls={`acc-body-${i}`}>
-                <span class="acc-q">{item.q}</span>
-                <svg class="acc-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-              <div class="acc-body" id={`acc-body-${i}`} role="region">
-                <p class="acc-text">{item.a}</p>
+          {
+            accordion.map((item, i) => (
+              <div
+                class="acc-item reveal-section"
+                style={`--delay:${0.05 + i * 0.06}s`}
+                data-index={i}
+              >
+                <button class="acc-trigger" aria-expanded="false" aria-controls={`acc-body-${i}`}>
+                  <span class="acc-q">{item.q}</span>
+                  <svg
+                    class="acc-arrow"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--green)"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                <div class="acc-body" id={`acc-body-${i}`} role="region">
+                  <p class="acc-text">{item.a}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
       </div>
     </section>
@@ -248,118 +866,661 @@ const accordion = [
         <div class="section-label">Tarifas y Normas</div>
         <h2 class="section-heading text-center">Informacion practica</h2>
         <div class="pricing-stats">
-          {[
-            { val: '15 EUR', lbl: 'por noche', id: 'info-price-stat' },
-            { val: '14:00', lbl: 'check-in',   id: undefined },
-            { val: '10:00', lbl: 'check-out',   id: undefined },
-            { val: '2',     lbl: 'noches max.', id: undefined },
-          ].map((s, i) => (
-            <div class="pricing-stat reveal-section" style={`--delay:${0.06 + i * 0.05}s`}>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-                <rect x="0" y="0" width="100%" height="100%" rx="14" fill="var(--green-light)" stroke="var(--green)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
-              </svg>
-              <span class="pricing-val" id={s.id}>{s.val}</span>
-              <span class="pricing-lbl">{s.lbl}</span>
-            </div>
-          ))}
+          {
+            [
+              { val: '15 EUR', lbl: 'por noche', id: 'info-price-stat' },
+              { val: hostelData.checkInOpen, lbl: 'check-in', id: undefined },
+              { val: hostelData.checkOutClose, lbl: 'check-out', id: undefined },
+              { val: String(hostelData.maxNights), lbl: 'noches max.', id: undefined },
+            ].map((s, i) => (
+              <div class="pricing-stat reveal-section" style={`--delay:${0.06 + i * 0.05}s`}>
+                <svg
+                  style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="0"
+                    y="0"
+                    width="100%"
+                    height="100%"
+                    rx="14"
+                    fill="var(--green-light)"
+                    stroke="var(--green)"
+                    stroke-width="2.5"
+                    filter="url(#sketchy-filter)"
+                  />
+                </svg>
+                <span class="pricing-val" id={s.id}>
+                  {s.val}
+                </span>
+                <span class="pricing-lbl">{s.lbl}</span>
+              </div>
+            ))
+          }
         </div>
         <div class="rules-list reveal-section" style="--delay:0.25s">
           <h3 class="rules-heading">Normas del albergue</h3>
           <ul class="rules-ul">
-            {[
-              'Horario de silencio: 22:00 — 07:00',
-              'No se permite fumar dentro del albergue',
-              'Documento de identidad obligatorio',
-              'Respeta a los demas peregrinos',
-              'Mantener el orden y la limpieza',
-              'Cancelacion gratuita 24h antes',
-              'Pago en efectivo en el albergue',
-              'Llegadas tardias: avisar previamente',
-            ].map(rule => (
-              <li class="rule-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                {rule}
-              </li>
-            ))}
+            {
+              rules.map((rule) => (
+                <li class="rule-item">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--green)"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  {rule}
+                </li>
+              ))
+            }
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- 6. CTA -->
+    <!-- 6. REVIEWS -->
+    <section class="info-section reveal-section" style="--delay:0.08s">
+      <div class="info-section-inner">
+        <div class="section-label">Valoraciones</div>
+        <h2 class="section-heading text-center">Lo que dicen los viajeros</h2>
+        <div class="reviews-overall reveal-section" style="--delay:0.1s">
+          <div class="reviews-score-big">
+            <span class="reviews-score-num">{reviewData.overall?.toFixed(1)}</span>
+            <span class="reviews-score-label">{reviewData.label}</span>
+            <span class="reviews-score-count"
+              >{reviewData.totalCount} valoraciones · Booking.com</span
+            >
+          </div>
+          <div class="reviews-subscores">
+            {
+              (
+                [
+                  { lbl: 'Personal', val: reviewData.staff },
+                  { lbl: 'Limpieza', val: reviewData.cleanliness },
+                  { lbl: 'Confort', val: reviewData.comfort },
+                  { lbl: 'Relacion calidad-precio', val: reviewData.valueForMoney },
+                  { lbl: 'Instalaciones', val: reviewData.facilities },
+                  { lbl: 'Ubicacion', val: reviewData.location },
+                ] as { lbl: string; val: number | null | undefined }[]
+              )
+                .filter((s) => s.val != null)
+                .map((s) => (
+                  <div class="subscore-row">
+                    <span class="subscore-lbl">{s.lbl}</span>
+                    <div class="subscore-bar-wrap">
+                      <div class="subscore-bar" style={`width:${((s.val ?? 0) / 10) * 100}%`} />
+                    </div>
+                    <span class="subscore-val">{s.val?.toFixed(1)}</span>
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. NEARBY ATTRACTIONS -->
+    <section class="info-section info-section-alt reveal-section" style="--delay:0.08s">
+      <div class="info-section-inner">
+        <div class="section-label">Alrededores</div>
+        <h2 class="section-heading text-center">Que ver cerca</h2>
+        <div class="nearby-grid">
+          {
+            attractions.map((a, i) => (
+              <div class="nearby-card reveal-section" style={`--delay:${0.08 + i * 0.07}s`}>
+                <svg
+                  style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="0"
+                    y="0"
+                    width="100%"
+                    height="100%"
+                    rx="14"
+                    fill="white"
+                    stroke="var(--green)"
+                    stroke-width="2"
+                    filter="url(#sketchy-filter)"
+                  />
+                </svg>
+                <div class="nearby-icon">{a.icon}</div>
+                <div class="nearby-info">
+                  <strong class="nearby-name">{a.name}</strong>
+                  <span class="nearby-dist">{a.distanceKm} km</span>
+                  <p class="nearby-desc">{a.description}</p>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        <p class="license-note">
+          Licencia turistica: <strong>{hostelData.tourismLicense}</strong>
+          {
+            hostelData.languages.length > 0 &&
+              ` · Idiomas: ${hostelData.languages.map((l: string) => (l === 'es' ? 'Espanol' : l === 'en' ? 'Ingles' : l)).join(', ')}`
+          }
+          {
+            hostelData.accessibility?.wheelchair &&
+              ' · Accesibilidad: planta baja, bano adaptado, asideros'
+          }
+        </p>
+      </div>
+    </section>
+
+    <!-- 8. CTA -->
     <section class="info-cta reveal-section" style="--delay:0.05s">
       <div class="cta-inner">
         <h2 class="cta-heading">Listo para empezar tu Camino?</h2>
         <p class="cta-sub">Reserva tu cama ahora y asegura tu plaza en El Carrascalejo</p>
         <a href="/book" class="btn-sketchy-cta">
-          <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-            <rect x="5" y="7" width="calc(100% - 10px)" height="calc(100% - 10px)" rx="14" fill="black" filter="blur(5px)" opacity="0.2"/>
-            <rect x="0" y="0" width="100%" height="100%" rx="14" fill="var(--green)" stroke="var(--black)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+          <svg
+            style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+            aria-hidden="true"
+          >
+            <rect
+              x="5"
+              y="7"
+              width="calc(100% - 10px)"
+              height="calc(100% - 10px)"
+              rx="14"
+              fill="black"
+              filter="blur(5px)"
+              opacity="0.2"></rect>
+            <rect
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              rx="14"
+              fill="var(--green)"
+              stroke="var(--black)"
+              stroke-width="2.5"
+              filter="url(#sketchy-filter)"></rect>
           </svg>
           <span class="cta-btn-label">Reservar ahora</span>
         </a>
       </div>
     </section>
-
   </div>
 
   <style>
     /* Hero */
-    .info-hero { padding: 3rem 1rem 2rem; text-align: center; background: linear-gradient(135deg, var(--green-light) 0%, white 100%); }
-    .info-hero-inner { max-width: 640px; margin: 0 auto; }
-    .info-title { font-family: var(--font-display); font-size: clamp(2.5rem,6vw,4rem); color: var(--green); margin: 0 0 0.25rem; }
-    .hero-wave { width: min(340px,85vw); height: 16px; margin: 0 auto 0.75rem; }
-    .info-hero-sub { font-family: var(--font-hand); font-size: 1.1rem; color: #555; margin: 0; }
+    .info-hero {
+      padding: 3rem 1rem 2rem;
+      text-align: center;
+      background: linear-gradient(135deg, var(--green-light) 0%, white 100%);
+    }
+    .info-hero-inner {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .info-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      color: var(--green);
+      margin: 0 0 0.25rem;
+    }
+    .hero-wave {
+      width: min(340px, 85vw);
+      height: 16px;
+      margin: 0 auto 0.75rem;
+    }
+    .info-hero-sub {
+      font-family: var(--font-hand);
+      font-size: 1.1rem;
+      color: #555;
+      margin: 0;
+    }
 
     /* Content wrapper */
-    .info-content { max-width: 1060px; margin: 0 auto; padding: 0 1rem 4rem; }
-    .info-section { padding: 3.5rem 0; border-bottom: 2px dashed rgba(0,171,57,0.2); }
-    .info-section-alt { background: var(--green-light); margin: 0 -1rem; padding: 3.5rem 1rem; }
-    .info-section-inner { max-width: 1060px; margin: 0 auto; }
+    .info-content {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 0 1rem 4rem;
+    }
+    .info-section {
+      padding: 3.5rem 0;
+      border-bottom: 2px dashed rgba(0, 171, 57, 0.2);
+    }
+    .info-section-alt {
+      background: var(--green-light);
+      margin: 0 -1rem;
+      padding: 3.5rem 1rem;
+    }
+    .info-section-inner {
+      max-width: 1060px;
+      margin: 0 auto;
+    }
     .section-label {
-      font-family: var(--font-sketch); font-size: 0.78rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      color: var(--green); margin-bottom: 0.4rem;
+      font-family: var(--font-sketch);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      margin-bottom: 0.4rem;
     }
     .section-heading {
-      font-family: var(--font-display); font-size: clamp(1.6rem,4vw,2.4rem);
-      color: var(--black); margin: 0 0 1.75rem; line-height: 1.15;
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      color: var(--black);
+      margin: 0 0 1.75rem;
+      line-height: 1.15;
     }
-    .text-center { text-align: center; }
-    .body-text { font-family: var(--font-hand); font-size: 1rem; color: #444; line-height: 1.7; margin: 0 0 1rem; }
+    .text-center {
+      text-align: center;
+    }
+    .body-text {
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      color: #444;
+      line-height: 1.7;
+      margin: 0 0 1rem;
+    }
 
     /* About grid */
-    .about-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: center; }
-    .about-stats { display: flex; gap: 1.5rem; margin-top: 1.5rem; }
-    .about-stat { text-align: center; }
-    .about-stat-val { display: block; font-family: var(--font-display); font-size: 1.8rem; color: var(--green); }
-    .about-stat-lbl { display: block; font-family: var(--font-hand); font-size: 0.8rem; color: #666; }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 2rem;
+      align-items: center;
+    }
+    .about-stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .about-stat {
+      text-align: center;
+    }
+    .about-stat-val {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      color: var(--green);
+    }
+    .about-stat-lbl {
+      display: block;
+      font-family: var(--font-hand);
+      font-size: 0.8rem;
+      color: #666;
+    }
     .about-photo {
-      position: relative; border-radius: 16px;
-      aspect-ratio: 4/3; min-height: 220px; overflow: hidden;
+      position: relative;
+      border-radius: 16px;
+      aspect-ratio: 4/3;
+      min-height: 220px;
+      overflow: hidden;
     }
     .photo-placeholder {
-      position: absolute; inset: 0; z-index: 2;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 0.75rem; text-align: center;
-      font-family: var(--font-hand); font-size: 0.9rem; color: var(--green-dark); line-height: 1.5;
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      text-align: center;
+      font-family: var(--font-hand);
+      font-size: 0.9rem;
+      color: var(--green-dark);
+      line-height: 1.5;
+    }
+
+    /* About real photo */
+    .about-real-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 16px;
+      display: block;
+    }
+    .about-photo-badge {
+      position: absolute;
+      bottom: 0.6rem;
+      left: 0.6rem;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-size: 0.7rem;
+      font-family: var(--font-hand);
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+      z-index: 2;
+    }
+
+    /* Photo Gallery Carousel */
+    .info-gallery {
+      margin-bottom: 2.25rem;
+    }
+    .gallery-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-bottom: 1.25rem;
+    }
+    .gallery-track-outer {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 16/7;
+      background: var(--green-light);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    .gallery-track {
+      display: flex;
+      height: 100%;
+      transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .gallery-slide {
+      flex: 0 0 100%;
+      position: relative;
+      margin: 0;
+      overflow: hidden;
+    }
+    .gallery-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .gallery-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+      color: #fff;
+      padding: 2rem 1.25rem 0.9rem;
+      font-family: var(--font-hand);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+    .gallery-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      border: none;
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      line-height: 1;
+      color: var(--black);
+      cursor: pointer;
+      z-index: 4;
+      transition:
+        background 200ms,
+        transform 200ms;
+    }
+    .gallery-btn:hover {
+      background: #fff;
+      transform: translateY(-50%) scale(1.07);
+    }
+    .gallery-prev {
+      left: 0.75rem;
+    }
+    .gallery-next {
+      right: 0.75rem;
+    }
+    .gallery-dots {
+      position: absolute;
+      bottom: 0.7rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.45rem;
+      z-index: 4;
+    }
+    :global(.gallery-dot) {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      transition:
+        background 200ms,
+        transform 200ms;
+    }
+    :global(.gallery-dot.active) {
+      background: #fff;
+      transform: scale(1.25);
     }
 
     /* Facilities */
-    .facilities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 1.25rem; }
-    .facility-card {
-      position: relative; border-radius: 14px;
-      transition: transform 250ms ease, box-shadow 250ms ease;
-      cursor: default;
+    .facilities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
     }
-    .facility-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,171,57,0.15); }
-    .facility-inner { position: relative; z-index: 2; padding: 1.5rem; }
-    .facility-icon { margin-bottom: 0.75rem; }
-    .facility-title { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; color: var(--black); margin: 0 0 0.4rem; }
-    .facility-desc { font-family: var(--font-hand); font-size: 0.85rem; color: #555; margin: 0; line-height: 1.5; }
+    .facility-card {
+      position: relative;
+      border-radius: 14px;
+      transition:
+        transform 250ms ease,
+        box-shadow 250ms ease;
+      cursor: pointer;
+      background: none;
+      border: none;
+      text-align: left;
+      width: 100%;
+    }
+    .facility-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(0, 171, 57, 0.15);
+    }
+    .facility-card:focus-visible {
+      outline: 3px solid var(--green);
+      outline-offset: 2px;
+    }
+    .facility-inner {
+      position: relative;
+      z-index: 2;
+      padding: 1.5rem;
+    }
+    .facility-icon {
+      margin-bottom: 0.75rem;
+    }
+    .facility-title {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--black);
+      margin: 0 0 0.4rem;
+    }
+    .facility-desc {
+      font-family: var(--font-hand);
+      font-size: 0.85rem;
+      color: #555;
+      margin: 0;
+      line-height: 1.5;
+    }
+    .facility-cta {
+      display: inline-block;
+      margin-top: 0.6rem;
+      font-family: var(--font-hand);
+      font-size: 0.78rem;
+      color: var(--green-dark);
+      opacity: 0;
+      transform: translateX(-4px);
+      transition:
+        opacity 200ms,
+        transform 200ms;
+    }
+    .facility-card:hover .facility-cta,
+    .facility-card:focus-visible .facility-cta {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Facility Modal */
+    .fac-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .fac-modal[aria-hidden='false'] {
+      display: flex;
+    }
+    .fac-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(3px);
+    }
+    .fac-modal-box {
+      position: relative;
+      z-index: 2;
+      background: #fff;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 680px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      animation: modal-in 300ms cubic-bezier(0.34, 1.2, 0.64, 1);
+    }
+    @keyframes modal-in {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+    .fac-modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      border: none;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background 200ms;
+    }
+    .fac-modal-close:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+    .fac-modal-title {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 1.3rem;
+      color: var(--black);
+      padding: 1.1rem 1.5rem 0.75rem;
+      border-bottom: 1px solid #f0f0f0;
+      margin: 0;
+    }
+    .fac-modal-carousel {
+      position: relative;
+      aspect-ratio: 16/10;
+      overflow: hidden;
+      background: #000;
+    }
+    .fac-modal-track {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+    }
+    /* :global needed — .fac-slide elements are created via JS and lack the Astro scope hash */
+    :global(.fac-slide) {
+      flex: 0 0 100%;
+      min-width: 100%;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      margin: 0;
+    }
+    :global(.fac-slide img) {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    :global(.fac-slide figcaption) {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.5rem 0.9rem;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+      color: #fff;
+      font-family: var(--font-hand);
+      font-size: 0.85rem;
+    }
+    .fac-prev {
+      left: 0.65rem;
+    }
+    .fac-next {
+      right: 0.65rem;
+    }
+    #fac-dots {
+      position: absolute;
+      bottom: 0.6rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.4rem;
+      z-index: 4;
+    }
+    .fac-modal-desc {
+      padding: 1rem 1.5rem 1.25rem;
+      font-family: var(--font-hand);
+      font-size: 0.9rem;
+      color: #444;
+      line-height: 1.65;
+      margin: 0;
+    }
+    @media (max-width: 680px) {
+      .gallery-track-outer {
+        aspect-ratio: 4/3;
+      }
+      .fac-modal-box {
+        max-height: 92vh;
+        overflow-y: auto;
+      }
+    }
 
     /* Location */
-    .location-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+    .location-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 2rem;
+      align-items: start;
+    }
 
     /* Map card — contains the MapLibre component + overlays */
     .map-card-big {
@@ -372,8 +1533,12 @@ const accordion = [
 
     /* SVG sketch border — sits on top of everything, pointer-events:none */
     .map-sketch-border {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 10;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
     }
 
     /* The MapLibre host element fills the card */
@@ -387,176 +1552,658 @@ const accordion = [
 
     /* Bottom gradient overlay with address + OSM link */
     .map-bottom-overlay {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
-      background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0) 100%);
       padding: 2rem 1.25rem 1rem;
-      display: flex; flex-direction: column; gap: 0.3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
       border-radius: 0 0 16px 16px;
       pointer-events: none;
     }
-    .map-bottom-overlay a { pointer-events: auto; }
+    .map-bottom-overlay a {
+      pointer-events: auto;
+    }
     .map-overlay-addr {
-      font-family: var(--font-hand); font-size: 0.82rem; color: rgba(255,255,255,0.88);
+      font-family: var(--font-hand);
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.88);
     }
     .map-overlay-link {
-      font-family: var(--font-sketch); font-size: 0.78rem; font-weight: 700;
-      color: #6ee7a0; text-decoration: none; letter-spacing: 0.03em;
-      text-transform: uppercase; width: fit-content;
+      font-family: var(--font-sketch);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #6ee7a0;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      width: fit-content;
     }
-    .map-overlay-link:hover { color: white; text-decoration: underline; }
+    .map-overlay-link:hover {
+      color: white;
+      text-decoration: underline;
+    }
 
     .via-badge {
-      background: var(--green); color: white;
-      font-family: var(--font-sketch); font-weight: 700; font-size: 0.85rem;
-      text-transform: uppercase; letter-spacing: 0.04em;
-      padding: 0.4rem 1rem; border-radius: 50px;
-      display: inline-block; margin-bottom: 1rem;
+      background: var(--green);
+      color: white;
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.4rem 1rem;
+      border-radius: 50px;
+      display: inline-block;
+      margin-bottom: 1rem;
     }
-    .location-rows { display: flex; flex-direction: column; gap: 0.75rem; }
+    .location-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
     .loc-row {
-      display: flex; align-items: flex-start; gap: 0.75rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
       padding: 0.75rem;
       background: white;
       border-radius: var(--r-md);
-      border: 1.5px solid rgba(0,171,57,0.15);
+      border: 1.5px solid rgba(0, 171, 57, 0.15);
     }
     .loc-row-icon {
-      width: 38px; height: 38px; flex-shrink: 0;
-      background: var(--green); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .loc-row strong { font-family: var(--font-sketch); font-weight: 700; font-size: 0.9rem; color: var(--black); display: block; }
-    .loc-row p { font-family: var(--font-hand); font-size: 0.85rem; color: #555; margin: 0.1rem 0 0; }
+    .loc-row strong {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--black);
+      display: block;
+    }
+    .loc-row p {
+      font-family: var(--font-hand);
+      font-size: 0.85rem;
+      color: #555;
+      margin: 0.1rem 0 0;
+    }
 
     /* Accordion */
-    .accordion { display: flex; flex-direction: column; gap: 0.75rem; }
+    .accordion {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
     .acc-item {
       border-radius: var(--r-md);
-      border: 2px solid rgba(0,171,57,0.25);
+      border: 2px solid rgba(0, 171, 57, 0.25);
       overflow: hidden;
       background: white;
       transition: border-color 200ms;
     }
-    .acc-item.open { border-color: var(--green); }
+    .acc-item.open {
+      border-color: var(--green);
+    }
     .acc-trigger {
-      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 1.1rem 1.25rem;
-      background: none; border: none; cursor: pointer;
-      text-align: left; gap: 0.75rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      gap: 0.75rem;
       transition: background 200ms ease;
     }
-    .acc-trigger:hover { background: rgba(0,171,57,0.04); }
-    .acc-q { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; color: var(--black); }
-    .acc-arrow { flex-shrink: 0; transition: transform 300ms ease; }
-    .acc-item.open .acc-arrow { transform: rotate(180deg); }
-    .acc-body { max-height: 0; overflow: hidden; transition: max-height 400ms cubic-bezier(0.4,0,0.2,1); }
-    .acc-item.open .acc-body { max-height: 220px; }
-    .acc-text {
-      font-family: var(--font-hand); font-size: 0.95rem; color: #444; line-height: 1.7; margin: 0; padding: 0 1.25rem 1.25rem;
-      opacity: 0; transition: opacity 300ms ease 200ms;
+    .acc-trigger:hover {
+      background: rgba(0, 171, 57, 0.04);
     }
-    .acc-item.open .acc-text { opacity: 1; }
+    .acc-q {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--black);
+    }
+    .acc-arrow {
+      flex-shrink: 0;
+      transition: transform 300ms ease;
+    }
+    .acc-item.open .acc-arrow {
+      transform: rotate(180deg);
+    }
+    .acc-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .acc-item.open .acc-body {
+      max-height: 220px;
+    }
+    .acc-text {
+      font-family: var(--font-hand);
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.7;
+      margin: 0;
+      padding: 0 1.25rem 1.25rem;
+      opacity: 0;
+      transition: opacity 300ms ease 200ms;
+    }
+    .acc-item.open .acc-text {
+      opacity: 1;
+    }
 
     /* Pricing stats */
-    .pricing-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2.5rem; }
+    .pricing-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
     .pricing-stat {
-      position: relative; border-radius: 14px;
-      padding: 1.5rem 1rem; text-align: center;
-      display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+      position: relative;
+      border-radius: 14px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
       transition: transform 250ms ease;
     }
-    .pricing-stat:hover { transform: translateY(-3px); }
+    .pricing-stat:hover {
+      transform: translateY(-3px);
+    }
     .pricing-val {
-      position: relative; z-index: 2; font-family: var(--font-display); font-size: 1.8rem; color: var(--green);
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      color: var(--green);
       animation: pricing-pulse 3s ease-in-out infinite;
     }
     @keyframes pricing-pulse {
-      0%, 100% { text-shadow: none; }
-      50%       { text-shadow: 0 0 12px rgba(0,171,57,0.5); }
+      0%,
+      100% {
+        text-shadow: none;
+      }
+      50% {
+        text-shadow: 0 0 12px rgba(0, 171, 57, 0.5);
+      }
     }
-    .pricing-lbl { position: relative; z-index: 2; font-family: var(--font-hand); font-size: 0.8rem; color: var(--green-dark); }
+    .pricing-lbl {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-hand);
+      font-size: 0.8rem;
+      color: var(--green-dark);
+    }
 
-    .rules-heading { font-family: var(--font-sketch); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--black); margin: 0 0 1rem; }
-    .rules-ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-    .rule-item {
-      display: flex; align-items: flex-start; gap: 0.5rem;
-      font-family: var(--font-hand); font-size: 0.9rem; color: #444;
+    .rules-heading {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--black);
+      margin: 0 0 1rem;
     }
-    .rule-item svg { flex-shrink: 0; margin-top: 3px; }
+    .rules-ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+    .rule-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-family: var(--font-hand);
+      font-size: 0.9rem;
+      color: #444;
+    }
+    .rule-item svg {
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
 
     /* CTA */
-    .info-cta { padding: 4rem 1rem; text-align: center; }
-    .cta-inner { max-width: 520px; margin: 0 auto; }
-    .cta-heading { font-family: var(--font-display); font-size: clamp(1.8rem,4vw,2.6rem); color: var(--black); margin: 0 0 0.5rem; }
-    .cta-sub { font-family: var(--font-hand); font-size: 1rem; color: #555; margin: 0 0 2rem; }
+    .info-cta {
+      padding: 4rem 1rem;
+      text-align: center;
+    }
+    .cta-inner {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .cta-heading {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      color: var(--black);
+      margin: 0 0 0.5rem;
+    }
+    .cta-sub {
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      color: #555;
+      margin: 0 0 2rem;
+    }
     @keyframes cta-rock-info {
-      0%, 100% { transform: rotate(0deg) translateY(0); }
-      20%       { transform: rotate(-2.5deg) translateY(-2px); }
-      40%       { transform: rotate(2.5deg) translateY(-3px); }
-      60%       { transform: rotate(-1.5deg) translateY(-1px); }
-      80%       { transform: rotate(1deg); }
+      0%,
+      100% {
+        transform: rotate(0deg) translateY(0);
+      }
+      20% {
+        transform: rotate(-2.5deg) translateY(-2px);
+      }
+      40% {
+        transform: rotate(2.5deg) translateY(-3px);
+      }
+      60% {
+        transform: rotate(-1.5deg) translateY(-1px);
+      }
+      80% {
+        transform: rotate(1deg);
+      }
     }
     .btn-sketchy-cta {
-      position: relative; display: inline-flex; align-items: center; justify-content: center;
-      padding: 1rem 2.5rem; text-decoration: none;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 2.5rem;
+      text-decoration: none;
       transition: transform 200ms ease;
       animation: cta-rock-info 3.5s ease-in-out infinite;
     }
-    .btn-sketchy-cta:hover { animation: none; transform: translateY(-3px); }
-    .btn-sketchy-cta:active { animation: none; transform: scale(0.98); }
+    .btn-sketchy-cta:hover {
+      animation: none;
+      transform: translateY(-3px);
+    }
+    .btn-sketchy-cta:active {
+      animation: none;
+      transform: scale(0.98);
+    }
     .cta-btn-label {
-      position: relative; z-index: 2;
-      font-family: var(--font-sketch); font-weight: 700; font-size: 1.1rem;
-      color: white; text-transform: uppercase; letter-spacing: 0.04em;
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     /* Scroll reveal */
-    .reveal-section { opacity: 0; transform: translateY(28px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
-    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+    .reveal-section {
+      opacity: 0;
+      transform: translateY(28px);
+      transition:
+        opacity 600ms ease calc(var(--delay, 0s)),
+        transform 600ms ease calc(var(--delay, 0s));
+    }
+    .reveal-section.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Reviews */
+    .reviews-overall {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 2.5rem;
+      align-items: start;
+    }
+    .reviews-score-big {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--green);
+      color: white;
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      min-width: 140px;
+    }
+    .reviews-score-num {
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      line-height: 1;
+    }
+    .reviews-score-label {
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      margin-top: 0.25rem;
+    }
+    .reviews-score-count {
+      font-size: 0.7rem;
+      opacity: 0.8;
+      margin-top: 0.35rem;
+      text-align: center;
+    }
+    .reviews-subscores {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .subscore-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 40px;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .subscore-lbl {
+      font-size: 0.85rem;
+      color: #444;
+    }
+    .subscore-bar-wrap {
+      background: #e8e8e8;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .subscore-bar {
+      background: var(--green);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 1s ease;
+    }
+    .subscore-val {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--green);
+    }
+
+    /* Nearby */
+    .nearby-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .nearby-card {
+      position: relative;
+      border-radius: 14px;
+      padding: 1.25rem 1.25rem 1.25rem 1rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .nearby-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+    .nearby-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .nearby-name {
+      font-size: 0.95rem;
+      color: #222;
+    }
+    .nearby-dist {
+      font-family: var(--font-sketch);
+      font-size: 0.75rem;
+      color: var(--green);
+      font-weight: 700;
+    }
+    .nearby-desc {
+      font-size: 0.8rem;
+      color: #555;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .license-note {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
 
     /* Responsive */
     @media (max-width: 768px) {
-      .about-grid, .location-grid { grid-template-columns: 1fr; }
-      .pricing-stats { grid-template-columns: repeat(2,1fr); }
-      .rules-ul { grid-template-columns: 1fr; }
+      .about-grid,
+      .location-grid {
+        grid-template-columns: 1fr;
+      }
+      .pricing-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .rules-ul {
+        grid-template-columns: 1fr;
+      }
+      .reviews-overall {
+        grid-template-columns: 1fr;
+      }
+      .subscore-row {
+        grid-template-columns: 140px 1fr 36px;
+      }
+      .nearby-grid {
+        grid-template-columns: 1fr;
+      }
     }
     @media (max-width: 480px) {
-      .pricing-stats { grid-template-columns: 1fr 1fr; }
+      .pricing-stats {
+        grid-template-columns: 1fr 1fr;
+      }
     }
   </style>
 
   <script>
+    // --- Photo Gallery Carousel ---
+    (function () {
+      const track = document.getElementById('gallery-track') as HTMLElement | null;
+      const dotsContainer = document.getElementById('gallery-dots');
+      const slides = track ? Array.from(track.querySelectorAll('.gallery-slide')) : [];
+      const total = slides.length;
+      if (!track || total === 0) return;
+
+      let current = 0;
+      let autoTimer: ReturnType<typeof setInterval>;
+
+      function goTo(idx: number) {
+        current = ((idx % total) + total) % total;
+        if (track) track.style.transform = `translateX(-${current * 100}%)`;
+        dotsContainer?.querySelectorAll('.gallery-dot').forEach((d, i) => {
+          d.classList.toggle('active', i === current);
+          d.setAttribute('aria-selected', i === current ? 'true' : 'false');
+        });
+      }
+
+      document.getElementById('gallery-prev')?.addEventListener('click', () => {
+        goTo(current - 1);
+        clearInterval(autoTimer);
+        autoTimer = setInterval(() => goTo(current + 1), 4500);
+      });
+      document.getElementById('gallery-next')?.addEventListener('click', () => {
+        goTo(current + 1);
+        clearInterval(autoTimer);
+        autoTimer = setInterval(() => goTo(current + 1), 4500);
+      });
+
+      dotsContainer?.querySelectorAll('.gallery-dot').forEach((dot, i) => {
+        dot.addEventListener('click', () => {
+          goTo(i);
+          clearInterval(autoTimer);
+          autoTimer = setInterval(() => goTo(current + 1), 4500);
+        });
+      });
+
+      autoTimer = setInterval(() => goTo(current + 1), 4500);
+
+      // Pause on hover
+      const outer = document.getElementById('gallery-outer');
+      outer?.addEventListener('mouseenter', () => clearInterval(autoTimer));
+      outer?.addEventListener('mouseleave', () => {
+        autoTimer = setInterval(() => goTo(current + 1), 4500);
+      });
+    })();
+
+    // --- Facility Modal ---
+    (function () {
+      interface PhotoEntry {
+        id: string;
+        hash: string;
+        alt: string;
+      }
+      interface FacEntry {
+        label: string;
+        photos: number[];
+        details: string;
+      }
+
+      const photosRaw = document.getElementById('photos-data')?.textContent ?? '[]';
+      const facRaw = document.getElementById('facilities-data')?.textContent ?? '[]';
+      let PHOTOS: PhotoEntry[] = [];
+      let facData: FacEntry[] = [];
+      try {
+        PHOTOS = JSON.parse(photosRaw);
+      } catch (e) {
+        console.warn('[info] photos-data parse error', e);
+      }
+      try {
+        facData = JSON.parse(facRaw);
+      } catch (e) {
+        console.warn('[info] facilities-data parse error', e);
+      }
+
+      const modal = document.getElementById('facility-modal');
+      const modalTitle = document.getElementById('fac-modal-title');
+      const modalTrack = document.getElementById('fac-modal-track') as HTMLElement | null;
+      const modalDesc = document.getElementById('fac-modal-desc');
+      const modalDots = document.getElementById('fac-dots');
+      let facIdx = 0;
+      let facPhotos: number[] = [];
+
+      function facGoTo(i: number) {
+        facIdx = ((i % facPhotos.length) + facPhotos.length) % facPhotos.length;
+        if (modalTrack) modalTrack.style.transform = `translateX(-${facIdx * 100}%)`;
+        modalDots?.querySelectorAll('.gallery-dot').forEach((d, j) => {
+          d.classList.toggle('active', j === facIdx);
+          d.setAttribute('aria-selected', j === facIdx ? 'true' : 'false');
+        });
+      }
+
+      function openModal(facilityIndex: number) {
+        const fac = facData[facilityIndex];
+        if (!fac || !modal) return;
+        facPhotos = fac.photos;
+        facIdx = 0;
+        if (modalTitle) modalTitle.textContent = fac.label;
+        if (modalDesc) modalDesc.textContent = fac.details;
+
+        if (modalTrack) {
+          while (modalTrack.firstChild) modalTrack.removeChild(modalTrack.firstChild);
+          modalTrack.style.transform = 'translateX(0)';
+          facPhotos.forEach((pi, i) => {
+            const p = PHOTOS[pi];
+            if (!p) return;
+            const fig = document.createElement('figure');
+            fig.className = 'fac-slide';
+            const img = document.createElement('img');
+            img.src = `https://cf.bstatic.com/xdata/images/hotel/max1280x900/${p.id}.jpg?k=${p.hash}&o=`;
+            img.alt = p.alt;
+            img.loading = i === 0 ? 'eager' : 'lazy';
+            const cap = document.createElement('figcaption');
+            cap.textContent = p.alt;
+            fig.appendChild(img);
+            fig.appendChild(cap);
+            modalTrack.appendChild(fig);
+          });
+        }
+
+        if (modalDots) {
+          while (modalDots.firstChild) modalDots.removeChild(modalDots.firstChild);
+          facPhotos.forEach((_, i) => {
+            const btn = document.createElement('button');
+            btn.className = `gallery-dot${i === 0 ? ' active' : ''}`;
+            btn.setAttribute('aria-label', `Foto ${i + 1}`);
+            btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+            btn.addEventListener('click', () => facGoTo(i));
+            modalDots.appendChild(btn);
+          });
+        }
+
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        if (!modal) return;
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      document.getElementById('fac-modal-close')?.addEventListener('click', closeModal);
+      document.getElementById('fac-modal-backdrop')?.addEventListener('click', closeModal);
+      document.getElementById('fac-prev')?.addEventListener('click', () => facGoTo(facIdx - 1));
+      document.getElementById('fac-next')?.addEventListener('click', () => facGoTo(facIdx + 1));
+
+      document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (modal?.getAttribute('aria-hidden') !== 'false') return;
+        if (e.key === 'Escape') closeModal();
+        if (e.key === 'ArrowLeft') facGoTo(facIdx - 1);
+        if (e.key === 'ArrowRight') facGoTo(facIdx + 1);
+      });
+
+      document
+        .querySelectorAll<HTMLElement>('.facility-card[data-facility-idx]')
+        .forEach((card) => {
+          card.addEventListener('click', () => {
+            const i = parseInt(card.dataset.facilityIdx ?? '0', 10);
+            openModal(i);
+          });
+        });
+    })();
+
     // Scroll reveal
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); observer.unobserve(e.target); } });
-    }, { threshold: 0.08 });
-    document.querySelectorAll('.reveal-section').forEach(el => observer.observe(el));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('revealed');
+            observer.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.08 }
+    );
+    document.querySelectorAll('.reveal-section').forEach((el) => observer.observe(el));
 
     // Accordion
-    document.querySelectorAll('.acc-trigger').forEach(trigger => {
-      trigger.addEventListener('click', function() {
-        const item   = this.closest('.acc-item') as HTMLElement;
+    document.querySelectorAll('.acc-trigger').forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        const item = trigger.closest('.acc-item') as HTMLElement;
         const isOpen = item.classList.contains('open');
         // Close all
-        document.querySelectorAll('.acc-item').forEach(i => {
+        document.querySelectorAll('.acc-item').forEach((i) => {
           i.classList.remove('open');
-          (i.querySelector('.acc-trigger') as HTMLButtonElement).setAttribute('aria-expanded','false');
+          (i.querySelector('.acc-trigger') as HTMLButtonElement).setAttribute(
+            'aria-expanded',
+            'false'
+          );
         });
         // Open clicked (if was closed)
         if (!isOpen) {
           item.classList.add('open');
-          (this as HTMLButtonElement).setAttribute('aria-expanded','true');
+          (trigger as HTMLButtonElement).setAttribute('aria-expanded', 'true');
         }
-      });
-    });
-
-    // Card hover ripple
-    document.querySelectorAll('.facility-card').forEach(card => {
-      card.addEventListener('mouseenter', function() {
-        (this as HTMLElement).style.zIndex = '2';
-      });
-      card.addEventListener('mouseleave', function() {
-        (this as HTMLElement).style.zIndex = '';
       });
     });
 
@@ -567,12 +2214,15 @@ const accordion = [
       heroWavePath.style.strokeDasharray = String(len);
       heroWavePath.style.strokeDashoffset = String(len);
       heroWavePath.style.transition = 'stroke-dashoffset 800ms ease 300ms';
-      const waveObs = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
-          heroWavePath.style.strokeDashoffset = '0';
-          waveObs.disconnect();
-        }
-      }, { threshold: 0.2 });
+      const waveObs = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            heroWavePath.style.strokeDashoffset = '0';
+            waveObs.disconnect();
+          }
+        },
+        { threshold: 0.2 }
+      );
       waveObs.observe(heroWavePath.closest('.hero-wave') as Element);
     }
   </script>
@@ -583,7 +2233,7 @@ const accordion = [
       try {
         const res = await fetch('/api/pricing');
         if (!res.ok) return;
-        const data = await res.json() as { price_eur?: number; price_cents?: number };
+        const data = (await res.json()) as { price_eur?: number; price_cents?: number };
         const priceEur = data.price_eur ?? (data.price_cents ? data.price_cents / 100 : 15);
         const label = `${priceEur} EUR`;
 
@@ -592,7 +2242,9 @@ const accordion = [
 
         const statEl = document.getElementById('info-price-stat');
         if (statEl) statEl.textContent = label;
-      } catch { /* keep default 15 EUR */ }
+      } catch {
+        /* keep default 15 EUR */
+      }
     })();
   </script>
 </Layout>
