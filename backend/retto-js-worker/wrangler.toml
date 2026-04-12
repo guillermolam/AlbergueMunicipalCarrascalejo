@@ -1,0 +1,12 @@
+name = "retto-ocr-worker"
+main = "src/index.js"
+compatibility_date = "2025-05-21"
+
+# R2 bucket for OCR models - subfolder in existing albergue-documents bucket
+[[r2_buckets]]
+binding = "OCR_MODELS"
+bucket_name = "albergue-documents"
+
+[env.preview]
+
+[env.production]

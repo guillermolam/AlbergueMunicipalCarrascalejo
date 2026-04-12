@@ -14,6 +14,18 @@
     const finalizer = Symbol("Comlink.finalizer");
     const throwMarker = Symbol("Comlink.thrown");
     const isObject = (val) => (typeof val === "object" && val !== null) || typeof val === "function";
+    function getRuntimeScriptURL(scriptName) {
+        if (typeof document === "undefined") {
+            if (typeof location === "undefined") {
+                return new (require("u" + "rl").URL)(`file:${__filename}`).href;
+            }
+            return location.href;
+        }
+        const currentScriptSrc = document.currentScript?.tagName?.toUpperCase() === "SCRIPT"
+            ? document.currentScript.src
+            : undefined;
+        return currentScriptSrc || new URL(scriptName, document.baseURI).href;
+    }
     /**
      * Internal transfer handle to handle objects marked to proxy.
      */
@@ -65,7 +77,7 @@
         ["proxy", proxyTransferHandler],
         ["throw", throwTransferHandler],
     ]);
-    function isAllowedOrigin(allowedOrigins, origin) {
+    const isAllowedOrigin = (allowedOrigins, origin) => {
         for (const allowedOrigin of allowedOrigins) {
             if (origin === allowedOrigin || allowedOrigin === "*") {
                 return true;
@@ -75,71 +87,59 @@
             }
         }
         return false;
-    }
+    };
     function expose(obj, ep = globalThis, allowedOrigins = ["*"]) {
         ep.addEventListener("message", function callback(ev) {
-            if (!ev || !ev.data) {
+            if (!ev?.data) {
                 return;
             }
-            if (!isAllowedOrigin(allowedOrigins, ev.origin)) {
+            if (typeof ev.origin !== "string" || !isAllowedOrigin(allowedOrigins, ev.origin)) {
                 console.warn(`Invalid origin '${ev.origin}' for comlink proxy`);
                 return;
             }
-            const { id, type, path } = Object.assign({ path: [] }, ev.data);
-            const argumentList = (ev.data.argumentList || []).map(fromWireValue);
+            const { id, type, path = [] } = ev.data;
+            const argumentList = (ev.data.argumentList ?? []).map(fromWireValue);
             let returnValue;
             try {
                 const parent = path.slice(0, -1).reduce((obj, prop) => obj[prop], obj);
                 const rawValue = path.reduce((obj, prop) => obj[prop], obj);
                 switch (type) {
                     case "GET" /* MessageType.GET */:
-                        {
-                            returnValue = rawValue;
-                        }
+                        returnValue = rawValue;
                         break;
                     case "SET" /* MessageType.SET */:
-                        {
-                            parent[path.slice(-1)[0]] = fromWireValue(ev.data.value);
-                            returnValue = true;
-                        }
+                        parent[path.at(-1)] = fromWireValue(ev.data.value);
+                        returnValue = true;
                         break;
                     case "APPLY" /* MessageType.APPLY */:
-                        {
-                            returnValue = rawValue.apply(parent, argumentList);
-                        }
+                        returnValue = rawValue.apply(parent, argumentList);
                         break;
                     case "CONSTRUCT" /* MessageType.CONSTRUCT */:
-                        {
-                            const value = new rawValue(...argumentList);
-                            returnValue = proxy(value);
-                        }
+                        returnValue = proxy(new rawValue(...argumentList));
                         break;
-                    case "ENDPOINT" /* MessageType.ENDPOINT */:
-                        {
-                            const { port1, port2 } = new MessageChannel();
-                            expose(obj, port2);
-                            returnValue = transfer(port1, [port1]);
-                        }
+                    case "ENDPOINT" /* MessageType.ENDPOINT */: {
+                        const { port1, port2 } = new MessageChannel();
+                        expose(obj, port2);
+                        returnValue = transfer(port1, [port1]);
                         break;
+                    }
                     case "RELEASE" /* MessageType.RELEASE */:
-                        {
-                            returnValue = undefined;
-                        }
+                        returnValue = undefined;
                         break;
                     default:
                         return;
                 }
             }
-            catch (value) {
-                returnValue = { value, [throwMarker]: 0 };
+            catch (error_) {
+                returnValue = { value: error_, [throwMarker]: 0 };
             }
             Promise.resolve(returnValue)
-                .catch((value) => {
-                return { value, [throwMarker]: 0 };
+                .catch((error_) => {
+                return { value: error_, [throwMarker]: 0 };
             })
                 .then((returnValue) => {
                 const [wireValue, transferables] = toWireValue(returnValue);
-                ep.postMessage(Object.assign(Object.assign({}, wireValue), { id }), transferables);
+                ep.postMessage({ ...wireValue, id }, transferables);
                 if (type === "RELEASE" /* MessageType.RELEASE */) {
                     // detach and deactive after sending release response above.
                     ep.removeEventListener("message", callback);
@@ -155,19 +155,18 @@
                     value: new TypeError("Unserializable return value"),
                     [throwMarker]: 0,
                 });
-                ep.postMessage(Object.assign(Object.assign({}, wireValue), { id }), transferables);
+                ep.postMessage({ ...wireValue, id }, transferables);
             });
         });
-        if (ep.start) {
-            ep.start();
-        }
+        ep.start?.();
     }
     function isMessagePort(endpoint) {
         return endpoint.constructor.name === "MessagePort";
     }
     function closeEndPoint(endpoint) {
-        if (isMessagePort(endpoint))
+        if (isMessagePort(endpoint)) {
             endpoint.close();
+        }
     }
     function wrap(ep, target) {
         return createProxy(ep, [], target);
@@ -219,7 +218,7 @@
                 }
                 if (prop === "then") {
                     if (path.length === 0) {
-                        return { then: () => proxy };
+                        return (resolve) => resolve(proxy);
                     }
                     const r = requestResponseMessage(ep, {
                         type: "GET" /* MessageType.GET */,
@@ -231,8 +230,6 @@
             },
             set(_target, prop, rawValue) {
                 throwIfProxyReleased(isProxyReleased);
-                // FIXME: ES6 Proxy Handler `set` methods are supposed to return a
-                // boolean. To show good will, we return true asynchronously ¯\_(ツ)_/¯
                 const [value, transferables] = toWireValue(rawValue);
                 return requestResponseMessage(ep, {
                     type: "SET" /* MessageType.SET */,
@@ -242,7 +239,7 @@
             },
             apply(_target, _thisArg, rawArgumentList) {
                 throwIfProxyReleased(isProxyReleased);
-                const last = path[path.length - 1];
+                const last = path.at(-1);
                 if (last === createEndpoint) {
                     return requestResponseMessage(ep, {
                         type: "ENDPOINT" /* MessageType.ENDPOINT */,
@@ -272,12 +269,9 @@
         registerProxy(proxy, ep);
         return proxy;
     }
-    function myFlat(arr) {
-        return Array.prototype.concat.apply([], arr);
-    }
     function processArguments(argumentList) {
         const processed = argumentList.map(toWireValue);
-        return [processed.map((v) => v[0]), myFlat(processed.map((v) => v[1]))];
+        return [processed.map((v) => v[0]), processed.map((v) => v[1]).flat()];
     }
     const transferCache = new WeakMap();
     function transfer(obj, transfers) {
@@ -285,7 +279,8 @@
         return obj;
     }
     function proxy(obj) {
-        return Object.assign(obj, { [proxyMarker]: true });
+        obj[proxyMarker] = true;
+        return obj;
     }
     function toWireValue(value) {
         for (const [name, handler] of transferHandlers) {
@@ -321,16 +316,14 @@
         return new Promise((resolve) => {
             const id = generateUUID();
             ep.addEventListener("message", function l(ev) {
-                if (!ev.data || !ev.data.id || ev.data.id !== id) {
+                if (!ev.data?.id || ev.data.id !== id) {
                     return;
                 }
                 ep.removeEventListener("message", l);
                 resolve(ev.data);
             });
-            if (ep.start) {
-                ep.start();
-            }
-            ep.postMessage(Object.assign({ id }, msg), transfers);
+            ep.start?.();
+            ep.postMessage({ id, ...msg }, transfers);
         });
     }
     function generateUUID() {
@@ -340,8 +333,9 @@
             .join("-");
     }
 
+
     var Module = (() => {
-      var _scriptDir = (typeof document === 'undefined' && typeof location === 'undefined' ? new (require('u' + 'rl').URL)('file:' + __filename).href : typeof document === 'undefined' ? location.href : (document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT' && document.currentScript.src || new URL('tesseract-worker.js', document.baseURI).href));
+      var _scriptDir = getRuntimeScriptURL("tesseract-worker.js");
       
       return (
     function(Module = {})  {
@@ -353,6 +347,7 @@
     }
     );
     })();
+    /* eslint-enable */
 
     /**
      * Extract the pixel data from an ImageBitmap.
@@ -363,14 +358,14 @@
             // @ts-expect-error - OffscreenCanvas API is missing
             canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
         }
-        else if (typeof HTMLCanvasElement !== "undefined") {
+        else if (typeof HTMLCanvasElement === "undefined") {
+            throw new TypeError("No canvas implementation available");
+        }
+        else {
             const canvasEl = document.createElement("canvas");
             canvasEl.width = bitmap.width;
             canvasEl.height = bitmap.height;
             canvas = canvasEl;
-        }
-        else {
-            throw new Error("No canvas implementation available");
         }
         const context = canvas.getContext("2d");
         context.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
@@ -539,9 +534,8 @@
             this._checkModelLoaded();
             const textUnit = this._textUnitForUnit(unit);
             return jsArrayFromStdVector(this._engine.getTextBoxes(textUnit, (progress) => {
-                var _a;
-                onProgress === null || onProgress === void 0 ? void 0 : onProgress(progress);
-                (_a = this._progressChannel) === null || _a === void 0 ? void 0 : _a.postMessage({ progress });
+                onProgress?.(progress);
+                this._progressChannel?.postMessage({ progress });
             }));
         }
         /**
@@ -555,9 +549,8 @@
             this._checkImageLoaded();
             this._checkModelLoaded();
             return this._engine.getText((progress) => {
-                var _a;
-                onProgress === null || onProgress === void 0 ? void 0 : onProgress(progress);
-                (_a = this._progressChannel) === null || _a === void 0 ? void 0 : _a.postMessage({ progress });
+                onProgress?.(progress);
+                this._progressChannel?.postMessage({ progress });
             });
         }
         /**
@@ -571,9 +564,8 @@
             this._checkImageLoaded();
             this._checkModelLoaded();
             return this._engine.getHOCR((progress) => {
-                var _a;
-                onProgress === null || onProgress === void 0 ? void 0 : onProgress(progress);
-                (_a = this._progressChannel) === null || _a === void 0 ? void 0 : _a.postMessage({ progress });
+                onProgress?.(progress);
+                this._progressChannel?.postMessage({ progress });
             });
         }
         /**
@@ -649,7 +641,7 @@
             // nb. If this code is included in a non-ESM bundle, Rollup will replace
             // `import.meta.url` with code that uses `document.currentScript` /
             // `location.href`.
-            const wasmURL = resolve(wasmPath, (typeof document === 'undefined' && typeof location === 'undefined' ? new (require('u' + 'rl').URL)('file:' + __filename).href : typeof document === 'undefined' ? location.href : (document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT' && document.currentScript.src || new URL('tesseract-worker.js', document.baseURI).href)));
+            const wasmURL = resolve(wasmPath, getRuntimeScriptURL("tesseract-worker.js"));
             const wasmBinaryResponse = await fetch(wasmURL);
             wasmBinary = await wasmBinaryResponse.arrayBuffer();
         }

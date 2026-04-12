@@ -1,0 +1,16 @@
+{
+  "name": "retto-ocr-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker using Retto WASM for OCR",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@nekoimageland/retto-wasm": "^0.1.5"
+  },
+  "devDependencies": {
+    "wrangler": "^4.81.1"
+  }
+}

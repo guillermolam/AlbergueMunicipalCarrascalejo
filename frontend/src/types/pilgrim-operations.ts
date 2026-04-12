@@ -190,12 +190,15 @@ export interface CreatePilgrimageDto {
   equipment?: Equipment[];
 }
 
+/** Dormitory room-gender configuration options */
+export type RoomType = 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
+
 export interface CreateBookingDto {
   accommodationId: string;
   accommodationName: string;
   checkInDate: Date;
   checkOutDate: Date;
-  roomType: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
+  roomType: RoomType;
   numberOfBeds: number;
   specialRequests?: string;
 }
@@ -226,7 +229,7 @@ export interface UpdatePilgrimageDto {
 export interface UpdateBookingDto {
   checkInDate?: Date;
   checkOutDate?: Date;
-  roomType?: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
+  roomType?: RoomType;
   numberOfBeds?: number;
   specialRequests?: string;
   status?: BookingStatus;
@@ -315,7 +318,7 @@ export interface CheckAvailabilityDto {
   accommodationId: string;
   checkInDate: Date;
   checkOutDate: Date;
-  roomType: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
+  roomType: RoomType;
   numberOfBeds: number;
 }
 
@@ -323,7 +326,7 @@ export interface AvailabilityResult {
   available: boolean;
   availableRooms: number;
   alternativeRooms: Array<{
-    roomType: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
+    roomType: RoomType;
     available: boolean;
     price: number;
   }>;

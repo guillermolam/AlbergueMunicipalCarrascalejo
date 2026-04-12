@@ -493,12 +493,14 @@ export function initCalendarIsland(opts: CalendarIslandOptions): void {
   });
 
   // ── Subscribe to store changes that affect the render ──
-  // (persons count changes need a calendar + summary repaint)
-  bookingDatesStore.subscribe(() => {
+  // (persons count changes need a calendar + summary repaint; date changes
+  //  also need to update the wizard Next-button state reactively)
+  bookingDatesStore.subscribe((state) => {
     // Debounce: only repaint on the next microtask to batch multiple setKey calls
     queueMicrotask(() => {
       renderCalendar();
       updateDateSummary();
+      opts.onCanProceed?.(!!(state.checkin && state.checkout));
     });
   });
 

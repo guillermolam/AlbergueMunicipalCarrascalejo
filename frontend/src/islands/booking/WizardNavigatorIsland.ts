@@ -93,6 +93,45 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
     setCanProceed(yes);
   }
 
+  // ── Sidebar step button painter (extracted to reduce cognitive complexity) ──
+  function paintStepBtn(btn: HTMLElement, step: number): void {
+    const circle = btn.querySelector('.step-circle');
+    const num    = btn.querySelector('.step-num');
+    const lbl    = btn.querySelector('.step-label');
+    const dot    = btn.querySelector('.step-dot');
+    const bg     = circle?.querySelector('svg > circle:first-child')  as SVGCircleElement | null;
+    const ring   = circle?.querySelector('svg > circle:nth-child(2)') as SVGCircleElement | null;
+
+    if (step < currentStep) {
+      // Done
+      circle?.classList.remove('active', 'done');
+      circle?.classList.add('done');
+      if (lbl) lbl.textContent = '✓ ' + (lbl.textContent ?? '').replace('✓ ', '');
+      lbl?.classList.add('active');
+      num?.classList.remove('inactive');
+      dot?.classList.remove('active');
+      if (bg)   { bg.setAttribute('fill', '#e8f5e9'); bg.setAttribute('stroke', '#00ab39'); }
+      if (ring) ring.setAttribute('stroke', 'rgba(0,171,57,0.15)');
+    } else if (step === currentStep) {
+      // Active
+      circle?.classList.add('active');
+      circle?.classList.remove('done');
+      lbl?.classList.add('active');
+      num?.classList.remove('inactive');
+      if (dot) { dot.classList.add('active'); (dot as HTMLElement).style.display = ''; }
+      if (bg)   { bg.setAttribute('fill', '#00ab39'); bg.setAttribute('stroke', '#005a1e'); bg.setAttribute('stroke-width', '2.5'); }
+      if (ring) ring.setAttribute('stroke', 'rgba(255,255,255,0.2)');
+    } else {
+      // Future
+      circle?.classList.remove('active', 'done');
+      lbl?.classList.remove('active');
+      num?.classList.add('inactive');
+      dot?.classList.remove('active');
+      if (bg)   { bg.setAttribute('fill', '#FFF9F0'); bg.setAttribute('stroke', '#D4A574'); bg.setAttribute('stroke-width', '2'); }
+      if (ring) ring.setAttribute('stroke', 'rgba(212,165,116,0.15)');
+    }
+  }
+
   // ── updateUI ──
   function updateUI(): void {
     const cfg = STEPS[currentStep - 1];
@@ -100,18 +139,17 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
     const vStep = visibleStep(currentStep);
 
     // Progress bar
-    if (progFill)        progFill.style.width = cfg.pct + '%';
+    if (progFill)        progFill.style.width = `${cfg.pct}%`;
     if (progText)        progText.textContent = `Step ${vStep} of 6`;
     if (progPct)         progPct.textContent  = `${cfg.pct}% Complete`;
     if (mobileStepLabel) mobileStepLabel.textContent = `Step ${vStep} of 6`;
 
-    // Nav bar
+    // Nav bar — hide entirely on step 7 (confirmation screen)
     if (currentStep === 7) {
       if (wizNav) wizNav.style.display = 'none';
       return;
-    } else {
-      if (wizNav) wizNav.style.display = '';
     }
+    if (wizNav) wizNav.style.display = '';
 
     if (btnBack) {
       if (cfg.back) {
@@ -130,43 +168,8 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
 
     // Sidebar circles — set SVG attrs directly (CSS cascade unreliable with SVG filters)
     document.querySelectorAll<HTMLElement>('.step-btn').forEach((btn) => {
-      const s = parseInt(btn.dataset.step ?? '0', 10);
-      const circle = btn.querySelector('.step-circle');
-      const num    = btn.querySelector('.step-num');
-      const lbl    = btn.querySelector('.step-label');
-      const dot    = btn.querySelector('.step-dot');
-      const bg     = circle?.querySelector('svg > circle:first-child')  as SVGCircleElement | null;
-      const ring   = circle?.querySelector('svg > circle:nth-child(2)') as SVGCircleElement | null;
-
-      if (s < currentStep) {
-        // Done
-        circle?.classList.remove('active');
-        circle?.classList.add('done');
-        if (lbl) lbl.textContent = '✓ ' + (lbl.textContent ?? '').replace('✓ ', '');
-        lbl?.classList.add('active');
-        num?.classList.remove('inactive');
-        dot?.classList.remove('active');
-        if (bg)   { bg.setAttribute('fill',   '#e8f5e9'); bg.setAttribute('stroke', '#00ab39'); }
-        if (ring) ring.setAttribute('stroke', 'rgba(0,171,57,0.15)');
-      } else if (s === currentStep) {
-        // Active
-        circle?.classList.add('active');
-        circle?.classList.remove('done');
-        lbl?.classList.add('active');
-        num?.classList.remove('inactive');
-        if (dot) { dot.classList.add('active'); (dot as HTMLElement).style.display = ''; }
-        if (bg)   { bg.setAttribute('fill', '#00ab39'); bg.setAttribute('stroke', '#005a1e'); bg.setAttribute('stroke-width', '2.5'); }
-        if (ring) ring.setAttribute('stroke', 'rgba(255,255,255,0.2)');
-      } else {
-        // Future
-        circle?.classList.remove('active');
-        circle?.classList.remove('done');
-        lbl?.classList.remove('active');
-        num?.classList.add('inactive');
-        dot?.classList.remove('active');
-        if (bg)   { bg.setAttribute('fill', '#FFF9F0'); bg.setAttribute('stroke', '#D4A574'); bg.setAttribute('stroke-width', '2'); }
-        if (ring) ring.setAttribute('stroke', 'rgba(212,165,116,0.15)');
-      }
+      const s = Number.parseInt(btn.dataset.step ?? '0', 10);
+      paintStepBtn(btn, s);
     });
 
     enableNext(resolveCanProceed());
@@ -228,7 +231,7 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
   // ── Wire sidebar step buttons ──
   document.querySelectorAll<HTMLElement>('.step-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const target = parseInt(btn.dataset.step ?? '0', 10);
+      const target = Number.parseInt(btn.dataset.step ?? '0', 10);
       if (!target || target === currentStep) return;
       // Only allow navigating back (not jumping forward)
       if (target < currentStep) goToStep(target, 'back');
@@ -236,8 +239,9 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
   });
 
   // ── Expose enableNext for use by child islands ──
-  // Store on window so external islands can call window.__wizEnableNext(true/false)
-  (window as unknown as Record<string, unknown>).__wizEnableNext = enableNext;
+  // window.__wizEnableNext is declared on the Window interface (env.d.ts / global.d.ts)
+  // so this assignment is fully type-safe without any cast.
+  window.__wizEnableNext = enableNext;
 
   // ── Subscribe to store (external changes) ──
   bookingWizardStore.subscribe((state) => {

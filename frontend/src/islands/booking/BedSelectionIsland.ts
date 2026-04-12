@@ -154,11 +154,13 @@ export function initBedSelectionIsland(opts: BedSelectionIslandOptions = {}): vo
     return 'partial';
   }
 
-  function bedLabel(bed: number): string {
+  /** Human-readable bed label (reserved for tooltip/aria use). */
+  function _bedLabel(bed: number): string {
     const isTop = bed % 2 !== 0;
     const bunk = Math.ceil(bed / 2);
     return `Bed ${bed} — ${isTop ? 'Top' : 'Bottom'} Bunk #${bunk}`;
   }
+  void (_bedLabel as unknown); // suppressed: available for future accessibility use
 
   // ── Fallback availability ──
 
@@ -376,7 +378,6 @@ export function initBedSelectionIsland(opts: BedSelectionIslandOptions = {}): vo
     clearEl(tabs);
 
     const ciDate = s.checkin ? new Date(s.checkin + 'T12:00:00') : new Date();
-    const allAssigned  = bedSchedule.every((b) => b !== null && b !== undefined);
     const hasUnassigned = bedSchedule.some((b) => b === null || b === undefined);
 
     const label = wrap.querySelector<HTMLElement>('.night-tabs-label');

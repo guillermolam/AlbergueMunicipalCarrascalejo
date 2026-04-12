@@ -1,31 +1,12 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"],
-      "@/layouts/*": ["src/layouts/*"],
-      "@/pages/*": ["src/pages/*"],
-      "@/styles/*": ["src/styles/*"],
-      "@/assets/*": ["src/assets/*"],
-      "@/public/*": ["public/*"],
-      "@/stores/*": ["src/stores/*"],
-      "@/lib/*": ["src/lib/*"],
-      "@/islands/*": ["src/islands/*"],
-      "@/types/*": ["src/types/*"],
-      "@/utils/*": ["src/utils/*"],
-      "@/actions/*": ["src/actions/*"]
+      "@/*": ["./src/*"]
     },
     "types": ["astro/client"],
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "preserve"
+    "target": "ES2022"
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", ".astro/types.d.ts"],
-  "exclude": [".astro", "dist", "node_modules", "src/**/*.tsx", "tests", "tests/**/*"]
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist", "node_modules", "tests"]
 }

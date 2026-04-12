@@ -1224,51 +1224,83 @@ export class PilgrimCardIsland {
   /** Read window.Clerk.user for avatar URL and all metadata, then refresh. */
   private loadClerkMeta(): void {
     try {
-      const u = window.Clerk?.user;
-      if (!u) return;
-      // Detect Google OAuth connection
-      const extAccounts = u.externalAccounts;
-      const hasGoogleAuth = extAccounts?.some(a => a.provider === 'google') ?? false;
+      const user = window.Clerk?.user;
+      if (!user) return;
 
-      this.state.clerkMeta = {
-        imageUrl: u.imageUrl ?? null,
-        firstName: u.firstName ?? null,
-        lastName: u.lastName ?? null,
-        publicMetadata: (u.publicMetadata as Record<string, unknown>) ?? {},
-        unsafeMetadata: (u.unsafeMetadata as Record<string, unknown>) ?? {},
-        hasGoogleAuth,
-      };
+      this.state.clerkMeta = this.createClerkMetaSnapshot(user);
 
-      // Pre-fill stored pilgrim data from Clerk when user is logged in (primary pilgrim only)
       if (this.opts.loggedInUserId) {
-        const existing = getPilgrimData(this.opts.pilgrimIndex);
-        const patch: Partial<Record<string, string>> = {};
-        if (!existing['f-first']  && u.firstName) patch['f-first'] = u.firstName;
-        if (!existing['f-last']   && u.lastName)  patch['f-last']  = u.lastName;
-        if (!existing['f-email']  && this.opts.loggedInEmail) patch['f-email'] = this.opts.loggedInEmail;
-
-        // Pull extra fields from unsafeMetadata if present (keys match store FieldKeys)
-        const unsafe = (u.unsafeMetadata ?? {}) as Record<string, unknown>;
-        const safeKeys = ['f-last2','f-dob','f-doc-num','f-doc-type','f-expiry','f-gender',
-                          'f-nat','f-nat-code','f-phone','f-phone-cc','f-addr','f-addr2',
-                          'f-zip','f-city','f-country','f-country-code'] as const;
-        for (const key of safeKeys) {
-          if (!existing[key] && typeof unsafe[key] === 'string') {
-            patch[key] = unsafe[key] as string;
-          }
-        }
-
-        if (Object.keys(patch).length > 0) {
-          setPilgrimData(this.opts.pilgrimIndex, patch as Parameters<typeof setPilgrimData>[1]);
-          // Sync email into state too
-          if (patch['f-email']) this.state.email = patch['f-email'];
-        }
+        this.applyLoggedInUserPrefill(user);
       }
 
-      // If we're already in done phase, refresh to show avatar + pre-filled data
       if (this.state.phase === 'done' && this.root) this.renderPhase();
     } catch {
       // ignore — Clerk may not be ready yet
+    }
+  }
+
+  private createClerkMetaSnapshot(user: {
+    imageUrl?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    publicMetadata?: unknown;
+    unsafeMetadata?: unknown;
+    externalAccounts?: Array<{ provider?: string }>;
+  }): ClerkMetaSnapshot {
+    const hasGoogleAuth = user.externalAccounts?.some(a => a.provider === 'google') ?? false;
+    return {
+      imageUrl: user.imageUrl ?? null,
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      publicMetadata: (user.publicMetadata as Record<string, unknown>) ?? {},
+      unsafeMetadata: (user.unsafeMetadata as Record<string, unknown>) ?? {},
+      hasGoogleAuth,
+    };
+  }
+
+  private applyLoggedInUserPrefill(user: {
+    firstName?: string | null;
+    lastName?: string | null;
+    unsafeMetadata?: unknown;
+  }): void {
+    const existing = getPilgrimData(this.opts.pilgrimIndex);
+    const patch: Partial<Record<string, string>> = {};
+    const unsafe = (user.unsafeMetadata ?? {}) as Record<string, unknown>;
+
+    this.fillBaseClerkFields(existing, patch, user);
+    this.fillUnsafeMetadataFields(existing, patch, unsafe);
+
+    if (Object.keys(patch).length === 0) return;
+
+    setPilgrimData(this.opts.pilgrimIndex, patch as Parameters<typeof setPilgrimData>[1]);
+    if (patch['f-email']) this.state.email = patch['f-email'];
+  }
+
+  private fillBaseClerkFields(
+    existing: ReturnType<typeof getPilgrimData>,
+    patch: Partial<Record<string, string>>,
+    user: { firstName?: string | null; lastName?: string | null }
+  ): void {
+    if (!existing['f-first'] && user.firstName) patch['f-first'] = user.firstName;
+    if (!existing['f-last'] && user.lastName) patch['f-last'] = user.lastName;
+    if (!existing['f-email'] && this.opts.loggedInEmail) patch['f-email'] = this.opts.loggedInEmail;
+  }
+
+  private fillUnsafeMetadataFields(
+    existing: ReturnType<typeof getPilgrimData>,
+    patch: Partial<Record<string, string>>,
+    unsafe: Record<string, unknown>
+  ): void {
+    const safeKeys = [
+      'f-last2', 'f-dob', 'f-doc-num', 'f-doc-type', 'f-expiry', 'f-gender',
+      'f-nat', 'f-nat-code', 'f-phone', 'f-phone-cc', 'f-addr', 'f-addr2',
+      'f-zip', 'f-city', 'f-country', 'f-country-code',
+    ] as const;
+
+    for (const key of safeKeys) {
+      if (!existing[key] && typeof unsafe[key] === 'string') {
+        patch[key] = unsafe[key];
+      }
     }
   }
 
@@ -1395,86 +1427,116 @@ export class PilgrimCardIsland {
     const wrap = el('div', 'pkd-art');
     const frame = el('div', 'pkd-art-frame');
 
-    if (mode === 'email') {
-      const illus = el('div', 'pkd-illus');
-      illus.appendChild(parseSvg(I_PERSON_LG));
-      frame.appendChild(illus);
-
-    } else if (mode === 'otp') {
-      const illus = el('div', 'pkd-illus');
-      illus.appendChild(parseSvg(I_MAIL));
-      frame.appendChild(illus);
-
-    } else if (mode === 'upload') {
-      const side = this.state.uploadStep;
-      const imageUrl = side === 'front' ? this.state.frontImageUrl : this.state.backImageUrl;
-
-      if (this.state.uploading) {
-        const illus = el('div', 'pkd-illus');
-        illus.appendChild(parseSvg(I_SPIN));
-        frame.appendChild(illus);
-      } else if (imageUrl) {
-        const img = el('img', 'pkd-drop-thumb');
-        attr(img as HTMLImageElement, {
-          src: imageUrl,
-          alt: side === 'front' ? 'Anverso del documento' : 'Reverso del documento',
-        });
-        frame.appendChild(img);
-        // Still allow replacing the image
-        this.attachDropHandlers(frame, side);
-      } else {
-        const zone = el('div', 'pkd-drop-zone');
-        zone.appendChild(parseSvg(I_UPLOAD));
-        zone.appendChild(el('div', 'pkd-drop-label', side === 'front' ? 'FRENTE' : 'DORSO'));
-        zone.appendChild(el('div', 'pkd-drop-hint', 'Arrastra o haz clic'));
-        frame.appendChild(zone);
-        this.attachDropHandlers(frame, side);
-      }
-
-      // Hidden file input
-      const fi = el('input', 'pkd-drop-file') as HTMLInputElement;
-      attr(fi, {
-        type: 'file',
-        accept: 'image/jpeg,image/png,image/webp,image/heic',
-        'aria-label': side === 'front' ? 'Seleccionar imagen del anverso' : 'Seleccionar imagen del reverso',
-      });
-      fi.addEventListener('change', () => {
-        const f = fi.files?.[0];
-        if (f) void this.handleFile(f, side);
-      });
-      frame.appendChild(fi);
-
-    } else if (mode === 'avatar') {
-      if (this.state.avatarDataUrl) {
-        const img = el('img', 'pkd-art-img') as HTMLImageElement;
-        img.src = this.state.avatarDataUrl;
-        img.alt = 'Foto del peregrino';
-        frame.appendChild(img);
-      } else {
-        const initials = this.getInitials();
-        frame.appendChild(el('span', 'pkd-art-initials', initials));
-      }
-
-    } else if (mode === 'done') {
-      if (this.state.avatarDataUrl) {
-        const img = el('img', 'pkd-art-img') as HTMLImageElement;
-        img.src = this.state.avatarDataUrl;
-        img.alt = 'Foto del peregrino';
-        frame.appendChild(img);
-        // Green checkmark overlay
-        const overlay = el('div');
-        overlay.style.cssText = 'position:absolute;bottom:8px;right:8px;background:rgba(22,163,74,.9);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center';
-        overlay.appendChild(parseSvg(I_CHECK_SM));
-        frame.appendChild(overlay);
-      } else {
-        const done = el('div', 'pkd-done-circle');
-        done.appendChild(parseSvg(I_CHECK));
-        frame.appendChild(done);
-      }
+    switch (mode) {
+      case 'email':
+        this.renderEmailArt(frame);
+        break;
+      case 'otp':
+        this.renderOtpArt(frame);
+        break;
+      case 'upload':
+        this.renderUploadArt(frame);
+        break;
+      case 'avatar':
+        this.renderAvatarArt(frame);
+        break;
+      case 'done':
+        this.renderDoneArt(frame);
+        break;
     }
 
     wrap.appendChild(frame);
     return wrap;
+  }
+
+  private renderEmailArt(frame: HTMLElement): void {
+    const illus = el('div', 'pkd-illus');
+    illus.appendChild(parseSvg(I_PERSON_LG));
+    frame.appendChild(illus);
+  }
+
+  private renderOtpArt(frame: HTMLElement): void {
+    const illus = el('div', 'pkd-illus');
+    illus.appendChild(parseSvg(I_MAIL));
+    frame.appendChild(illus);
+  }
+
+  private renderUploadArt(frame: HTMLElement): void {
+    const side = this.state.uploadStep;
+    const imageUrl = side === 'front' ? this.state.frontImageUrl : this.state.backImageUrl;
+
+    if (this.state.uploading) {
+      const illus = el('div', 'pkd-illus');
+      illus.appendChild(parseSvg(I_SPIN));
+      frame.appendChild(illus);
+    } else if (imageUrl) {
+      const img = el('img', 'pkd-drop-thumb');
+      attr(img, {
+        src: imageUrl,
+        alt: side === 'front' ? 'Anverso del documento' : 'Reverso del documento',
+      });
+      frame.appendChild(img);
+      this.attachDropHandlers(frame, side);
+    } else {
+      this.renderUploadZone(frame, side);
+      this.attachDropHandlers(frame, side);
+    }
+
+    this.appendUploadFileInput(frame, side);
+  }
+
+  private renderUploadZone(frame: HTMLElement, side: 'front' | 'back'): void {
+    const zone = el('div', 'pkd-drop-zone');
+    zone.appendChild(parseSvg(I_UPLOAD));
+    zone.appendChild(el('div', 'pkd-drop-label', side === 'front' ? 'FRENTE' : 'DORSO'));
+    zone.appendChild(el('div', 'pkd-drop-hint', 'Arrastra o haz clic'));
+    frame.appendChild(zone);
+  }
+
+  private appendUploadFileInput(frame: HTMLElement, side: 'front' | 'back'): void {
+    const fi = el('input', 'pkd-drop-file');
+    attr(fi, {
+      type: 'file',
+      accept: 'image/jpeg,image/png,image/webp,image/heic',
+      'aria-label': side === 'front' ? 'Seleccionar imagen del anverso' : 'Seleccionar imagen del reverso',
+    });
+    fi.addEventListener('change', () => {
+      const f = fi.files?.[0];
+      if (f) void this.handleFile(f, side);
+    });
+    frame.appendChild(fi);
+  }
+
+  private renderAvatarArt(frame: HTMLElement): void {
+    if (this.state.avatarDataUrl) {
+      const img = el('img', 'pkd-art-img');
+      img.src = this.state.avatarDataUrl;
+      img.alt = 'Foto del peregrino';
+      frame.appendChild(img);
+      return;
+    }
+
+    const initials = this.getInitials();
+    frame.appendChild(el('span', 'pkd-art-initials', initials));
+  }
+
+  private renderDoneArt(frame: HTMLElement): void {
+    if (!this.state.avatarDataUrl) {
+      const done = el('div', 'pkd-done-circle');
+      done.appendChild(parseSvg(I_CHECK));
+      frame.appendChild(done);
+      return;
+    }
+
+    const img = el('img', 'pkd-art-img');
+    img.src = this.state.avatarDataUrl;
+    img.alt = 'Foto del peregrino';
+    frame.appendChild(img);
+
+    const overlay = el('div');
+    overlay.style.cssText = 'position:absolute;bottom:8px;right:8px;background:rgba(22,163,74,.9);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center';
+    overlay.appendChild(parseSvg(I_CHECK_SM));
+    frame.appendChild(overlay);
   }
 
   private attachDropHandlers(frame: HTMLElement, side: 'front' | 'back'): void {
@@ -1485,10 +1547,10 @@ export class PilgrimCardIsland {
     frame.addEventListener('dragleave', () => {
       frame.querySelector('.pkd-drop-zone')?.classList.remove('drag-over');
     });
-    frame.addEventListener('drop', (e) => {
+    frame.addEventListener('drop', (e: DragEvent) => {
       e.preventDefault();
       frame.querySelector('.pkd-drop-zone')?.classList.remove('drag-over');
-      const f = (e as DragEvent).dataTransfer?.files?.[0];
+      const f = e.dataTransfer?.files?.[0];
       if (f) void this.handleFile(f, side);
     });
   }
@@ -1548,11 +1610,23 @@ export class PilgrimCardIsland {
   private buildProgressDots(currentStep: number, totalSteps: number, label: string): HTMLElement {
     const row = el('div', 'pkd-progress');
     for (let i = 0; i < totalSteps; i++) {
-      const dot = el('div', `pkd-prog-dot${i < currentStep ? ' done' : i === currentStep ? ' active' : ''}`);
+      const dot = el('div', `pkd-prog-dot${this.getProgressDotState(i, currentStep)}`);
       row.appendChild(dot);
     }
     row.appendChild(el('span', 'pkd-prog-label', label));
     return row;
+  }
+
+  private getProgressDotState(index: number, currentStep: number): string {
+    if (index < currentStep) return ' done';
+    if (index === currentStep) return ' active';
+    return '';
+  }
+
+  private autocompleteForField(key: FieldKey): 'email' | 'tel' | 'off' {
+    if (key.includes('email')) return 'email';
+    if (key.includes('phone')) return 'tel';
+    return 'off';
   }
 
   // ── EMAIL PHASE ────────────────────────────────────────────────────────────
@@ -1630,7 +1704,7 @@ export class PilgrimCardIsland {
       attr(box, { type: 'text', maxlength: '1', inputmode: 'numeric', pattern: '[0-9]', autocomplete: 'one-time-code' });
       const idx = i;
       box.addEventListener('input', () => {
-        box.value = box.value.replace(/\D/g, '').slice(-1);
+        box.value = box.value.replaceAll(/\D/g, '').slice(-1);
         if (box.value && idx < 5) this.otpBoxes[idx + 1]?.focus();
         if (this.otpBoxes.every((b) => b.value)) void this.verifyOtp();
       });
@@ -1639,8 +1713,8 @@ export class PilgrimCardIsland {
       });
       box.addEventListener('paste', (e) => {
         e.preventDefault();
-        const digits = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '').slice(0, 6);
-        digits.split('').forEach((d, j) => { if (this.otpBoxes[j]) this.otpBoxes[j]!.value = d; });
+        const digits = (e.clipboardData?.getData('text') ?? '').replaceAll(/\D/g, '').slice(0, 6);
+        digits.split('').forEach((d, j) => { if (this.otpBoxes[j]) this.otpBoxes[j].value = d; });
         const next = this.otpBoxes.findIndex((b) => !b.value);
         (next >= 0 ? this.otpBoxes[next] : this.otpBoxes[5])?.focus();
         if (digits.length === 6) void this.verifyOtp();
@@ -1675,98 +1749,128 @@ export class PilgrimCardIsland {
     const body = el('div', 'pkd-body');
     const isBack = this.state.uploadStep === 'back';
     const stepN = isBack ? 3 : 2;
-    body.appendChild(this.buildProgressDots(stepN, 4, isBack ? 'Reverso del documento' : 'Anverso del documento'));
+    const progressLabel = isBack ? 'Reverso del documento' : 'Anverso del documento';
+    const stored = getPilgrimData(this.opts.pilgrimIndex);
 
-    // Progress bar showing upload stages
+    body.appendChild(this.buildProgressDots(stepN, 4, progressLabel));
+    body.appendChild(this.buildUploadProgressBar(isBack));
+    this.appendUploadSpinnerIfNeeded(body);
+    body.appendChild(this.buildUploadStatusChips(stored));
+    this.appendUploadMessages(body);
+    this.appendUploadActions(body, isBack);
+
+    return body;
+  }
+
+  private buildUploadProgressBar(isBack: boolean): HTMLElement {
     const pBar = el('div', 'pkd-progress-bar');
     const pFill = el('div', 'pkd-progress-bar-fill');
     pFill.style.width = isBack ? '75%' : '50%';
     pBar.appendChild(pFill);
-    body.appendChild(pBar);
+    return pBar;
+  }
 
-    if (this.state.uploading) {
-      const spin = el('div');
-      spin.style.cssText = 'text-align:center;padding:.5rem;font-size:.8rem;color:#555;font-family:var(--font-h);display:flex;align-items:center;justify-content:center;gap:.35rem';
-      spin.appendChild(parseSvg(I_SPIN));
-      spin.appendChild(document.createTextNode('Procesando documento…'));
-      body.appendChild(spin);
-    }
+  private appendUploadSpinnerIfNeeded(body: HTMLElement): void {
+    if (!this.state.uploading) return;
 
-    // Status chips
+    const spin = el('div');
+    spin.style.cssText = 'text-align:center;padding:.5rem;font-size:.8rem;color:#555;font-family:var(--font-h);display:flex;align-items:center;justify-content:center;gap:.35rem';
+    spin.appendChild(parseSvg(I_SPIN));
+    spin.appendChild(document.createTextNode('Procesando documento…'));
+    body.appendChild(spin);
+  }
+
+  private buildUploadStatusChips(stored: ReturnType<typeof getPilgrimData>): HTMLElement {
     const chips = el('div', 'pkd-chips');
-    const stored = getPilgrimData(this.opts.pilgrimIndex);
-    if (this.state.frontImageUrl) {
-      if (this.state.frontOcrFields?.firstName) {
-        const c = el('span', 'pkd-chip ok'); c.appendChild(parseSvg(I_CHECK_SM)); c.appendChild(document.createTextNode(' Frente OK')); chips.appendChild(c);
-      } else {
-        const c = el('span', 'pkd-chip warn'); c.appendChild(parseSvg(I_WARN_SM)); c.appendChild(document.createTextNode(' Frente sin OCR')); chips.appendChild(c);
-      }
-    }
-    if (this.state.backImageUrl && this.state.docType !== 'passport') {
-      if (this.state.backOcrFields?.documentNumber) {
-        const c = el('span', 'pkd-chip ok'); c.appendChild(parseSvg(I_CHECK_SM)); c.appendChild(document.createTextNode(' Reverso + MRZ')); chips.appendChild(c);
-      } else {
-        const c = el('span', 'pkd-chip warn'); c.appendChild(parseSvg(I_WARN_SM)); c.appendChild(document.createTextNode(' Reverso sin MRZ')); chips.appendChild(c);
-      }
-    }
-    if (stored['f-first']) {
-      const c = el('span', 'pkd-chip ok'); c.appendChild(parseSvg(I_CHECK_SM)); c.appendChild(document.createTextNode(' Datos extraídos')); chips.appendChild(c);
-    }
-    body.appendChild(chips);
 
+    if (this.state.frontImageUrl) {
+      const frontChip = this.state.frontOcrFields?.firstName
+        ? this.createUploadChip('ok', I_CHECK_SM, ' Frente OK')
+        : this.createUploadChip('warn', I_WARN_SM, ' Frente sin OCR');
+      chips.appendChild(frontChip);
+    }
+
+    if (this.state.backImageUrl && this.state.docType !== 'passport') {
+      const backChip = this.state.backOcrFields?.documentNumber
+        ? this.createUploadChip('ok', I_CHECK_SM, ' Reverso + MRZ')
+        : this.createUploadChip('warn', I_WARN_SM, ' Reverso sin MRZ');
+      chips.appendChild(backChip);
+    }
+
+    if (stored['f-first']) {
+      chips.appendChild(this.createUploadChip('ok', I_CHECK_SM, ' Datos extraídos'));
+    }
+
+    return chips;
+  }
+
+  private createUploadChip(cls: 'ok' | 'warn', iconSvg: string, text: string): HTMLElement {
+    const chip = el('span', `pkd-chip ${cls}`);
+    chip.appendChild(parseSvg(iconSvg));
+    chip.appendChild(document.createTextNode(text));
+    return chip;
+  }
+
+  private appendUploadMessages(body: HTMLElement): void {
     if (this.state.errorMsg) body.appendChild(this.buildError(this.state.errorMsg));
     if (this.state.frontBackValid === false && this.state.mismatches.length > 0) {
       body.appendChild(this.buildMismatchAlert());
     }
+  }
 
-    // Next step button (shown after upload complete)
+  private appendUploadActions(body: HTMLElement, isBack: boolean): void {
     const frontDone = !!this.state.frontImageUrl && !this.state.uploading;
-    if (frontDone && !isBack) {
-      if (this.state.docType !== 'passport') {
-        const nextBtn = el('button', 'pkd-btn', '→ Subir Reverso');
-        nextBtn.addEventListener('click', () => {
-          this.state.uploadStep = 'back';
-          this.renderPhase();
-        });
-        body.appendChild(nextBtn);
-        const skipBack = el('button', 'pkd-btn secondary', 'Omitir reverso →');
-        skipBack.addEventListener('click', () => {
-          this.state.phase = 'form';
-          this.renderPhase();
-        });
-        body.appendChild(skipBack);
-      } else {
-        const nextBtn = el('button', 'pkd-btn', '→ Rellenar datos');
-        nextBtn.addEventListener('click', () => {
-          this.state.phase = 'form';
-          this.renderPhase();
-        });
-        body.appendChild(nextBtn);
-      }
-    }
-
     const backDone = !!this.state.backImageUrl && !this.state.uploading && isBack;
+    const canManualFill = this.state.uploading || !!this.state.frontImageUrl;
+
+    if (frontDone && !isBack) {
+      this.appendFrontUploadActions(body);
+    }
     if (backDone) {
-      const nextBtn = el('button', 'pkd-btn', '→ Rellenar datos');
-      nextBtn.addEventListener('click', () => {
-        this.state.phase = 'form';
-        this.renderPhase();
-      });
-      body.appendChild(nextBtn);
+      this.appendGoToFormButton(body);
+    }
+    if (!canManualFill) {
+      this.appendManualFillButton(body);
+    }
+  }
+
+  private appendFrontUploadActions(body: HTMLElement): void {
+    if (this.state.docType === 'passport') {
+      this.appendGoToFormButton(body);
+      return;
     }
 
-    // Allow proceeding even without upload
-    if (!this.state.frontImageUrl && !this.state.uploading) {
-      const skipAll = el('button', 'pkd-btn secondary', 'Rellenar manualmente →');
-      skipAll.addEventListener('click', () => {
-        this.state.phase = 'form';
-        this.renderPhase();
-      });
-      body.appendChild(skipAll);
-    }
+    const nextBtn = el('button', 'pkd-btn', '→ Subir Reverso');
+    nextBtn.addEventListener('click', () => {
+      this.state.uploadStep = 'back';
+      this.renderPhase();
+    });
+    body.appendChild(nextBtn);
 
-    void stored; // suppress lint
-    return body;
+    const skipBack = el('button', 'pkd-btn secondary', 'Omitir reverso →');
+    skipBack.addEventListener('click', () => {
+      this.state.phase = 'form';
+      this.renderPhase();
+    });
+    body.appendChild(skipBack);
+  }
+
+  private appendGoToFormButton(body: HTMLElement): void {
+    const nextBtn = el('button', 'pkd-btn', '→ Rellenar datos');
+    nextBtn.addEventListener('click', () => {
+      this.state.phase = 'form';
+      this.renderPhase();
+    });
+    body.appendChild(nextBtn);
+  }
+
+  private appendManualFillButton(body: HTMLElement): void {
+    const skipAll = el('button', 'pkd-btn secondary', 'Rellenar manualmente →');
+    skipAll.addEventListener('click', () => {
+      this.state.phase = 'form';
+      this.renderPhase();
+    });
+    body.appendChild(skipAll);
   }
 
   // ── FORM PHASE ─────────────────────────────────────────────────────────────
@@ -1784,7 +1888,7 @@ export class PilgrimCardIsland {
       const lbl = el('label', 'pkd-label', label);
       attr(lbl, { for: `pkd-${idx}-${key}` });
       const inp = el('input', `pkd-input${stored[key] ? ' filled' : ''}`) as HTMLInputElement;
-      attr(inp, { id: `pkd-${idx}-${key}`, type, placeholder, autocomplete: key.includes('email') ? 'email' : key.includes('phone') ? 'tel' : 'off' });
+      attr(inp, { id: `pkd-${idx}-${key}`, type, placeholder, autocomplete: this.autocompleteForField(key) });
       inp.value = stored[key] ?? '';
       inp.addEventListener('change', () => this.saveField(key, inp.value.trim()));
       inp.addEventListener('input', () => {
@@ -1936,7 +2040,6 @@ export class PilgrimCardIsland {
     body.appendChild(completeBtn);
 
     if (this.state.errorMsg) body.appendChild(this.buildError(this.state.errorMsg));
-    void natInp;
     return body;
   }
 
@@ -1949,7 +2052,7 @@ export class PilgrimCardIsland {
   ): HTMLElement {
     const row = el('div', 'pkd-phone-row');
 
-    const ccSel = el('select', 'pkd-cc-select') as HTMLSelectElement;
+    const ccSel = el('select', 'pkd-cc-select');
     for (const c of COUNTRY_CODES) {
       const opt = document.createElement('option');
       opt.value = c.code;
@@ -1960,7 +2063,7 @@ export class PilgrimCardIsland {
     ccSel.addEventListener('change', () => this.saveField(ccKey, ccSel.value));
     row.appendChild(ccSel);
 
-    const inp = el('input', `pkd-input${stored[phoneKey] ? ' filled' : ''}`) as HTMLInputElement;
+    const inp = el('input', `pkd-input${stored[phoneKey] ? ' filled' : ''}`);
     attr(inp, { type: 'tel', placeholder: '600 000 000' });
     inp.value = stored[phoneKey] ?? '';
     inp.addEventListener('change', () => {
@@ -1998,7 +2101,20 @@ export class PilgrimCardIsland {
     const stored = getPilgrimData(this.opts.pilgrimIndex);
     const meta = this.state.clerkMeta;
 
-    // ── Avatar zone ──────────────────────────────────────────────────────────
+    wrap.appendChild(this.buildDoneAvatarZone(stored, meta));
+
+    const { tabsRow, panelsWrap } = this.buildDoneTabs(stored);
+    wrap.appendChild(tabsRow);
+    wrap.appendChild(panelsWrap);
+
+    this.appendDoneDocButtons(wrap);
+    return wrap;
+  }
+
+  private buildDoneAvatarZone(
+    stored: ReturnType<typeof getPilgrimData>,
+    meta: ClerkMetaSnapshot | null
+  ): HTMLElement {
     const avatarZone = el('div', 'pkd-done-avatar-zone');
     const ringWrap = el('div');
     ringWrap.style.cssText = 'position:relative;display:inline-block';
@@ -2019,11 +2135,9 @@ export class PilgrimCardIsland {
     }
     ringWrap.appendChild(ring);
 
-    // Google auth badge on avatar
     if (meta?.hasGoogleAuth) {
       const gBadge = el('div', 'pkd-done-google-badge');
       gBadge.setAttribute('title', 'Google conectado');
-      // Google 'G' logo in colours
       gBadge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>';
       ringWrap.appendChild(gBadge);
     }
@@ -2031,30 +2145,30 @@ export class PilgrimCardIsland {
 
     const fullName = [
       stored['f-first'] || meta?.firstName || '',
-      stored['f-last']  || meta?.lastName  || '',
+      stored['f-last'] || meta?.lastName || '',
       stored['f-last2'] || '',
     ].filter(Boolean).join(' ') || this.opts.pilgrimLabel;
     avatarZone.appendChild(el('p', 'pkd-done-name', fullName));
     avatarZone.appendChild(el('span', 'pkd-done-completed-badge', '✓ COMPLETADO'));
-    wrap.appendChild(avatarZone);
+    return avatarZone;
+  }
 
-    // ── Tabs ─────────────────────────────────────────────────────────────────
+  private buildDoneTabs(stored: ReturnType<typeof getPilgrimData>): { tabsRow: HTMLElement; panelsWrap: HTMLElement } {
     const tabsRow = el('div', 'pkd-done-tabs');
     const panelsWrap = el('div', 'pkd-done-panels');
 
     type TabSection = 'identity' | 'contact' | 'address';
     const tabs: Array<{ iconSvg: string; label: string; section: TabSection }> = [
-      { iconSvg: I_ID_CARD,    label: 'Identidad', section: 'identity' },
-      { iconSvg: I_PHONE_TAB,  label: 'Contacto',  section: 'contact' },
-      { iconSvg: I_HOME_TAB,   label: 'Domicilio', section: 'address' },
+      { iconSvg: I_ID_CARD, label: 'Identidad', section: 'identity' },
+      { iconSvg: I_PHONE_TAB, label: 'Contacto', section: 'contact' },
+      { iconSvg: I_HOME_TAB, label: 'Domicilio', section: 'address' },
     ];
+
     const tabEls: HTMLButtonElement[] = [];
     const panelEls: HTMLElement[] = [];
 
-    for (let ti = 0; ti < tabs.length; ti++) {
-      const def = tabs[ti]!;
-      const tabIdx = ti;
-      const tab = el('button', `pkd-done-tab${ti === 0 ? ' active' : ''}`);
+    tabs.forEach((def, tabIdx) => {
+      const tab = el('button', `pkd-done-tab${tabIdx === 0 ? ' active' : ''}`);
       tab.appendChild(iconSpan(def.iconSvg));
       tab.appendChild(document.createTextNode(` ${def.label}`));
       tab.addEventListener('click', () => {
@@ -2062,14 +2176,16 @@ export class PilgrimCardIsland {
         panelEls.forEach((p, j) => p.classList.toggle('hidden', j !== tabIdx));
       });
       tabsRow.appendChild(tab);
-      tabEls.push(tab as HTMLButtonElement);
+      tabEls.push(tab);
 
-      const panel = el('div', `pkd-done-panel${ti !== 0 ? ' hidden' : ''}`);
+      const panelClass = tabIdx === 0 ? 'pkd-done-panel' : 'pkd-done-panel hidden';
+      const panel = el('div', panelClass);
       const hdr = el('div', 'pkd-done-panel-hdr');
       const titleSpan = el('span', 'pkd-done-panel-title');
       titleSpan.appendChild(iconSpan(def.iconSvg, 'margin-right:.25rem'));
       titleSpan.appendChild(document.createTextNode(def.label));
       hdr.appendChild(titleSpan);
+
       const editBtn = el('button', 'pkd-done-panel-edit');
       editBtn.appendChild(iconSpan(I_PENCIL, 'margin-right:.2rem'));
       editBtn.appendChild(document.createTextNode('Editar'));
@@ -2083,34 +2199,33 @@ export class PilgrimCardIsland {
 
       panelsWrap.appendChild(panel);
       panelEls.push(panel);
-    }
+    });
 
-    wrap.appendChild(tabsRow);
-    wrap.appendChild(panelsWrap);
+    return { tabsRow, panelsWrap };
+  }
 
-    // ── Document view buttons ─────────────────────────────────────────────────
+  private appendDoneDocButtons(wrap: HTMLElement): void {
     const hasFront = !!this.state.frontImageUrl;
-    const hasBack  = !!this.state.backImageUrl;
-    if (hasFront || hasBack) {
-      const docBtnRow = el('div', 'pkd-done-doc-btns');
-      if (hasFront) {
-        const btn = el('button', 'pkd-done-doc-view-btn');
-        btn.appendChild(parseSvg(I_FILE_SM));
-        btn.appendChild(document.createTextNode(' Anverso'));
-        btn.addEventListener('click', () => this.openImageModal(this.state.frontImageUrl!, 'ANVERSO'));
-        docBtnRow.appendChild(btn);
-      }
-      if (hasBack) {
-        const btn = el('button', 'pkd-done-doc-view-btn');
-        btn.appendChild(parseSvg(I_FILE_SM));
-        btn.appendChild(document.createTextNode(' Reverso'));
-        btn.addEventListener('click', () => this.openImageModal(this.state.backImageUrl!, 'REVERSO'));
-        docBtnRow.appendChild(btn);
-      }
-      wrap.appendChild(docBtnRow);
+    const hasBack = !!this.state.backImageUrl;
+    if (!hasFront && !hasBack) return;
+
+    const docBtnRow = el('div', 'pkd-done-doc-btns');
+    if (hasFront) {
+      const btn = el('button', 'pkd-done-doc-view-btn');
+      btn.appendChild(parseSvg(I_FILE_SM));
+      btn.appendChild(document.createTextNode(' Anverso'));
+      btn.addEventListener('click', () => this.openImageModal(this.state.frontImageUrl!, 'ANVERSO'));
+      docBtnRow.appendChild(btn);
+    }
+    if (hasBack) {
+      const btn = el('button', 'pkd-done-doc-view-btn');
+      btn.appendChild(parseSvg(I_FILE_SM));
+      btn.appendChild(document.createTextNode(' Reverso'));
+      btn.addEventListener('click', () => this.openImageModal(this.state.backImageUrl!, 'REVERSO'));
+      docBtnRow.appendChild(btn);
     }
 
-    return wrap;
+    wrap.appendChild(docBtnRow);
   }
 
   // ── DONE CARD PANEL BUILDERS ──────────────────────────────────────────────
@@ -2216,7 +2331,8 @@ export class PilgrimCardIsland {
     }
     phoneRow.appendChild(phoneIcon);
     const pi = el('div', 'pkd-done-contact-info');
-    pi.appendChild(el('div', 'pkd-done-contact-label', `Teléfono${ccEntry ? ` ${ccEntry.dial}` : ''}`));
+    const dialLabel = ccEntry ? ` ${ccEntry.dial}` : '';
+    pi.appendChild(el('div', 'pkd-done-contact-label', `Teléfono${dialLabel}`));
     pi.appendChild(el('div', `pkd-done-contact-val${phoneDisplay ? '' : ' muted'}`, phoneDisplay || '—'));
     phoneRow.appendChild(pi);
     panel.appendChild(phoneRow);
@@ -2260,7 +2376,7 @@ export class PilgrimCardIsland {
   private calcAge(dob: string): number | null {
     if (!dob) return null;
     const d = new Date(dob);
-    if (isNaN(d.getTime())) return null;
+    if (Number.isNaN(d.getTime())) return null;
     const now = new Date();
     let age = now.getFullYear() - d.getFullYear();
     const m = now.getMonth() - d.getMonth();
@@ -2271,13 +2387,13 @@ export class PilgrimCardIsland {
   private fmtDate(iso: string): string {
     if (!iso) return '—';
     const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
+    if (Number.isNaN(d.getTime())) return iso;
     return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   private expiryStatus(expiry: string): { iconSvg: string; text: string; cls: string } {
     const d = new Date(expiry);
-    if (isNaN(d.getTime())) return { iconSvg: '', text: '?', cls: '' };
+    if (Number.isNaN(d.getTime())) return { iconSvg: '', text: '?', cls: '' };
     const now = new Date();
     const soon = new Date(now.getFullYear(), now.getMonth() + 6, now.getDate());
     if (d < now)   return { iconSvg: I_X_SM,    text: 'Caducado',      cls: 'expired' };
@@ -2302,7 +2418,7 @@ export class PilgrimCardIsland {
       contact:  { iconSvg: I_PHONE_TAB, label: 'Contacto' },
       address:  { iconSvg: I_HOME_TAB,  label: 'Domicilio' },
     };
-    const { iconSvg: modalIconSvg, label } = sectionMeta[section]!;
+    const { iconSvg: modalIconSvg, label } = sectionMeta[section];
 
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:1rem';
@@ -2361,114 +2477,181 @@ export class PilgrimCardIsland {
     const idx = this.opts.pilgrimIndex;
     const stored = getPilgrimData(idx);
 
-    const field = (key: FieldKey, label: string, type = 'text', placeholder = ''): HTMLElement => {
-      const wrap = el('div', 'pkd-stack');
-      const lbl = el('label', 'pkd-label', label);
-      attr(lbl, { for: `pkd-${idx}-${key}-m` });
-      const inp = el('input', `pkd-input${stored[key] ? ' filled' : ''}`) as HTMLInputElement;
-      attr(inp, { id: `pkd-${idx}-${key}-m`, type, placeholder });
-      inp.value = stored[key] ?? '';
-      inp.addEventListener('change', () => this.saveField(key, inp.value.trim()));
-      inp.addEventListener('input', () => inp.classList.toggle('filled', inp.value.length > 0));
-      wrap.appendChild(lbl);
-      wrap.appendChild(inp);
-      return wrap;
-    };
-
     if (section === 'identity') {
-      const g1 = el('div', 'pkd-grid2');
-      g1.appendChild(field('f-first', 'Nombre'));
-      g1.appendChild(field('f-doc-num', 'Nº Documento', 'text', '12345678A'));
-      body.appendChild(g1);
-      const g2 = el('div', 'pkd-grid2');
-      g2.appendChild(field('f-last', 'Apellido 1'));
-      g2.appendChild(field('f-last2', 'Apellido 2'));
-      body.appendChild(g2);
-      const g3 = el('div', 'pkd-grid2');
-      g3.appendChild(field('f-dob', 'Fecha nacimiento', 'date'));
-      g3.appendChild(field('f-expiry', 'Caducidad', 'date'));
-      body.appendChild(g3);
-      // Doc type selector
-      const dtWrap = el('div', 'pkd-stack');
-      dtWrap.appendChild(el('span', 'pkd-label', 'Tipo documento'));
-      const dtRow = el('div', 'pkd-doctype-row');
-      for (const [val, lbl] of [['dni','DNI'],['nie','NIE'],['passport','Pasaporte']] as [string,string][]) {
-        const btn = el('button', `pkd-dt-btn${stored['f-doc-type'] === val ? ' active' : ''}`, lbl);
-        btn.addEventListener('click', () => { this.state.docType = val as 'dni'|'nie'|'passport'; this.saveField('f-doc-type', val); dtRow.querySelectorAll('.pkd-dt-btn').forEach(b => b.classList.toggle('active', b.textContent === lbl)); });
-        dtRow.appendChild(btn);
-      }
-      dtWrap.appendChild(dtRow);
-      body.appendChild(dtWrap);
-      // Gender
-      const genderWrap = el('div', 'pkd-stack');
-      genderWrap.appendChild(el('span', 'pkd-label', 'Sexo'));
-      const gRow = el('div', 'pkd-gender-row');
-      for (const [val, lbl] of [['M','Hombre'],['F','Mujer'],['X','Otro']] as [string,string][]) {
-        const lbEl = el('label', 'pkd-gender-lbl');
-        const rb = el('input') as HTMLInputElement;
-        attr(rb, { type: 'radio', name: `pkd-gender-${idx}-m`, value: val });
-        if (stored['f-gender'] === val) rb.checked = true;
-        rb.addEventListener('change', () => this.saveField('f-gender', val));
-        lbEl.appendChild(rb);
-        lbEl.appendChild(document.createTextNode(lbl));
-        gRow.appendChild(lbEl);
-      }
-      genderWrap.appendChild(gRow);
-      body.appendChild(genderWrap);
-      // Nationality
-      const natWrap = el('div', 'pkd-stack');
-      natWrap.appendChild(el('span', 'pkd-label', 'Nacionalidad'));
-      const natSel = el('select', 'pkd-input') as HTMLSelectElement;
-      natSel.style.height = '2.1rem';
-      for (const c of COUNTRIES) {
-        const opt = document.createElement('option');
-        opt.value = c.code;
-        opt.textContent = `${flagImg(c.code2) ? '' : ''}${c.name} (${c.code})`;
-        if (stored['f-nat-code'] === c.code || stored['f-nat'] === c.code) opt.selected = true;
-        natSel.appendChild(opt);
-      }
-      natSel.addEventListener('change', () => { this.saveField('f-nat-code', natSel.value); this.saveField('f-nat', natSel.value); });
-      natWrap.appendChild(natSel);
-      body.appendChild(natWrap);
-    }
-
-    if (section === 'contact') {
-      const emailWrap = el('div', 'pkd-stack');
-      emailWrap.appendChild(el('label', 'pkd-label', 'Email'));
-      const emailInp = el('input', `pkd-input${stored['f-email'] ? ' filled' : ''}`) as HTMLInputElement;
-      attr(emailInp, { type: 'email', placeholder: 'peregrino@email.com', autocomplete: 'email' });
-      emailInp.value = this.state.email || stored['f-email'] || '';
-      emailInp.addEventListener('change', () => this.saveField('f-email', emailInp.value.trim()));
-      emailWrap.appendChild(emailInp);
-      body.appendChild(emailWrap);
-      body.appendChild(el('span', 'pkd-label', 'Teléfono'));
-      body.appendChild(this.buildPhoneInput('f-phone', 'f-phone-cc', stored));
-    }
-
-    if (section === 'address') {
-      body.appendChild(field('f-addr', 'Calle / Número', 'text', 'Calle Mayor 1'));
-      body.appendChild(field('f-addr2', 'Piso / Escalera', 'text', '2ºA'));
-      const g = el('div', 'pkd-grid3');
-      g.appendChild(field('f-zip', 'C.P.', 'text', '28001'));
-      g.appendChild(field('f-city', 'Ciudad', 'text', 'Madrid'));
-      const ctryWrap = el('div', 'pkd-stack');
-      ctryWrap.appendChild(el('span', 'pkd-label', 'País'));
-      const ctrySel = el('select', 'pkd-input') as HTMLSelectElement;
-      ctrySel.style.height = '2.1rem';
-      for (const c of COUNTRIES) {
-        const opt = document.createElement('option');
-        opt.value = c.code;
-        opt.textContent = c.name;
-        if (stored['f-country-code'] === c.code || stored['f-country'] === c.code) opt.selected = true;
-        ctrySel.appendChild(opt);
-      }
-      ctrySel.addEventListener('change', () => { this.saveField('f-country-code', ctrySel.value); this.saveField('f-country', ctrySel.value); });
-      ctryWrap.appendChild(ctrySel);
-      g.appendChild(ctryWrap);
-      body.appendChild(g);
+      this.appendIdentitySectionForm(body, idx, stored);
+    } else if (section === 'contact') {
+      this.appendContactSectionForm(body, idx, stored);
+    } else {
+      this.appendAddressSectionForm(body, idx, stored);
     }
 
     return body;
+  }
+
+  private buildSectionField(
+    idx: number,
+    stored: ReturnType<typeof getPilgrimData>,
+    key: FieldKey,
+    label: string,
+    type = 'text',
+    placeholder = ''
+  ): HTMLElement {
+    const wrap = el('div', 'pkd-stack');
+    const lbl = el('label', 'pkd-label', label);
+    attr(lbl, { for: `pkd-${idx}-${key}-m` });
+    const inp = el('input', `pkd-input${stored[key] ? ' filled' : ''}`);
+    attr(inp, { id: `pkd-${idx}-${key}-m`, type, placeholder });
+    inp.value = stored[key] ?? '';
+    inp.addEventListener('change', () => this.saveField(key, inp.value.trim()));
+    inp.addEventListener('input', () => inp.classList.toggle('filled', inp.value.length > 0));
+    wrap.appendChild(lbl);
+    wrap.appendChild(inp);
+    return wrap;
+  }
+
+  private appendIdentitySectionForm(
+    body: HTMLElement,
+    idx: number,
+    stored: ReturnType<typeof getPilgrimData>
+  ): void {
+    const g1 = el('div', 'pkd-grid2');
+    g1.appendChild(this.buildSectionField(idx, stored, 'f-first', 'Nombre'));
+    g1.appendChild(this.buildSectionField(idx, stored, 'f-doc-num', 'Nº Documento', 'text', '12345678A'));
+    body.appendChild(g1);
+
+    const g2 = el('div', 'pkd-grid2');
+    g2.appendChild(this.buildSectionField(idx, stored, 'f-last', 'Apellido 1'));
+    g2.appendChild(this.buildSectionField(idx, stored, 'f-last2', 'Apellido 2'));
+    body.appendChild(g2);
+
+    const g3 = el('div', 'pkd-grid2');
+    g3.appendChild(this.buildSectionField(idx, stored, 'f-dob', 'Fecha nacimiento', 'date'));
+    g3.appendChild(this.buildSectionField(idx, stored, 'f-expiry', 'Caducidad', 'date'));
+    body.appendChild(g3);
+
+    this.appendIdentityDocTypeControls(body, idx, stored);
+    this.appendIdentityGenderControls(body, idx, stored);
+    this.appendIdentityNationalityControls(body, stored);
+  }
+
+  private appendIdentityDocTypeControls(
+    body: HTMLElement,
+    _idx: number,
+    stored: ReturnType<typeof getPilgrimData>
+  ): void {
+    const dtWrap = el('div', 'pkd-stack');
+    dtWrap.appendChild(el('span', 'pkd-label', 'Tipo documento'));
+    const dtRow = el('div', 'pkd-doctype-row');
+
+    for (const [val, lbl] of [['dni', 'DNI'], ['nie', 'NIE'], ['passport', 'Pasaporte']] as [string, string][]) {
+      const btn = el('button', `pkd-dt-btn${stored['f-doc-type'] === val ? ' active' : ''}`, lbl);
+      btn.addEventListener('click', () => {
+        this.state.docType = val as DocType;
+        this.saveField('f-doc-type', val);
+        dtRow.querySelectorAll('.pkd-dt-btn').forEach((b) => b.classList.toggle('active', b.textContent === lbl));
+      });
+      dtRow.appendChild(btn);
+    }
+
+    dtWrap.appendChild(dtRow);
+    body.appendChild(dtWrap);
+  }
+
+  private appendIdentityGenderControls(
+    body: HTMLElement,
+    idx: number,
+    stored: ReturnType<typeof getPilgrimData>
+  ): void {
+    const genderWrap = el('div', 'pkd-stack');
+    genderWrap.appendChild(el('span', 'pkd-label', 'Sexo'));
+    const gRow = el('div', 'pkd-gender-row');
+
+    for (const [val, lbl] of [['M', 'Hombre'], ['F', 'Mujer'], ['X', 'Otro']] as [string, string][]) {
+      const lbEl = el('label', 'pkd-gender-lbl');
+      const rb = el('input');
+      attr(rb, { type: 'radio', name: `pkd-gender-${idx}-m`, value: val });
+      if (stored['f-gender'] === val) rb.checked = true;
+      rb.addEventListener('change', () => this.saveField('f-gender', val));
+      lbEl.appendChild(rb);
+      lbEl.appendChild(document.createTextNode(lbl));
+      gRow.appendChild(lbEl);
+    }
+
+    genderWrap.appendChild(gRow);
+    body.appendChild(genderWrap);
+  }
+
+  private appendIdentityNationalityControls(body: HTMLElement, stored: ReturnType<typeof getPilgrimData>): void {
+    const natWrap = el('div', 'pkd-stack');
+    natWrap.appendChild(el('span', 'pkd-label', 'Nacionalidad'));
+    const natSel = el('select', 'pkd-input');
+    natSel.style.height = '2.1rem';
+
+    for (const c of COUNTRIES) {
+      const opt = document.createElement('option');
+      opt.value = c.code;
+      opt.textContent = `${c.name} (${c.code})`;
+      if (stored['f-nat-code'] === c.code || stored['f-nat'] === c.code) opt.selected = true;
+      natSel.appendChild(opt);
+    }
+
+    natSel.addEventListener('change', () => {
+      this.saveField('f-nat-code', natSel.value);
+      this.saveField('f-nat', natSel.value);
+    });
+
+    natWrap.appendChild(natSel);
+    body.appendChild(natWrap);
+  }
+
+  private appendContactSectionForm(
+    body: HTMLElement,
+    _idx: number,
+    stored: ReturnType<typeof getPilgrimData>
+  ): void {
+    const emailWrap = el('div', 'pkd-stack');
+    emailWrap.appendChild(el('label', 'pkd-label', 'Email'));
+    const emailInp = el('input', `pkd-input${stored['f-email'] ? ' filled' : ''}`);
+    attr(emailInp, { type: 'email', placeholder: 'peregrino@email.com', autocomplete: 'email' });
+    emailInp.value = this.state.email || stored['f-email'] || '';
+    emailInp.addEventListener('change', () => this.saveField('f-email', emailInp.value.trim()));
+    emailWrap.appendChild(emailInp);
+    body.appendChild(emailWrap);
+
+    body.appendChild(el('span', 'pkd-label', 'Teléfono'));
+    body.appendChild(this.buildPhoneInput('f-phone', 'f-phone-cc', stored));
+  }
+
+  private appendAddressSectionForm(
+    body: HTMLElement,
+    idx: number,
+    stored: ReturnType<typeof getPilgrimData>
+  ): void {
+    body.appendChild(this.buildSectionField(idx, stored, 'f-addr', 'Calle / Número', 'text', 'Calle Mayor 1'));
+    body.appendChild(this.buildSectionField(idx, stored, 'f-addr2', 'Piso / Escalera', 'text', '2ºA'));
+
+    const g = el('div', 'pkd-grid3');
+    g.appendChild(this.buildSectionField(idx, stored, 'f-zip', 'C.P.', 'text', '28001'));
+    g.appendChild(this.buildSectionField(idx, stored, 'f-city', 'Ciudad', 'text', 'Madrid'));
+
+    const ctryWrap = el('div', 'pkd-stack');
+    ctryWrap.appendChild(el('span', 'pkd-label', 'País'));
+    const ctrySel = el('select', 'pkd-input');
+    ctrySel.style.height = '2.1rem';
+    for (const c of COUNTRIES) {
+      const opt = document.createElement('option');
+      opt.value = c.code;
+      opt.textContent = c.name;
+      if (stored['f-country-code'] === c.code || stored['f-country'] === c.code) opt.selected = true;
+      ctrySel.appendChild(opt);
+    }
+    ctrySel.addEventListener('change', () => {
+      this.saveField('f-country-code', ctrySel.value);
+      this.saveField('f-country', ctrySel.value);
+    });
+    ctryWrap.appendChild(ctrySel);
+    g.appendChild(ctryWrap);
+    body.appendChild(g);
   }
 
   private closeEditModal(): void {
@@ -2570,6 +2753,10 @@ export class PilgrimCardIsland {
 
   // ── API: send OTP via Clerk ────────────────────────────────────────────────
 
+  private async parseJson<T>(res: Response): Promise<T> {
+    return res.json() as Promise<T>;
+  }
+
   private async sendOtp(): Promise<void> {
     const email = this.state.email.trim();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -2605,7 +2792,7 @@ export class PilgrimCardIsland {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      const data = (await res.json()) as { success?: boolean; error?: string; _devCode?: string };
+      const data = await this.parseJson<{ success?: boolean; error?: string; _devCode?: string }>(res);
       if (data.success) {
         this.state.phase = 'otp';
         if (data._devCode) console.info(`[DEV] OTP: ${data._devCode}`);
@@ -2658,10 +2845,10 @@ export class PilgrimCardIsland {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: this.state.email, code }),
       });
-      const data = (await res.json()) as {
+      const data = await this.parseJson<{
         success?: boolean; error?: string; userId?: string;
         pilgrimData?: Partial<Record<FieldKey, string>>;
-      };
+      }>(res);
       if (data.success && data.userId) {
         this.state.userId = data.userId;
         this.state.phase = 'upload';
@@ -2680,62 +2867,106 @@ export class PilgrimCardIsland {
   // ── API: process document ──────────────────────────────────────────────────
 
   private async handleFile(file: File, side: 'front' | 'back'): Promise<void> {
-    if (file.size > 10 * 1024 * 1024) {
-      this.state.errorMsg = 'Archivo demasiado grande (máx. 10 MB).';
-      this.renderPhase();
-      return;
-    }
-    const allowed = ['image/jpeg','image/png','image/webp','image/heic','image/heif'];
-    if (!allowed.includes(file.type)) {
-      this.state.errorMsg = 'Formato no soportado. Usa JPG, PNG, WEBP o HEIC.';
+    const validationError = this.validateFileForUpload(file);
+    if (validationError) {
+      this.state.errorMsg = validationError;
       this.renderPhase();
       return;
     }
 
+    this.setLocalUploadPreview(side, file);
+    const form = this.buildProcessDocumentForm(file, side);
+
+    try {
+      const res = await fetch('/api/pilgrim/process-document', { method: 'POST', body: form });
+      const data = await this.parseJson<{ imageUrl?: string | null; ocrFields?: OcrFields | null; valid?: boolean }>(res);
+
+      this.state.uploading = false;
+      this.applyProcessedDocumentResult(side, data, file);
+      this.finalizeDocumentValidation();
+    } catch {
+      this.state.uploading = false;
+      this.state.errorMsg = 'Error procesando el documento. Inténtalo de nuevo.';
+    }
+
+    this.renderPhase();
+  }
+
+  private validateFileForUpload(file: File): string | null {
+    if (file.size > 10 * 1024 * 1024) return 'Archivo demasiado grande (máx. 10 MB).';
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    if (!allowed.includes(file.type)) return 'Formato no soportado. Usa JPG, PNG, WEBP o HEIC.';
+
+    return null;
+  }
+
+  private setLocalUploadPreview(side: 'front' | 'back', file: File): void {
     const localUrl = URL.createObjectURL(file);
     if (side === 'front') this.state.frontImageUrl = localUrl;
     else this.state.backImageUrl = localUrl;
+
     this.state.uploading = true;
     this.state.errorMsg = null;
     this.renderPhase();
+  }
 
+  private buildProcessDocumentForm(file: File, side: 'front' | 'back'): FormData {
     const form = new FormData();
     form.set('file', file);
     form.set('side', side);
     form.set('docType', this.state.docType);
     form.set('userId', this.state.userId ?? 'anonymous');
+    return form;
+  }
 
-    try {
-      const res = await fetch('/api/pilgrim/process-document', { method: 'POST', body: form });
-      const data = (await res.json()) as { imageUrl?: string | null; ocrFields?: OcrFields | null; valid?: boolean };
-
-      this.state.uploading = false;
-      if (side === 'front') {
-        if (data.imageUrl) this.state.frontImageUrl = data.imageUrl;
-        if (data.ocrFields) {
-          this.state.frontOcrFields = data.ocrFields;
-          this.autoFill(data.ocrFields);
-          void this.extractAvatar(file);
-        }
-        updatePilgrimDocState(this.opts.pilgrimIndex, { frontValid: data.valid ?? true, frontOcrFields: toExtractedFields(data.ocrFields) });
-      } else {
-        if (data.imageUrl) this.state.backImageUrl = data.imageUrl;
-        if (data.ocrFields) {
-          this.state.backOcrFields = data.ocrFields;
-        }
-        updatePilgrimDocState(this.opts.pilgrimIndex, { backValid: data.valid ?? true, backOcrFields: toExtractedFields(data.ocrFields) });
-      }
-
-      if (this.state.frontOcrFields && this.state.backOcrFields && this.state.docType !== 'passport') {
-        void this.validateSides();
-      } else if (this.state.docType === 'passport' && this.state.frontOcrFields) {
-        this.state.frontBackValid = true;
-      }
-    } catch {
-      this.state.uploading = false;
-      this.state.errorMsg = 'Error procesando el documento. Inténtalo de nuevo.';
+  private applyProcessedDocumentResult(
+    side: 'front' | 'back',
+    data: { imageUrl?: string | null; ocrFields?: OcrFields | null; valid?: boolean },
+    file: File
+  ): void {
+    if (side === 'front') {
+      this.applyFrontDocumentResult(data, file);
+    } else {
+      this.applyBackDocumentResult(data);
     }
-    this.renderPhase();
+  }
+
+  private applyFrontDocumentResult(
+    data: { imageUrl?: string | null; ocrFields?: OcrFields | null; valid?: boolean },
+    file: File
+  ): void {
+    if (data.imageUrl) this.state.frontImageUrl = data.imageUrl;
+    if (data.ocrFields) {
+      this.state.frontOcrFields = data.ocrFields;
+      this.autoFill(data.ocrFields);
+      void this.extractAvatar(file);
+    }
+    updatePilgrimDocState(this.opts.pilgrimIndex, {
+      frontValid: data.valid ?? true,
+      frontOcrFields: toExtractedFields(data.ocrFields),
+    });
+  }
+
+  private applyBackDocumentResult(data: { imageUrl?: string | null; ocrFields?: OcrFields | null; valid?: boolean }): void {
+    if (data.imageUrl) this.state.backImageUrl = data.imageUrl;
+    if (data.ocrFields) this.state.backOcrFields = data.ocrFields;
+
+    updatePilgrimDocState(this.opts.pilgrimIndex, {
+      backValid: data.valid ?? true,
+      backOcrFields: toExtractedFields(data.ocrFields),
+    });
+  }
+
+  private finalizeDocumentValidation(): void {
+    if (this.state.docType === 'passport') {
+      if (this.state.frontOcrFields) this.state.frontBackValid = true;
+      return;
+    }
+
+    if (this.state.frontOcrFields && this.state.backOcrFields) {
+      void this.validateSides();
+    }
   }
 
   private async validateSides(): Promise<void> {
@@ -2746,7 +2977,7 @@ export class PilgrimCardIsland {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ frontFields: this.state.frontOcrFields, backFields: this.state.backOcrFields, docType: this.state.docType }),
       });
-      const data = (await res.json()) as { valid: boolean; mismatches: Array<{ field: string; front: string; back: string }>; warnings: string[] };
+      const data = await this.parseJson<{ valid: boolean; mismatches: Array<{ field: string; front: string; back: string }>; warnings: string[] }>(res);
       this.state.frontBackValid = data.valid;
       this.state.mismatches = data.mismatches ?? [];
       updatePilgrimDocState(this.opts.pilgrimIndex, { validationError: data.valid ? null : 'Mismatch' });
@@ -2760,8 +2991,8 @@ export class PilgrimCardIsland {
     try {
       const bmp = await createImageBitmap(frontFile);
       const canvas = document.createElement('canvas');
-      const cw = Math.round(bmp.width * 0.30);
-      const ch = Math.round(bmp.height * 0.40);
+      const cw = Math.round(bmp.width * 0.3);
+      const ch = Math.round(bmp.height * 0.4);
       canvas.width = cw; canvas.height = ch;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;

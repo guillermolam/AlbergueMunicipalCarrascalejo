@@ -36,6 +36,17 @@ interface Env {
   OCR_SERVICE?: CloudflareServiceBinding;
 }
 
+// ── Window extensions used in book.astro <script> blocks ─────────────────────
+// Repeated here (also in types/global.d.ts) so the Astro embedded-TS service
+// picks them up — it honours env.d.ts but may miss supplementary .d.ts files.
+interface Window {
+  /**
+   * Wizard step gating — set by WizardNavigatorIsland so child islands
+   * can enable/disable the "Next" button without direct DOM coupling.
+   */
+  __wizEnableNext?: (enabled: boolean) => void;
+}
+
 // In @astrojs/cloudflare v13+, Runtime only exposes cfContext.
 type Runtime = import('@astrojs/cloudflare').Runtime;
 

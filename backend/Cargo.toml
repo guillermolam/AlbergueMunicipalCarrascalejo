@@ -7,7 +7,7 @@ members = [
   "reviews-service",
   "document-validation-service",
   "info-on-arrival-service",
-  "location-service",
+  "location-service", "retto-ocr-worker",
 ]
 
 [workspace.package]

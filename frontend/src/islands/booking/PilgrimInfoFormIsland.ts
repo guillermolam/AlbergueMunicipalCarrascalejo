@@ -40,6 +40,36 @@ function getCountryFlag(code: string): string {
   return String.fromCodePoint(...pts);
 }
 
+// ── Mark a required field as invalid (and auto-clear on correction) ──
+function markFieldInvalid(el: HTMLInputElement): void {
+  const fg = el.closest('.fg');
+  fg?.classList.add('has-error');
+  el.classList.add('invalid');
+  el.addEventListener('input', () => {
+    fg?.classList.remove('has-error');
+    el.classList.remove('invalid');
+  }, { once: true });
+}
+
+// ── Show validation errors for REQUIRED_FIELDS in current DOM ──
+function showDomErrors(): boolean {
+  let allOk = true;
+  for (const id of REQUIRED_FIELDS) {
+    const el = document.getElementById(id) as HTMLInputElement | null;
+    if (!el) continue;
+    if (!el.value.trim()) { markFieldInvalid(el); allOk = false; }
+  }
+  const email = document.getElementById('f-email') as HTMLInputElement | null;
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (email?.value && !EMAIL_RE.test(email.value)) {
+    const fg = email.closest('.fg');
+    fg?.classList.add('has-error');
+    email.classList.add('invalid');
+    allOk = false;
+  }
+  return allOk;
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 export interface PilgrimInfoFormIslandOptions {
@@ -112,44 +142,44 @@ export function initPilgrimInfoFormIsland(_opts: PilgrimInfoFormIslandOptions = 
     if (desc) desc.textContent = `Fill details for each pilgrim (${persons} total)`;
     if (!tabs) return;
 
-    while (tabs.firstChild) tabs.removeChild(tabs.firstChild);
+    tabs.replaceChildren();
 
     for (let p = 0; p < persons; p++) {
-      const data =
-        p === activePerson
-          ? Object.fromEntries(
-              FORM_FIELD_IDS.map((id) => [
-                id,
-                (document.getElementById(id) as HTMLInputElement | null)?.value ?? '',
-              ])
-            )
-          : (personFormData[p] ?? {});
-
-      const done = !!(
-        data['f-first'] &&
-        data['f-last']  &&
-        data['f-email'] &&
-        data['f-zip']   &&
-        data['f-city']
-      );
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = `person-tab${p === activePerson ? ' active' : ''}${done ? ' done' : ''}`;
-      btn.textContent = data['f-first']
-        ? `${data['f-first']} (P${p + 1})`
-        : `Pilgrim ${p + 1}`;
-
-      const pi = p;
-      btn.addEventListener('click', () => {
-        if (pi === activePerson) return;
-        saveCurrentPerson();
-        activePerson = pi;
-        loadCurrentPerson();
-        renderPersonNav();
-      });
-      tabs.appendChild(btn);
+      tabs.appendChild(buildPersonTab(p));
     }
+  }
+
+  function buildPersonTab(p: number): HTMLButtonElement {
+    const data = readPersonData(p);
+    const done = isPersonComplete(data);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `person-tab${p === activePerson ? ' active' : ''}${done ? ' done' : ''}`;
+    btn.textContent = data['f-first'] ? `${data['f-first']} (P${p + 1})` : `Pilgrim ${p + 1}`;
+
+    btn.addEventListener('click', () => {
+      if (p === activePerson) return;
+      saveCurrentPerson();
+      activePerson = p;
+      loadCurrentPerson();
+      renderPersonNav();
+    });
+    return btn;
+  }
+
+  function readPersonData(p: number): Record<string, string> {
+    if (p !== activePerson) return personFormData[p] ?? {};
+    return Object.fromEntries(
+      FORM_FIELD_IDS.map((id) => [
+        id,
+        (document.getElementById(id) as HTMLInputElement | null)?.value ?? '',
+      ])
+    );
+  }
+
+  function isPersonComplete(data: Record<string, string>): boolean {
+    return !!(data['f-first'] && data['f-last'] && data['f-email'] && data['f-zip'] && data['f-city']);
   }
 
   // ── Wire utility pickers ──
@@ -194,61 +224,25 @@ export function initPilgrimInfoFormIsland(_opts: PilgrimInfoFormIslandOptions = 
   function validate(): boolean {
     saveCurrentPerson();
 
-    // Validate current person's DOM
-    let currentOk = true;
-    for (const id of REQUIRED_FIELDS) {
-      const el = document.getElementById(id) as HTMLInputElement | null;
-      if (!el) continue;
-      const fg = el.closest('.fg');
-      if (!el.value.trim()) {
-        fg?.classList.add('has-error');
-        el.classList.add('invalid');
-        currentOk = false;
-        el.addEventListener('input', () => {
-          fg?.classList.remove('has-error');
-          el.classList.remove('invalid');
-        }, { once: true });
-      }
-    }
-    const email = document.getElementById('f-email') as HTMLInputElement | null;
-    if (email?.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-      const fg = email.closest('.fg');
-      fg?.classList.add('has-error');
-      email.classList.add('invalid');
-      currentOk = false;
-    }
-    if (!currentOk) return false;
+    if (!showDomErrors()) return false;
 
     // Validate other persons' saved data
-    if (persons > 1) {
-      const firstIncomplete = personFormData.findIndex((data, i) => {
-        if (i === activePerson) return false;
-        return !REQUIRED_FIELDS.every((id) => data[id]?.trim());
-      });
-      if (firstIncomplete !== -1) {
-        saveCurrentPerson();
-        activePerson = firstIncomplete;
-        loadCurrentPerson();
-        renderPersonNav();
-        // Show errors for the incomplete person's DOM
-        for (const id of REQUIRED_FIELDS) {
-          const el = document.getElementById(id) as HTMLInputElement | null;
-          if (!el) continue;
-          const fg = el.closest('.fg');
-          if (!el.value.trim()) {
-            fg?.classList.add('has-error');
-            el.classList.add('invalid');
-            el.addEventListener('input', () => {
-              fg?.classList.remove('has-error');
-              el.classList.remove('invalid');
-            }, { once: true });
-          }
-        }
-        return false;
-      }
-    }
+    if (persons <= 1) return true;
 
-    return true;
+    const firstIncomplete = personFormData.findIndex((data, i) => {
+      if (i === activePerson) return false;
+      return !REQUIRED_FIELDS.every((id) => data[id]?.trim());
+    });
+
+    if (firstIncomplete === -1) return true;
+
+    // Navigate to incomplete person and show their errors
+    saveCurrentPerson();
+    activePerson = firstIncomplete;
+    loadCurrentPerson();
+    renderPersonNav();
+    showDomErrors();
+    return false;
   }
 
   return { validate };

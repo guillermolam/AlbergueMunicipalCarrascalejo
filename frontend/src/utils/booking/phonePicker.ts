@@ -3,7 +3,7 @@
  *
  * Extracted from initPhonePicker() and initPhoneValidation() in book.astro.
  */
-import { isValidPhoneNumber, parsePhoneNumber } from 'libphonenumber-js';
+import { isValidPhoneNumber, parsePhoneNumberWithError, type CountryCode } from 'libphonenumber-js';
 import { COUNTRIES, type Country } from '../../data/countries';
 import { clearEl } from './svgIcons';
 
@@ -23,9 +23,9 @@ export interface PhonePickerOpts {
 
 export function initPhonePicker(opts: PhonePickerOpts): void {
   const btn    = document.getElementById(opts.btnId)    as HTMLButtonElement | null;
-  const drop   = document.getElementById(opts.dropId)   as HTMLElement | null;
-  const flagEl = opts.flagId ? document.getElementById(opts.flagId) as HTMLElement | null : null;
-  const dialEl = opts.dialId ? document.getElementById(opts.dialId) as HTMLElement | null : null;
+  const drop   = document.getElementById(opts.dropId);
+  const flagEl = opts.flagId ? document.getElementById(opts.flagId) : null;
+  const dialEl = opts.dialId ? document.getElementById(opts.dialId) : null;
   const hidden = document.getElementById(opts.hiddenId) as HTMLInputElement | null;
   if (!btn || !drop) return;
 
@@ -49,6 +49,12 @@ export function initPhonePicker(opts: PhonePickerOpts): void {
           );
     clearEl(list!);
     activeIdx = -1;
+
+    function setActive(idx: number): void {
+      list!.querySelectorAll('li').forEach((l, j) => l.classList.toggle('active', j === idx));
+      activeIdx = idx;
+    }
+
     filtered.forEach((c, i) => {
       const li = document.createElement('li');
       li.setAttribute('role', 'option');
@@ -56,10 +62,7 @@ export function initPhonePicker(opts: PhonePickerOpts): void {
       const p2 = document.createElement('span'); p2.textContent = c.n; li.appendChild(p2);
       const p3 = document.createElement('span'); p3.className = 'pdl-dial'; p3.textContent = c.d; li.appendChild(p3);
       li.addEventListener('mousedown', (e) => { e.preventDefault(); choose(c); });
-      li.addEventListener('mouseenter', () => {
-        list!.querySelectorAll('li').forEach((l, j) => l.classList.toggle('active', j === i));
-        activeIdx = i;
-      });
+      li.addEventListener('mouseenter', () => setActive(i));
       list!.appendChild(li);
     });
   }
@@ -137,8 +140,8 @@ export interface PhoneValidationOpts {
 
 export function initPhoneValidation(opts: PhoneValidationOpts): void {
   const input = document.getElementById(opts.inputId) as HTMLInputElement | null;
-  const ccEl  = document.getElementById(opts.ccId ?? opts.ccInputId ?? '')    as HTMLInputElement | null;
-  const errEl = document.getElementById(opts.errId ?? opts.errorId ?? '')   as HTMLElement | null;
+  const ccEl  = document.getElementById(opts.ccId ?? opts.ccInputId ?? '') as HTMLInputElement | null;
+  const errEl = document.getElementById(opts.errId ?? opts.errorId ?? '');
   if (!input || !errEl) return;
 
   const wrap = input.closest('.phone-wrap') as HTMLElement | null;
@@ -172,9 +175,10 @@ export function initPhoneValidation(opts: PhoneValidationOpts): void {
 
   input.addEventListener('input', () => {
     const raw = input.value;
+    // Remove non-phone chars then strip mid-string '+' signs (only leading '+' is valid)
     const cleaned = raw
-      .replace(/[^\d\s\-\(\)+]/g, '')
-      .replace(/(?!^)\+/g, '');
+      .replaceAll(/[^\d\s()+-]/g, '')
+      .replaceAll(/(?!^)\+/g, '');
     if (cleaned !== raw) {
       const sel = input.selectionStart ?? cleaned.length;
       input.value = cleaned;
@@ -187,15 +191,16 @@ export function initPhoneValidation(opts: PhoneValidationOpts): void {
     const raw = input.value.trim();
     if (!raw) { setError(null); return; }
 
-    const cc = (ccEl?.value ?? 'ES').toUpperCase() as Parameters<typeof isValidPhoneNumber>[1];
+    const cc = (ccEl?.value ?? 'ES').toUpperCase() as CountryCode;
     const dialEl = opts.dialId ? document.getElementById(opts.dialId) : null;
     const dialCode = dialEl?.textContent?.trim() ?? '';
     const fullNumber = raw.startsWith('+') ? raw : `${dialCode}${raw}`;
 
     try {
-      const valid = isValidPhoneNumber(fullNumber, cc);
+      const opts2 = { defaultCountry: cc };
+      const valid = isValidPhoneNumber(fullNumber, opts2);
       if (valid) {
-        const parsed = parsePhoneNumber(fullNumber, cc);
+        const parsed = parsePhoneNumberWithError(fullNumber, opts2);
         input.value = parsed.formatInternational();
         setError(null);
       } else {

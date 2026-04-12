@@ -138,6 +138,8 @@ import WizardNav from '../components/booking/WizardNav.astro';
       nextBtnId: 'next-month',
       todayBtnId: 'today-btn',
       dateErrorId: 'date-range-error',
+      // Wire date selection → wizard Next button reactivity
+      onCanProceed: (can: boolean) => { window.__wizEnableNext?.(can); },
     });
 
     // ── Persons picker ────────────────────────────────────────────────────────
