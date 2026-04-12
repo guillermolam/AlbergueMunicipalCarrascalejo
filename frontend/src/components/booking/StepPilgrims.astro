@@ -1,0 +1,26 @@
+---
+// StepPilgrims.astro — Step 2: Pilgrim card upload (PilgrimCardIsland mounts here)
+---
+
+<div class="step-panel hidden" id="step-2" data-step="2">
+  <div class="step-header center">
+    <h1 class="step-title">Peregrinos</h1>
+    <p class="step-desc" id="step2-desc">
+      Completa los datos de cada peregrino — haz clic en <strong>Editar</strong> para modificar
+    </p>
+    <svg class="squiggle-line" viewBox="0 0 200 12" preserveAspectRatio="none">
+      <path
+        d="M0,6 Q25,0 50,6 T100,6 T150,6 T200,6"
+        fill="none"
+        stroke="#00AB39"
+        stroke-width="2.5"
+        stroke-linecap="round"></path>
+    </svg>
+  </div>
+
+  <!-- PilgrimCardIsland mounts here — all pilgrim cards shown simultaneously in a flex grid -->
+  <div
+    id="pilgrim-card-slots"
+    style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:.5rem 0"
+  ></div>
+</div>

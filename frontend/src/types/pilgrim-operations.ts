@@ -10,7 +10,7 @@ import type {
   HealthSafety,
   SocialProfile,
   PersonalInfo,
-  EmergencyContact,
+  EmergencyContactEntry,
   MedicalInfo,
   CaminoExperience,
   SocialLinks,
@@ -166,7 +166,7 @@ export interface CreatePilgrimProfileDto {
     nationality: string;
     passportNumber?: string;
     idCardNumber?: string;
-    emergencyContact: EmergencyContact;
+    emergencyContact: EmergencyContactEntry;
     medicalInfo?: MedicalInfo;
   };
   languages: string[];
@@ -195,7 +195,7 @@ export interface CreateBookingDto {
   accommodationName: string;
   checkInDate: Date;
   checkOutDate: Date;
-  roomType: 'shared' | 'private' | 'family';
+  roomType: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
   numberOfBeds: number;
   specialRequests?: string;
 }
@@ -226,7 +226,7 @@ export interface UpdatePilgrimageDto {
 export interface UpdateBookingDto {
   checkInDate?: Date;
   checkOutDate?: Date;
-  roomType?: 'shared' | 'private' | 'family';
+  roomType?: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
   numberOfBeds?: number;
   specialRequests?: string;
   status?: BookingStatus;
@@ -315,7 +315,7 @@ export interface CheckAvailabilityDto {
   accommodationId: string;
   checkInDate: Date;
   checkOutDate: Date;
-  roomType: 'shared' | 'private' | 'family';
+  roomType: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
   numberOfBeds: number;
 }
 
@@ -323,7 +323,7 @@ export interface AvailabilityResult {
   available: boolean;
   availableRooms: number;
   alternativeRooms: Array<{
-    roomType: string;
+    roomType: 'mixed' | 'femaleOnly' | 'maleOnly' | 'private';
     available: boolean;
     price: number;
   }>;

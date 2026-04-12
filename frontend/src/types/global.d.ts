@@ -28,9 +28,58 @@ interface ImportMeta {
   readonly url: string;
 }
 
-// Global window extensions for SSR compatibility
+// ── Clerk SDK types (window.Clerk injected by @clerk/astro) ──────────────────
+// These cover every access pattern used in the booking islands and book.astro.
+// Minimal — only the surface touched by this project; not a full Clerk SDK stub.
+interface ClerkExternalAccount {
+  provider?: string;
+  emailAddress?: string;
+}
+
+interface ClerkUser {
+  id?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  imageUrl?: string | null;
+  primaryEmailAddress?: { emailAddress?: string };
+  emailAddresses?: Array<{ emailAddress?: string }>;
+  publicMetadata?: Record<string, unknown>;
+  unsafeMetadata?: Record<string, unknown>;
+  privateMetadata?: Record<string, unknown>;
+  externalAccounts?: ClerkExternalAccount[];
+}
+
+interface ClerkSignIn {
+  create: (opts: Record<string, unknown>) => Promise<unknown>;
+}
+
+interface ClerkClient {
+  signIn?: ClerkSignIn;
+}
+
+interface ClerkInstance {
+  user?: ClerkUser | null;
+  client?: ClerkClient;
+  session?: { id?: string } | null;
+  /** @clerk/astro reloads the session after mutations */
+  load?: () => Promise<void>;
+}
+
+// ── Global window extensions for SSR compatibility ────────────────────────────
 declare global {
   interface Window {
+    /**
+     * Clerk frontend SDK — injected automatically by `@clerk/astro`.
+     * Available client-side only; always guard with `window.Clerk?.`.
+     */
+    Clerk?: ClerkInstance;
+
+    /**
+     * Wizard step gating — set by WizardNavigatorIsland so child islands
+     * can enable/disable the "Next" button without direct DOM coupling.
+     */
+    __wizEnableNext?: (enabled: boolean) => void;
+
     // Analytics and tracking
     gtag?: (...args: any[]) => void;
     dataLayer?: any[];

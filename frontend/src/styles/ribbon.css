@@ -1,0 +1,195 @@
+/* ==========================================================================
+   Ribbon Component — Albergue Municipal Carrascalejo
+   Two variants: rotated corner ribbon + folded tag ribbon
+   Inspired by webcoreui.dev/docs/ribbon — pure CSS, no library dependency
+   ========================================================================== */
+
+/* ── CSS Variables ──────────────────────────────────────────────────────── */
+:root {
+  --ribbon-offset:        20px;   /* corner ribbon: distance from top/left of container */
+  --ribbon-folded-offset: 10px;   /* folded ribbon: how far it sticks out left */
+  --ribbon-font:          var(--font-hand);
+  --ribbon-font-size:     0.72rem;
+  --ribbon-font-weight:   700;
+  --ribbon-letter-spacing: 0.06em;
+  --ribbon-text-transform: uppercase;
+  --ribbon-padding:       4px 28px;       /* rotated - wide padding for band */
+  --ribbon-folded-padding: 5px 10px 5px 14px;
+  --ribbon-radius:        0;              /* rotated bands are flat */
+  --ribbon-folded-radius: 0 4px 4px 0;   /* folded tag right side */
+
+  /* colour tokens */
+  --ribbon-bg:            var(--green);
+  --ribbon-color:         #fff;
+  --ribbon-shadow:        0 2px 6px rgba(0,0,0,0.22);
+  --ribbon-fold-shadow:   inset -2px 0 4px rgba(0,0,0,0.08);
+}
+
+/* ── Wrapper ─────────────────────────────────────────────────────────────
+   Add .ribbon-wrap to any container that hosts a rotated ribbon.
+   Must be position:relative; overflow:hidden.
+   For folded ribbons use .ribbon-wrap-folded (no overflow:hidden needed).
+   ──────────────────────────────────────────────────────────────────────── */
+.ribbon-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.ribbon-wrap-folded {
+  position: relative;
+}
+
+/* ── Base ribbon ─────────────────────────────────────────────────────────
+   Default = rotated corner ribbon (top-left diagonal band).
+   ──────────────────────────────────────────────────────────────────────── */
+.ribbon {
+  position: absolute;
+  top:  var(--ribbon-offset);
+  left: var(--ribbon-offset);
+
+  padding:        var(--ribbon-padding);
+  background:     var(--ribbon-bg);
+  color:          var(--ribbon-color);
+  font-family:    var(--ribbon-font);
+  font-size:      var(--ribbon-font-size);
+  font-weight:    var(--ribbon-font-weight);
+  letter-spacing: var(--ribbon-letter-spacing);
+  text-transform: var(--ribbon-text-transform);
+  white-space:    nowrap;
+  text-align:     center;
+
+  transform:        rotate(-45deg) translate(-50%, -50%);
+  transform-origin: top left;
+  pointer-events:   none;
+
+  box-shadow: var(--ribbon-shadow);
+  z-index: 10;
+}
+
+/* Top-right variant (rotate the other way) */
+.ribbon.ribbon-right {
+  top:   var(--ribbon-offset);
+  right: var(--ribbon-offset);
+  left:  auto;
+  transform:        rotate(45deg) translate(50%, -50%);
+  transform-origin: top right;
+}
+
+/* ── Offset helper classes ───────────────────────────────────────────────
+   Use when the ribbon text is long and needs more room.
+   ──────────────────────────────────────────────────────────────────────── */
+.ribbon.ribbon-offset-sm { --ribbon-offset: 14px; }
+.ribbon.ribbon-offset-md { --ribbon-offset: 20px; } /* default */
+.ribbon.ribbon-offset-lg { --ribbon-offset: 28px; }
+.ribbon.ribbon-offset-xl { --ribbon-offset: 36px; }
+
+/* ── Folded ribbon ───────────────────────────────────────────────────────
+   Horizontal tag protruding from the left edge — no rotation needed.
+   The ::before pseudo creates the paper-fold shadow triangle.
+   ──────────────────────────────────────────────────────────────────────── */
+.ribbon.ribbon-folded {
+  top:    10px;
+  left:   calc(var(--ribbon-folded-offset) * -1);
+  right:  auto;
+
+  padding:        var(--ribbon-folded-padding);
+  border-radius:  var(--ribbon-folded-radius);
+
+  transform:        none;
+  transform-origin: unset;
+
+  box-shadow: var(--ribbon-fold-shadow);
+}
+
+/* fold shadow triangle */
+.ribbon.ribbon-folded::before {
+  content: '';
+  position: absolute;
+  bottom: calc(var(--ribbon-folded-offset) * -1);
+  left: 0;
+
+  border-right:  var(--ribbon-folded-offset) solid color-mix(in srgb, var(--ribbon-bg) 60%, #000);
+  border-top:    var(--ribbon-folded-offset) solid transparent;
+  border-bottom: var(--ribbon-folded-offset) solid transparent;
+  width: 0;
+  height: 0;
+}
+
+/* Folded ribbon from the right side */
+.ribbon.ribbon-folded.ribbon-right {
+  left:  auto;
+  right: calc(var(--ribbon-folded-offset) * -1);
+  border-radius: 4px 0 0 4px;
+  padding: 5px 14px 5px 10px;
+}
+
+.ribbon.ribbon-folded.ribbon-right::before {
+  left:  auto;
+  right: 0;
+  border-left:   var(--ribbon-folded-offset) solid color-mix(in srgb, var(--ribbon-bg) 60%, #000);
+  border-right:  none;
+  border-top:    var(--ribbon-folded-offset) solid transparent;
+  border-bottom: var(--ribbon-folded-offset) solid transparent;
+}
+
+/* ── Colour Themes ───────────────────────────────────────────────────────
+   Override --ribbon-bg / --ribbon-color for semantic variants.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* default = green / success */
+.ribbon {
+  --ribbon-bg:    var(--green);
+  --ribbon-color: #fff;
+}
+.ribbon.ribbon-folded::before { border-right-color: var(--green-dark); }
+.ribbon.ribbon-folded.ribbon-right::before { border-left-color: var(--green-dark); }
+
+/* secondary — dark green */
+.ribbon.ribbon-secondary {
+  --ribbon-bg:    var(--green-dark);
+  --ribbon-color: #fff;
+}
+.ribbon.ribbon-secondary.ribbon-folded::before { border-right-color: var(--green-darker); }
+
+/* gold / warning */
+.ribbon.ribbon-warning {
+  --ribbon-bg:    var(--gold);
+  --ribbon-color: #1a1a1a;
+}
+.ribbon.ribbon-warning.ribbon-folded::before { border-right-color: #b89400; }
+
+/* red / alert */
+.ribbon.ribbon-alert {
+  --ribbon-bg:    var(--red);
+  --ribbon-color: #fff;
+}
+.ribbon.ribbon-alert.ribbon-folded::before { border-right-color: #a01018; }
+
+/* blue / info */
+.ribbon.ribbon-info {
+  --ribbon-bg:    var(--blue);
+  --ribbon-color: #fff;
+}
+.ribbon.ribbon-info.ribbon-folded::before { border-right-color: #00519a; }
+
+/* dark / ink */
+.ribbon.ribbon-dark {
+  --ribbon-bg:    var(--black);
+  --ribbon-color: #fff;
+}
+.ribbon.ribbon-dark.ribbon-folded::before { border-right-color: #000; }
+
+/* parchment / subtle */
+.ribbon.ribbon-light {
+  --ribbon-bg:    #faf7f0;
+  --ribbon-color: var(--green-dark);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.ribbon.ribbon-light.ribbon-folded::before { border-right-color: #e8e0cc; }
+
+/* ── Sketchy filter overlay (matches site hand-drawn aesthetic) ──────────
+   Optional: add class .ribbon-sketchy to get the SVG turbulence distort.
+   ──────────────────────────────────────────────────────────────────────── */
+.ribbon.ribbon-sketchy {
+  filter: url(#sketchy-filter);
+}

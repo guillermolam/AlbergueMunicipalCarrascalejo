@@ -3,8 +3,10 @@
 import Layout from '../layouts/Layout.astro';
 import { SignIn } from '@clerk/astro/components';
 
-// If already signed in, redirect to role-appropriate dashboard
-const { userId } = Astro.locals.auth();
+// If already signed in, redirect to role-appropriate dashboard.
+// Guard: on prerendered pages locals.auth may not be a function yet.
+const authState = typeof Astro.locals.auth === 'function' ? Astro.locals.auth() : null;
+const userId = authState?.userId ?? null;
 const role = Astro.locals.role ?? 'guest';
 const defaultDest = role === 'admin' ? '/admin' : '/dashboard';
 const from = Astro.url.searchParams.get('from') ?? defaultDest;
@@ -68,8 +70,6 @@ if (userId) {
               colorTextSecondary: '#666666',
               colorInputBackground: '#ffffff',
               colorInputText: '#1A1A1A',
-              fontFamily: '"Patrick Hand", cursive',
-              fontFamilyButtons: '"Cabin Sketch", cursive',
               borderRadius: '12px',
               spacingUnit: '1rem',
             },
@@ -80,6 +80,9 @@ if (userId) {
               headerSubtitle: 'clerk-header-subtitle',
               socialButtonsBlockButton: 'clerk-social-btn',
               formButtonPrimary: 'clerk-btn-primary',
+              formFieldLabel: 'clerk-field-label',
+              formFieldInput: 'clerk-field-input',
+              footerActionText: 'clerk-footer-text',
               footerActionLink: 'clerk-footer-link',
               dividerLine: 'clerk-divider-line',
               dividerText: 'clerk-divider-text',
@@ -92,11 +95,12 @@ if (userId) {
 
   <style>
     .auth-page {
-      min-height: calc(100vh - 200px);
+      min-height: calc(100dvh - 80px); /* 80px = header height */
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem 1rem 4rem;
+      padding: 2rem 1rem 3rem;
       background: linear-gradient(160deg, var(--green-light) 0%, white 60%);
     }
     .auth-container {
@@ -150,13 +154,20 @@ if (userId) {
     }
 
     /*
-     * Override Clerk's default card styles to match the sketchy aesthetic.
-     * Clerk renders inside a shadow-DOM-like container so we target the
-     * exposed class names via the `elements` appearance prop above.
+     * Clerk card overrides — target exposed class names from the `elements` prop.
+     * Font vars (--font-*) are set by Astro's Font component and resolve to the
+     * actual loaded font-face name. No cursive fallback.
      */
     :global(.clerk-root-box) {
       width: 100% !important;
     }
+
+    /* Base font for entire card — Patrick Hand for all text, inherited by children */
+    :global(.clerk-card),
+    :global(.clerk-card *) {
+      font-family: var(--font-patrick-hand) !important;
+    }
+
     :global(.clerk-card) {
       border-radius: 16px !important;
       border: 2.5px solid var(--black) !important;
@@ -167,44 +178,70 @@ if (userId) {
       max-width: 100% !important;
     }
     :global(.clerk-header-title) {
-      display: none !important; /* we use our own hero heading */
+      display: none !important;
     }
     :global(.clerk-header-subtitle) {
       display: none !important;
     }
+
+    /* Social login buttons */
     :global(.clerk-social-btn) {
       border: 2px solid #e0e0e0 !important;
       border-radius: 12px !important;
-      font-family: 'Cabin Sketch', cursive !important;
-      font-weight: 700 !important;
-      text-transform: uppercase !important;
+      font-family: var(--font-patrick-hand) !important;
+      font-weight: 400 !important;
+      font-size: 0.95rem !important;
       letter-spacing: 0.03em !important;
       transition: all 200ms ease !important;
     }
     :global(.clerk-social-btn:hover) {
       transform: translateY(-2px) !important;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+      border-color: var(--green) !important;
     }
+
+    /* Form labels and inputs */
+    :global(.clerk-field-label) {
+      font-family: var(--font-patrick-hand) !important;
+      font-size: 0.9rem !important;
+      color: var(--black) !important;
+    }
+    :global(.clerk-field-input) {
+      font-family: var(--font-inter) !important;
+      font-size: 0.95rem !important;
+      border-radius: 10px !important;
+    }
+
+    /* Primary CTA button */
     :global(.clerk-btn-primary) {
       background: var(--green) !important;
       border-radius: 12px !important;
-      font-family: 'Cabin Sketch', cursive !important;
-      font-weight: 700 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.04em !important;
+      font-family: var(--font-patrick-hand) !important;
+      font-weight: 400 !important;
       font-size: 1rem !important;
+      letter-spacing: 0.04em !important;
     }
+    :global(.clerk-btn-primary:hover) {
+      background: var(--green-dark) !important;
+    }
+
+    /* Divider */
     :global(.clerk-divider-line) {
       background: rgba(0, 171, 57, 0.2) !important;
     }
     :global(.clerk-divider-text) {
-      font-family: 'Patrick Hand', cursive !important;
+      font-family: var(--font-patrick-hand) !important;
       color: #999 !important;
       font-size: 0.82rem !important;
     }
+
+    /* Footer */
+    :global(.clerk-footer-text),
+    :global(.clerk-footer-link) {
+      font-family: var(--font-patrick-hand) !important;
+    }
     :global(.clerk-footer-link) {
       color: var(--green) !important;
-      font-family: 'Patrick Hand', cursive !important;
     }
 
     /* Animations */

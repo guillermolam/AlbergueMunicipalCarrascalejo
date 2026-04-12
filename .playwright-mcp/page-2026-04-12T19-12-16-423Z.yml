@@ -1,0 +1,451 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#_top"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Starlight" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]: Starlight
+        - button "Search" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - generic [ref=e14]: Search
+          - generic [ref=e15]:
+            - generic [ref=e16]: ⌘
+            - generic [ref=e17]: K
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "GitHub" [ref=e20] [cursor=pointer]:
+              - /url: https://github.com/withastro/starlight
+              - generic [ref=e21]: GitHub
+              - img [ref=e22]
+            - link "Discord" [ref=e24] [cursor=pointer]:
+              - /url: https://astro.build/chat
+              - generic [ref=e25]: Discord
+              - img [ref=e26]
+          - generic [ref=e29]:
+            - generic [ref=e30]: Select theme
+            - img
+            - combobox "Select theme" [ref=e31] [cursor=pointer]:
+              - option "Dark"
+              - option "Light"
+              - option "Auto" [selected]
+            - img
+          - generic [ref=e33]:
+            - generic [ref=e34]: Select language
+            - img
+            - combobox "Select language" [ref=e35] [cursor=pointer]:
+              - option "English" [selected]
+              - option "Deutsch"
+              - option "Español"
+              - option "日本語"
+              - option "Français"
+              - option "Italiano"
+              - option "Bahasa Indonesia"
+              - option "简体中文"
+              - option "Português do Brasil"
+              - option "Português"
+              - option "한국어"
+              - option "Türkçe"
+              - option "Русский"
+              - option "हिंदी"
+              - option "Dansk"
+              - option "Українська"
+            - img
+    - navigation "Main":
+      - list [ref=e39]:
+        - listitem [ref=e40]:
+          - group [ref=e41]:
+            - generic "Start Here" [ref=e42] [cursor=pointer]:
+              - generic [ref=e43]: Start Here
+              - img [ref=e44]
+            - list [ref=e46]:
+              - listitem [ref=e47]:
+                - link "Getting Started" [ref=e48] [cursor=pointer]:
+                  - /url: /getting-started/
+              - listitem [ref=e49]:
+                - link "Manual Setup" [ref=e50] [cursor=pointer]:
+                  - /url: /manual-setup/
+              - listitem [ref=e51]:
+                - link "Environmental Impact" [ref=e52] [cursor=pointer]:
+                  - /url: /environmental-impact/
+        - listitem [ref=e53]:
+          - group [ref=e54]:
+            - generic "Guides" [ref=e55] [cursor=pointer]:
+              - generic [ref=e56]: Guides
+              - img [ref=e57]
+            - list [ref=e59]:
+              - listitem [ref=e60]:
+                - link "Pages" [ref=e61] [cursor=pointer]:
+                  - /url: /guides/pages/
+              - listitem [ref=e62]:
+                - link "Authoring Content in Markdown" [ref=e63] [cursor=pointer]:
+                  - /url: /guides/authoring-content/
+              - listitem [ref=e64]:
+                - link "CSS & Styling" [ref=e65] [cursor=pointer]:
+                  - /url: /guides/css-and-tailwind/
+              - listitem [ref=e66]:
+                - link "Customizing Starlight" [ref=e67] [cursor=pointer]:
+                  - /url: /guides/customization/
+              - listitem [ref=e68]:
+                - link "Internationalization (i18n)" [ref=e69] [cursor=pointer]:
+                  - /url: /guides/i18n/
+              - listitem [ref=e70]:
+                - link "Overriding Components" [ref=e71] [cursor=pointer]:
+                  - /url: /guides/overriding-components/
+              - listitem [ref=e72]:
+                - link "Project Structure" [ref=e73] [cursor=pointer]:
+                  - /url: /guides/project-structure/
+              - listitem [ref=e74]:
+                - link "Route Data" [ref=e75] [cursor=pointer]:
+                  - /url: /guides/route-data/
+              - listitem [ref=e76]:
+                - link "Sidebar Navigation" [ref=e77] [cursor=pointer]:
+                  - /url: /guides/sidebar/
+              - listitem [ref=e78]:
+                - link "Site Search" [ref=e79] [cursor=pointer]:
+                  - /url: /guides/site-search/
+        - listitem [ref=e80]:
+          - group [ref=e81]:
+            - generic "Components" [ref=e82] [cursor=pointer]:
+              - generic [ref=e83]: Components
+              - img [ref=e84]
+            - list [ref=e86]:
+              - listitem [ref=e87]:
+                - link "Using Components" [ref=e88] [cursor=pointer]:
+                  - /url: /components/using-components/
+              - listitem [ref=e89]:
+                - link "Cards" [ref=e90] [cursor=pointer]:
+                  - /url: /components/cards/
+              - listitem [ref=e91]:
+                - link "Link Cards" [ref=e92] [cursor=pointer]:
+                  - /url: /components/link-cards/
+              - listitem [ref=e93]:
+                - link "Card Grids" [ref=e94] [cursor=pointer]:
+                  - /url: /components/card-grids/
+              - listitem [ref=e95]:
+                - link "Asides" [ref=e96] [cursor=pointer]:
+                  - /url: /components/asides/
+              - listitem [ref=e97]:
+                - link "Badges" [ref=e98] [cursor=pointer]:
+                  - /url: /components/badges/
+              - listitem [ref=e99]:
+                - link "Code" [ref=e100] [cursor=pointer]:
+                  - /url: /components/code/
+              - listitem [ref=e101]:
+                - link "File Tree" [ref=e102] [cursor=pointer]:
+                  - /url: /components/file-tree/
+              - listitem [ref=e103]:
+                - link "Icons" [ref=e104] [cursor=pointer]:
+                  - /url: /components/icons/
+              - listitem [ref=e105]:
+                - link "Link Buttons" [ref=e106] [cursor=pointer]:
+                  - /url: /components/link-buttons/
+              - listitem [ref=e107]:
+                - link "Steps" [ref=e108] [cursor=pointer]:
+                  - /url: /components/steps/
+              - listitem [ref=e109]:
+                - link "Tabs" [ref=e110] [cursor=pointer]:
+                  - /url: /components/tabs/
+        - listitem [ref=e111]:
+          - group [ref=e112]:
+            - generic "Reference" [ref=e113] [cursor=pointer]:
+              - generic [ref=e114]: Reference
+              - img [ref=e115]
+            - list [ref=e117]:
+              - listitem [ref=e118]:
+                - link "Configuration Reference" [ref=e119] [cursor=pointer]:
+                  - /url: /reference/configuration/
+              - listitem [ref=e120]:
+                - link "Frontmatter Reference" [ref=e121] [cursor=pointer]:
+                  - /url: /reference/frontmatter/
+              - listitem [ref=e122]:
+                - link "Icons Reference" [ref=e123] [cursor=pointer]:
+                  - /url: /reference/icons/
+              - listitem [ref=e124]:
+                - link "Overrides Reference" [ref=e125] [cursor=pointer]:
+                  - /url: /reference/overrides/
+              - listitem [ref=e126]:
+                - link "Plugins Reference" [ref=e127] [cursor=pointer]:
+                  - /url: /reference/plugins/
+              - listitem [ref=e128]:
+                - link "Route Data Reference" [ref=e129] [cursor=pointer]:
+                  - /url: /reference/route-data/
+        - listitem [ref=e130]:
+          - group [ref=e131]:
+            - generic "Resources" [ref=e132] [cursor=pointer]:
+              - generic [ref=e133]: Resources
+              - img [ref=e134]
+            - list [ref=e136]:
+              - listitem [ref=e137]:
+                - link "Plugins and Integrations" [ref=e138] [cursor=pointer]:
+                  - /url: /resources/plugins/
+              - listitem [ref=e139]:
+                - link "Themes" [ref=e140] [cursor=pointer]:
+                  - /url: /resources/themes/
+              - listitem [ref=e141]:
+                - link "Community Content" [ref=e142] [cursor=pointer]:
+                  - /url: /resources/community-content/
+              - listitem [ref=e143]:
+                - link "Site Showcase" [ref=e144] [cursor=pointer]:
+                  - /url: /resources/showcase/
+    - generic [ref=e146]:
+      - complementary [ref=e147]:
+        - navigation "On this page" [ref=e152]:
+          - heading "On this page" [level=2] [ref=e153]
+          - list [ref=e154]:
+            - listitem [ref=e155]:
+              - link "Overview" [ref=e156] [cursor=pointer]:
+                - /url: "#_top"
+            - listitem [ref=e157]:
+              - link "Import" [ref=e158] [cursor=pointer]:
+                - /url: "#import"
+            - listitem [ref=e159]:
+              - link "Usage" [ref=e160] [cursor=pointer]:
+                - /url: "#usage"
+              - list [ref=e161]:
+                - listitem [ref=e162]:
+                  - link "Group cards" [ref=e163] [cursor=pointer]:
+                    - /url: "#group-cards"
+                - listitem [ref=e164]:
+                  - link "Group link cards" [ref=e165] [cursor=pointer]:
+                    - /url: "#group-link-cards"
+                - listitem [ref=e166]:
+                  - link "Stagger cards" [ref=e167] [cursor=pointer]:
+                    - /url: "#stagger-cards"
+            - listitem [ref=e168]:
+              - link "<CardGrid> Props" [ref=e169] [cursor=pointer]:
+                - /url: "#cardgrid-props"
+              - list [ref=e170]:
+                - listitem [ref=e171]:
+                  - link "stagger" [ref=e172] [cursor=pointer]:
+                    - /url: "#stagger"
+      - main [ref=e174]:
+        - heading "Card Grids" [level=1] [ref=e177]
+        - generic [ref=e179]:
+          - generic [ref=e180]:
+            - paragraph [ref=e181]:
+              - text: To wrap multiple
+              - link "<Card>" [ref=e182] [cursor=pointer]:
+                - /url: /components/cards/
+                - code [ref=e183]: <Card>
+              - text: or
+              - link "<LinkCard>" [ref=e184] [cursor=pointer]:
+                - /url: /components/link-cards/
+                - code [ref=e185]: <LinkCard>
+              - text: components in a grid, use the
+              - code [ref=e186]: <CardGrid>
+              - text: component.
+            - figure [ref=e187]:
+              - generic [ref=e188]:
+                - generic [ref=e189]: Preview
+                - generic [ref=e191]:
+                  - article [ref=e192]:
+                    - paragraph [ref=e193]:
+                      - img [ref=e194]
+                      - generic [ref=e196]: Stars
+                    - paragraph [ref=e198]: Sirius, Vega, Betelgeuse
+                  - article [ref=e199]:
+                    - paragraph [ref=e200]:
+                      - img [ref=e201]
+                      - generic [ref=e203]: Moons
+                    - paragraph [ref=e205]: Io, Europa, Ganymede
+            - generic [ref=e206]:
+              - heading "Import" [level=2] [ref=e207]
+              - link "Section titled “Import”" [ref=e208] [cursor=pointer]:
+                - /url: "#import"
+                - img [ref=e210]
+                - generic [ref=e212]: Section titled “Import”
+            - figure [ref=e214]:
+              - code [ref=e216]:
+                - generic [ref=e218]: "import { CardGrid } from '@astrojs/starlight/components';"
+              - button "Copy to clipboard" [ref=e220] [cursor=pointer]
+            - generic [ref=e222]:
+              - heading "Usage" [level=2] [ref=e223]
+              - link "Section titled “Usage”" [ref=e224] [cursor=pointer]:
+                - /url: "#usage"
+                - img [ref=e226]
+                - generic [ref=e228]: Section titled “Usage”
+            - generic [ref=e229]:
+              - heading "Group cards" [level=3] [ref=e230]
+              - link "Section titled “Group cards”" [ref=e231] [cursor=pointer]:
+                - /url: "#group-cards"
+                - img [ref=e233]
+                - generic [ref=e235]: Section titled “Group cards”
+            - paragraph [ref=e236]:
+              - text: Display multiple
+              - link "<Card>" [ref=e237] [cursor=pointer]:
+                - /url: /components/cards/
+                - code [ref=e238]: <Card>
+              - text: components side-by-side when there’s enough space by grouping them using the
+              - code [ref=e239]: <CardGrid>
+              - text: component.
+            - figure [ref=e240]:
+              - generic [ref=e241]:
+                - tablist [ref=e243]:
+                  - tab "MDX" [selected] [ref=e244] [cursor=pointer]
+                  - tab "Markdoc" [ref=e245] [cursor=pointer]
+                - tabpanel "MDX" [ref=e246]:
+                  - figure [ref=e248]:
+                    - code [ref=e250]:
+                      - generic [ref=e252]: "import { Card, CardGrid } from '@astrojs/starlight/components';"
+                      - generic [ref=e256]: <CardGrid>
+                      - generic [ref=e258]: <Card title="Check this out" icon="open-book">
+                      - generic [ref=e260]: Interesting content you want to highlight.
+                      - generic [ref=e263]: </Card>
+                      - generic [ref=e265]: <Card title="Other feature" icon="information">
+                      - generic [ref=e267]: More information you want to share.
+                      - generic [ref=e270]: </Card>
+                      - generic [ref=e272]: </CardGrid>
+                    - button "Copy to clipboard" [ref=e274] [cursor=pointer]
+              - generic [ref=e276]:
+                - generic [ref=e277]: Preview
+                - generic [ref=e279]:
+                  - article [ref=e280]:
+                    - paragraph [ref=e281]:
+                      - img [ref=e282]
+                      - generic [ref=e284]: Check this out
+                    - paragraph [ref=e286]: Interesting content you want to highlight.
+                  - article [ref=e287]:
+                    - paragraph [ref=e288]:
+                      - img [ref=e289]
+                      - generic [ref=e291]: Other feature
+                    - paragraph [ref=e293]: More information you want to share.
+            - generic [ref=e294]:
+              - heading "Group link cards" [level=3] [ref=e295]
+              - link "Section titled “Group link cards”" [ref=e296] [cursor=pointer]:
+                - /url: "#group-link-cards"
+                - img [ref=e298]
+                - generic [ref=e300]: Section titled “Group link cards”
+            - paragraph [ref=e301]:
+              - text: Display multiple
+              - link "<LinkCard>" [ref=e302] [cursor=pointer]:
+                - /url: /components/link-cards/
+                - code [ref=e303]: <LinkCard>
+              - text: components side-by-side when there’s enough space by grouping them using the
+              - code [ref=e304]: <CardGrid>
+              - text: component.
+            - figure [ref=e305]:
+              - generic [ref=e306]:
+                - tablist [ref=e308]:
+                  - tab "MDX" [selected] [ref=e309] [cursor=pointer]
+                  - tab "Markdoc" [ref=e310] [cursor=pointer]
+                - tabpanel "MDX" [ref=e311]:
+                  - figure [ref=e313]:
+                    - code [ref=e315]:
+                      - generic [ref=e317]: "import { LinkCard, CardGrid } from '@astrojs/starlight/components';"
+                      - generic [ref=e321]: <CardGrid>
+                      - generic [ref=e323]: <LinkCard title="Authoring Markdown" href="/guides/authoring-content/" />
+                      - generic [ref=e325]: <LinkCard title="Components" href="/components/using-components/" />
+                      - generic [ref=e327]: </CardGrid>
+                    - button "Copy to clipboard" [ref=e329] [cursor=pointer]
+              - generic [ref=e331]:
+                - generic [ref=e332]: Preview
+                - generic [ref=e334]:
+                  - generic [ref=e335]:
+                    - link "Authoring Markdown" [ref=e337] [cursor=pointer]:
+                      - /url: /guides/authoring-content/
+                    - img [ref=e338]
+                  - generic [ref=e340]:
+                    - link "Components" [ref=e342] [cursor=pointer]:
+                      - /url: /components/using-components/
+                    - img [ref=e343]
+            - generic [ref=e345]:
+              - heading "Stagger cards" [level=3] [ref=e346]
+              - link "Section titled “Stagger cards”" [ref=e347] [cursor=pointer]:
+                - /url: "#stagger-cards"
+                - img [ref=e349]
+                - generic [ref=e351]: Section titled “Stagger cards”
+            - paragraph [ref=e352]:
+              - text: Shift the second column of the grid vertically to add visual interest by adding the
+              - link "stagger" [ref=e353] [cursor=pointer]:
+                - /url: "#stagger"
+                - code [ref=e354]: stagger
+              - text: attribute to the
+              - code [ref=e355]: <CardGrid>
+              - text: component.
+            - paragraph [ref=e356]: This attribute is useful on your home page to display your project’s key features.
+            - figure [ref=e357]:
+              - generic [ref=e358]:
+                - tablist [ref=e360]:
+                  - tab "MDX" [selected] [ref=e361] [cursor=pointer]
+                  - tab "Markdoc" [ref=e362] [cursor=pointer]
+                - tabpanel "MDX" [ref=e363]:
+                  - figure [ref=e365]:
+                    - code [ref=e367]:
+                      - generic [ref=e369]: "import { Card, CardGrid } from '@astrojs/starlight/components';"
+                      - generic [ref=e373]:
+                        - text: <CardGrid
+                        - mark [ref=e374]: stagger
+                        - text: ">"
+                      - generic [ref=e376]: <Card title="Check this out" icon="open-book">
+                      - generic [ref=e378]: Interesting content you want to highlight.
+                      - generic [ref=e381]: </Card>
+                      - generic [ref=e383]: <Card title="Other feature" icon="information">
+                      - generic [ref=e385]: More information you want to share.
+                      - generic [ref=e388]: </Card>
+                      - generic [ref=e390]: </CardGrid>
+                    - button "Copy to clipboard" [ref=e392] [cursor=pointer]
+              - generic [ref=e394]:
+                - generic [ref=e395]: Preview
+                - generic [ref=e397]:
+                  - article [ref=e398]:
+                    - paragraph [ref=e399]:
+                      - img [ref=e400]
+                      - generic [ref=e402]: Check this out
+                    - paragraph [ref=e404]: Interesting content you want to highlight.
+                  - article [ref=e405]:
+                    - paragraph [ref=e406]:
+                      - img [ref=e407]
+                      - generic [ref=e409]: Other feature
+                    - paragraph [ref=e411]: More information you want to share.
+            - generic [ref=e412]:
+              - heading "<CardGrid> Props" [level=2] [ref=e413]:
+                - code [ref=e414]: <CardGrid>
+                - text: Props
+              - link "Section titled “<CardGrid> Props”" [ref=e415] [cursor=pointer]:
+                - /url: "#cardgrid-props"
+                - img [ref=e417]
+                - generic [ref=e419]: Section titled “<CardGrid> Props”
+            - paragraph [ref=e420]:
+              - strong [ref=e421]: "Implementation:"
+              - link "CardGrid.astro" [ref=e422] [cursor=pointer]:
+                - /url: https://github.com/withastro/starlight/blob/main/packages/starlight/user-components/CardGrid.astro
+                - code [ref=e423]: CardGrid.astro
+            - paragraph [ref=e424]:
+              - text: The
+              - code [ref=e425]: <CardGrid>
+              - text: "component accepts the following props:"
+            - generic [ref=e426]:
+              - heading "stagger" [level=3] [ref=e427]:
+                - code [ref=e428]: stagger
+              - link "Section titled “stagger”" [ref=e429] [cursor=pointer]:
+                - /url: "#stagger"
+                - img [ref=e431]
+                - generic [ref=e433]: Section titled “stagger”
+            - paragraph [ref=e434]:
+              - strong [ref=e435]: "type:"
+              - code [ref=e436]: boolean
+            - paragraph [ref=e437]: Defines whether to stagger the cards in the grid or not.
+          - generic [ref=e438]:
+            - generic [ref=e439]:
+              - link "Edit page" [ref=e440] [cursor=pointer]:
+                - /url: https://github.com/withastro/starlight/edit/main/docs/src/content/docs/components/card-grids.mdx
+                - img [ref=e441]
+                - text: Edit page
+              - paragraph [ref=e443]:
+                - text: "Last updated:"
+                - time [ref=e444]: Sep 18, 2024
+            - generic [ref=e445]:
+              - link "Previous Link Cards" [ref=e446] [cursor=pointer]:
+                - /url: /components/link-cards/
+                - img [ref=e447]
+                - generic [ref=e449]:
+                  - text: Previous
+                  - text: Link Cards
+              - link "Next Asides" [ref=e450] [cursor=pointer]:
+                - /url: /components/asides/
+                - img [ref=e451]
+                - generic [ref=e453]:
+                  - text: Next
+                  - text: Asides

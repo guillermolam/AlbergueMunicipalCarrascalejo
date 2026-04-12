@@ -13,7 +13,7 @@ import { clerkClient } from '@clerk/astro/server';
 
 export const prerender = false;
 
-const ALLOWED_SECTIONS = new Set(['emergency', 'vehicles', 'belongings', 'lockerNum']);
+const ALLOWED_SECTIONS = new Set(['emergency', 'emergencyContacts', 'vehicles', 'belongings', 'lockerNum', 'pets']);
 
 export const POST: APIRoute = async (context) => {
   const { request, locals } = context;

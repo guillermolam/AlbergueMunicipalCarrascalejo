@@ -125,7 +125,7 @@ const calUrl = `https://calendar.google.com/calendar/r/eventedit?text=Albergue+M
           <!-- Offline warning (shown only when API was unavailable at booking time) -->
           {
             isOffline && (
-              <div style="background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-family:'Patrick Hand',cursive;font-size:0.85rem;color:#5D4E37;display:flex;align-items:center;gap:0.5rem">
+              <div style="background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-family:var(--font-patrick-hand);font-size:0.85rem;color:#5D4E37;display:flex;align-items:center;gap:0.5rem">
                 <span>⚠️</span>
                 <span>
                   Reserva guardada localmente — se sincronizará cuando el servidor esté disponible.
@@ -432,7 +432,7 @@ const calUrl = `https://calendar.google.com/calendar/r/eventedit?text=Albergue+M
       animation: stroke-draw 700ms ease 1300ms forwards;
     }
     .camino-msg {
-      font-family: 'Shadows Into Light', cursive;
+      font-family: var(--font-shadows-into-light);
       font-size: 1.5rem;
       color: var(--green);
       margin: 0;

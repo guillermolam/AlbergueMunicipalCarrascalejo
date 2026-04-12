@@ -1,0 +1,151 @@
+---
+// StepDatePicker.astro — Step 1: date selection (calendar + persons picker + date chips)
+---
+
+<div class="step-panel" id="step-1" data-step="1">
+  <div class="step-header">
+    <div class="step-header-icon">
+      <svg width="48" height="48" viewBox="0 0 100 100" fill="none">
+        <path
+          d="M15,30 L15,85 C15,88 17,90 20,90 L80,90 C83,90 85,88 85,85 L85,30 Z"
+          fill="#FFF9F0"
+          stroke="#00AB39"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path>
+        <path
+          d="M15,18 C15,15 17,13 20,13 L80,13 C83,13 85,15 85,18 L85,30 L15,30 Z"
+          fill="#00AB39"
+          stroke="#00AB39"
+          stroke-width="3"></path>
+        <circle cx="30" cy="18" r="4" fill="white" stroke="#006b24" stroke-width="2.5"></circle>
+        <circle cx="30" cy="18" r="2" fill="#006b24"></circle>
+        <circle cx="70" cy="18" r="4" fill="white" stroke="#006b24" stroke-width="2.5"></circle>
+        <circle cx="70" cy="18" r="2" fill="#006b24"></circle>
+      </svg>
+    </div>
+    <div>
+      <h1 class="step-title">When are you visiting?</h1>
+      <p class="step-desc">Select your check-in and check-out dates</p>
+    </div>
+    <div class="step-hint" aria-hidden="true">Select your stay dates</div>
+  </div>
+
+  <!-- Step 1: two-column layout — calendar left, controls right -->
+  <div class="step1-body">
+
+    <!-- ── LEFT: Calendar ── -->
+    <div class="cal-wrap">
+      <svg class="cal-border" aria-hidden="true" preserveAspectRatio="none">
+        <rect
+          x="4"
+          y="4"
+          width="calc(100% - 8px)"
+          height="calc(100% - 8px)"
+          fill="white"
+          fill-opacity="0.95"
+          stroke="#00AB39"
+          stroke-width="3.5"
+          rx="20"></rect>
+        <rect
+          x="8"
+          y="8"
+          width="calc(100% - 16px)"
+          height="calc(100% - 16px)"
+          fill="none"
+          stroke="#00AB39"
+          stroke-width="2"
+          rx="18"
+          opacity="0.3"
+          stroke-dasharray="6,6"></rect>
+      </svg>
+      <div class="cal-inner">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" id="prev-month" aria-label="Previous month">
+            <svg class="nav-circle" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#00AB39" stroke-width="3" stroke-dasharray="2,3" opacity="0.3"></circle>
+            </svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+              <path d="m15 18-6-6 6-6"></path>
+            </svg>
+          </button>
+          <h3 class="cal-month-title" id="cal-month-title">April 2026</h3>
+          <button class="cal-today-btn" id="today-btn" aria-label="Go to today">Today</button>
+          <button class="cal-nav-btn" id="next-month" aria-label="Next month">
+            <svg class="nav-circle" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#00AB39" stroke-width="3" stroke-dasharray="2,3" opacity="0.3"></circle>
+            </svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+              <path d="m9 18 6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="cal-dow-row">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <!-- Validation error shown when selected range exceeds max nights -->
+      <p
+        id="date-range-error"
+        style="display:none;color:#c0392b;font-size:0.85rem;margin:0.5rem 0.5rem 0;font-weight:600;"
+      ></p>
+    </div><!-- /.cal-wrap -->
+
+    <!-- ── RIGHT: Pilgrim picker (top) + Date chips (bottom) ── -->
+    <div class="step1-controls">
+
+      <!-- Pilgrim count picker — FIRST -->
+      <div class="persons-picker" id="persons-picker">
+        <div class="persons-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round">
+            <circle cx="12" cy="7" r="4"></circle>
+            <path d="M4 21v-2a8 8 0 0 1 16 0v2"></path>
+          </svg>
+          <span>Pilgrims</span>
+        </div>
+        <div class="persons-control">
+          <button class="persons-btn" id="persons-minus" type="button" aria-label="Remove pilgrim">−</button>
+          <input id="persons-input" class="persons-input" type="number" min="1" max="10" value="1" inputmode="numeric" aria-label="Number of pilgrims" />
+          <button class="persons-btn" id="persons-plus" type="button" aria-label="Add pilgrim">+</button>
+        </div>
+        <span class="persons-hint" id="persons-hint">1 pilgrim</span>
+      </div>
+
+      <!-- Date summary — SECOND -->
+      <div class="date-summary" id="date-summary">
+        <div class="date-chip" id="checkin-chip">
+          <span class="chip-label">Check-in</span>
+          <span class="chip-val" id="checkin-display">—</span>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5">
+          <path d="M12 5v14M5 12l7 7 7-7"></path>
+        </svg>
+        <div class="date-chip" id="checkout-chip">
+          <span class="chip-label">Check-out</span>
+          <span class="chip-val" id="checkout-display">—</span>
+        </div>
+        <div class="nights-chip" id="nights-chip" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span class="nights-val" id="nights-val">0</span>
+        </div>
+        <div class="price-chip" id="price-chip" style="display:none">
+          <span class="price-chip-label">Total</span>
+          <span class="price-chip-val" id="price-total">€0</span>
+        </div>
+        <div class="date-actions" id="date-actions" style="display:none">
+          <span class="time-hint">14:00 · 10:00</span>
+          <button class="clear-btn" id="clear-dates">Clear</button>
+        </div>
+        <div class="price-breakdown" id="price-breakdown" style="display:none">
+          <div class="price-breakdown-rows" id="price-rows"></div>
+          <div class="price-breakdown-total" id="price-total-row"></div>
+        </div>
+      </div>
+
+    </div><!-- /.step1-controls -->
+
+  </div><!-- /.step1-body -->
+</div>

@@ -1,0 +1,271 @@
+/* ─── PAYMENT — payment card, booking summary, booking confirmed ─── */
+
+/* ─── PAYMENT ─── */
+.payment-card {
+  position: relative;
+  border-radius: 16px;
+  margin-bottom: 1rem;
+}
+.payment-inner {
+  position: relative;
+  z-index: 2;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.price-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #e8f5e9;
+  border-radius: 12px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.psb-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.9rem;
+  color: #006b24;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.psb-val {
+  font-family: var(--font-shadows-into-light);
+  font-size: 2rem;
+  color: #00ab39;
+}
+.card-input-wrap { position: relative; }
+.card-number {
+  padding-right: 3.5rem !important;
+  letter-spacing: 0.1em;
+}
+.card-icons {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.cvv-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cvv-help {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  display: flex;
+  transition: color 150ms;
+}
+.cvv-help:hover { color: #00ab39; }
+.security-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.82rem;
+  color: #888;
+  background: #f0fff4;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+}
+
+/* ─── SUMMARY ─── */
+.summary-card {
+  position: relative;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+}
+.summary-inner {
+  position: relative;
+  z-index: 2;
+  padding: 1.75rem;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed rgba(212, 165, 116, 0.3);
+}
+.summary-row:last-child { border-bottom: none; }
+.sum-label {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.95rem;
+  color: #888;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.sum-val {
+  font-family: var(--font-cabin-sketch);
+  font-size: 1rem;
+  color: #5d4e37;
+  text-align: right;
+}
+.summary-divider {
+  height: 2px;
+  background: rgba(212, 165, 116, 0.4);
+  margin: 0.5rem 0;
+}
+.total-row { padding-top: 1rem; }
+.total-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 1.1rem;
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.total-val {
+  font-family: var(--font-shadows-into-light);
+  font-size: 2.2rem;
+  color: #00ab39;
+}
+
+.btn-confirm {
+  position: relative;
+  width: 100%;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  border-radius: 14px;
+  transition: transform 200ms;
+  overflow: hidden;
+  animation: cta-rock 3.5s ease-in-out infinite;
+}
+.btn-confirm:hover {
+  animation: none;
+  transform: scale(1.06) rotateZ(-3deg) translateY(-3px);
+}
+.btn-confirm:active { transform: scale(0.95); animation: none; }
+@keyframes cta-rock {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-2deg) translateY(-2px); }
+  75% { transform: rotate(2deg) translateY(-1px); }
+}
+.confirm-label {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-cabin-sketch);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Wave underline */
+.wave-line { width: 120px; height: 12px; }
+.wave-line svg { width: 100%; height: 100%; }
+
+/* ─── CONFIRMED ─── */
+.confirmed-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  gap: 1rem;
+}
+.confirmed-circle { width: 90px; height: 90px; }
+.confirmed-circle svg { width: 100%; height: 100%; }
+.conf-ring {
+  stroke-dasharray: 151;
+  stroke-dashoffset: 151;
+  transition: stroke-dashoffset 700ms ease 200ms;
+}
+.conf-check {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  transition: stroke-dashoffset 600ms ease 900ms;
+}
+.confirmed-wrap.show .conf-ring { stroke-dashoffset: 0; }
+.confirmed-wrap.show .conf-check { stroke-dashoffset: 0; }
+.confirmed-title {
+  font-family: var(--font-shadows-into-light);
+  font-size: 2.5rem;
+  color: #00ab39;
+  margin: 0;
+  animation: bounce-in 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s both;
+}
+.confirmed-sub {
+  font-family: var(--font-patrick-hand);
+  font-size: 1.1rem;
+  color: #555;
+  margin: 0;
+  animation: fade-in-up-c 400ms ease 1.4s both;
+}
+@keyframes bounce-in {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes fade-in-up-c {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.confirmed-ref {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.75rem 1.5rem;
+  background: #e8f5e9;
+  border-radius: 12px;
+  animation: fade-in-up-c 400ms ease 1.6s both;
+}
+.ref-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.75rem;
+  color: #006b24;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.ref-val {
+  font-family: var(--font-shadows-into-light);
+  font-size: 1.5rem;
+  color: #00ab39;
+}
+.confirmed-btns {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 1rem;
+  animation: fade-in-up-c 400ms ease 1.8s both;
+}
+.btn-conf-primary,
+.btn-conf-secondary {
+  position: relative;
+  padding: 0.8rem 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  border-radius: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 200ms;
+}
+.btn-conf-primary:hover,
+.btn-conf-secondary:hover { transform: translateY(-3px) scale(1.04); }
+.conf-btn-label {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.conf-btn-label.sec { color: #00ab39; }

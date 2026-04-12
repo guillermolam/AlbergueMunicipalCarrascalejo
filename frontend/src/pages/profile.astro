@@ -28,6 +28,28 @@ const socialAccounts: { provider: string; label: string; icon: string }[] = (
 });
 
 const meta: Record<string, any> = (clerkUser?.unsafeMetadata?.pilgrimProfile as any) ?? {};
+const privateMeta = (clerkUser?.privateMetadata ?? {}) as Record<string, any>;
+// Filter out internal keys (prefix _) and show friendly labels for known keys
+const PRIVATE_LABEL_MAP: Record<string, string> = {
+  reservationRef:   'Ref. de reserva',
+  roomNumber:       'Habitación',
+  bedNumber:        'Cama',
+  checkIn:          'Entrada',
+  checkOut:         'Salida',
+  stayStatus:       'Estado de estancia',
+  credentialNumber: 'N.º credencial',
+  assignedLocker:   'Taquilla asignada',
+  arrivalDate:      'Fecha de llegada',
+  departureDate:    'Fecha de salida',
+  dietaryNotes:     'Dieta',
+  notes:            'Notas del albergue',
+};
+const privateEntries = Object.entries(privateMeta).filter(([k]) => !k.startsWith('_'));
+const hasPrivateMeta = privateEntries.length > 0;
+const docVerified = !!privateMeta.docVerified;
+function friendlyKey(k: string): string {
+  return PRIVATE_LABEL_MAP[k] ?? k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+}
 const initStages: string[] = meta.camino?.stages ?? [];
 const STAGE_KM_LIST: Record<string, number> = {
   s01: 20,
@@ -398,9 +420,12 @@ const BADGES = [
     <div class="right-col">
       <!-- ─── INFO PANELS (above camino) ─── -->
 
+      <!-- ── Top row: Perfil Personal + Contacto Emergencia side-by-side ── -->
+      <div class="panels-top-row">
+
       <!-- Personal Profile Panel -->
-      <div class="info-panel ip-glass">
-        <div class="panel-head">
+      <div class="info-panel ip-glass" data-panel-id="personal">
+        <div class="panel-head drag-handle" title="Arrastrar panel">
           <div class="panel-head-left">
             <svg
               width="15"
@@ -418,89 +443,58 @@ const BADGES = [
             >
             <span class="panel-title">Perfil personal</span>
           </div>
-          <button class="panel-toggle" data-target="panelPersonalForm" aria-expanded="false"
-            >Editar</button
-          >
         </div>
         <div class="panel-display" id="panelPersonalDisplay">
+          <!-- Dynamic personal data pills rendered by JS (renderPersonalDisplay) -->
           <div class="disp-pills" id="dispPersonal">
             <span class="disp-empty">Sin información personal</span>
           </div>
-        </div>
-        <div class="panel-form" id="panelPersonalForm" hidden>
-          <div class="form-grid">
-            <div class="field field-full">
-              <label>Teléfono</label>
-              <div class="phone-outer-p">
-                <div class="phone-wrap-p">
-                  <button
-                    type="button"
-                    class="phone-prefix-p"
-                    id="p-phone-prefix"
-                    aria-haspopup="listbox"
-                    aria-expanded="false"
-                  >
-                    <span id="p-phone-flag">🇪🇸</span>
-                    <span class="p-prefix-code" id="p-phone-dial">+34</span>
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.5"
-                      aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg
-                    >
-                  </button>
-                  <input
-                    type="tel"
-                    id="fPhone"
-                    placeholder="612 345 678"
-                    class="phone-input-p"
-                    inputmode="numeric"
-                  />
-                  <input type="hidden" id="fPhoneCC" value="ES" />
-                </div>
-                <div id="p-phone-drop" class="phone-drop-p" role="listbox">
-                  <input
-                    type="text"
-                    class="phone-drop-search-p"
-                    placeholder="País o +código…"
-                    autocomplete="off"
-                  />
-                  <ul class="phone-drop-list-p"></ul>
-                </div>
+
+          <!-- Bio-only inline edit -->
+          <div class="bio-edit-row" id="bioEditRow">
+            <button class="bio-edit-trigger" id="editBioBtn" aria-expanded="false" title="Editar descripción">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Sobre mí
+            </button>
+            <div class="bio-edit-form" id="bioEditForm" hidden>
+              <textarea id="fBio" rows="3" placeholder="Cuéntanos algo sobre tu camino…"></textarea>
+              <div class="bio-edit-actions">
+                <button class="sketchy-btn" id="saveBioBtn">Guardar</button>
+                <button class="sketchy-btn-ghost" id="cancelBioBtn">Cancelar</button>
               </div>
             </div>
-            <div class="field field-full">
-              <label>Dirección de casa</label>
-              <div class="addr-outer">
-                <input
-                  type="text"
-                  id="fAddress"
-                  placeholder="Calle, ciudad, país…"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-haspopup="listbox"
-                />
-                <ul id="addrDrop" class="addr-drop" role="listbox" hidden></ul>
+          </div>
+
+          <!-- Private metadata — server-rendered (Clerk privateMetadata, staff-only write) -->
+          {hasPrivateMeta && (
+            <div class="private-meta-section">
+              <div class="private-meta-heading">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Del albergue
+              </div>
+              <div class="disp-pills">
+                {privateEntries.map(([key, value]) => (
+                  <span class="disp-pill private-pill">
+                    <span class="private-pill-label">{friendlyKey(key)}</span>
+                    <span class="private-pill-value">{String(value ?? '—')}</span>
+                  </span>
+                ))}
               </div>
             </div>
-            <div class="field field-full">
-              <label>Sobre mí</label><textarea id="fBio" rows="2" placeholder="Cuéntanos algo…"
-              ></textarea>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="sketchy-btn" data-save="personal">Guardar</button>
-            <button class="sketchy-btn-ghost" data-cancel="personal">Cancelar</button>
-          </div>
+          )}
         </div>
+        <div class="panel-resize-grip" aria-hidden="true"></div>
       </div>
 
       <!-- Emergency Contact Panel -->
-      <div class="info-panel ip-glass">
-        <div class="panel-head">
+      <div class="info-panel ip-glass" data-panel-id="emergency">
+        <div class="panel-head drag-handle" title="Arrastrar panel">
           <div class="panel-head-left">
             <svg
               width="15"
@@ -518,7 +512,7 @@ const BADGES = [
             <span class="panel-title">Contacto de emergencia</span>
           </div>
           <button class="panel-toggle" data-target="panelEmForm" aria-expanded="false"
-            >Editar</button
+            >+ Añadir</button
           >
         </div>
         <div class="panel-display" id="panelEmDisplay">
@@ -541,11 +535,14 @@ const BADGES = [
               <label>Relación *</label>
               <select id="emRelation">
                 <option value="">— elige —</option>
-                <option value="pareja">Pareja</option><option value="padre_madre"
-                  >Padre/Madre</option
-                >
-                <option value="hijo_a">Hijo/a</option><option value="hermano_a">Hermano/a</option>
-                <option value="amigo_a">Amigo/a</option><option value="otro">Otro</option>
+                <option value="partner">Pareja</option>
+                <option value="father">Padre</option>
+                <option value="mother">Madre</option>
+                <option value="child">Hijo/a</option>
+                <option value="sibling">Hermano/a</option>
+                <option value="friend">Amigo/a</option>
+                <option value="colleague">Compañero/a</option>
+                <option value="other">Otro</option>
               </select>
             </div>
             <div class="field field-full">
@@ -605,11 +602,70 @@ const BADGES = [
             <button class="sketchy-btn-ghost" data-cancel="emergency">Cancelar</button>
           </div>
         </div>
+        <div class="panel-resize-grip" aria-hidden="true"></div>
+      </div>
+
+      </div><!-- /panels-top-row -->
+
+      <!-- ─── Mis datos Panel (contact + identity, editable by user) ─── -->
+      <div class="info-panel ip-glass" data-panel-id="contact">
+        <div class="panel-head drag-handle" title="Arrastrar panel">
+          <div class="panel-head-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+            <span class="panel-title">Mis datos</span>
+          </div>
+          <button class="panel-toggle" data-target="panelContactForm" aria-expanded="false">Editar</button>
+        </div>
+        <div class="panel-display" id="panelContactDisplay">
+          <div class="disp-pills" id="dispContact">
+            <span class="disp-empty">Sin datos de contacto</span>
+          </div>
+        </div>
+        <div class="panel-form" id="panelContactForm" hidden>
+          <div class="form-grid">
+            <!-- Phone picker -->
+            <div class="field field-full">
+              <label>Teléfono</label>
+              <div class="phone-outer-p">
+                <div class="phone-wrap-p">
+                  <button type="button" class="phone-prefix-p" id="p-phone-prefix" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="p-phone-flag">🇪🇸</span>
+                    <span class="p-prefix-code" id="p-phone-dial">+34</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                  <input type="tel" id="fPhone" placeholder="612 345 678" class="phone-input-p" inputmode="numeric" />
+                  <input type="hidden" id="fPhoneCC" value="ES" />
+                </div>
+                <div id="p-phone-drop" class="phone-drop-p" role="listbox">
+                  <input type="text" class="phone-drop-search-p" placeholder="País o +código…" autocomplete="off" />
+                  <ul class="phone-drop-list-p"></ul>
+                </div>
+              </div>
+            </div>
+            <!-- Nationality -->
+            <div class="field field-full">
+              <label>Nacionalidad</label>
+              <input type="text" id="fNationality" placeholder="Española, Francesa…" />
+            </div>
+            <!-- Note about address/docs -->
+            <div class="field field-full" style="font-size:0.75rem;color:#888;font-style:italic;padding:0.1rem 0;">
+              Dirección y documentos se gestionan durante el proceso de reserva o check-in.
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="sketchy-btn" data-save="contact">Guardar</button>
+            <button class="sketchy-btn-ghost" data-cancel="contact">Cancelar</button>
+          </div>
+        </div>
+        <div class="panel-resize-grip" aria-hidden="true"></div>
       </div>
 
       <!-- Vehicles Panel -->
-      <div class="info-panel ip-glass">
-        <div class="panel-head">
+      <div class="info-panel ip-glass" data-panel-id="vehicles">
+        <div class="panel-head drag-handle" title="Arrastrar panel">
           <div class="panel-head-left">
             <svg
               width="15"
@@ -667,11 +723,12 @@ const BADGES = [
             <button class="sketchy-btn-ghost" data-cancel="gear">Cancelar</button>
           </div>
         </div>
+        <div class="panel-resize-grip" aria-hidden="true"></div>
       </div>
 
       <!-- Belongings Panel -->
-      <div class="info-panel ip-glass">
-        <div class="panel-head">
+      <div class="info-panel ip-glass" data-panel-id="belongings">
+        <div class="panel-head drag-handle" title="Arrastrar panel">
           <div class="panel-head-left">
             <svg
               width="15"
@@ -705,16 +762,39 @@ const BADGES = [
             <div class="form-grid">
               <div class="field">
                 <label>Categoría *</label>
-                <select id="bCategory"
-                  ><option value="">— elige —</option><option value="mochila">Mochila</option
-                  ><option value="medicamentos">Medicamentos</option><option value="electronica"
-                    >Electrónica</option
-                  ><option value="documentacion">Documentación</option><option value="ropa"
-                    >Ropa</option
-                  ><option value="valor">Objetos de valor</option><option value="llaves"
-                    >Llaves</option
-                  ><option value="otro">Otro</option></select
-                >
+                <select id="bCategory">
+                  <option value="">— elige —</option>
+                  <optgroup label="Equipo de camino">
+                    <option value="mochila">Mochila</option>
+                    <option value="bastones">Bastones</option>
+                    <option value="tienda">Tienda de campaña</option>
+                    <option value="saco de dormir">Saco de dormir</option>
+                    <option value="calzado">Calzado</option>
+                  </optgroup>
+                  <optgroup label="Personal">
+                    <option value="ropa">Ropa</option>
+                    <option value="higiene">Higiene personal</option>
+                    <option value="medicacion">Medicación</option>
+                    <option value="botiquin">Botiquín</option>
+                  </optgroup>
+                  <optgroup label="Tecnología">
+                    <option value="electronica">Electrónica</option>
+                    <option value="cargadores">Cargadores</option>
+                  </optgroup>
+                  <optgroup label="Documentos y valores">
+                    <option value="documentos">Documentos</option>
+                    <option value="credencial">Credencial del peregrino</option>
+                    <option value="llaves">Llaves</option>
+                    <option value="efectivo">Efectivo / tarjetas</option>
+                  </optgroup>
+                  <optgroup label="Provisiones">
+                    <option value="comida">Comida y agua</option>
+                  </optgroup>
+                  <optgroup label="Otros">
+                    <option value="accesorios">Accesorios</option>
+                    <option value="otros">Otros</option>
+                  </optgroup>
+                </select>
               </div>
               <div class="field">
                 <label>Cantidad</label><input
@@ -751,11 +831,12 @@ const BADGES = [
             </div>
           </div>
         </div>
+        <div class="panel-resize-grip" aria-hidden="true"></div>
       </div>
 
       <!-- Pets Panel -->
-      <div class="info-panel ip-glass">
-        <div class="panel-head">
+      <div class="info-panel ip-glass" data-panel-id="pets">
+        <div class="panel-head drag-handle" title="Arrastrar panel">
           <div class="panel-head-left">
             <svg
               width="15"
@@ -810,6 +891,7 @@ const BADGES = [
             <button class="sketchy-btn-ghost" data-cancel="pet">Cancelar</button>
           </div>
         </div>
+        <div class="panel-resize-grip" aria-hidden="true"></div>
       </div>
 
       <!-- Camino stages panel -->
@@ -970,6 +1052,24 @@ const BADGES = [
 
   <div id="profileData" data-user-email={email} hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Universal panel-edit modal shell (forms are moved here when opened) -->
+  <div id="panelEditModal" class="item-modal-backdrop" hidden aria-modal="true" role="dialog">
+    <div class="item-modal panel-edit-modal-box">
+      <div class="item-modal-header">
+        <span class="item-modal-title" id="panelEditModalTitle">Editar</span>
+        <button class="item-modal-close" id="panelEditModalClose" aria-label="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="item-modal-body panel-edit-modal-body" id="panelEditModalBody">
+        <!-- form content is moved here dynamically -->
+      </div>
+    </div>
+  </div>
 </Layout>
 
 <style>
@@ -981,8 +1081,8 @@ const BADGES = [
     --gl: #e8f5e9;
     --parchment: #faf7f0;
     --ink: #1a2a1a;
-    --font-hand: 'Patrick Hand', cursive;
-    --font-sketch: 'Cabin Sketch', cursive;
+    --font-hand: var(--font-patrick-hand);
+    --font-sketch: var(--font-cabin-sketch);
   }
 
   /* ── Page ── */
@@ -1307,25 +1407,31 @@ const BADGES = [
   .disp-pills {
     display: flex;
     flex-direction: column;
-    gap: 0.42rem;
-    padding: 0.1rem 0;
+    gap: 0.35rem;
+    padding: 0.15rem 0;
   }
   .disp-pill {
-    display: inline-flex;
+    display: flex;
+    width: 100%;
     align-items: center;
-    gap: 0.45rem;
-    background: rgba(0, 171, 57, 0.22);
-    border: 1px solid rgba(0, 171, 57, 0.35);
-    border-radius: 20px;
-    padding: 0.3rem 0.85rem 0.3rem 0.6rem;
+    gap: 0.55rem;
+    background: rgba(0, 171, 57, 0.10);
+    border: 1.5px solid rgba(0, 171, 57, 0.28);
+    border-radius: 10px;
+    padding: 0.38rem 0.75rem;
     font-family: var(--font-hand);
     font-size: 0.84rem;
     color: var(--gd);
     font-weight: 600;
-    line-height: 1.3;
-    align-self: flex-start;
-    max-width: 100%;
+    line-height: 1.35;
+    box-sizing: border-box;
     word-break: break-word;
+    transition: background 0.15s, box-shadow 0.15s;
+    box-shadow: 0 1px 3px rgba(0, 171, 57, 0.07);
+  }
+  .disp-pill:hover {
+    background: rgba(0, 171, 57, 0.24);
+    box-shadow: 0 2px 8px rgba(0, 171, 57, 0.16);
   }
   .disp-pill[style*='cursor'] {
     cursor: pointer;
@@ -1346,6 +1452,123 @@ const BADGES = [
   .disp-pill a:hover {
     text-decoration: underline;
   }
+
+  /* ── Bio inline edit ─────────────────────────────────────────────── */
+  .bio-edit-row {
+    padding: 0.25rem 0.75rem 0.5rem;
+  }
+  .bio-edit-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-family: var(--font-hand);
+    font-weight: 700;
+    color: var(--gm);
+    background: none;
+    border: 1.5px dashed rgba(0,171,57,0.4);
+    border-radius: 8px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s, border-color 0.15s;
+  }
+  .bio-edit-trigger:hover {
+    opacity: 1;
+    border-color: var(--g);
+    color: var(--gd);
+  }
+  .bio-edit-form {
+    margin-top: 0.5rem;
+  }
+  .bio-edit-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    border: 1.5px solid rgba(0,171,57,0.35);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    font-family: var(--font-hand);
+    font-size: 0.84rem;
+    color: var(--gd);
+    background: rgba(0,171,57,0.04);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .bio-edit-form textarea:focus {
+    border-color: var(--g);
+    background: #fff;
+  }
+  .bio-edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+  }
+
+  /* ── Private metadata section (staff-set, read-only) ─────────────── */
+  .private-meta-section {
+    margin-top: 0.65rem;
+    padding-top: 0.5rem;
+    border-top: 1.5px dashed rgba(0,171,57,0.22);
+  }
+  .private-meta-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-family: var(--font-hand);
+    font-weight: 700;
+    color: var(--gm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.75;
+    margin-bottom: 0.4rem;
+    padding: 0 0.1rem;
+  }
+  .private-pill {
+    cursor: default !important;
+    background: rgba(0, 122, 204, 0.08) !important;
+    border-color: rgba(0, 122, 204, 0.25) !important;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.65rem !important;
+    gap: 0.5rem;
+  }
+  .private-pill-label {
+    font-weight: 700;
+    color: #1a3a5c;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .private-pill-value {
+    color: #2a4a6c;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  /* ── Locked / verified identity field ─────────────────────────────── */
+  .field-locked {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: rgba(0,0,0,0.04);
+    border-color: rgba(0,0,0,0.15) !important;
+  }
+  .doc-verified-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: #2a7a40;
+    background: rgba(0,171,57,0.08);
+    border: 1.5px solid rgba(0,171,57,0.25);
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+  }
+  .doc-verified-notice svg {
+    flex-shrink: 0;
+    color: #00ab39;
+  }
+
   .disp-empty {
     font-family: var(--font-hand);
     font-size: 0.82rem;
@@ -1438,13 +1661,135 @@ const BADGES = [
     word-break: break-word;
   }
 
+  /* ── Item cards grid — Starlight-style 2-col grid ── */
   .gear-chips-wrap {
-    padding: 0.55rem 0.85rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    min-height: 40px;
+    padding: 0.75rem 0.85rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 0.75rem;
+    min-height: 48px;
   }
+
+  /* ── Item card — horizontal icon+title, description below ── */
+  .item-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.85rem 1rem 0.85rem 0.85rem;
+    background: #fff;
+    border: 1.5px solid rgba(0, 171, 57, 0.22);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 171, 57, 0.05);
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    cursor: default;
+  }
+  .item-card:hover {
+    border-color: rgba(0, 171, 57, 0.5);
+    box-shadow: 0 4px 14px rgba(0, 171, 57, 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* Header row: colored icon box + bold title */
+  .item-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .item-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(0, 171, 57, 0.1);
+    border: 1.5px solid rgba(0, 171, 57, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--icon-accent, var(--g));
+    transition: background 0.15s;
+  }
+  .item-card:hover .item-card-icon {
+    background: rgba(0, 171, 57, 0.16);
+  }
+  .item-card-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .item-card-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .item-card-title {
+    font-family: var(--font-sketch);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--gd);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item-card-count-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #f5c842;
+    color: #1a1a1a;
+    font-family: var(--font-hand);
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* Description line */
+  .item-card-desc {
+    font-family: var(--font-hand);
+    font-size: 0.78rem;
+    color: #777;
+    margin: 0;
+    line-height: 1.35;
+    padding-left: calc(36px + 0.6rem); /* indent under the icon */
+  }
+
+  /* Action buttons — top-right corner, appear on hover */
+  .item-card-actions {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 4;
+  }
+  .item-card:hover .item-card-actions { opacity: 1; }
+  .item-card-edit,
+  .item-card-remove {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.13);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.12s, background 0.12s, border-color 0.12s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .item-card-edit:hover  { color: var(--g);  border-color: var(--g);  background: #fff; }
+  .item-card-remove:hover { color: #c00; border-color: #c00; background: #fff; }
+
+  /* Legacy chip styles (kept in case used elsewhere) */
   .gear-chip {
     font-family: var(--font-hand);
     font-size: 0.78rem;
@@ -1457,16 +1802,104 @@ const BADGES = [
     align-items: center;
     gap: 0.3rem;
   }
-  .chip-remove {
+  .chip-remove { background: none; border: none; color: #aaa; cursor: pointer; font-size: 0.7rem; padding: 0; }
+  .chip-remove:hover { color: #c00; }
+
+  /* ── Item edit modal ── */
+  .item-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    backdrop-filter: blur(3px);
+    animation: modalIn 0.18s ease;
+  }
+  .item-modal-backdrop[hidden] {
+    display: none !important;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .item-modal {
+    background: #fff;
+    border-radius: 16px;
+    border: 2px solid rgba(0, 171, 57, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+    animation: modalSlideIn 0.18s ease;
+  }
+  @keyframes modalSlideIn {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .item-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    background: var(--gl);
+    border-bottom: 1px solid rgba(0, 171, 57, 0.15);
+  }
+  .item-modal-title {
+    font-family: var(--font-sketch);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gd);
+    margin: 0;
+  }
+  .item-modal-close {
     background: none;
     border: none;
-    color: #aaa;
     cursor: pointer;
-    font-size: 0.7rem;
-    padding: 0;
+    color: #999;
+    font-size: 1rem;
+    padding: 0 0.25rem;
+    line-height: 1;
+    transition: color 0.12s;
   }
-  .chip-remove:hover {
-    color: #c00;
+  .item-modal-close:hover { color: var(--ink); }
+  .item-modal-body {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+  .item-modal-body .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .item-modal-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(0, 171, 57, 0.1);
+    justify-content: flex-end;
+  }
+
+  /* Panel edit modal overrides */
+  .panel-edit-modal-box {
+    max-width: 560px;
+    width: 100%;
+  }
+  .panel-edit-modal-body {
+    display: block;
+    padding: 0.25rem 0;
+    grid-template-columns: unset;
+  }
+  /* Keep the inline panel-form hidden when not in modal */
+  .panel-form[hidden] { display: none !important; }
+  /* When form is inside the modal, remove extra panel borders */
+  #panelEditModalBody .panel-form {
+    border-top: none;
+    padding: 0.75rem 1rem;
   }
 
   /* Forms */
@@ -1601,6 +2034,69 @@ const BADGES = [
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+  }
+
+  /* ── Top-row: Perfil Personal + Emergencia side-by-side ── */
+  .panels-top-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  @media (max-width: 600px) {
+    .panels-top-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Draggable panels ── */
+  .info-panel[data-panel-id] {
+    position: relative;
+    min-height: 110px;
+    overflow: hidden;
+    transition: box-shadow 0.18s, transform 0.18s, opacity 0.18s;
+  }
+  .drag-handle {
+    cursor: grab;
+    user-select: none;
+  }
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+  .info-panel.panel-dragging {
+    opacity: 0.52;
+    transform: scale(1.015) rotate(0.5deg);
+    box-shadow: 0 12px 36px rgba(0, 171, 57, 0.28) !important;
+    z-index: 200;
+  }
+  .info-panel.panel-drag-over {
+    outline: 2.5px dashed var(--g);
+    outline-offset: 2px;
+    background: rgba(0, 171, 57, 0.05) !important;
+  }
+
+  /* ── Resize grip ── */
+  .panel-resize-grip {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 22px;
+    height: 22px;
+    cursor: se-resize;
+    z-index: 10;
+    border-bottom-right-radius: 14px;
+    background: repeating-linear-gradient(
+      -45deg,
+      rgba(0, 171, 57, 0.25) 0px,
+      rgba(0, 171, 57, 0.25) 1.5px,
+      transparent 1.5px,
+      transparent 4px
+    );
+    opacity: 0.7;
+    transition: opacity 0.15s;
+  }
+  .info-panel[data-panel-id]:hover .panel-resize-grip {
+    opacity: 1;
   }
 
   /* Camino panel */
@@ -2259,1536 +2755,164 @@ const BADGES = [
   }
 </style>
 
+<!-- Global styles for JS-created elements (Astro scoped styles won't reach them) -->
+<style is:global>
+  /* ── disp-pill rows: icon + value side-by-side ── */
+  .disp-pills .disp-pill {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.55rem;
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 171, 57, 0.10);
+    border: 1.5px solid rgba(0, 171, 57, 0.28);
+    border-radius: 10px;
+    padding: 0.38rem 0.75rem;
+    font-weight: 600;
+    line-height: 1.35;
+    transition: background 0.15s;
+  }
+  .disp-pills .disp-pill:hover {
+    background: rgba(0, 171, 57, 0.22);
+  }
+  .disp-pills .disp-pill svg {
+    flex-shrink: 0;
+    display: block;
+    opacity: 0.7;
+    color: var(--gm, #2d5a3d);
+  }
+  .disp-pills .disp-pill a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .disp-pills .disp-pill a:hover { text-decoration: underline; }
+  /* Relation badge inline next to name in emergency contact */
+  .disp-pills .disp-pill .em-relation-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 171, 57, 0.14);
+    border: 1.5px solid rgba(0, 171, 57, 0.35);
+    border-radius: 20px;
+    padding: 1px 9px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--gd, #1a3a2e);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── item cards (JS-created) ── */
+  .gear-chips-wrap .item-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.85rem 1rem 0.85rem 0.85rem;
+    background: #fff;
+    border: 1.5px solid rgba(0, 171, 57, 0.22);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 171, 57, 0.05);
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    position: relative;
+    cursor: default;
+  }
+  .gear-chips-wrap .item-card:hover {
+    border-color: rgba(0, 171, 57, 0.5);
+    box-shadow: 0 4px 14px rgba(0, 171, 57, 0.12);
+    transform: translateY(-2px);
+  }
+  .gear-chips-wrap .item-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .gear-chips-wrap .item-card-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 8px;
+    background: rgba(0, 171, 57, 0.1);
+    border: 1.5px solid rgba(0, 171, 57, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--icon-accent, var(--g, #00ab39));
+    transition: background 0.15s;
+  }
+  .gear-chips-wrap .item-card:hover .item-card-icon {
+    background: rgba(0, 171, 57, 0.18);
+  }
+  .gear-chips-wrap .item-card-icon svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+  }
+  .gear-chips-wrap .item-card-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .gear-chips-wrap .item-card-title {
+    font-weight: 700;
+    color: var(--gd, #1a3a2e);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gear-chips-wrap .item-card-count-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #f5c842;
+    color: #1a1a1a;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .gear-chips-wrap .item-card-desc {
+    font-size: 0.78rem;
+    color: #777;
+    margin: 0;
+    line-height: 1.35;
+    padding-left: calc(36px + 0.6rem);
+  }
+  .gear-chips-wrap .item-card-actions {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 4;
+  }
+  .gear-chips-wrap .item-card:hover .item-card-actions { opacity: 1; }
+  .gear-chips-wrap .item-card-edit,
+  .gear-chips-wrap .item-card-remove {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(0,0,0,0.13);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.12s, background 0.12s, border-color 0.12s;
+  }
+  .gear-chips-wrap .item-card-edit:hover  { color: #00ab39; border-color: #00ab39; background: #fff; }
+  .gear-chips-wrap .item-card-remove:hover { color: #c00; border-color: #c00; background: #fff; }
+</style>
+
 <script>
-  // ── Clerk helpers ──────────────────────────────────────────────────────────
-  type ClerkUser = {
-    imageUrl: string;
-    firstName: string | null;
-    lastName: string | null;
-    unsafeMetadata: Record<string, unknown>;
-    publicMetadata: Record<string, unknown>;
-    update(d: Record<string, unknown>): Promise<void>;
-    setProfileImage(d: { file: File }): Promise<void>;
-  };
-  async function clerkUser(): Promise<ClerkUser | null> {
-    const w = window as any;
-    if (w.Clerk?.user) return w.Clerk.user;
-    try {
-      await w.Clerk?.load?.();
-    } catch {}
-    return (window as any).Clerk?.user ?? null;
-  }
-  async function loadMeta(): Promise<Record<string, any>> {
-    const u = await clerkUser();
-    // personal/camino/badges from unsafeMetadata (client-writable)
-    const cloud = (u?.unsafeMetadata?.pilgrimProfile as any) ?? {};
-    // safety-critical fields from publicMetadata (server-writable, admin-readable)
-    const pub = (u?.publicMetadata ?? {}) as Record<string, any>;
-    try {
-      const local = JSON.parse(localStorage.getItem('pilgrim_profile') ?? '{}');
-      // publicMetadata wins over unsafeMetadata for overlapping keys
-      return { ...local, ...cloud, ...pub };
-    } catch {
-      return { ...cloud, ...pub };
-    }
-  }
-  async function saveMeta(patch: Record<string, any>): Promise<void> {
-    const u = await clerkUser();
-    if (!u) {
-      showToast('Sin sesión');
-      return;
-    }
-    // Clerk's update() overwrites the ENTIRE unsafeMetadata object — spread both
-    // the top-level object (to preserve any other keys Clerk may store there)
-    // and the nested pilgrimProfile (to do a partial-patch of our data).
-    const topLevel = u.unsafeMetadata ?? {};
-    const curProfile = (topLevel.pilgrimProfile as Record<string, any>) ?? {};
-    await u.update({
-      unsafeMetadata: { ...topLevel, pilgrimProfile: { ...curProfile, ...patch } },
-    });
-    showToast('Guardado');
-  }
-
-  async function savePublicMeta(section: string, data: unknown): Promise<void> {
-    const res = await fetch('/api/profile/save-public', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section, data }),
-    });
-    if (!res.ok) {
-      showToast('Error al guardar');
-      return;
-    }
-    showToast('Guardado');
-  }
-
-  function showToast(msg: string) {
-    const t = document.getElementById('toast')!;
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2400);
-  }
-
-  // ── Stage / stat helpers ───────────────────────────────────────────────────
-  const KM: Record<string, number> = {
-    s01: 20,
-    s02: 25,
-    s03: 22,
-    s04: 18,
-    s05: 26,
-    s06: 19,
-    s07: 22,
-    s08: 16,
-    s09: 23,
-    s10: 24,
-    s11: 12,
-    s12: 22,
-    s13: 21,
-    s14: 8,
-    s15: 33,
-    s16: 14,
-    s17: 26,
-    s18: 24,
-    s19: 20,
-    s20: 18,
-    s21: 22,
-    s22: 26,
-    s23: 30,
-    s24: 27,
-    s25: 22,
-    s26: 22,
-    s27: 25,
-    s28: 29,
-    s29: 30,
-    s30: 21,
-    s31: 32,
-    s32: 24,
-    s33: 29,
-    s34: 21,
-    s35: 18,
-    s36: 22,
-    s37: 25,
-    s38: 29,
-    s39: 19,
-    s40: 20,
-  };
-  const BADGE_AUTO_CRITERIA: Record<string, (s: string[]) => boolean> = {
-    b_first: (s) => s.length >= 1,
-    b_5stages: (s) => s.length >= 5,
-    b_10stages: (s) => s.length >= 10,
-    b_halfway: (s) => s.length >= 20,
-    b_carrascalejo: (s) => s.includes('s13') || s.includes('s14'),
-    b_complete: (s) => s.includes('s40'),
-  };
-
-  function updateStats(stages: string[], manual: string[]) {
-    const km = stages.reduce((a, id) => a + (KM[id] ?? 0), 0);
-    const pct = Math.min(100, Math.round((stages.length / 40) * 100));
-    const kmPct = Math.min(100, Math.round((km / 910) * 100));
-
-    setText('statNumStages', stages.length + '/40');
-    setText('statNumKm', km + '/910');
-    setWidth('statFillStages', pct);
-    setWidth('statFillKm', kmPct);
-    setText('stageCountPill', stages.length + '/40');
-    setText('cardKmVal', String(km));
-
-    // Badges stat — will be fully updated by renderCoaBadges()
-    const earnedCount =
-      Object.entries(BADGE_AUTO_CRITERIA).filter(([, fn]) => fn(stages)).length + manual.length;
-    const badgePct = Math.round((earnedCount / ALL_BADGES.length) * 100);
-    setText('statNumBadges', earnedCount + '/' + ALL_BADGES.length);
-    setWidth('statFillBadges', badgePct);
-  }
-
-  function renderCoaBadges(
-    stages: string[],
-    manualBadges: string[],
-    profileMeta: Record<string, any>
-  ) {
-    const wrap = document.getElementById('coaBadgesWrap');
-    if (!wrap) return;
-    while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
-
-    // Auto-determine earned
-    const km = stages.reduce((a, id) => a + (KM[id] ?? 0), 0);
-    const autoEarned = new Set<string>();
-    if (stages.length >= 1) autoEarned.add('b_first');
-    if (stages.length >= 5) autoEarned.add('b_5stages');
-    if (stages.length >= 10) autoEarned.add('b_10stages');
-    if (stages.length >= 20) autoEarned.add('b_halfway');
-    if (stages.includes('s13') || stages.includes('s14')) autoEarned.add('b_carrascalejo');
-    if (stages.length === 40) autoEarned.add('b_complete');
-    // Data-driven badges
-    if (profileMeta.emergency?.name && profileMeta.emergency?.phone) autoEarned.add('b_emergency');
-    if (profileMeta.phone && profileMeta.address && profileMeta.bio) autoEarned.add('b_profile');
-    if ((profileMeta.vehicles ?? []).length > 0 || (profileMeta.belongings ?? []).length > 0)
-      autoEarned.add('b_gear');
-    if ((profileMeta.pets ?? []).length > 0) autoEarned.add('b_pet');
-
-    const earned = new Set([...autoEarned, ...manualBadges]);
-
-    const LEVEL_COLORS: Record<string, { fill: string; stroke: string; text: string }> = {
-      bronce: { fill: '#cd7f32', stroke: '#8b4513', text: '#fff' },
-      plata: { fill: '#c0c0c0', stroke: '#808080', text: '#333' },
-      oro: { fill: '#ffd700', stroke: '#b8860b', text: '#333' },
-      legendario: { fill: '#7b2fff', stroke: '#4a0099', text: '#fff' },
-    };
-    const NS = 'http://www.w3.org/2000/svg';
-
-    ALL_BADGES.forEach((b) => {
-      const isEarned = earned.has(b.id);
-      const colors = LEVEL_COLORS[b.level.toLowerCase()] ?? LEVEL_COLORS['bronce'];
-      const wrapper = document.createElement('div');
-      wrapper.className = 'coa-badge' + (isEarned ? ' coa-badge--earned' : ' coa-badge--locked');
-      wrapper.setAttribute('title', b.desc);
-      if (!b.auto) {
-        wrapper.setAttribute('role', 'button');
-        wrapper.setAttribute('tabindex', '0');
-        wrapper.classList.add('coa-badge--manual');
-      }
-
-      // SVG coat-of-arms shield
-      const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;
-      svg.setAttribute('viewBox', '0 0 80 90');
-      svg.setAttribute('aria-hidden', 'true');
-      svg.setAttribute('class', 'coa-shield');
-
-      // Shield background
-      const shieldBg = document.createElementNS(NS, 'path');
-      shieldBg.setAttribute('d', 'M5,5 L75,5 L75,52 Q75,73 40,87 Q5,73 5,52 Z');
-      shieldBg.setAttribute('fill', isEarned ? colors.fill : '#e0e0e0');
-      shieldBg.setAttribute('stroke', isEarned ? colors.stroke : '#b0b0b0');
-      shieldBg.setAttribute('stroke-width', '2.5');
-      svg.appendChild(shieldBg);
-
-      // Inner border decorative line
-      const innerBorder = document.createElementNS(NS, 'path');
-      innerBorder.setAttribute('d', 'M11,11 L69,11 L69,51 Q69,69 40,82 Q11,69 11,51 Z');
-      innerBorder.setAttribute('fill', 'none');
-      innerBorder.setAttribute('stroke', isEarned ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.08)');
-      innerBorder.setAttribute('stroke-width', '1.5');
-      svg.appendChild(innerBorder);
-
-      // Horizontal divider line
-      const divider = document.createElementNS(NS, 'line');
-      divider.setAttribute('x1', '11');
-      divider.setAttribute('y1', '32');
-      divider.setAttribute('x2', '69');
-      divider.setAttribute('y2', '32');
-      divider.setAttribute('stroke', isEarned ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.06)');
-      divider.setAttribute('stroke-width', '1');
-      svg.appendChild(divider);
-
-      // Glyph text
-      const glyphEl = document.createElementNS(NS, 'text');
-      glyphEl.setAttribute('x', '40');
-      glyphEl.setAttribute('y', '52');
-      glyphEl.setAttribute('text-anchor', 'middle');
-      glyphEl.setAttribute('dominant-baseline', 'middle');
-      glyphEl.setAttribute('font-family', "'Cabin Sketch', cursive");
-      glyphEl.setAttribute('font-size', b.glyph.length > 2 ? '14' : '22');
-      glyphEl.setAttribute('fill', isEarned ? colors.text : '#bbb');
-      glyphEl.setAttribute('font-weight', '700');
-      glyphEl.textContent = b.glyph;
-      svg.appendChild(glyphEl);
-
-      // Level text at top
-      const levelEl = document.createElementNS(NS, 'text');
-      levelEl.setAttribute('x', '40');
-      levelEl.setAttribute('y', '21');
-      levelEl.setAttribute('text-anchor', 'middle');
-      levelEl.setAttribute('dominant-baseline', 'middle');
-      levelEl.setAttribute('font-family', "'Patrick Hand', cursive");
-      levelEl.setAttribute('font-size', '7');
-      levelEl.setAttribute('fill', isEarned ? 'rgba(255,255,255,0.85)' : '#ccc');
-      levelEl.setAttribute('letter-spacing', '1');
-      levelEl.textContent = b.level.toUpperCase();
-      svg.appendChild(levelEl);
-
-      // Lock overlay if not earned
-      if (!isEarned) {
-        const lockCircle = document.createElementNS(NS, 'circle');
-        lockCircle.setAttribute('cx', '40');
-        lockCircle.setAttribute('cy', '46');
-        lockCircle.setAttribute('r', '12');
-        lockCircle.setAttribute('fill', 'rgba(0,0,0,0.12)');
-        svg.appendChild(lockCircle);
-      }
-
-      wrapper.appendChild(svg);
-
-      // Badge name label
-      const nameEl = document.createElement('span');
-      nameEl.className = 'coa-badge-name';
-      nameEl.textContent = b.name;
-      wrapper.appendChild(nameEl);
-
-      // Manual toggle
-      if (!b.auto) {
-        wrapper.addEventListener('click', async () => {
-          const m = await loadMeta();
-          const mb: string[] = m.manualBadges ?? [];
-          const idx = mb.indexOf(b.id);
-          if (idx >= 0) mb.splice(idx, 1);
-          else mb.push(b.id);
-          await saveMeta({ manualBadges: mb });
-          const stgs = Array.from(
-            document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')
-          ).map((c) => c.value);
-          updateStats(stgs, mb);
-          renderCoaBadges(stgs, mb, m);
-        });
-      }
-
-      wrap.appendChild(wrapper);
-    });
-
-    // Update badge count
-    const countEl = document.getElementById('badgeCountPill');
-    if (countEl) countEl.textContent = `${earned.size}/${ALL_BADGES.length}`;
-    const statFill = document.getElementById('statFillBadges');
-    const statNum = document.getElementById('statNumBadges');
-    if (statFill) statFill.style.width = `${Math.round((earned.size / ALL_BADGES.length) * 100)}%`;
-    if (statNum) statNum.textContent = `${earned.size}`;
-  }
-
-  function setText(id: string, val: string) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
-  }
-  function setWidth(id: string, pct: number) {
-    const el = document.getElementById(id) as HTMLElement | null;
-    if (el) el.style.width = pct + '%';
-  }
-
-  // ── SVG icon builder (DOM API — no innerHTML) ─────────────────────────────
-  type SvgPrimitive = { tag: string; attrs: Record<string, string> };
-  const ICONS: Record<string, SvgPrimitive[]> = {
-    phone: [
-      {
-        tag: 'path',
-        attrs: {
-          d: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.83 12a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.82 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6.09 6.09l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z',
-        },
-      },
-    ],
-    globe: [
-      { tag: 'circle', attrs: { cx: '12', cy: '12', r: '10' } },
-      { tag: 'line', attrs: { x1: '2', y1: '12', x2: '22', y2: '12' } },
-      {
-        tag: 'path',
-        attrs: {
-          d: 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z',
-        },
-      },
-    ],
-    pin: [
-      { tag: 'path', attrs: { d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z' } },
-      { tag: 'circle', attrs: { cx: '12', cy: '10', r: '3' } },
-    ],
-    user: [
-      { tag: 'path', attrs: { d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' } },
-      { tag: 'circle', attrs: { cx: '12', cy: '7', r: '4' } },
-    ],
-    heart: [
-      {
-        tag: 'path',
-        attrs: {
-          d: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z',
-        },
-      },
-    ],
-    mail: [
-      {
-        tag: 'path',
-        attrs: { d: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z' },
-      },
-      { tag: 'polyline', attrs: { points: '22,6 12,13 2,6' } },
-    ],
-    text: [
-      { tag: 'line', attrs: { x1: '21', y1: '6', x2: '3', y2: '6' } },
-      { tag: 'line', attrs: { x1: '15', y1: '12', x2: '3', y2: '12' } },
-      { tag: 'line', attrs: { x1: '17', y1: '18', x2: '3', y2: '18' } },
-    ],
-  };
-  const LABEL_ICON: Record<string, string> = {
-    Teléfono: 'phone',
-    Tel: 'phone',
-    País: 'globe',
-    Dirección: 'pin',
-    Ciudad: 'pin',
-    'Sobre mí': 'text',
-    Bio: 'text',
-    Nombre: 'user',
-    Relación: 'heart',
-    Email: 'mail',
-  };
-
-  // Country code → { flag, name } for display
-  const COUNTRY_NAMES: Record<string, { f: string; n: string }> = {
-    ES: { f: '🇪🇸', n: 'España' },
-    FR: { f: '🇫🇷', n: 'France' },
-    DE: { f: '🇩🇪', n: 'Germany' },
-    IT: { f: '🇮🇹', n: 'Italy' },
-    PT: { f: '🇵🇹', n: 'Portugal' },
-    GB: { f: '🇬🇧', n: 'United Kingdom' },
-    IE: { f: '🇮🇪', n: 'Ireland' },
-    NL: { f: '🇳🇱', n: 'Netherlands' },
-    BE: { f: '🇧🇪', n: 'Belgium' },
-    CH: { f: '🇨🇭', n: 'Switzerland' },
-    AT: { f: '🇦🇹', n: 'Austria' },
-    PL: { f: '🇵🇱', n: 'Poland' },
-    SE: { f: '🇸🇪', n: 'Sweden' },
-    NO: { f: '🇳🇴', n: 'Norway' },
-    DK: { f: '🇩🇰', n: 'Denmark' },
-    FI: { f: '🇫🇮', n: 'Finland' },
-    GR: { f: '🇬🇷', n: 'Greece' },
-    RU: { f: '🇷🇺', n: 'Russia' },
-    TR: { f: '🇹🇷', n: 'Turkey' },
-    UA: { f: '🇺🇦', n: 'Ukraine' },
-    US: { f: '🇺🇸', n: 'United States' },
-    CA: { f: '🇨🇦', n: 'Canada' },
-    MX: { f: '🇲🇽', n: 'Mexico' },
-    BR: { f: '🇧🇷', n: 'Brazil' },
-    AR: { f: '🇦🇷', n: 'Argentina' },
-    AU: { f: '🇦🇺', n: 'Australia' },
-    NZ: { f: '🇳🇿', n: 'New Zealand' },
-    JP: { f: '🇯🇵', n: 'Japan' },
-    KR: { f: '🇰🇷', n: 'South Korea' },
-    CN: { f: '🇨🇳', n: 'China' },
-    IN: { f: '🇮🇳', n: 'India' },
-    ZA: { f: '🇿🇦', n: 'South Africa' },
-    MA: { f: '🇲🇦', n: 'Morocco' },
-    EG: { f: '🇪🇬', n: 'Egypt' },
-    SA: { f: '🇸🇦', n: 'Saudi Arabia' },
-    AE: { f: '🇦🇪', n: 'UAE' },
-    CL: { f: '🇨🇱', n: 'Chile' },
-    CO: { f: '🇨🇴', n: 'Colombia' },
-    PE: { f: '🇵🇪', n: 'Peru' },
-  };
-  function countryDisplay(code: string): string {
-    const c = COUNTRY_NAMES[code];
-    return c ? c.f + '\u00a0' + c.n : code;
-  }
-  function makeSvgIcon(type: string): SVGSVGElement {
-    const NS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;
-    svg.setAttribute('width', '13');
-    svg.setAttribute('height', '13');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '2');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.setAttribute('aria-hidden', 'true');
-    (ICONS[type] ?? ICONS['user']).forEach(({ tag, attrs }) => {
-      const el = document.createElementNS(NS, tag);
-      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-      svg.appendChild(el);
-    });
-    return svg;
-  }
-
-  // ── Display renderers (DOM API, no innerHTML for user data) ────────────────
-  function renderDispGrid(elId: string, rows: [string, string][]) {
-    const container = document.getElementById(elId)!;
-    while (container.firstChild) container.removeChild(container.firstChild);
-    const hasData = rows.some(([, v]) => v && v !== '—');
-    if (!hasData) {
-      const emp = document.createElement('span');
-      emp.className = 'disp-empty';
-      emp.textContent = 'Sin información';
-      container.appendChild(emp);
-      return;
-    }
-    rows.forEach(([lbl, val]) => {
-      if (!val) return;
-      const pill = document.createElement('span');
-      pill.className = 'disp-pill';
-
-      // Icon only (no label text)
-      pill.appendChild(makeSvgIcon(LABEL_ICON[lbl] ?? 'user'));
-
-      // Value: link for phone/email, clickable for address, plain text otherwise
-      const isPhone = lbl === 'Teléfono' || lbl === 'Tel';
-      const isEmail = lbl === 'Email';
-      const isAddr = lbl === 'Dirección';
-
-      if (isPhone) {
-        const a = document.createElement('a');
-        a.href = `tel:${val.replace(/\s/g, '')}`;
-        a.textContent = val;
-        pill.appendChild(a);
-      } else if (isEmail) {
-        const a = document.createElement('a');
-        a.href = `mailto:${val}`;
-        a.textContent = val;
-        pill.appendChild(a);
-      } else if (isAddr) {
-        pill.setAttribute('style', 'cursor:pointer');
-        pill.setAttribute('title', 'Ver distancia desde casa');
-        pill.setAttribute('role', 'button');
-        pill.setAttribute('tabindex', '0');
-        pill.appendChild(document.createTextNode(val));
-        pill.addEventListener('click', () => openAddrDistModal(val));
-        pill.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') openAddrDistModal(val);
-        });
-      } else {
-        pill.appendChild(document.createTextNode(val));
-      }
-
-      container.appendChild(pill);
-    });
-  }
-
-  function makeChipEl(label: string, onRemove?: () => void) {
-    const chip = document.createElement('span');
-    chip.className = 'gear-chip';
-    chip.appendChild(document.createTextNode(label + ' '));
-    if (onRemove) {
-      const btn = document.createElement('button');
-      btn.className = 'chip-remove';
-      btn.textContent = '×';
-      btn.setAttribute('aria-label', 'Eliminar');
-      btn.addEventListener('click', onRemove);
-      chip.appendChild(btn);
-    }
-    return chip;
-  }
-  function renderChipWrap(
-    wrapId: string,
-    items: ReturnType<typeof makeChipEl>[],
-    emptyText: string
-  ) {
-    const wrap = document.getElementById(wrapId)!;
-    if (!wrap) return;
-    while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
-    if (!items.length) {
-      const emp = document.createElement('span');
-      emp.className = 'disp-empty';
-      emp.textContent = emptyText;
-      wrap.appendChild(emp);
-      return;
-    }
-    items.forEach((el) => wrap.appendChild(el));
-  }
-  function renderVehicles(meta: Record<string, any>) {
-    const vehicles: any[] = meta.vehicles ?? [];
-    const locker: string = meta.lockerNum ?? '';
-    const chips: ReturnType<typeof makeChipEl>[] = [];
-    if (locker) chips.push(makeChipEl('Taquilla ' + locker));
-    vehicles.forEach((v) =>
-      chips.push(
-        makeChipEl([v.type, v.plate, v.model].filter(Boolean).join(' · '), async () => {
-          const m = await loadMeta();
-          m.vehicles = (m.vehicles ?? []).filter((x: any) => x.id !== v.id);
-          await savePublicMeta('vehicles', m.vehicles);
-          renderVehicles(m);
-          const stages = Array.from(
-            document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')
-          ).map((c) => c.value);
-          renderCoaBadges(stages, m.manualBadges ?? [], m);
-        })
-      )
-    );
-    renderChipWrap('vehicleDisplay', chips, 'Sin vehículos registrados');
-  }
-  function renderBelongings(meta: Record<string, any>) {
-    const items: any[] = meta.belongings ?? [];
-    const chips = items.map((b) =>
-      makeChipEl(b.name + (b.count > 1 ? ' ×' + b.count : ''), async () => {
-        const m = await loadMeta();
-        m.belongings = (m.belongings ?? []).filter((x: any) => x.id !== b.id);
-        await savePublicMeta('belongings', m.belongings);
-        renderBelongings(m);
-        const stages = Array.from(
-          document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')
-        ).map((c) => c.value);
-        renderCoaBadges(stages, m.manualBadges ?? [], m);
-      })
-    );
-    renderChipWrap('belongingsDisplay', chips, 'Sin artículos registrados');
-  }
-  function renderPets(meta: Record<string, any>) {
-    const pets: any[] = meta.pets ?? [];
-    const chips = pets.map((p) =>
-      makeChipEl([p.name, p.species, p.breed].filter(Boolean).join(' · '), async () => {
-        const m = await loadMeta();
-        m.pets = (m.pets ?? []).filter((x: any) => x.id !== p.id);
-        await savePublicMeta('pets', m.pets);
-        renderPets(m);
-        const stages = Array.from(
-          document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')
-        ).map((c) => c.value);
-        renderCoaBadges(stages, m.manualBadges ?? [], m);
-      })
-    );
-    renderChipWrap('petsDisplay', chips, 'Sin mascotas registradas');
-  }
-  function renderGear(meta: Record<string, any>) {
-    renderVehicles(meta);
-    renderBelongings(meta);
-    renderPets(meta);
-  }
-
-  // ── All badge definitions (mirrors frontmatter BADGES + new data-driven ones) ──
-  const ALL_BADGES = [
-    {
-      id: 'b_first',
-      glyph: 'I',
-      name: 'Primera Etapa',
-      desc: 'Completa tu primera etapa',
-      auto: true,
-      level: 'Bronce',
-    },
-    {
-      id: 'b_5stages',
-      glyph: 'V',
-      name: '5 Etapas',
-      desc: 'Completa 5 etapas del camino',
-      auto: true,
-      level: 'Plata',
-    },
-    {
-      id: 'b_10stages',
-      glyph: 'X',
-      name: '10 Etapas',
-      desc: 'Completa 10 etapas del camino',
-      auto: true,
-      level: 'Plata',
-    },
-    {
-      id: 'b_halfway',
-      glyph: '½',
-      name: 'Mitad del Camino',
-      desc: 'Supera la etapa 20',
-      auto: true,
-      level: 'Oro',
-    },
-    {
-      id: 'b_carrascalejo',
-      glyph: 'C',
-      name: 'El Carrascalejo',
-      desc: 'Pasa por el Albergue Municipal',
-      auto: true,
-      level: 'Oro',
-    },
-    {
-      id: 'b_100km',
-      glyph: 'C',
-      name: '100 km',
-      desc: 'Camina más de 100 km en total',
-      auto: false,
-      level: 'Bronce',
-    },
-    {
-      id: 'b_rain',
-      glyph: '~',
-      name: 'Peregrino Mojado',
-      desc: 'Sal a andar bajo la lluvia',
-      auto: false,
-      level: 'Bronce',
-    },
-    {
-      id: 'b_stamps5',
-      glyph: '5S',
-      name: '5 Sellos',
-      desc: 'Colecciona 5 sellos en tu credencial',
-      auto: false,
-      level: 'Plata',
-    },
-    {
-      id: 'b_stamps10',
-      glyph: '10S',
-      name: '10 Sellos',
-      desc: 'Colecciona 10 sellos',
-      auto: false,
-      level: 'Oro',
-    },
-    {
-      id: 'b_social',
-      glyph: '∞',
-      name: 'Espíritu Peregrino',
-      desc: 'Comparte mesa con otros peregrinos',
-      auto: false,
-      level: 'Plata',
-    },
-    {
-      id: 'b_dawn',
-      glyph: '↑',
-      name: 'Madrugador',
-      desc: 'Sal antes de las 6:00 h',
-      auto: false,
-      level: 'Bronce',
-    },
-    {
-      id: 'b_complete',
-      glyph: '★',
-      name: 'Buen Camino',
-      desc: 'Llega a Santiago de Compostela',
-      auto: true,
-      level: 'Legendario',
-    },
-    {
-      id: 'b_emergency',
-      glyph: '🛡',
-      name: 'Siempre Protegido',
-      desc: 'Añade un contacto de emergencia',
-      auto: true,
-      level: 'Bronce',
-    },
-    {
-      id: 'b_profile',
-      glyph: '✓',
-      name: 'Peregrino Completo',
-      desc: 'Completa tu perfil personal',
-      auto: true,
-      level: 'Plata',
-    },
-    {
-      id: 'b_gear',
-      glyph: '⚙',
-      name: 'Bien Equipado',
-      desc: 'Registra tu equipaje',
-      auto: true,
-      level: 'Bronce',
-    },
-    {
-      id: 'b_pet',
-      glyph: '🐾',
-      name: 'Compañero Fiel',
-      desc: 'Registra una mascota',
-      auto: true,
-      level: 'Bronce',
-    },
-  ];
-
-  // ── Countries data (for phone picker) ─────────────────────────────────────
-  const COUNTRIES: { c: string; n: string; f: string; d: string }[] = [
-    { c: 'ES', n: 'España', f: '🇪🇸', d: '+34' },
-    { c: 'FR', n: 'France', f: '🇫🇷', d: '+33' },
-    { c: 'DE', n: 'Germany', f: '🇩🇪', d: '+49' },
-    { c: 'IT', n: 'Italy', f: '🇮🇹', d: '+39' },
-    { c: 'PT', n: 'Portugal', f: '🇵🇹', d: '+351' },
-    { c: 'GB', n: 'United Kingdom', f: '🇬🇧', d: '+44' },
-    { c: 'IE', n: 'Ireland', f: '🇮🇪', d: '+353' },
-    { c: 'NL', n: 'Netherlands', f: '🇳🇱', d: '+31' },
-    { c: 'BE', n: 'Belgium', f: '🇧🇪', d: '+32' },
-    { c: 'CH', n: 'Switzerland', f: '🇨🇭', d: '+41' },
-    { c: 'AT', n: 'Austria', f: '🇦🇹', d: '+43' },
-    { c: 'PL', n: 'Poland', f: '🇵🇱', d: '+48' },
-    { c: 'SE', n: 'Sweden', f: '🇸🇪', d: '+46' },
-    { c: 'NO', n: 'Norway', f: '🇳🇴', d: '+47' },
-    { c: 'DK', n: 'Denmark', f: '🇩🇰', d: '+45' },
-    { c: 'FI', n: 'Finland', f: '🇫🇮', d: '+358' },
-    { c: 'GR', n: 'Greece', f: '🇬🇷', d: '+30' },
-    { c: 'RU', n: 'Russia', f: '🇷🇺', d: '+7' },
-    { c: 'TR', n: 'Turkey', f: '🇹🇷', d: '+90' },
-    { c: 'UA', n: 'Ukraine', f: '🇺🇦', d: '+380' },
-    { c: 'US', n: 'United States', f: '🇺🇸', d: '+1' },
-    { c: 'CA', n: 'Canada', f: '🇨🇦', d: '+1' },
-    { c: 'MX', n: 'Mexico', f: '🇲🇽', d: '+52' },
-    { c: 'BR', n: 'Brazil', f: '🇧🇷', d: '+55' },
-    { c: 'AR', n: 'Argentina', f: '🇦🇷', d: '+54' },
-    { c: 'AU', n: 'Australia', f: '🇦🇺', d: '+61' },
-    { c: 'NZ', n: 'New Zealand', f: '🇳🇿', d: '+64' },
-    { c: 'JP', n: 'Japan', f: '🇯🇵', d: '+81' },
-    { c: 'KR', n: 'South Korea', f: '🇰🇷', d: '+82' },
-    { c: 'CN', n: 'China', f: '🇨🇳', d: '+86' },
-    { c: 'IN', n: 'India', f: '🇮🇳', d: '+91' },
-    { c: 'ZA', n: 'South Africa', f: '🇿🇦', d: '+27' },
-    { c: 'MA', n: 'Morocco', f: '🇲🇦', d: '+212' },
-    { c: 'EG', n: 'Egypt', f: '🇪🇬', d: '+20' },
-    { c: 'SA', n: 'Saudi Arabia', f: '🇸🇦', d: '+966' },
-    { c: 'AE', n: 'UAE', f: '🇦🇪', d: '+971' },
-    { c: 'IL', n: 'Israel', f: '🇮🇱', d: '+972' },
-    { c: 'CL', n: 'Chile', f: '🇨🇱', d: '+56' },
-    { c: 'CO', n: 'Colombia', f: '🇨🇴', d: '+57' },
-    { c: 'PE', n: 'Peru', f: '🇵🇪', d: '+51' },
-  ];
-
-  // ── Profile phone picker ───────────────────────────────────────────────────
-  function initProfilePhonePicker() {
-    const prefixBtn = document.getElementById('p-phone-prefix') as HTMLButtonElement | null;
-    const flagEl = document.getElementById('p-phone-flag') as HTMLElement | null;
-    const dialEl = document.getElementById('p-phone-dial') as HTMLElement | null;
-    const hiddenCC = document.getElementById('fPhoneCC') as HTMLInputElement | null;
-    const drop = document.getElementById('p-phone-drop') as HTMLElement | null;
-    const searchInput = drop?.querySelector('.phone-drop-search-p') as HTMLInputElement | null;
-    const list = drop?.querySelector('.phone-drop-list-p') as HTMLUListElement | null;
-    if (!prefixBtn || !drop || !list || !searchInput) return;
-
-    function renderList(q: string) {
-      const lq = q.toLowerCase();
-      const filtered =
-        q.length < 1
-          ? COUNTRIES.slice(0, 40)
-          : COUNTRIES.filter(
-              (c) =>
-                c.n.toLowerCase().includes(lq) || c.d.includes(lq) || c.c.toLowerCase().includes(lq)
-            );
-      while (list!.firstChild) list!.removeChild(list!.firstChild);
-      filtered.forEach((co) => {
-        const li = document.createElement('li');
-        li.setAttribute('role', 'option');
-        const flag = document.createTextNode(co.f + ' ');
-        const name = document.createTextNode(co.n);
-        const dial = document.createElement('span');
-        dial.className = 'pdl-dial-p';
-        dial.textContent = co.d;
-        li.appendChild(flag);
-        li.appendChild(name);
-        li.appendChild(dial);
-        li.addEventListener('click', () => {
-          if (flagEl) flagEl.textContent = co.f;
-          if (dialEl) dialEl.textContent = co.d;
-          if (hiddenCC) hiddenCC.value = co.c;
-          drop!.classList.remove('open');
-          prefixBtn!.setAttribute('aria-expanded', 'false');
-          searchInput!.value = '';
-          renderList('');
-        });
-        list!.appendChild(li);
-      });
-    }
-
-    prefixBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isOpen = drop.classList.contains('open');
-      drop.classList.toggle('open', !isOpen);
-      prefixBtn.setAttribute('aria-expanded', String(!isOpen));
-      if (!isOpen) {
-        searchInput.focus();
-        renderList('');
-      }
-    });
-    searchInput.addEventListener('input', () => renderList(searchInput.value));
-    document.addEventListener('click', (e) => {
-      if (!drop.contains(e.target as Node) && e.target !== prefixBtn) {
-        drop.classList.remove('open');
-        prefixBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-    renderList('');
-  }
-
-  // ── Address autocomplete (Nominatim OSM) ────────────────────────────────
-  function initAddressAutocomplete() {
-    const input = document.getElementById('fAddress') as HTMLInputElement | null;
-    const drop = document.getElementById('addrDrop') as HTMLUListElement | null;
-    if (!input || !drop) return;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    function closeDrop() {
-      drop.hidden = true;
-    }
-    function clearDrop() {
-      while (drop.firstChild) drop.removeChild(drop.firstChild);
-    }
-
-    async function fetchSuggestions(q: string) {
-      if (q.length < 3) {
-        closeDrop();
-        return;
-      }
-      clearDrop();
-      const loading = document.createElement('li');
-      loading.className = 'addr-drop-loading';
-      loading.textContent = 'Buscando…';
-      drop.appendChild(loading);
-      drop.hidden = false;
-
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=5&accept-language=es`;
-        const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
-        const data = (await res.json()) as Array<{ display_name: string }>;
-        clearDrop();
-        if (!data.length) {
-          closeDrop();
-          return;
-        }
-        const NS = 'http://www.w3.org/2000/svg';
-        data.forEach((item) => {
-          const li = document.createElement('li');
-          li.setAttribute('role', 'option');
-          const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;
-          svg.setAttribute('width', '13');
-          svg.setAttribute('height', '13');
-          svg.setAttribute('viewBox', '0 0 24 24');
-          svg.setAttribute('fill', 'none');
-          svg.setAttribute('stroke', 'currentColor');
-          svg.setAttribute('stroke-width', '2');
-          svg.setAttribute('aria-hidden', 'true');
-          const p1 = document.createElementNS(NS, 'path');
-          p1.setAttribute('d', 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z');
-          const circle = document.createElementNS(NS, 'circle');
-          circle.setAttribute('cx', '12');
-          circle.setAttribute('cy', '10');
-          circle.setAttribute('r', '3');
-          svg.appendChild(p1);
-          svg.appendChild(circle);
-          li.appendChild(svg);
-          li.appendChild(document.createTextNode(item.display_name));
-          li.addEventListener('click', () => {
-            input.value = item.display_name;
-            closeDrop();
-          });
-          drop.appendChild(li);
-        });
-        drop.hidden = false;
-      } catch {
-        closeDrop();
-      }
-    }
-
-    input.addEventListener('input', () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => fetchSuggestions(input.value), 350);
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeDrop();
-    });
-    document.addEventListener('click', (e) => {
-      if (!drop.contains(e.target as Node) && e.target !== input) closeDrop();
-    });
-  }
-
-  // ── Emergency contact phone picker ───────────────────────────────────────
-  function initEmPhonePicker() {
-    const prefixBtn = document.getElementById('em-phone-prefix') as HTMLButtonElement | null;
-    const flagEl = document.getElementById('em-phone-flag') as HTMLElement | null;
-    const dialEl = document.getElementById('em-phone-dial') as HTMLElement | null;
-    const hiddenCC = document.getElementById('emPhoneCC') as HTMLInputElement | null;
-    const drop = document.getElementById('em-phone-drop') as HTMLElement | null;
-    if (!prefixBtn || !drop) return;
-    const searchInput = drop.querySelector<HTMLInputElement>('.phone-drop-search-p')!;
-    const list = drop.querySelector<HTMLUListElement>('.phone-drop-list-p')!;
-    let currentDial = '+34';
-
-    function renderList(q: string) {
-      while (list.firstChild) list.removeChild(list.firstChild);
-      const filtered = COUNTRIES.filter(
-        (c) =>
-          c.n.toLowerCase().includes(q.toLowerCase()) ||
-          c.d.includes(q) ||
-          c.c.toLowerCase().includes(q.toLowerCase())
-      );
-      filtered.forEach((c) => {
-        const li = document.createElement('li');
-        li.setAttribute('role', 'option');
-        li.textContent = `${c.f} ${c.n}  ${c.d}`;
-        li.addEventListener('click', () => {
-          if (flagEl) flagEl.textContent = c.f;
-          if (dialEl) dialEl.textContent = c.d;
-          if (hiddenCC) hiddenCC.value = c.c;
-          currentDial = c.d;
-          drop!.classList.remove('open');
-          prefixBtn!.setAttribute('aria-expanded', 'false');
-          searchInput!.value = '';
-          renderList('');
-        });
-        list!.appendChild(li);
-      });
-    }
-    prefixBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isOpen = drop.classList.contains('open');
-      drop.classList.toggle('open', !isOpen);
-      prefixBtn.setAttribute('aria-expanded', String(!isOpen));
-      if (!isOpen) {
-        searchInput.focus();
-        renderList('');
-      }
-    });
-    searchInput.addEventListener('input', () => renderList(searchInput.value));
-    document.addEventListener('click', (e) => {
-      if (!drop.contains(e.target as Node) && e.target !== prefixBtn) {
-        drop.classList.remove('open');
-        prefixBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-    renderList('');
-  }
-
-  // ── Address distance modal ────────────────────────────────────────────────
-  function openAddrDistModal(addr: string) {
-    const modal = document.getElementById('addrDistModal') as HTMLElement;
-    const addrEl = document.getElementById('addrDistAddress') as HTMLElement;
-    const resEl = document.getElementById('addrDistResult') as HTMLElement;
-    const lblEl = document.getElementById('addrDistLabel') as HTMLElement;
-    if (!modal) return;
-    addrEl.textContent = addr;
-    resEl.textContent = '—';
-    lblEl.textContent = 'Calculando distancia…';
-    modal.hidden = false;
-
-    function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
-      const R = 6371;
-      const dLat = ((lat2 - lat1) * Math.PI) / 180;
-      const dLon = ((lon2 - lon1) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos((lat1 * Math.PI) / 180) *
-          Math.cos((lat2 * Math.PI) / 180) *
-          Math.sin(dLon / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`;
-          const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
-          const data = (await res.json()) as Array<{ lat: string; lon: string }>;
-          if (!data.length) {
-            lblEl.textContent = 'No se encontró la dirección';
-            return;
-          }
-          const homeLat = parseFloat(data[0].lat);
-          const homeLon = parseFloat(data[0].lon);
-          const km = haversine(pos.coords.latitude, pos.coords.longitude, homeLat, homeLon);
-          resEl.textContent = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
-          lblEl.textContent = 'de distancia desde tu ubicación actual a casa';
-        } catch {
-          lblEl.textContent = 'Error calculando distancia';
-        }
-      },
-      () => {
-        lblEl.textContent = 'Permite el acceso a tu ubicación para calcular la distancia';
-      }
-    );
-  }
-
-  document.getElementById('addrDistClose')?.addEventListener('click', () => {
-    const m = document.getElementById('addrDistModal') as HTMLElement;
-    if (m) m.hidden = true;
-  });
-  document.getElementById('addrDistModal')?.addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).hidden = true;
-  });
-
-  // ── Panel toggle (show/hide form) ─────────────────────────────────────────
-  document.querySelectorAll<HTMLButtonElement>('.panel-toggle').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const formId = btn.dataset.target!;
-      const form = document.getElementById(formId)!;
-      const open = !form.hidden;
-      form.hidden = open;
-      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
-    });
-  });
-  document.querySelectorAll<HTMLButtonElement>('[data-cancel]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.cancel!;
-      const panels: Record<string, string> = {
-        personal: 'panelPersonalForm',
-        emergency: 'panelEmForm',
-        locker: 'panelBelongingsForm',
-        gear: 'panelVehicleForm',
-        pet: 'panelPetsForm',
-        camino: 'panelVehicleForm',
-      };
-      const formId = panels[target];
-      if (formId) {
-        const form = document.getElementById(formId);
-        if (form) form.hidden = true;
-      }
-    });
-  });
-
-  // ── Save: personal ────────────────────────────────────────────────────────
-  document.querySelector('[data-save="personal"]')?.addEventListener('click', async () => {
-    const phoneCC = (document.getElementById('fPhoneCC') as HTMLInputElement).value;
-    const phoneDial = (document.getElementById('p-phone-dial') as HTMLElement)?.textContent ?? '';
-    const phoneNum = (document.getElementById('fPhone') as HTMLInputElement).value.trim();
-    const phone = phoneNum ? phoneDial + ' ' + phoneNum : '';
-    const address = (document.getElementById('fAddress') as HTMLInputElement).value.trim();
-    const bio = (document.getElementById('fBio') as HTMLTextAreaElement).value.trim();
-    const meta = await loadMeta();
-    await saveMeta({ phone, phoneCC, address, bio });
-    renderDispGrid('dispPersonal', [
-      ['Teléfono', phone],
-      ['País', meta.country ? countryDisplay(meta.country) : ''],
-      ['Dirección', address],
-      ['Sobre mí', bio],
-    ]);
-    (document.getElementById('panelPersonalForm') as HTMLElement).hidden = true;
-  });
-
-  // ── Save: emergency (→ publicMetadata via API) ────────────────────────────
-  document.querySelector('[data-save="emergency"]')?.addEventListener('click', async () => {
-    const emPhoneDial =
-      (document.getElementById('em-phone-dial') as HTMLElement)?.textContent?.trim() ?? '';
-    const emPhoneNum = (document.getElementById('emPhoneNum') as HTMLInputElement).value.trim();
-    const emPhoneCC = (document.getElementById('emPhoneCC') as HTMLInputElement).value;
-    const emPhone = emPhoneNum ? emPhoneDial + ' ' + emPhoneNum : '';
-    const emName = (document.getElementById('emName') as HTMLInputElement).value.trim();
-    const emRelation = (document.getElementById('emRelation') as HTMLSelectElement).value;
-    const emEmail = (document.getElementById('emEmail') as HTMLInputElement).value.trim();
-    const msgEl = document.getElementById('emValidationMsg') as HTMLElement;
-    const userEmail =
-      (document.getElementById('profileData') as HTMLElement)?.dataset.userEmail ?? '';
-    const userMeta = await loadMeta();
-    const userPhone = userMeta.phone ?? '';
-
-    // Validation
-    const errors: string[] = [];
-    if (!emName) errors.push('Nombre es obligatorio.');
-    if (!emRelation) errors.push('Relación es obligatoria.');
-    if (!emPhoneNum) errors.push('Teléfono es obligatorio.');
-    if (!emEmail) errors.push('Email es obligatorio.');
-    if (emEmail && emEmail.toLowerCase() === userEmail.toLowerCase())
-      errors.push('El email de emergencia no puede ser el mismo que el tuyo.');
-    if (emPhone && userPhone && emPhone.replace(/\s/g, '') === userPhone.replace(/\s/g, ''))
-      errors.push('El teléfono de emergencia no puede ser el mismo que el tuyo.');
-
-    if (errors.length) {
-      msgEl.textContent = errors.join(' ');
-      msgEl.hidden = false;
-      return;
-    }
-    msgEl.hidden = true;
-
-    const em = {
-      name: emName,
-      relation: emRelation,
-      phone: emPhone,
-      phoneCC: emPhoneCC,
-      email: emEmail,
-    };
-    await savePublicMeta('emergency', em);
-    renderDispGrid('dispEmergency', [
-      ['Nombre', em.name],
-      ['Relación', em.relation],
-      ['Tel', em.phone],
-      ['Email', em.email],
-    ]);
-    (document.getElementById('panelEmForm') as HTMLElement).hidden = true;
-    const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(
-      (c) => c.value
-    );
-    renderCoaBadges(stages, userMeta.manualBadges ?? [], { ...userMeta, emergency: em });
-  });
-
-  // ── Save: camino ──────────────────────────────────────────────────────────
-  document.getElementById('saveCaminoBtn')?.addEventListener('click', async () => {
-    const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(
-      (c) => c.value
-    );
-    const route = (document.getElementById('cRoute') as HTMLSelectElement).value;
-    const start = (document.getElementById('cStart') as HTMLInputElement).value;
-    const m = await loadMeta();
-    await saveMeta({ camino: { stages, route, start, origin: m.camino?.origin ?? '' } });
-    updateStats(stages, m.manualBadges ?? []);
-    renderCoaBadges(stages, m.manualBadges ?? [], m);
-    const routeNames: Record<string, string> = {
-      vdlp: 'Vía de la Plata',
-      frances: 'Camino Francés',
-      norte: 'Camino del Norte',
-      portugues: 'Camino Portugués',
-      sana: 'Vía de la Plata + Sanabrés',
-      otro: 'Otro',
-    };
-    setText('cardRouteName', routeNames[route] ?? route);
-  });
-
-  // ── Stage checkboxes (live stat update) ───────────────────────────────────
-  document.querySelectorAll<HTMLInputElement>('.stage-cb').forEach((cb) => {
-    cb.addEventListener('change', async () => {
-      const stages = Array.from(
-        document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')
-      ).map((c) => c.value);
-      const m = await loadMeta();
-      updateStats(stages, m.manualBadges ?? []);
-    });
-  });
-
-  // Badge toggles handled inside renderCoaBadges()
-
-  // ── Avatar upload ─────────────────────────────────────────────────────────
-  document
-    .getElementById('cardArtZone')
-    ?.addEventListener('click', () =>
-      (document.getElementById('avatarInput') as HTMLInputElement).click()
-    );
-  document.getElementById('avatarInput')?.addEventListener('change', async (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    const u = await clerkUser();
-    if (!u) {
-      showToast('Sin sesión');
-      return;
-    }
-    try {
-      await u.setProfileImage({ file });
-      const img = document.querySelector<HTMLImageElement>('.card-avatar-img');
-      const init = document.querySelector<HTMLElement>('.card-avatar-initials');
-      if (img) {
-        img.src = u.imageUrl;
-        img.style.display = 'block';
-      }
-      if (init) init.style.display = 'none';
-      if (!img) {
-        // Create img element if it didn't exist (no avatar before)
-        const newImg = document.createElement('img');
-        newImg.src = u.imageUrl;
-        newImg.alt = 'Foto de perfil';
-        newImg.className = 'card-avatar-img';
-        document.querySelector('.card-art-inner')?.appendChild(newImg);
-      }
-      showToast('Foto actualizada');
-    } catch {
-      showToast('Error al subir la foto');
-    }
-  });
-
-  // ── Gear add buttons (→ publicMetadata via API) ───────────────────────────
-  document.getElementById('addVehicleBtn')?.addEventListener('click', async () => {
-    const type = (document.getElementById('vType') as HTMLSelectElement).value;
-    const plate = (document.getElementById('vPlate') as HTMLInputElement).value.trim();
-    const model = (document.getElementById('vModel') as HTMLInputElement).value.trim();
-    const color = (document.getElementById('vColor') as HTMLInputElement).value.trim();
-    const msgEl = document.getElementById('vehicleValidationMsg') as HTMLElement;
-    const errors: string[] = [];
-    if (!type) errors.push('Tipo es obligatorio.');
-    if (!plate) errors.push('Matrícula es obligatoria.');
-    if (errors.length) {
-      msgEl.textContent = errors.join(' ');
-      msgEl.hidden = false;
-      return;
-    }
-    msgEl.hidden = true;
-    const m = await loadMeta();
-    const vehicles: any[] = m.vehicles ?? [];
-    vehicles.push({ id: 'v' + Date.now(), type, plate, model, color });
-    await savePublicMeta('vehicles', vehicles);
-    m.vehicles = vehicles;
-    (['vPlate', 'vModel', 'vColor'] as const).forEach(
-      (id) => ((document.getElementById(id) as HTMLInputElement).value = '')
-    );
-    (document.getElementById('vType') as HTMLSelectElement).value = '';
-    renderVehicles(m);
-    const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(
-      (c) => c.value
-    );
-    renderCoaBadges(stages, m.manualBadges ?? [], m);
-    (document.getElementById('panelVehicleForm') as HTMLElement).hidden = true;
-    showToast('Vehículo añadido');
-  });
-
-  document.getElementById('addItemBtn')?.addEventListener('click', async () => {
-    const category = (document.getElementById('bCategory') as HTMLSelectElement).value;
-    const name = (document.getElementById('bName') as HTMLInputElement).value.trim();
-    const notes = (document.getElementById('bNotes') as HTMLInputElement).value.trim();
-    const count = Math.max(
-      1,
-      Math.min(100, parseInt((document.getElementById('bCount') as HTMLInputElement).value) || 1)
-    );
-    const msgEl = document.getElementById('itemValidationMsg') as HTMLElement;
-    const errors: string[] = [];
-    if (!category) errors.push('Categoría es obligatoria.');
-    if (!name) errors.push('Nombre es obligatorio.');
-    if (errors.length) {
-      msgEl.textContent = errors.join(' ');
-      msgEl.hidden = false;
-      return;
-    }
-    msgEl.hidden = true;
-    const m = await loadMeta();
-    const belongings: any[] = m.belongings ?? [];
-    belongings.push({ id: 'b' + Date.now(), category, name, notes, count });
-    await savePublicMeta('belongings', belongings);
-    m.belongings = belongings;
-    (['bName', 'bNotes'] as const).forEach(
-      (id) => ((document.getElementById(id) as HTMLInputElement).value = '')
-    );
-    (document.getElementById('bCount') as HTMLInputElement).value = '1';
-    renderBelongings(m);
-    const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(
-      (c) => c.value
-    );
-    renderCoaBadges(stages, m.manualBadges ?? [], m);
-    showToast('Artículo añadido');
-  });
-
-  document.querySelector('[data-save="locker"]')?.addEventListener('click', async () => {
-    const lockerNum = (document.getElementById('lockerNum') as HTMLInputElement).value.trim();
-    await savePublicMeta('lockerNum', lockerNum);
-    const m = await loadMeta();
-    m.lockerNum = lockerNum;
-    renderVehicles(m);
-  });
-
-  // ── Save: pet ─────────────────────────────────────────────────────────────
-  document.getElementById('addPetBtn')?.addEventListener('click', async () => {
-    const petName = (document.getElementById('petName') as HTMLInputElement).value.trim();
-    const petSpecies = (document.getElementById('petSpecies') as HTMLSelectElement).value;
-    const petBreed = (document.getElementById('petBreed') as HTMLInputElement).value.trim();
-    const petChip = (document.getElementById('petChip') as HTMLInputElement).value.trim();
-    const msgEl = document.getElementById('petValidationMsg') as HTMLElement;
-
-    if (!petName || !petSpecies) {
-      msgEl.textContent = 'Nombre y especie son obligatorios.';
-      msgEl.hidden = false;
-      return;
-    }
-    msgEl.hidden = true;
-
-    const m = await loadMeta();
-    const pets: any[] = m.pets ?? [];
-    pets.push({
-      id: Date.now().toString(),
-      name: petName,
-      species: petSpecies,
-      breed: petBreed,
-      chip: petChip,
-    });
-    await savePublicMeta('pets', pets);
-    renderPets({ ...m, pets });
-    const stages = Array.from(document.querySelectorAll<HTMLInputElement>('.stage-cb:checked')).map(
-      (c) => c.value
-    );
-    renderCoaBadges(stages, m.manualBadges ?? [], { ...m, pets });
-    (document.getElementById('petName') as HTMLInputElement).value = '';
-    (document.getElementById('petSpecies') as HTMLSelectElement).value = '';
-    (document.getElementById('petBreed') as HTMLInputElement).value = '';
-    (document.getElementById('petChip') as HTMLInputElement).value = '';
-    (document.getElementById('panelPetsForm') as HTMLElement).hidden = true;
-    showToast('Mascota añadida');
-  });
-
-  // Gear sub-tabs
-  document.querySelectorAll<HTMLButtonElement>('.gear-sub-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.gear-sub-tab').forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
-      ['gItem', 'gLocker'].forEach((id) => {
-        const el = document.getElementById(id) as HTMLElement | null;
-        if (el) el.hidden = id !== tab.dataset.sub;
-      });
-    });
-  });
-
-  // ── Stage detail modal ─────────────────────────────────────────────────────
-  let currentStageId: string | null = null;
-
-  function openStageModal(stageId: string, stageName: string) {
-    currentStageId = stageId;
-    const overlay = document.getElementById('stageModal') as HTMLElement;
-    const title = document.getElementById('stageModalTitle') as HTMLElement;
-    title.textContent = stageName;
-
-    // Load existing detail
-    loadMeta().then((meta) => {
-      const details = (meta.stageDetails ?? {}) as Record<string, any>;
-      const d = details[stageId] ?? {};
-      (document.getElementById('smStartDate') as HTMLInputElement).value = d.startDate ?? '';
-      (document.getElementById('smStartTime') as HTMLInputElement).value = d.startTime ?? '06:00';
-      (document.getElementById('smEndDate') as HTMLInputElement).value = d.endDate ?? '';
-      (document.getElementById('smEndTime') as HTMLInputElement).value = d.endTime ?? '14:00';
-      (document.getElementById('smTransport') as HTMLSelectElement).value =
-        d.transport ?? 'walking';
-      (document.getElementById('smNotes') as HTMLTextAreaElement).value = d.notes ?? '';
-    });
-
-    overlay.hidden = false;
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeStageModal() {
-    const overlay = document.getElementById('stageModal') as HTMLElement;
-    overlay.hidden = true;
-    document.body.style.overflow = '';
-    currentStageId = null;
-  }
-
-  document.getElementById('stageModalClose')?.addEventListener('click', closeStageModal);
-  document.getElementById('stageModalCancel')?.addEventListener('click', closeStageModal);
-  document.getElementById('stageModal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('stageModal')) closeStageModal();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !document.getElementById('stageModal')!.hidden) closeStageModal();
-  });
-
-  document.getElementById('stageModalSave')?.addEventListener('click', async () => {
-    if (!currentStageId) return;
-    const detail = {
-      startDate: (document.getElementById('smStartDate') as HTMLInputElement).value,
-      startTime: (document.getElementById('smStartTime') as HTMLInputElement).value,
-      endDate: (document.getElementById('smEndDate') as HTMLInputElement).value,
-      endTime: (document.getElementById('smEndTime') as HTMLInputElement).value,
-      transport: (document.getElementById('smTransport') as HTMLSelectElement).value,
-      notes: (document.getElementById('smNotes') as HTMLTextAreaElement).value.trim(),
-    };
-    const meta = await loadMeta();
-    const stageDetails = (meta.stageDetails ?? {}) as Record<string, any>;
-    stageDetails[currentStageId] = detail;
-    await saveMeta({ stageDetails });
-    // Mark row as having detail
-    const row = document.querySelector<HTMLElement>(`.stage-row[data-id="${currentStageId}"]`);
-    if (row) row.classList.add('has-detail');
-    closeStageModal();
-  });
-
-  // Attach info button to each stage row
-  document.querySelectorAll<HTMLElement>('.stage-row').forEach((row) => {
-    const stageId = row.dataset.id!;
-    const nameEl = row.querySelector('.stage-name');
-    const stageName = nameEl?.textContent ?? stageId;
-
-    // Add info button to row (after km tag)
-    const infoBtn = document.createElement('button');
-    infoBtn.className = 'stage-info-btn';
-    infoBtn.setAttribute('aria-label', 'Detalles de la etapa');
-    infoBtn.setAttribute('title', 'Añadir fecha y transporte');
-    infoBtn.type = 'button';
-    // Use SVG calendar icon via createElementNS
-    const NS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(NS, 'svg') as SVGSVGElement;
-    svg.setAttribute('width', '13');
-    svg.setAttribute('height', '13');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '2');
-    svg.setAttribute('aria-hidden', 'true');
-    const rect = document.createElementNS(NS, 'rect');
-    rect.setAttribute('x', '3');
-    rect.setAttribute('y', '4');
-    rect.setAttribute('width', '18');
-    rect.setAttribute('height', '18');
-    rect.setAttribute('rx', '2');
-    const line1 = document.createElementNS(NS, 'line');
-    line1.setAttribute('x1', '16');
-    line1.setAttribute('y1', '2');
-    line1.setAttribute('x2', '16');
-    line1.setAttribute('y2', '6');
-    const line2 = document.createElementNS(NS, 'line');
-    line2.setAttribute('x1', '8');
-    line2.setAttribute('y1', '2');
-    line2.setAttribute('x2', '8');
-    line2.setAttribute('y2', '6');
-    const line3 = document.createElementNS(NS, 'line');
-    line3.setAttribute('x1', '3');
-    line3.setAttribute('y1', '10');
-    line3.setAttribute('x2', '21');
-    line3.setAttribute('y2', '10');
-    svg.appendChild(rect);
-    svg.appendChild(line1);
-    svg.appendChild(line2);
-    svg.appendChild(line3);
-    infoBtn.appendChild(svg);
-    infoBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openStageModal(stageId, stageName);
-    });
-    row.appendChild(infoBtn);
-  });
-
-  // ── Boot ──────────────────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', async () => {
-    initProfilePhonePicker();
-    initEmPhonePicker();
-    initAddressAutocomplete();
-    const meta = await loadMeta();
-
-    // Populate personal form
-    if (meta.phone)
-      (document.getElementById('fPhone') as HTMLInputElement).value = meta.phone.replace(
-        /^\+\d+\s*/,
-        ''
-      );
-    if (meta.phoneCC) {
-      const co = COUNTRIES.find((c) => c.c === meta.phoneCC);
-      if (co) {
-        const flagEl = document.getElementById('p-phone-flag');
-        const dialEl = document.getElementById('p-phone-dial');
-        const hiddenCC = document.getElementById('fPhoneCC') as HTMLInputElement | null;
-        if (flagEl) flagEl.textContent = co.f;
-        if (dialEl) dialEl.textContent = co.d;
-        if (hiddenCC) hiddenCC.value = co.c;
-      }
-    }
-    if (meta.address)
-      (document.getElementById('fAddress') as HTMLInputElement).value = meta.address;
-    if (meta.bio) (document.getElementById('fBio') as HTMLTextAreaElement).value = meta.bio;
-    renderDispGrid('dispPersonal', [
-      ['Teléfono', meta.phone ?? ''],
-      ['País', meta.country ? countryDisplay(meta.country) : ''],
-      ['Dirección', meta.address ?? ''],
-      ['Sobre mí', meta.bio ?? ''],
-    ]);
-
-    // Emergency
-    const em = meta.emergency ?? {};
-    if (em.name) (document.getElementById('emName') as HTMLInputElement).value = em.name;
-    if (em.relation)
-      (document.getElementById('emRelation') as HTMLSelectElement).value = em.relation;
-    if (em.phone)
-      (document.getElementById('emPhoneNum') as HTMLInputElement).value = em.phone.replace(
-        /^\+\d+\s*/,
-        ''
-      );
-    if (em.phoneCC) {
-      const co = COUNTRIES.find((c) => c.c === em.phoneCC);
-      if (co) {
-        const emFlagEl = document.getElementById('em-phone-flag');
-        const emDialEl = document.getElementById('em-phone-dial');
-        const emHiddenCC = document.getElementById('emPhoneCC') as HTMLInputElement | null;
-        if (emFlagEl) emFlagEl.textContent = co.f;
-        if (emDialEl) emDialEl.textContent = co.d;
-        if (emHiddenCC) emHiddenCC.value = co.c;
-      }
-    }
-    if (em.email) (document.getElementById('emEmail') as HTMLInputElement).value = em.email;
-    renderDispGrid('dispEmergency', [
-      ['Nombre', em.name ?? ''],
-      ['Relación', em.relation ?? ''],
-      ['Tel', em.phone ?? ''],
-      ['Email', em.email ?? ''],
-    ]);
-
-    // Camino
-    const cam = meta.camino ?? {};
-    if (cam.route) (document.getElementById('cRoute') as HTMLSelectElement).value = cam.route;
-    if (cam.start) (document.getElementById('cStart') as HTMLInputElement).value = cam.start;
-    const stages: string[] = cam.stages ?? [];
-    stages.forEach((id) => {
-      const cb = document.querySelector<HTMLInputElement>(`.stage-cb[value="${id}"]`);
-      if (cb) cb.checked = true;
-    });
-    updateStats(stages, meta.manualBadges ?? []);
-
-    // Gear
-    if (meta.lockerNum)
-      (document.getElementById('lockerNum') as HTMLInputElement).value = meta.lockerNum;
-    renderVehicles(meta);
-    renderBelongings(meta);
-    renderPets(meta);
-    renderCoaBadges(stages, meta.manualBadges ?? [], meta);
-
-    // Mark stage rows that already have details
-    const stageDetails = (meta.stageDetails ?? {}) as Record<string, any>;
-    Object.keys(stageDetails).forEach((id) => {
-      const row = document.querySelector<HTMLElement>(`.stage-row[data-id="${id}"]`);
-      if (row && stageDetails[id].startDate) row.classList.add('has-detail');
-    });
-
-    // Avatar from Clerk (in case SSR was stale)
-    const u = await clerkUser();
-    if (u?.imageUrl) {
-      const img = document.querySelector<HTMLImageElement>('.card-avatar-img');
-      const init = document.querySelector<HTMLElement>('.card-avatar-initials');
-      if (img) {
-        img.src = u.imageUrl;
-        img.style.display = '';
-      }
-      if (init) init.style.display = 'none';
-    }
-  });
+  import '../scripts/profile-island';
 </script>

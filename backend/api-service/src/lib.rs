@@ -1,6 +1,8 @@
 use worker::*;
 
-mod auth;
+// Auth is handled entirely by Clerk — no custom auth worker needed.
+// mod auth;  ← removed
+
 mod booking;
 mod document_validation;
 mod info;
@@ -8,8 +10,10 @@ mod location;
 mod notification;
 mod rate_limiter;
 mod reviews;
-mod security;
 mod shared;
+
+// Security validation moved to middleware (Zod schemas at service boundaries).
+// mod security;  ← removed
 
 /// Default allowed origins for CORS.
 /// TODO: Move to env var `ALLOWED_ORIGINS` (comma-separated) once `Env` is
@@ -65,54 +69,33 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
                 "platform": "cloudflare-workers"
             }))
         })
-        // Auth
-        .get_async("/api/auth/login", auth::handle_login)
-        .get_async("/api/auth/callback", auth::handle_callback)
-        .get_async("/api/auth/logout", auth::handle_logout)
-        .post_async("/api/auth/refresh", auth::handle_refresh)
         // Booking
-        .get_async("/api/bookings", booking::get_bookings)
-        .post_async("/api/bookings", booking::create_booking)
-        .get_async("/api/rooms", booking::get_rooms)
-        .get_async("/api/dashboard/stats", booking::get_dashboard_stats)
-        .get_async("/api/pricing", booking::get_pricing)
-        .get_async("/api/availability/calendar",  booking::get_availability_calendar)
-        .get_async("/api/accommodation/config",   booking::get_accommodation_config)
-        .get_async("/api/accommodation/services", booking::get_services)
-        .get_async("/api/info/hostel",            booking::get_hostel_info)
+        .get_async("/api/bookings",              booking::get_bookings)
+        .post_async("/api/bookings",             booking::create_booking)
+        .get_async("/api/rooms",                 booking::get_rooms)
+        .get_async("/api/dashboard/stats",       booking::get_dashboard_stats)
+        .get_async("/api/pricing",               booking::get_pricing)
+        // Availability calendar — used by the booking wizard calendar widget
+        .get_async("/api/availability",          booking::get_availability)
+        .get_async("/api/availability/calendar", booking::get_availability)
+        .get_async("/api/accommodation/config",  booking::get_accommodation_config)
+        .get_async("/api/accommodation/services",booking::get_services)
+        .get_async("/api/info/hostel",           booking::get_hostel_info)
         // Reviews
         .get_async("/api/reviews/:source", reviews::get_reviews)
-        .get_async("/api/reviews/stats", reviews::get_stats)
-        // Security
-        .post_async("/api/security/scan", security::handle_scan)
-        .post_async("/api/security/encrypt", security::handle_encrypt)
-        .post_async("/api/security/validate", security::handle_validate)
-        .get_async("/api/security/status", security::handle_status)
-        // Rate Limiter
-        .post_async("/api/rate-limit/check", rate_limiter::handle_check)
-        .get_async("/api/rate-limit/status", rate_limiter::handle_status)
-        .post_async("/api/rate-limit/reset", rate_limiter::handle_reset)
+        .get_async("/api/reviews/stats",   reviews::get_stats)
         // Document Validation
-        .post_async(
-            "/api/validate/document",
-            document_validation::handle_document,
-        )
-        .post_async("/api/validate/dni", document_validation::handle_dni)
-        .post_async("/api/validate/nie", document_validation::handle_nie)
-        .post_async(
-            "/api/validate/passport",
-            document_validation::handle_passport,
-        )
-        // Notification
-        .post_async("/api/notifications/send", notification::handle_send)
-        .post_async(
-            "/api/notifications/booking-confirmation",
-            notification::handle_booking_confirmation,
-        )
+        .post_async("/api/validate/document", document_validation::handle_document)
+        .post_async("/api/validate/dni",      document_validation::handle_dni)
+        .post_async("/api/validate/nie",      document_validation::handle_nie)
+        .post_async("/api/validate/passport", document_validation::handle_passport)
+        // Notifications
+        .post_async("/api/notifications/send",                 notification::handle_send)
+        .post_async("/api/notifications/booking-confirmation", notification::handle_booking_confirmation)
         // Location
-        .get_async("/api/countries/:code", location::get_country)
-        .get_async("/api/countries", location::list_countries)
-        .get_async("/api/location/search", location::search_locations)
+        .get_async("/api/countries/:code",  location::get_country)
+        .get_async("/api/countries",        location::list_countries)
+        .get_async("/api/location/search",  location::search_locations)
         // Info on Arrival
         .get_async("/api/info/:category", info::handle_info)
         .run(req, env)

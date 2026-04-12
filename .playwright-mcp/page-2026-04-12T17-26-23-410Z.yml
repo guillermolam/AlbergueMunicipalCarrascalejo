@@ -1,0 +1,329 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - img
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Albergue Municipal El Carrascalejo Albergue Municipal de El Carrascalejo Camino de Santiago" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "Albergue Municipal El Carrascalejo" [ref=e5]
+        - generic [ref=e6]:
+          - generic [ref=e7]: Albergue Municipal de El Carrascalejo
+          - generic [ref=e8]: Camino de Santiago
+      - generic [ref=e10]:
+        - button "Español" [ref=e11] [cursor=pointer]:
+          - img
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - text: Español
+            - img [ref=e17]
+        - link "Entrar" [ref=e19] [cursor=pointer]:
+          - /url: /auth
+          - img
+          - generic [ref=e20]:
+            - img [ref=e21]
+            - text: Entrar
+    - generic [ref=e24]:
+      - link "Inicio" [ref=e25] [cursor=pointer]:
+        - /url: /
+      - link "Reservar" [ref=e26] [cursor=pointer]:
+        - /url: /book
+      - link "El Camino" [ref=e27] [cursor=pointer]:
+        - /url: /camino
+      - link "Información" [ref=e28] [cursor=pointer]:
+        - /url: /info
+      - link "Dashboard" [ref=e29] [cursor=pointer]:
+        - /url: /dashboard
+      - generic [ref=e30]:
+        - link "Acceso" [ref=e31] [cursor=pointer]:
+          - /url: /auth
+          - img [ref=e32]
+          - text: Acceso
+        - generic [ref=e35]:
+          - button "ES" [ref=e36] [cursor=pointer]
+          - button "EN" [ref=e37] [cursor=pointer]
+  - main [ref=e38]:
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - img [ref=e44]
+        - heading "¡Bienvenido!" [level=2] [ref=e47]
+        - generic [ref=e48]:
+          - heading "Peregrino" [level=3] [ref=e49]
+          - img [ref=e50]
+        - paragraph [ref=e52]:
+          - text: Your resting place on the historic
+          - link "Via de la Plata" [ref=e53] [cursor=pointer]:
+            - /url: /camino
+          - text: route through Extremadura.
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - img
+            - generic [ref=e57]:
+              - generic [ref=e58]: PRICE
+              - generic [ref=e59]: €15
+              - generic [ref=e60]: /night
+          - generic [ref=e61]:
+            - img
+            - generic [ref=e63]:
+              - generic [ref=e64]: BEDS
+              - generic [ref=e65]: 24/24
+              - generic [ref=e66]: available tonight
+        - link "Start Booking Now" [ref=e68] [cursor=pointer]:
+          - /url: /book
+          - img
+          - generic [ref=e69]: Start Booking Now
+        - list [ref=e71]:
+          - listitem [ref=e72]:
+            - img [ref=e73]
+            - text: 2 dormitories with 12 beds each
+          - listitem [ref=e76]:
+            - img [ref=e77]
+            - text: Historic Camino route location
+          - listitem [ref=e80]:
+            - img [ref=e81]
+            - text: Modern facilities, warm hospitality
+      - generic [ref=e84]:
+        - link "✨ Tell me more..." [ref=e85] [cursor=pointer]:
+          - /url: /info
+          - img
+          - generic [ref=e86]:
+            - generic [ref=e87]: ✨
+            - text: Tell me more...
+        - generic [ref=e89]:
+          - img
+          - img [ref=e90]
+          - img [ref=e92]
+          - img [ref=e94]
+          - img [ref=e96]
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - img "The Journey" [ref=e100]
+              - generic [ref=e102]:
+                - img
+                - generic [ref=e103]:
+                  - generic [ref=e104]:
+                    - text: The Journey
+                    - img [ref=e105]
+                  - generic [ref=e107]: Hiking & Nature
+            - generic [ref=e108]:
+              - img "Mérida" [ref=e109]
+              - generic [ref=e111]:
+                - img
+                - generic [ref=e112]:
+                  - generic [ref=e113]:
+                    - text: Mérida
+                    - img [ref=e114]
+                  - generic [ref=e116]: Roman Ruins & Amphitheater
+                  - generic [ref=e117]:
+                    - img [ref=e118]
+                    - text: 35 km away
+            - generic [ref=e121]:
+              - img "Extremadura" [ref=e122]
+              - generic [ref=e124]:
+                - img
+                - generic [ref=e125]:
+                  - generic [ref=e126]:
+                    - text: Extremadura
+                    - img [ref=e127]
+                  - generic [ref=e129]: Natural Landscapes
+                  - generic [ref=e130]:
+                    - img [ref=e131]
+                    - text: All around
+            - generic [ref=e134]:
+              - img "El Carrascalejo" [ref=e135]
+              - generic [ref=e137]:
+                - img
+                - generic [ref=e138]:
+                  - generic [ref=e139]:
+                    - text: El Carrascalejo
+                    - img [ref=e140]
+                  - generic [ref=e142]: Your Destination
+            - generic [ref=e143]:
+              - img "Vía de la Plata" [ref=e144]
+              - generic [ref=e146]:
+                - img
+                - generic [ref=e147]:
+                  - generic [ref=e148]:
+                    - text: Vía de la Plata
+                    - img [ref=e149]
+                  - generic [ref=e151]: Historic Route
+            - button "Previous slide" [ref=e152] [cursor=pointer]:
+              - img [ref=e153]
+            - button "Next slide" [ref=e155] [cursor=pointer]:
+              - img [ref=e156]
+          - generic [ref=e158]:
+            - button "Go to slide 1" [ref=e159] [cursor=pointer]
+            - button "Go to slide 2" [ref=e160] [cursor=pointer]
+            - button "Go to slide 3" [ref=e161] [cursor=pointer]
+            - button "Go to slide 4" [ref=e162] [cursor=pointer]
+            - button "Go to slide 5" [ref=e163] [cursor=pointer]
+  - contentinfo [ref=e164]:
+    - generic [ref=e166]:
+      - generic [ref=e167]:
+        - generic [ref=e168]:
+          - generic [ref=e169]:
+            - img "Albergue de Peregrinos El Carrascalejo" [ref=e171]
+            - generic [ref=e173]: Albergue Municipal de Carrascalejo
+          - paragraph [ref=e174]: Tu refugio en el Camino de Santiago — Vía de la Plata. Alojamiento para peregrinos en el corazón de Extremadura, con ambiente familiar y todas las comodidades para el descanso del caminante.
+          - generic [ref=e179]:
+            - img [ref=e180]
+            - text: Registro Turístico H-CC-0023
+        - generic [ref=e183]:
+          - generic [ref=e184]: Enlaces Rápidos
+          - list [ref=e185]:
+            - listitem [ref=e186]:
+              - link "→ Inicio" [ref=e187] [cursor=pointer]:
+                - /url: /
+                - generic [ref=e188]: →
+                - text: Inicio
+            - listitem [ref=e189]:
+              - link "→ Reservar" [ref=e190] [cursor=pointer]:
+                - /url: /book
+                - generic [ref=e191]: →
+                - text: Reservar
+            - listitem [ref=e192]:
+              - link "→ Mi Reserva" [ref=e193] [cursor=pointer]:
+                - /url: /dashboard
+                - generic [ref=e194]: →
+                - text: Mi Reserva
+            - listitem [ref=e195]:
+              - link "→ Info del Camino" [ref=e196] [cursor=pointer]:
+                - /url: https://www.gronze.com
+                - generic [ref=e197]: →
+                - text: Info del Camino
+                - img [ref=e198]
+            - listitem [ref=e202]:
+              - link "→ Turismo Extremadura" [ref=e203] [cursor=pointer]:
+                - /url: https://www.turismoextremadura.com
+                - generic [ref=e204]: →
+                - text: Turismo Extremadura
+                - img [ref=e205]
+            - listitem [ref=e209]:
+              - link "→ Derechos del Consumidor" [ref=e210] [cursor=pointer]:
+                - /url: https://www.consumo.gob.es
+                - generic [ref=e211]: →
+                - text: Derechos del Consumidor
+                - img [ref=e212]
+      - generic [ref=e216]:
+        - generic [ref=e217]:
+          - generic [ref=e218]: Contacto
+          - generic [ref=e219]:
+            - img [ref=e220]
+            - link "Paraje Cuesta, s/n 06894 El Carrascalejo Badajoz, España" [ref=e223] [cursor=pointer]:
+              - /url: https://www.openstreetmap.org/?mlat=39.023831&mlon=-6.337627&zoom=16
+              - text: Paraje Cuesta, s/n
+              - text: 06894 El Carrascalejo
+              - text: Badajoz, España
+          - generic [ref=e224]:
+            - img [ref=e225]
+            - generic [ref=e227]:
+              - link "+34 695 90 43 44" [ref=e228] [cursor=pointer]:
+                - /url: tel:+34695904344
+              - link "Contactar por WhatsApp" [ref=e229] [cursor=pointer]:
+                - /url: https://wa.me/34695904344
+                - img [ref=e230]
+                - text: WhatsApp
+          - generic [ref=e232]:
+            - img [ref=e233]
+            - link "elcarrascalejoalbergue@gmail.com" [ref=e236] [cursor=pointer]:
+              - /url: mailto:elcarrascalejoalbergue@gmail.com
+          - generic [ref=e237]:
+            - generic [ref=e238]: Síguenos
+            - generic [ref=e239]:
+              - link "Facebook" [ref=e240] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e241]
+              - link "Instagram" [ref=e243] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e244]
+              - link "Twitter" [ref=e247] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e248]
+              - link "YouTube" [ref=e250] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e251]
+              - link "Favoritos" [ref=e254] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e255]
+        - generic [ref=e257]:
+          - generic [ref=e258]: Certificaciones
+          - generic [ref=e259]:
+            - generic [ref=e260]:
+              - img [ref=e261]
+              - text: Albergue Oficial del Camino de Santiago
+            - generic [ref=e264]:
+              - img [ref=e265]
+              - text: Turismo de Extremadura
+            - generic [ref=e268]:
+              - img [ref=e269]
+              - text: Sello de Calidad Turística
+            - generic [ref=e272]:
+              - img [ref=e273]
+              - text: Accesibilidad Universal
+          - generic [ref=e276]:
+            - generic [ref=e277]:
+              - img [ref=e278]
+              - text: Cumplimiento RGPD
+            - generic [ref=e280]:
+              - img [ref=e281]
+              - text: Cumplimiento LSSI
+            - generic [ref=e283]:
+              - img [ref=e284]
+              - text: Cumplimiento LOPD
+            - generic [ref=e286]:
+              - img [ref=e287]
+              - text: Conexión Segura SSL
+          - generic [ref=e290]:
+            - link "Política de Privacidad" [ref=e291] [cursor=pointer]:
+              - /url: /privacidad
+            - link "Términos y Condiciones" [ref=e292] [cursor=pointer]:
+              - /url: /terminos
+            - link "Política de Cookies" [ref=e293] [cursor=pointer]:
+              - /url: /cookies
+            - link "Aviso Legal" [ref=e294] [cursor=pointer]:
+              - /url: /aviso-legal
+    - generic [ref=e297]:
+      - generic [ref=e298]:
+        - generic [ref=e299]:
+          - generic [ref=e300]: Información Legal
+          - generic [ref=e301]:
+            - text: "CIF:"
+            - text: "Licencia Turística: H-CC-0023"
+            - text: "Seguro RC: Póliza nº"
+        - generic [ref=e302]:
+          - generic [ref=e303]: Derechos del Consumidor
+          - generic [ref=e304]:
+            - link "Oficina de Consumo" [ref=e305] [cursor=pointer]:
+              - /url: https://www.consumo.gob.es
+              - text: Oficina de Consumo
+              - img [ref=e306]
+            - link "Junta de Extremadura" [ref=e310] [cursor=pointer]:
+              - /url: https://www.juntaex.es/consejerias/consumo
+              - text: Junta de Extremadura
+              - img [ref=e311]
+            - link "Resolución de Litigios en Línea (UE)" [ref=e315] [cursor=pointer]:
+              - /url: https://ec.europa.eu/consumers/odr
+              - text: Resolución de Litigios en Línea (UE)
+              - img [ref=e316]
+        - generic [ref=e321]:
+          - text: © 2026 Albergue Municipal
+          - text: de El Carrascalejo.
+          - text: Todos los derechos reservados.
+      - generic [ref=e322]: Hecho con ❤ para los peregrinos del Camino de Santiago
+      - generic [ref=e323]: Este sitio web cumple con las directrices de accesibilidad WCAG 2.1 nivel AA y con la normativa europea de accesibilidad web.
+  - button "Volver arriba":
+    - img
+  - generic [ref=e326]:
+    - button "Menu" [ref=e327]:
+      - img [ref=e329]
+      - generic: Menu
+    - button "Inspect" [ref=e333]:
+      - img [ref=e335]
+      - generic: Inspect
+    - button "Audit" [ref=e337]:
+      - generic [ref=e338]:
+        - img [ref=e339]
+        - img [ref=e342]
+      - generic: Audit
+    - button "Settings" [ref=e345]:
+      - img [ref=e347]
+      - generic: Settings

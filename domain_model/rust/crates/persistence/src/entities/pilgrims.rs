@@ -14,8 +14,23 @@ pub struct Model {
     pub document_support: Option<String>,
     pub gender: String,
     pub nationality: Option<String>,
+    // ── Contact ──────────────────────────────────────────────────────────────
     pub phone_encrypted: String,
     pub email_encrypted: Option<String>,
+    /// Dialing code, e.g. "+34" — not PII, stored in plaintext
+    pub phone_code: Option<String>,
+    /// ISO 3166-1 alpha-2 phone country, e.g. "ES" — not PII, stored in plaintext
+    pub phone_country: Option<String>,
+    // ── Emergency contacts ───────────────────────────────────────────────────
+    /// Legacy flat fields (kept for government submission compat)
+    pub emergency_contact_name_encrypted: Option<String>,
+    pub emergency_contact_phone_encrypted: Option<String>,
+    /// AES-256-GCM encrypted JSON: EmergencyContactEntry[] (multi-contact, structured phone)
+    pub emergency_contacts_encrypted: Option<String>,
+    // ── Identity documents ───────────────────────────────────────────────────
+    /// AES-256-GCM encrypted JSON: PilgrimDocument[] with images
+    pub documents_encrypted: Option<String>,
+    // ── Address ──────────────────────────────────────────────────────────────
     pub address_country: String,
     pub address_street_encrypted: String,
     pub address_street_2_encrypted: Option<String>,
@@ -23,6 +38,7 @@ pub struct Model {
     pub address_postal_code: String,
     pub address_province: Option<String>,
     pub address_municipality_code: Option<String>,
+    // ── Misc ─────────────────────────────────────────────────────────────────
     pub id_photo_url: Option<String>,
     pub language: Option<String>,
     pub consent_given: Option<bool>,

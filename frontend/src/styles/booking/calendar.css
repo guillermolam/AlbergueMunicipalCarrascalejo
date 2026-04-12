@@ -1,0 +1,465 @@
+/* ─── CALENDAR — date picker, date summary bar, price chip, persons picker, person tabs ─── */
+
+/* ─── DATE SUMMARY BAR ─── */
+.date-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background: white;
+  border: 2px solid #d4a574;
+  border-radius: 12px;
+  padding: 0.7rem 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 200ms;
+}
+.date-chip {
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem 0.55rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+  width: 100%;
+  transition: background 200ms, transform 200ms;
+}
+.date-chip.filled {
+  background: #e8f5e9;
+  transform: translateY(-1px);
+}
+.chip-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
+}
+.chip-val {
+  font-family: var(--font-shadows-into-light);
+  font-size: 0.95rem;
+  color: #00ab39;
+  word-break: break-word;
+}
+.nights-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #00ab39;
+  color: white;
+  border-radius: 8px;
+  padding: 0.25rem 0.65rem;
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.88rem;
+  animation: bounce-in-chip 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes bounce-in-chip {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.date-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+.time-hint {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.82rem;
+  color: #888;
+}
+.clear-btn {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.85rem;
+  color: #00ab39;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 150ms;
+}
+.clear-btn:hover { color: #006b24; }
+
+/* ─── PRICE CHIP & BREAKDOWN ─── */
+.price-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #006b24, #00ab39);
+  color: white;
+  border-radius: 10px;
+  padding: 0.4rem 1rem;
+  animation: bounce-in-chip 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.price-chip-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+.price-chip-val {
+  font-family: var(--font-shadows-into-light);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.price-breakdown {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1.5px dashed #d4a574;
+  animation: fade-in-up-uc 300ms ease;
+}
+.price-breakdown-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.82rem;
+  color: #5d4e37;
+  padding: 0.15rem 0.25rem;
+  border-radius: 6px;
+  transition: background 150ms;
+}
+.price-row:hover { background: rgba(0, 171, 57, 0.06); }
+.price-row-night { opacity: 0.7; }
+.price-row-amt { font-weight: 700; color: #00ab39; }
+.price-breakdown-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 2px solid #d4a574;
+  font-family: var(--font-cabin-sketch);
+  font-size: 1rem;
+  color: #5d4e37;
+}
+.price-total-label { font-weight: 700; }
+.price-total-amt {
+  font-weight: 700;
+  color: #00ab39;
+  font-size: 1.15rem;
+}
+
+/* ─── PERSON PICKER ─── */
+.persons-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fbf4;
+  border: 2px solid #a5d6a7;
+  border-radius: 12px;
+  padding: 0.7rem 0.75rem;
+  margin-bottom: 0;
+  min-width: 120px;
+}
+.persons-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.95rem;
+  color: #006b24;
+  font-weight: 700;
+}
+.persons-control {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.persons-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 2px solid #00ab39;
+  background: white;
+  color: #00ab39;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms, color 150ms, transform 100ms;
+  line-height: 1;
+}
+.persons-btn:hover { background: #00ab39; color: white; }
+.persons-btn:active { transform: scale(0.92); }
+.persons-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: white;
+  color: #00ab39;
+}
+.persons-input {
+  width: 48px;
+  text-align: center;
+  font-family: var(--font-shadows-into-light);
+  font-size: 1.3rem;
+  color: #006b24;
+  font-weight: 700;
+  border: 2px solid #00ab39;
+  border-radius: 8px;
+  padding: 0.15rem 0.3rem;
+  background: white;
+    -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: none;
+}
+.persons-input::-webkit-outer-spin-button,
+.persons-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.persons-hint {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.8rem;
+  color: #5d4e37;
+}
+
+/* ─── PILGRIM STEP NAVIGATOR (steps 2 & 3) ─── */
+.pilgrim-step-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  background: #f0fbf4;
+  border: 2px solid #a5d6a7;
+  border-radius: 12px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.pilgrim-step-nav-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.82rem;
+  color: #006b24;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.pilgrim-step-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* ─── PERSON TABS (step 4) ─── */
+.person-tabs-wrap {
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.person-tabs-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.8rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.person-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.person-tab {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  border: 2px solid #00ab39;
+  background: white;
+  color: #00ab39;
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+.person-tab.active { background: #00ab39; color: white; }
+.person-tab.done {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #006b24;
+}
+.person-tab.done::after { content: ' ✓'; }
+
+/* ─── CALENDAR ─── */
+.cal-wrap {
+  position: relative;
+  border-radius: 20px;
+  padding: 0.35rem 0.6rem 0.5rem;
+  min-height: 0;
+}
+.cal-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(3px 4px 6px rgba(0, 0, 0, 0.08));
+}
+.cal-inner {
+  position: relative;
+  z-index: 2;
+}
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+  padding: 0 0.1rem;
+}
+.cal-month-title {
+  font-family: var(--font-cabin-sketch);
+  font-size: 1.15rem;
+  color: #00ab39;
+  margin: 0;
+  transition: opacity 200ms, transform 200ms;
+}
+.cal-nav-btn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 3px solid #00ab39;
+  color: #00ab39;
+  cursor: pointer;
+  transition: background 150ms, transform 150ms;
+  border-radius: 50% 45% 48% 52% / 52% 48% 50% 50%;
+}
+.cal-nav-btn:hover { background: #e8f5e9; transform: scale(1.1); }
+.cal-nav-btn:active { transform: scale(0.92); }
+.nav-circle {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cal-today-btn {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.75rem;
+  color: #00ab39;
+  background: #e8f5e9;
+  border: 2px solid #00ab39;
+  border-radius: 8px;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+.cal-today-btn:hover { background: #00ab39; color: white; transform: scale(1.05); }
+.cal-today-btn:active { transform: scale(0.95); }
+.cal-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.1rem;
+  margin-bottom: 0.2rem;
+  opacity: 0.9;
+}
+.cal-dow-row span {
+  text-align: center;
+  font-family: var(--font-cabin-sketch);
+  font-size: clamp(0.62rem, 1.1vw, 0.82rem);
+  color: #5d4e37;
+  padding: 0.05rem 0;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: clamp(2px, 0.35vw, 4px);
+}
+.cal-day {
+  position: relative;
+  height: clamp(44px, 7.5vh, 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 150ms, box-shadow 150ms;
+  border: none;
+  background: none;
+  padding: 0;
+  gap: 0;
+}
+.cal-day:not(.disabled):hover {
+  transform: scale(1.08);
+  box-shadow: 0 3px 12px rgba(0, 171, 57, 0.15);
+  z-index: 5;
+}
+.cal-day:not(.disabled):active { transform: scale(0.94); }
+.cal-day.disabled { cursor: not-allowed; opacity: 0.5; }
+.cal-day-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cal-day-num {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-patrick-hand);
+  font-size: clamp(0.72rem, 1.4vw, 0.92rem);
+  color: #5d4e37;
+  line-height: 1;
+}
+.cal-day-beds {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-cabin-sketch);
+  font-size: clamp(0.52rem, 1vw, 0.65rem);
+  color: #00ab39;
+  line-height: 1;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+.cal-day-beds.low { color: #ed1c24; font-weight: 700; }
+.cal-day-beds.none { color: #999; }
+.cal-day-price {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-patrick-hand);
+  font-size: clamp(0.5rem, 1vw, 0.62rem);
+  color: #5d4e37;
+  opacity: 0.7;
+  line-height: 1;
+}
+.cal-day.today .cal-day-num { color: white; font-family: var(--font-cabin-sketch); }
+.cal-day.today .cal-day-beds { color: white; opacity: 0.9; }
+.cal-day.today .cal-day-price { color: white; opacity: 0.7; }
+.cal-day.disabled .cal-day-num { color: #ccc; }
+.cal-day.disabled .cal-day-beds,
+.cal-day.disabled .cal-day-price { display: none; }
+.cal-day.in-range {
+  background: rgba(0, 171, 57, 0.1);
+  border-radius: 4px;
+}
+.cal-day.selected .cal-day-num,
+.cal-day.checkin .cal-day-num,
+.cal-day.checkout .cal-day-num { color: white; font-family: var(--font-cabin-sketch); }
+.cal-day.checkin .cal-day-beds,
+.cal-day.checkout .cal-day-beds { color: white; opacity: 0.9; }
+.cal-day.checkin .cal-day-price,
+.cal-day.checkout .cal-day-price { color: white; opacity: 0.7; }
+.cal-day.in-range .cal-day-beds { color: #006b24; }
+.cal-day.in-range .cal-day-price { color: #006b24; opacity: 0.7; }
+.today-dot {
+  position: absolute;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: white;
+  z-index: 3;
+}

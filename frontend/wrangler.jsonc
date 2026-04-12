@@ -60,6 +60,17 @@
     }
   ],
 
+  // ─── R2 Buckets ──────────────────────────────────────────────────────────────
+  // DOCUMENTS: stores uploaded pilgrim ID document images (front / back / photo page).
+  // Create via: wrangler r2 bucket create albergue-documents
+  // After creation, enable public access in the CF dashboard or set a custom domain.
+  "r2_buckets": [
+    {
+      "binding": "DOCUMENTS",
+      "bucket_name": "albergue-documents"
+    }
+  ],
+
   // ─── D1 Database ─────────────────────────────────────────────────────────────
   // ID is created by Terraform (infra/cloudflare.tf) and output via:
   //   terraform output cloudflare_d1_database_id

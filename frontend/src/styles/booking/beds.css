@@ -1,0 +1,423 @@
+/* ─── BEDS — bed/bunk selection grid, night tabs, bed schedule, tooltip, animations ─── */
+
+/* ─── BED SELECTION ─── */
+.bed-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.9rem;
+  color: #5d4e37;
+}
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+.legend-dot.available { background: #fff9f0; border: 2px solid #d4a574; }
+.legend-dot.occupied { background: #f5f5f5; border: 2px solid #e0e0e0; }
+.legend-dot.selected { background: #00ab39; border: 2px solid #006b24; }
+
+.dorm-wrap {
+  position: relative;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+}
+.dorm-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(2px 3px 8px rgba(0, 0, 0, 0.07));
+}
+.dorm-inner {
+  position: relative;
+  z-index: 2;
+  padding: 1.5rem;
+}
+.bunk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 560px) {
+  .bunk-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.bunk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.bunk-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.85rem;
+  color: #5d4e37;
+  font-weight: 700;
+  text-align: center;
+}
+
+.bed-btn {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 200ms, filter 200ms;
+}
+.bed-btn:not([data-state='occupied']):hover { transform: scale(1.06); filter: brightness(1.03); }
+.bed-btn:not([data-state='occupied']):active { transform: scale(0.94); }
+.bed-btn[data-state='occupied'] { cursor: not-allowed; opacity: 0.7; }
+.bed-btn[data-state='selected'] .bed-bg rect {
+  fill: #e8f5e9 !important;
+  stroke: #00ab39 !important;
+  stroke-width: 3 !important;
+}
+.bed-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.bed-pos {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.85rem;
+  color: #5d4e37;
+}
+.occupied-text { color: #aaa; text-decoration: line-through; }
+.bed-selection-hint {
+  text-align: center;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+/* ─── ISO BED GRID (Step 4) ─── */
+.legend-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 2px solid;
+  display: inline-block;
+}
+.dorm-title {
+  font-family: var(--font-cabin-sketch);
+  font-size: 1.05rem;
+  color: #5d4e37;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dorm-range {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: 400;
+}
+.iso-bed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem 0.6rem;
+}
+@media (max-width: 400px) {
+  .iso-bed-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.bunk-cell {
+  position: relative;
+  width: 100%;
+  transition: transform 200ms;
+}
+.bunk-cell:hover { transform: translateY(-3px); }
+.bunk-cell svg { width: 100%; height: auto; display: block; }
+.bunk-cell .bunk-label {
+  text-align: center;
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.72rem;
+  color: #5d4e37;
+  margin-top: 0.15rem;
+  font-weight: 700;
+}
+
+/* Clickable zones within each bunk SVG */
+.bunk-zone {
+  cursor: pointer;
+  transition: opacity 150ms, transform 150ms;
+}
+.bunk-zone:hover:not(.occupied) { opacity: 0.8; transform: scale(1.03); }
+.bunk-zone.occupied { cursor: not-allowed; }
+.bunk-zone.occupied:hover { opacity: 1; }
+.bunk-zone.selected { filter: brightness(1.05); }
+
+/* Bed info card */
+.bed-info-card {
+  margin-top: 1.25rem;
+  background: white;
+  border: 2.5px solid #0071bc;
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  animation: bed-card-pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes bed-card-pop {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.bed-info-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.bed-info-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0071bc;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+}
+.bed-info-header { display: flex; align-items: center; gap: 0.6rem; }
+.bed-info-num {
+  font-family: var(--font-cabin-sketch);
+  font-size: 1.2rem;
+  color: #0071bc;
+  font-weight: 700;
+}
+.bed-info-detail { display: flex; align-items: center; gap: 1rem; }
+.bed-info-position { font-family: var(--font-patrick-hand); font-size: 0.95rem; color: #5d4e37; margin: 0; }
+.bed-info-bunk { font-family: var(--font-patrick-hand); font-size: 0.85rem; color: #888; margin: 0.1rem 0 0; }
+.bed-info-divider {
+  height: 1.5px;
+  background: rgba(0, 113, 188, 0.2);
+  border-top: 1px dashed rgba(0, 113, 188, 0.3);
+}
+.bed-info-dorm { font-family: var(--font-patrick-hand); font-size: 0.9rem; color: #5d4e37; margin: 0; }
+
+.bed-ready {
+  text-align: center;
+  margin-top: 1rem;
+  animation: fade-in-up-uc 400ms ease;
+}
+@keyframes fade-in-up-uc {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.bed-ready-title {
+  font-family: var(--font-shadows-into-light);
+  font-size: 1.4rem;
+  color: #00ab39;
+  margin: 0;
+}
+.bed-ready-sub {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0.2rem 0 0;
+}
+
+.bunk-illus { width: 48px; height: 48px; flex-shrink: 0; }
+.bunk-illus svg { width: 100%; height: 100%; }
+
+/* ─── NIGHT TABS ─── */
+.night-tabs-wrap {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 2px solid #d4a574;
+  border-radius: 14px;
+}
+.night-tabs-label {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5d4e37;
+  margin-bottom: 0.5rem;
+}
+.night-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.night-tab {
+  position: relative;
+  padding: 0.35rem 0.7rem;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.85rem;
+  border: 2px solid #d4a574;
+  border-radius: 10px;
+  background: #fff9f0;
+  color: #5d4e37;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.night-tab:hover { border-color: #00ab39; background: #e8f5e9; }
+.night-tab.active {
+  border-color: #00ab39;
+  background: #00ab39;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 171, 57, 0.2);
+}
+.night-tab.assigned { border-color: #0071bc; background: #e3f2fd; }
+.night-tab.assigned.active { background: #0071bc; color: white; border-color: #0071bc; }
+.night-tab-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+/* ─── BED SCHEDULE ─── */
+.bed-schedule {
+  margin-top: 1rem;
+  background: white;
+  border: 2px solid #d4a574;
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  animation: fade-in-up-uc 350ms ease;
+}
+.bed-schedule-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #00ab39;
+  margin-bottom: 0.5rem;
+}
+.bed-schedule-rows { display: flex; flex-direction: column; gap: 0.3rem; }
+.sched-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.85rem;
+  color: #5d4e37;
+  background: #f9f9f6;
+  border: 1px solid #e8e0d5;
+}
+.sched-night {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: white;
+  background: #006b24;
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+  min-width: 52px;
+  text-align: center;
+}
+.sched-bed { flex: 1; }
+.sched-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 1rem;
+  transition: color 150ms;
+}
+.sched-remove:hover { color: #ed1c24; }
+.sched-empty {
+  font-family: var(--font-patrick-hand);
+  font-size: 0.82rem;
+  color: #bbb;
+  font-style: italic;
+  padding: 0.2rem 0;
+}
+
+/* ─── BED TOOLTIP ─── */
+.bed-tooltip {
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
+  background: rgba(30, 30, 30, 0.92);
+   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  min-width: 180px;
+  max-width: 260px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: opacity 150ms, transform 100ms;
+}
+.bed-tooltip-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid rgba(30, 30, 30, 0.92);
+}
+.bed-tooltip-title {
+  font-family: var(--font-cabin-sketch);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.35rem;
+}
+.bed-tooltip-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-patrick-hand);
+  font-size: 0.82rem;
+  color: #ccc;
+  margin-bottom: 0.3rem;
+}
+.tt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.bed-tooltip-nights { display: flex; flex-direction: column; gap: 0.2rem; }
+.tt-night-row { display: flex; align-items: center; gap: 0.4rem; font-family: var(--font-patrick-hand); font-size: 0.78rem; }
+.tt-night-label { color: #aaa; min-width: 48px; }
+.tt-night-val { color: white; }
+.tt-night-val.avail { color: #a5d6a7; }
+.tt-night-val.unavail { color: #ef9a9a; }
+.tt-night-val.selected { color: #90caf9; }
+
+/* ─── BUNK ANIMATIONS ─── */
+.bunk-cell {
+  animation: bunk-float 4s ease-in-out infinite;
+}
+.bunk-cell:nth-child(2) { animation-delay: -0.7s; }
+.bunk-cell:nth-child(3) { animation-delay: -1.4s; }
+.bunk-cell:nth-child(4) { animation-delay: -2.1s; }
+.bunk-cell:nth-child(5) { animation-delay: -2.8s; }
+.bunk-cell:nth-child(6) { animation-delay: -3.5s; }
+@keyframes bunk-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.bunk-cell:hover {
+  animation: none;
+  transform: translateY(-4px) scale(1.03);
+}

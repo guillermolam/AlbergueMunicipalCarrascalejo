@@ -4,13 +4,14 @@
 import type {
   PilgrimProfile,
   PersonalInfo,
-  EmergencyContact,
+  EmergencyContactEntry,
   MedicalInfo,
   Pilgrimage,
   Booking,
   ValidationResult,
   ValidationError,
   ValidationWarning,
+  PhoneNumber,
 } from '@/types/pilgrim';
 
 import type { CreatePilgrimProfileDto } from '@/types/pilgrim-operations';
@@ -42,9 +43,10 @@ abstract class BaseValidator<T> {
     return emailRegex.test(email);
   }
 
-  protected isValidPhone(phone: string): boolean {
+  protected isValidPhone(phone: string | PhoneNumber): boolean {
+    const phoneStr = typeof phone === 'string' ? phone : `${phone.code ?? ''}${phone.number ?? ''}`;
     const phoneRegex = /^\+?[\d\s\-\(\)]{6,}$/;
-    return phoneRegex.test(phone);
+    return phoneRegex.test(phoneStr);
   }
 
   protected isValidDate(date: Date): boolean {
@@ -211,10 +213,10 @@ export class PersonalInfoValidator extends BaseValidator<PersonalInfo> {
       );
     }
 
-    // Emergency contact validation
-    const emergencyContactValidation = new EmergencyContactValidator().validate(
-      data.emergencyContact
-    );
+    // Emergency contact validation (field is optional — only validate if present)
+    const emergencyContactValidation = data.emergencyContact
+      ? new EmergencyContactValidator().validate(data.emergencyContact)
+      : { isValid: true, errors: [], warnings: [] };
     if (!emergencyContactValidation.isValid) {
       this.errors.push(
         ...emergencyContactValidation.errors.map((error) => ({
@@ -244,8 +246,8 @@ export class PersonalInfoValidator extends BaseValidator<PersonalInfo> {
 /**
  * Emergency contact validator
  */
-export class EmergencyContactValidator extends BaseValidator<EmergencyContact> {
-  validate(data: EmergencyContact): ValidationResult {
+export class EmergencyContactValidator extends BaseValidator<EmergencyContactEntry> {
+  validate(data: EmergencyContactEntry): ValidationResult {
     this.reset();
 
     // Name validation
@@ -265,23 +267,23 @@ export class EmergencyContactValidator extends BaseValidator<EmergencyContact> {
       );
     }
 
-    // Relationship validation
-    if (!data.relationship || data.relationship.trim().length < 2) {
+    // Relation validation (English key — "partner", "father", etc.)
+    if (!data.relation || data.relation.trim().length < 2) {
       this.addError(
-        'relationship',
+        'relation',
         'Please specify the relationship to the emergency contact',
         'REQUIRED',
-        data.relationship
+        data.relation
       );
     }
 
-    // Phone validation
-    if (!data.phone || !this.isValidPhone(data.phone)) {
+    // Phone validation (optional — EmergencyContactEntry.phone is optional)
+    if (data.phone && !this.isValidPhone(data.phone)) {
       this.addError(
         'phone',
         'Please provide a valid phone number for the emergency contact',
         'INVALID_PHONE',
-        data.phone
+        String(data.phone),
       );
     }
 
@@ -292,16 +294,6 @@ export class EmergencyContactValidator extends BaseValidator<EmergencyContact> {
         'Please provide a valid email address for the emergency contact',
         'INVALID_EMAIL',
         data.email
-      );
-    }
-
-    // Country validation
-    if (!data.country || data.country.length < 2) {
-      this.addError(
-        'country',
-        'Please provide the country where the emergency contact is located',
-        'REQUIRED',
-        data.country
       );
     }
 

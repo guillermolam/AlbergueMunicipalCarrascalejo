@@ -41,6 +41,9 @@ pub struct ExtractedData {
     pub document_type:    Option<String>,
     pub nationality:      Option<String>,
     pub date_of_birth:    Option<String>,   // YYYY-MM-DD
+    pub expiry_date:      Option<String>,   // YYYY-MM-DD — from VALIDEZ field on DNI or MRZ
+    /// "M" (masculino) | "F" (femenino) — from SEXO field on Spanish DNI/NIE
+    pub gender:           Option<String>,
     pub home_address:     Option<String>,
     pub country:          Option<String>,
     pub has_photo:        bool,

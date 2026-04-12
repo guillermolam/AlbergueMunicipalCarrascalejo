@@ -5,13 +5,9 @@ members = [
   "booking-service",
   "notification-service",
   "reviews-service",
-  "security-service",
   "document-validation-service",
   "info-on-arrival-service",
   "location-service",
-  "rate-limiter-service",
-  "auth-service",
-  "mqtt-broker-service",
 ]
 
 [workspace.package]

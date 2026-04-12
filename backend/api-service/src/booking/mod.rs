@@ -39,6 +39,62 @@ pub async fn create_booking(mut req: Request, ctx: RouteContext<()>) -> Result<R
     let check_out   = body["check_out"].as_str().unwrap_or("");
     let num_guests  = body["num_guests"].as_i64().unwrap_or(1);
 
+    // ── Booking rule validation (server-side, authoritative) ─────────────────
+    // Read limits from hostel_config; fall back to schema defaults.
+    let config_row = db
+        .prepare("SELECT max_nights_per_booking, max_booking_days_in_advance FROM hostel_config WHERE id = 1")
+        .first::<serde_json::Value>(None)
+        .await?;
+    let max_nights: i64 = config_row.as_ref()
+        .and_then(|r| r["max_nights_per_booking"].as_i64())
+        .unwrap_or(30);
+    let max_advance_days: i64 = config_row.as_ref()
+        .and_then(|r| r["max_booking_days_in_advance"].as_i64())
+        .unwrap_or(365);
+
+    // Validate date formats
+    let re = regex::Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap();
+    if !re.is_match(check_in) || !re.is_match(check_out) {
+        return Response::error("check_in and check_out must be YYYY-MM-DD", 400);
+    }
+    if check_out <= check_in {
+        return Response::error("check_out must be after check_in", 400);
+    }
+
+    // Count nights (simple string comparison works for ISO dates)
+    let nights = {
+        let ci = chrono::NaiveDate::parse_from_str(check_in, "%Y-%m-%d")
+            .map_err(|_| worker::Error::RustError("Invalid check_in date".into()))?;
+        let co = chrono::NaiveDate::parse_from_str(check_out, "%Y-%m-%d")
+            .map_err(|_| worker::Error::RustError("Invalid check_out date".into()))?;
+        (co - ci).num_days()
+    };
+
+    if nights < 1 {
+        return Response::error("check_out must be at least 1 night after check_in", 400);
+    }
+    if nights > max_nights {
+        return Response::error(
+            &format!("Maximum stay is {} nights", max_nights),
+            422,
+        );
+    }
+
+    // Validate not too far in advance
+    let today = chrono::Utc::now().date_naive();
+    let ci_date = chrono::NaiveDate::parse_from_str(check_in, "%Y-%m-%d")
+        .map_err(|_| worker::Error::RustError("Invalid check_in date".into()))?;
+    let days_in_advance = (ci_date - today).num_days();
+    if days_in_advance < 0 {
+        return Response::error("check_in cannot be in the past", 422);
+    }
+    if days_in_advance > max_advance_days {
+        return Response::error(
+            &format!("Bookings can only be made up to {} days in advance", max_advance_days),
+            422,
+        );
+    }
+
     // Resolve effective price from pricing_rules for check_in date
     let price_row = db
         .prepare(
@@ -303,86 +359,165 @@ pub async fn get_hostel_info(_req: Request, ctx: RouteContext<()>) -> Result<Res
     }
 }
 
-/// GET /api/availability/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD
-/// Returns per-day availability (beds free) + effective price for the calendar widget.
-pub async fn get_availability_calendar(req: Request, ctx: RouteContext<()>) -> Result<Response> {
+/// GET /api/availability?from=YYYY-MM-DD&to=YYYY-MM-DD
+/// GET /api/availability/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD  (alias)
+///
+/// Returns per-day availability and effective price for the booking wizard
+/// calendar widget. Response shape:
+///   { "days": { "2026-04-12": { "beds": 18, "price": 15.0 }, … } }
+///
+/// Availability is computed from the v2 schema:
+///   - Total beds: COUNT(*) FROM beds WHERE status != 'maintenance'
+///   - Occupied per night: COUNT(DISTINCT bed_id) FROM booking_beds
+///       WHERE night_date = d AND booking status not terminal
+///   - Price per day: best matching pricing_rules row (highest priority),
+///       falling back to hostel_config.default_price_per_night_eur_cents
+pub async fn get_availability(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let url = req.url()?;
     let params: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
     let from = params.get("from").cloned().unwrap_or_default();
     let to   = params.get("to").cloned().unwrap_or_default();
 
-    // Basic validation
-    let re = regex::Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap();
-    if !re.is_match(&from) || !re.is_match(&to) || from > to {
-        return Response::error("Query params from and to must be YYYY-MM-DD", 400);
+    // Validate YYYY-MM-DD format and logical range
+    let date_re = regex::Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap();
+    if !date_re.is_match(&from) || !date_re.is_match(&to) || from > to {
+        return Response::error("Query params `from` and `to` must be YYYY-MM-DD and from ≤ to", 400);
     }
 
     let db = ctx.env.d1("DB")?;
 
-    // Total capacity
-    let cap = db
-        .prepare("SELECT COALESCE(SUM(beds_count),0) AS total FROM dormitories WHERE active=1")
-        .first::<serde_json::Value>(None)
-        .await?;
-    let total_beds = cap.as_ref().and_then(|v| v["total"].as_i64()).unwrap_or(24);
+    // ── Total active beds ─────────────────────────────────────────────────────
+    // Uses the v2 `beds` table; excludes beds in maintenance.
+    // Falls back to legacy `dormitories` table if `beds` doesn't exist yet.
+    let total_beds = {
+        let row = db
+            .prepare(
+                "SELECT COUNT(*) AS total FROM beds WHERE status != 'maintenance'"
+            )
+            .first::<serde_json::Value>(None)
+            .await
+            .ok()
+            .flatten();
+        let n = row.as_ref().and_then(|v| v["total"].as_i64()).unwrap_or(0);
+        if n == 0 {
+            // Legacy fallback
+            let leg = db
+                .prepare("SELECT COALESCE(SUM(beds_count), 0) AS total FROM dormitories WHERE active = 1")
+                .first::<serde_json::Value>(None)
+                .await?;
+            leg.as_ref().and_then(|v| v["total"].as_i64()).unwrap_or(24)
+        } else {
+            n
+        }
+    };
 
-    // Effective nightly price for the period
-    let price_row = db
-        .prepare(
-            "SELECT price_cents FROM pricing_rules \
-             WHERE accommodation_type='dormitory' AND active=1 \
-               AND (valid_from IS NULL OR valid_from <= ?) \
-               AND (valid_until IS NULL OR valid_until >= ?) \
-             ORDER BY CASE WHEN valid_from IS NULL THEN 0 ELSE 1 END DESC, valid_from DESC \
-             LIMIT 1",
-        )
-        .bind(&[from.clone().into(), to.clone().into()])?
-        .first::<serde_json::Value>(None)
-        .await?;
-    let price_cents = price_row
-        .as_ref()
-        .and_then(|r| r["price_cents"].as_i64())
-        .unwrap_or(800);
-    let price_eur = price_cents as f64 / 100.0;
+    // ── Default price from hostel_config ─────────────────────────────────────
+    let default_cents = {
+        let row = db
+            .prepare("SELECT default_price_per_night_eur_cents FROM hostel_config WHERE id = 1")
+            .first::<serde_json::Value>(None)
+            .await?;
+        row.as_ref()
+            .and_then(|r| r["default_price_per_night_eur_cents"].as_i64())
+            .unwrap_or(1500) // €15.00
+    };
 
-    // Bookings that overlap with [from, to]
-    let bookings = db
+    // ── All active pricing rules that overlap [from, to] ──────────────────────
+    // Ordered by priority DESC so that when we iterate per day we can find the
+    // first (highest-priority) matching rule efficiently in Rust.
+    let rules_result = db
         .prepare(
-            "SELECT check_in, check_out, num_guests FROM bookings \
-             WHERE status NOT IN ('cancelled') \
-               AND check_in <= ? AND check_out >= ?",
+            "SELECT valid_from, valid_to, price_per_night_eur_cents, priority, dorm_id, bed_id \
+             FROM pricing_rules \
+             WHERE is_active = 1 \
+               AND valid_from <= ? \
+               AND valid_to   >= ? \
+             ORDER BY priority DESC",
         )
         .bind(&[to.clone().into(), from.clone().into()])?
         .all()
         .await?;
-    let booking_rows = bookings.results::<serde_json::Value>()?;
+    let pricing_rules = rules_result.results::<serde_json::Value>()?;
 
-    // Build day map: date → guests_booked
+    // ── Occupied beds per night in [from, to] ─────────────────────────────────
+    // booking_beds has one row per (bed_id, night_date); the UNIQUE constraint
+    // prevents double-booking. We count distinct beds per night.
+    // Also handles legacy bookings table as fallback.
+    let occ_result = db
+        .prepare(
+            "SELECT bb.night_date, COUNT(DISTINCT bb.bed_id) AS occupied \
+             FROM booking_beds bb \
+             JOIN bookings b ON b.id = bb.booking_id \
+             WHERE bb.night_date >= ? \
+               AND bb.night_date <= ? \
+               AND b.status NOT IN ('cancelled', 'reimbursed', 'expired', 'no_show') \
+             GROUP BY bb.night_date",
+        )
+        .bind(&[from.clone().into(), to.clone().into()])?
+        .all()
+        .await;
+
+    // Build occupied-per-day map (handles both v2 and legacy gracefully)
     let mut occupied_by_day: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
-    for b in &booking_rows {
-        let ci = b["check_in"].as_str().unwrap_or("").to_string();
-        let co = b["check_out"].as_str().unwrap_or("").to_string();
-        let guests = b["num_guests"].as_i64().unwrap_or(1);
-        // Add guests to each night they stay (check_in ≤ night < check_out)
-        if ci.len() == 10 && co.len() == 10 {
-            let mut cur = ci.clone();
-            while cur < co && cur >= from && cur <= to {
-                *occupied_by_day.entry(cur.clone()).or_insert(0) += guests;
-                // Advance date by 1 day (simple string arithmetic)
-                cur = next_date(&cur);
+    match occ_result {
+        Ok(rows) => {
+            for row in rows.results::<serde_json::Value>()? {
+                if let (Some(d), Some(n)) = (
+                    row["night_date"].as_str(),
+                    row["occupied"].as_i64(),
+                ) {
+                    occupied_by_day.insert(d.to_string(), n);
+                }
+            }
+        }
+        Err(_) => {
+            // Legacy fallback: count guests from old bookings table
+            if let Ok(legacy) = db
+                .prepare(
+                    "SELECT check_in_date AS ci, check_out_date AS co, number_of_people AS guests \
+                     FROM bookings \
+                     WHERE status NOT IN ('cancelled','reimbursed','expired','no_show') \
+                       AND check_in_date <= ? AND check_out_date >= ?",
+                )
+                .bind(&[to.clone().into(), from.clone().into()])?
+                .all()
+                .await
+            {
+                for b in legacy.results::<serde_json::Value>()? {
+                    let ci = b["ci"].as_str().unwrap_or("").to_string();
+                    let co = b["co"].as_str().unwrap_or("").to_string();
+                    let guests = b["guests"].as_i64().unwrap_or(1);
+                    let mut cur = ci.clone();
+                    while cur < co && cur >= from && cur <= to {
+                        *occupied_by_day.entry(cur.clone()).or_insert(0) += guests;
+                        cur = next_date(&cur);
+                    }
+                }
             }
         }
     }
 
-    // Build response: one entry per day in [from, to]
+    // ── Build per-day response ────────────────────────────────────────────────
     let mut days = serde_json::Map::new();
     let mut cur = from.clone();
     while cur <= to {
-        let occupied = *occupied_by_day.get(&cur).unwrap_or(&0);
+        // Find highest-priority pricing rule that covers this day
+        let price_cents = pricing_rules
+            .iter()
+            .find(|r| {
+                let vf = r["valid_from"].as_str().unwrap_or("");
+                let vt = r["valid_to"].as_str().unwrap_or("");
+                cur.as_str() >= vf && cur.as_str() <= vt
+            })
+            .and_then(|r| r["price_per_night_eur_cents"].as_i64())
+            .unwrap_or(default_cents);
+
+        let occupied  = *occupied_by_day.get(&cur).unwrap_or(&0);
         let available = (total_beds - occupied).max(0);
+
         days.insert(cur.clone(), serde_json::json!({
             "beds":  available,
-            "price": price_eur
+            "price": price_cents as f64 / 100.0
         }));
         cur = next_date(&cur);
     }
@@ -392,11 +527,9 @@ pub async fn get_availability_calendar(req: Request, ctx: RouteContext<()>) -> R
 
 /// Advance a YYYY-MM-DD date string by one day (no external deps).
 fn next_date(date: &str) -> String {
-    // Parse
     let y: i32 = date[0..4].parse().unwrap_or(2026);
     let m: u32 = date[5..7].parse().unwrap_or(1);
     let d: u32 = date[8..10].parse().unwrap_or(1);
-    // Days in month
     let days_in_month = match m {
         1|3|5|7|8|10|12 => 31,
         4|6|9|11 => 30,

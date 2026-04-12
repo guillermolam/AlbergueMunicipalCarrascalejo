@@ -1,6 +1,169 @@
 // Comprehensive TypeScript types for Pilgrim data management
 // SSR-compatible types with strict validation and security
 
+// ── Structured primitives ─────────────────────────────────────────────────────
+
+/**
+ * Structured phone number (matches Clerk metadata format)
+ * Backward-compatible: legacy code may store a flat E.164 string instead.
+ */
+export interface PhoneNumber {
+  /** Dialing code, e.g. "+34" */
+  code: string;
+  /** Local number without country code, e.g. "620235950" */
+  number: string;
+  /** ISO 3166-1 alpha-2 country code, e.g. "ES" */
+  country: string;
+}
+
+/**
+ * Structured postal address (matches Clerk metadata format)
+ * Backward-compatible: legacy code may store a flat string.
+ */
+export interface StructuredAddress {
+  street?: {
+    line1?: string;
+    line2?: string;
+  };
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  /** ISO 3166-1 alpha-2 country code */
+  country?: string;
+}
+
+/**
+ * Single scanned image for a pilgrim document
+ */
+export interface DocumentImage {
+  /** Human-readable label, e.g. "Front side", "Back side" */
+  label?: string;
+  /** Cloudflare R2 URL */
+  r2Url?: string;
+  /** Cloudflare Images ID (for transformations / delivery) */
+  cloudflareImageId?: string;
+}
+
+/**
+ * A single identity document belonging to a pilgrim
+ */
+export interface PilgrimDocument {
+  /** Client-generated UUID */
+  id: string;
+  /** "dni" | "nie" | "passport" | "driving_license" | other free text */
+  type: string;
+  /** ISO 3166-1 alpha-2 issuing country */
+  country?: string;
+  /** ISO 8601 date string (YYYY-MM-DD) */
+  expirationDate?: string;
+  images?: DocumentImage[];
+}
+
+/**
+ * Emergency contact entry (matches Clerk publicMetadata.emergencyContacts[] format)
+ */
+export interface EmergencyContactEntry {
+  name?: string;
+  /** English relation key: "father" | "mother" | "partner" | "child" | "sibling" | "friend" | "colleague" | "other" */
+  relation?: string;
+  phone?: PhoneNumber | string;
+  email?: string;
+}
+
+/**
+ * Pilgrim belonging / item stored at the hostel
+ */
+export interface PilgrimBelonging {
+  /** Client-generated UUID */
+  id: string;
+  /**
+   * Category key (matches bCategory select values):
+   * mochila | bastones | tienda | saco de dormir | calzado | ropa | higiene |
+   * medicacion | botiquin | electronica | cargadores | documentos | credencial |
+   * llaves | efectivo | comida | accesorios | otros
+   */
+  category: string;
+  name: string;
+  count: number;
+  notes?: string;
+}
+
+/**
+ * Vehicle registered by the pilgrim
+ */
+export interface PilgrimVehicle {
+  /** Client-generated UUID */
+  id: string;
+  /** "coche" | "bicicleta" | "moto" | "furgoneta" | ... */
+  type: string;
+  plate: string;
+  model?: string;
+  color?: string;
+}
+
+/**
+ * Pet travelling with the pilgrim
+ */
+export interface PilgrimPet {
+  /** Client-generated UUID */
+  id: string;
+  name: string;
+  /** "perro" | "gato" | "ave" | "otro" */
+  species: string;
+  breed?: string;
+  chip?: string;
+}
+
+/**
+ * Clerk pilgrimProfile metadata shape (unsafeMetadata.pilgrimProfile)
+ */
+export interface PilgrimProfileMetadata {
+  phone?: PhoneNumber | string;
+  phoneCC?: string;
+  dob?: string;
+  nationality?: string;
+  address?: StructuredAddress | string;
+  bio?: string;
+  /** Legacy flat document fields */
+  docType?: string;
+  docId?: string;
+  docUrl?: string;
+  country?: string;
+  /** Structured documents array */
+  documents?: PilgrimDocument[];
+  camino?: CaminoMetadata;
+  manualBadges?: string[];
+}
+
+/**
+ * Clerk publicMetadata shape (server-writable profile data)
+ */
+export interface PilgrimPublicMetadata {
+  /** Role assigned by staff */
+  role?: 'pilgrim' | 'staff' | 'admin';
+  /** Array of emergency contacts */
+  emergencyContacts?: EmergencyContactEntry[];
+  /** Legacy single emergency contact (backward compat) */
+  emergency?: EmergencyContactEntry;
+  vehicles?: PilgrimVehicle[];
+  belongings?: PilgrimBelonging[];
+  pets?: PilgrimPet[];
+  lockerNum?: string;
+}
+
+/**
+ * Camino journey metadata stored in unsafeMetadata.pilgrimProfile.camino
+ */
+export interface CaminoMetadata {
+  stages?: string[];
+  route?: string;
+  start?: string;
+  origin?: string;
+  stageDetails?: Record<string, unknown>;
+}
+
+// ── Legacy / existing interfaces ──────────────────────────────────────────────
+
 /**
  * Base entity with common fields for all pilgrim-related data
  */
@@ -15,29 +178,41 @@ export interface BaseEntity {
 
 /**
  * Personal information for pilgrims
+ * Phone and address support both structured objects (new) and flat strings (legacy).
  */
 export interface PersonalInfo {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  /** Structured phone (new) or flat E.164 string (legacy) */
+  phone: PhoneNumber | string;
   dateOfBirth: Date;
   nationality: string;
+  /** ISO 3166-1 alpha-2 nationality code */
+  nationalityCode?: string;
   passportNumber?: string;
   idCardNumber?: string;
-  emergencyContact: EmergencyContact;
+  /** Structured documents array (new) */
+  documents?: PilgrimDocument[];
+  /** Structured address (new) or flat string (legacy) */
+  address?: StructuredAddress | string;
+  /** Primary emergency contact (legacy — prefer emergencyContacts array) */
+  emergencyContact?: EmergencyContactEntry;
   medicalInfo?: MedicalInfo;
 }
 
 /**
- * Emergency contact information
+ * Emergency contact information (legacy flat interface — prefer EmergencyContactEntry)
+ * @deprecated Use EmergencyContactEntry which supports structured phone
  */
 export interface EmergencyContact {
   name: string;
+  /** Relation label (may be English key or legacy Spanish) */
   relationship: string;
-  phone: string;
+  /** Structured phone (new) or flat string (legacy) */
+  phone: PhoneNumber | string;
   email?: string;
-  country: string;
+  country?: string;
 }
 
 /**

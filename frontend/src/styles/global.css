@@ -1,10 +1,7 @@
 /* ==========================================================================
    Global Styles — Albergue Municipal Carrascalejo
-   Extremadura flag palette + hand-drawn Google Fonts
+   Extremadura flag palette · fonts loaded locally from /fonts/ (see fonts.css)
    ========================================================================== */
-
-/* Google Fonts — 3 hand-drawn families */
-@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&family=Shadows+Into+Light&family=Cabin+Sketch:wght@400;700&family=Patrick+Hand&display=swap');
 
 /* ==========================================================================
    CSS Custom Properties
@@ -21,10 +18,10 @@
   --red: #ed1c24;
   --blue: #0071bc;
 
-  /* Typography */
-  --font-display: 'Shadows Into Light', cursive;
-  --font-sketch: 'Cabin Sketch', cursive;
-  --font-hand: 'Patrick Hand', cursive;
+  /* Typography — semantic aliases (actual values injected by <Font> components) */
+  --font-display: var(--font-shadows-into-light);
+  --font-sketch:  var(--font-cabin-sketch);
+  --font-hand:    var(--font-patrick-hand);
 
   /* Layout */
   --container: 80rem; /* 1280px */

@@ -1,21 +1,125 @@
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import node from '@astrojs/node';
 import clerk from '@clerk/astro';
 
-// Use the Node adapter in local dev (avoids @cloudflare/vite-plugin miniflare crash).
-// Use the Cloudflare adapter for production builds (CF Pages / wrangler pages dev).
-const isProd = process.env.NODE_ENV === 'production' || !!process.env.CF_PAGES;
+// Use the Node adapter in local dev (avoids miniflare/workerd startup overhead).
+// Use the Cloudflare adapter for production builds (wrangler deploy / CF Workers).
+// CF_PAGES is set by Cloudflare Pages CI; NODE_ENV=production covers wrangler builds.
+const isProd = process.env.NODE_ENV === 'production' || !!process.env.CF_PAGES || !!process.env.CF_WORKER;
 
 export default defineConfig({
   adapter: isProd
-    ? cloudflare({ platformProxy: { enabled: false } })
+    ? cloudflare({
+        prerenderEnvironment: 'node',
+      })
     : node({ mode: 'standalone' }),
 
   output: 'server',
 
   integrations: [
     clerk(),
+  ],
+
+  // ── Fonts ─────────────────────────────────────────────────────────────────
+  // Local WOFF2 files downloaded from Google Fonts, served from src/assets/fonts/.
+  // fontProviders.local() reads the files from disk — zero network requests.
+  fonts: [
+    {
+      name: 'Patrick Hand',
+      cssVariable: '--font-patrick-hand',
+      provider: fontProviders.local(),
+      fallbacks: [],
+      options: {
+        variants: [
+          {
+            weight: 400,
+            style: 'normal',
+            src: ['./src/assets/fonts/patrick-hand-400.woff2'],
+          },
+        ],
+      },
+    },
+    {
+      name: 'Cabin Sketch',
+      cssVariable: '--font-cabin-sketch',
+      provider: fontProviders.local(),
+      fallbacks: [],
+      options: {
+        variants: [
+          {
+            weight: 400,
+            style: 'normal',
+            src: ['./src/assets/fonts/cabin-sketch-400.woff2'],
+          },
+          {
+            weight: 700,
+            style: 'normal',
+            src: ['./src/assets/fonts/cabin-sketch-700.woff2'],
+          },
+        ],
+      },
+    },
+    {
+      name: 'Shadows Into Light',
+      cssVariable: '--font-shadows-into-light',
+      provider: fontProviders.local(),
+      fallbacks: [],
+      options: {
+        variants: [
+          {
+            weight: 400,
+            style: 'normal',
+            src: ['./src/assets/fonts/shadows-into-light-400.woff2'],
+          },
+        ],
+      },
+    },
+    {
+      name: 'Gloria Hallelujah',
+      cssVariable: '--font-gloria',
+      provider: fontProviders.local(),
+      fallbacks: [],
+      options: {
+        variants: [
+          {
+            weight: 400,
+            style: 'normal',
+            src: ['./src/assets/fonts/gloria-hallelujah-400.woff2'],
+          },
+        ],
+      },
+    },
+    {
+      name: 'Inter',
+      cssVariable: '--font-inter',
+      provider: fontProviders.local(),
+      fallbacks: [],
+      options: {
+        variants: [
+          {
+            weight: '100 900',
+            style: 'normal',
+            src: ['./src/assets/fonts/inter-latin.woff2'],
+          },
+        ],
+      },
+    },
+    {
+      name: 'JetBrains Mono',
+      cssVariable: '--font-jetbrains-mono',
+      provider: fontProviders.local(),
+      fallbacks: [],
+      options: {
+        variants: [
+          {
+            weight: '100 800',
+            style: 'normal',
+            src: ['./src/assets/fonts/jetbrains-mono-latin.woff2'],
+          },
+        ],
+      },
+    },
   ],
 
   // Site configuration
@@ -40,13 +144,11 @@ export default defineConfig({
       open: false,
     },
     // Clerk's backend SDK must be external for SSR (Node.js can resolve it natively).
-    // Do NOT exclude @clerk/shared from optimizeDeps — Vite needs to bundle its
-    // subpath exports (e.g. @clerk/shared/deriveState) for the client-side bundle.
     ssr: {
       external: ['@clerk/backend'],
     },
     optimizeDeps: {
-      exclude: ['@clerk/backend'],
+      exclude: ['@clerk/backend', 'tesseract-wasm'],
     },
     resolve: {
       alias: {
@@ -57,6 +159,12 @@ export default defineConfig({
         '@/styles': '/src/styles',
         '@/assets': '/src/assets',
         '@/public': '/public',
+        '@/stores': '/src/stores',
+        '@/lib': '/src/lib',
+        '@/islands': '/src/islands',
+        '@/types': '/src/types',
+        '@/utils': '/src/utils',
+        '@/actions': '/src/actions',
       },
     },
   },

@@ -7,12 +7,23 @@ command = "cargo install worker-build && worker-build --release"
 
 [vars]
 ENVIRONMENT = "production"
+# GOOGLE_PLACES_API_KEY = "set-in-wrangler-secret"
+# GOOGLE_PLACE_ID       = "ChIJ..."   # Google Place ID for the hostel
 
-# D1 Database
+# D1 Database — shared with the main albergue-bookings database
 [[d1_databases]]
 binding = "DB"
 database_name = "albergue-bookings"
 database_id = "" # Set after `wrangler d1 create albergue-bookings`
+
+# KV for caching scraped review HTML (optional)
+[[kv_namespaces]]
+binding = "REVIEWS_CACHE"
+id = "" # Set after `wrangler kv:namespace create REVIEWS_CACHE`
+
+# Cron: sync reviews from Google Places every 6 hours
+[triggers]
+crons = ["0 */6 * * *"]
 
 [placement]
 mode = "smart"

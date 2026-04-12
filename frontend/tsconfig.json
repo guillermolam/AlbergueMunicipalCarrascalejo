@@ -9,7 +9,13 @@
       "@/pages/*": ["src/pages/*"],
       "@/styles/*": ["src/styles/*"],
       "@/assets/*": ["src/assets/*"],
-      "@/public/*": ["public/*"]
+      "@/public/*": ["public/*"],
+      "@/stores/*": ["src/stores/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/islands/*": ["src/islands/*"],
+      "@/types/*": ["src/types/*"],
+      "@/utils/*": ["src/utils/*"],
+      "@/actions/*": ["src/actions/*"]
     },
     "types": ["astro/client"],
     "target": "ES2022",

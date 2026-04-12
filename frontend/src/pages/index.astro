@@ -150,14 +150,14 @@ const features = [
 
           <!-- Bienvenido heading -->
           <div class="fade-in" style="animation-delay: 0.1s;">
-            <h2 class="wave-underline" style="font-family: 'Shadows Into Light', cursive; font-size: 2.25rem; color: #1A1A1A; margin: 0 0 0.75rem; line-height: 1.1; display: inline-block;">
+            <h2 class="wave-underline" style="font-family: var(--font-shadows-into-light); font-size: 2.25rem; color: #1A1A1A; margin: 0 0 0.75rem; line-height: 1.1; display: inline-block;">
               &#161;Bienvenido!
             </h2>
           </div>
 
           <!-- Peregrino subtitle -->
           <div class="fade-in" style="animation-delay: 0.3s;">
-            <h3 style="font-family: 'Cabin Sketch', cursive; font-size: 1.5rem; color: #00AB39; margin: 0 0 0.5rem; font-weight: 700;">
+            <h3 style="font-family: var(--font-cabin-sketch); font-size: 1.5rem; color: #00AB39; margin: 0 0 0.5rem; font-weight: 700;">
               Peregrino
             </h3>
             <!-- Wave divider -->
@@ -167,7 +167,7 @@ const features = [
           </div>
 
           <!-- Description text -->
-          <p class="fade-in" style="font-family: 'Patrick Hand', cursive; font-size: 1rem; color: inherit; line-height: 1.7; margin-bottom: 1.5rem; max-width: 480px; animation-delay: 0.4s;">
+          <p class="fade-in" style="font-family: var(--font-patrick-hand); font-size: 1rem; color: inherit; line-height: 1.7; margin-bottom: 1.5rem; max-width: 480px; animation-delay: 0.4s;">
             Your resting place on the historic <a href="/camino" style="color: #00AB39; text-decoration: underline; text-underline-offset: 3px;">Via de la Plata</a> route through Extremadura.
           </p>
 
@@ -180,9 +180,9 @@ const features = [
               </svg>
               <span class="pulse-dot" style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 3;"></span>
               <div style="position: relative; z-index: 2;">
-                <div style="font-family: 'Cabin Sketch', cursive; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; font-weight: 700;">PRICE</div>
-                <div class="stat-value" style="font-family: 'Shadows Into Light', cursive; font-size: 1.5rem; color: #00AB39; line-height: 1.2; animation: pulse-glow 3s ease-in-out infinite;">{priceDisplay}</div>
-                <div style="font-family: 'Patrick Hand', cursive; font-size: 0.75rem; color: #9ca3af;">/night</div>
+                <div style="font-family: var(--font-cabin-sketch); font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; font-weight: 700;">PRICE</div>
+                <div class="stat-value" style="font-family: var(--font-shadows-into-light); font-size: 1.5rem; color: #00AB39; line-height: 1.2; animation: pulse-glow 3s ease-in-out infinite;">{priceDisplay}</div>
+                <div style="font-family: var(--font-patrick-hand); font-size: 0.75rem; color: #9ca3af;">/night</div>
               </div>
             </div>
 
@@ -193,9 +193,9 @@ const features = [
               </svg>
               <span class="pulse-dot" style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 3;"></span>
               <div style="position: relative; z-index: 2;">
-                <div style="font-family: 'Cabin Sketch', cursive; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; font-weight: 700;">BEDS</div>
-                <div class="stat-value" style="font-family: 'Shadows Into Light', cursive; font-size: 1.5rem; color: #00AB39; line-height: 1.2; animation: pulse-glow 3s ease-in-out infinite;">{bedsLabel}</div>
-                <div style="font-family: 'Patrick Hand', cursive; font-size: 0.75rem; color: #9ca3af;">available tonight</div>
+                <div style="font-family: var(--font-cabin-sketch); font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; font-weight: 700;">BEDS</div>
+                <div class="stat-value" style="font-family: var(--font-shadows-into-light); font-size: 1.5rem; color: #00AB39; line-height: 1.2; animation: pulse-glow 3s ease-in-out infinite;">{bedsLabel}</div>
+                <div style="font-family: var(--font-patrick-hand); font-size: 0.75rem; color: #9ca3af;">available tonight</div>
               </div>
             </div>
           </div>
@@ -209,7 +209,7 @@ const features = [
                 <!-- Main fill -->
                 <rect x="0" y="0" width="100%" height="100%" rx="10" fill="#00AB39" stroke="#1A1A1A" stroke-width="2.5" filter="url(#sketchy-filter)" />
               </svg>
-              <span style="position: relative; z-index: 2; color: white; font-family: 'Cabin Sketch', cursive; font-weight: 700; font-size: 1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); letter-spacing: 0.05em;">
+              <span style="position: relative; z-index: 2; color: white; font-family: var(--font-cabin-sketch); font-weight: 700; font-size: 1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); letter-spacing: 0.05em;">
                 Start Booking Now
               </span>
             </a>
@@ -219,7 +219,7 @@ const features = [
           <div class="fade-in" style="animation-delay: 0.7s;">
             <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.625rem;">
               <!-- Feature 1: Home icon -->
-              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: 'Patrick Hand', cursive; font-size: 0.95rem; color: #374151;">
+              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: var(--font-patrick-hand); font-size: 0.95rem; color: #374151;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
@@ -227,7 +227,7 @@ const features = [
                 2 dormitories with 12 beds each
               </li>
               <!-- Feature 2: Map Pin icon -->
-              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: 'Patrick Hand', cursive; font-size: 0.95rem; color: #374151;">
+              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: var(--font-patrick-hand); font-size: 0.95rem; color: #374151;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
@@ -235,7 +235,7 @@ const features = [
                 Historic Camino route location
               </li>
               <!-- Feature 3: Check Circle icon -->
-              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: 'Patrick Hand', cursive; font-size: 0.95rem; color: #374151;">
+              <li style="display: flex; align-items: center; gap: 0.625rem; font-family: var(--font-patrick-hand); font-size: 0.95rem; color: #374151;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
@@ -253,14 +253,14 @@ const features = [
             <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;">
               <rect x="0" y="0" width="100%" height="100%" rx="20" fill="#00AB39" stroke="#1A1A1A" stroke-width="2" filter="url(#sketchy-filter)" />
             </svg>
-            <span style="position: relative; z-index: 2; color: white; font-family: 'Cabin Sketch', cursive; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.375rem;">
+            <span style="position: relative; z-index: 2; color: white; font-family: var(--font-cabin-sketch); font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.375rem;">
               <span>&#10024;</span> Tell me more...
             </span>
           </a>
 
           <!-- Image Carousel in tablet/phone frame -->
-          <div class="parallax-frame" id="parallax-frame" style="width: 100%; position: relative; perspective: 1000px; transform-style: preserve-3d; overflow: visible;">
-            <div class="parallax-content" id="parallax-content" style="position: relative; transform-style: preserve-3d; transition: transform 100ms ease-out;">
+          <div class="parallax-frame" id="parallax-frame" style="width: 100%; position: relative; perspective: 1000px; overflow: visible;">
+            <div class="parallax-content" id="parallax-content" style="position: relative; transition: transform 100ms ease-out;">
               <!-- Frame border SVG -->
               <svg class="carousel-frame-border" style="position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); pointer-events: none; z-index: 5;">
                 <!-- Outer frame -->
@@ -284,7 +284,7 @@ const features = [
               </svg>
 
               <!-- Carousel Container -->
-              <div id="carousel" style="position: relative; border-radius: 1rem; overflow: hidden; aspect-ratio: 4/3; background: #f3f4f6; perspective: 800px; transform-style: preserve-3d;">
+              <div id="carousel" style="position: relative; border-radius: 1rem; overflow: hidden; aspect-ratio: 4/3; background: #f3f4f6; perspective: 800px;">
 
                 <!-- Floating Particles -->
                 <div class="float-particle" style="position: absolute; width: 0.5rem; height: 0.5rem; background: rgba(255,255,255,0.4); border-radius: 9999px; top: 10%; left: 15%; z-index: 4;"></div>
@@ -322,7 +322,7 @@ const features = [
                         </svg>
                         <div style="position: relative; z-index: 2;">
                           <!-- Wave underline SVG for each slide title -->
-                          <div class="slide-title" style="font-family: 'Shadows Into Light', cursive; font-size: 1.125rem; color: #1A1A1A; line-height: 1.2; opacity: 0; transform: scale(0.9); transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
+                          <div class="slide-title" style="font-family: var(--font-shadows-into-light); font-size: 1.125rem; color: #1A1A1A; line-height: 1.2; opacity: 0; transform: scale(0.9); transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);">
                             {slide.title}
                             <svg width="80" height="6" viewBox="0 0 80 6" style="display:block; margin-top:2px;">
                               <path class="slide-wave" d="M0,3 Q5,1 10,3 T20,3 T30,3 T40,3 T50,3 T60,3 T70,3 T80,3"
@@ -331,11 +331,11 @@ const features = [
                                 style="transition: stroke-dashoffset 0.8s ease 0.5s;" />
                             </svg>
                           </div>
-                          <div class="slide-subtitle" style="font-family: 'Patrick Hand', cursive; font-size: 0.85rem; color: #6b7280; opacity: 0; transform: translateX(-8px); transition: opacity 0.3s ease 0.15s, transform 0.3s ease 0.15s;">
+                          <div class="slide-subtitle" style="font-family: var(--font-patrick-hand); font-size: 0.85rem; color: #6b7280; opacity: 0; transform: translateX(-8px); transition: opacity 0.3s ease 0.15s, transform 0.3s ease 0.15s;">
                             {slide.subtitle}
                           </div>
                           {slide.location && (
-                            <span class="slide-location" style="display: inline-flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem; padding: 0.125rem 0.5rem; background: rgba(0,171,57,0.1); border-radius: 9999px; font-family: 'Patrick Hand', cursive; font-size: 0.75rem; color: #00AB39; opacity: 0; transform: translateX(-20px); transition: opacity 0.3s ease 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.3s;">
+                            <span class="slide-location" style="display: inline-flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem; padding: 0.125rem 0.5rem; background: rgba(0,171,57,0.1); border-radius: 9999px; font-family: var(--font-patrick-hand); font-size: 0.75rem; color: #00AB39; opacity: 0; transform: translateX(-20px); transition: opacity 0.3s ease 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.3s;">
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                               {slide.location}
                             </span>
@@ -346,35 +346,37 @@ const features = [
                   </div>
                 ))}
 
-                <!-- Navigation Arrows -->
-                <button
-                  id="carousel-prev"
-                  aria-label="Previous slide"
-                  style="position: absolute; left: 0.75rem; top: 50%; width: 36px; height: 36px; background: rgba(255,255,255,0.9); border: 2px solid #00AB39; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <button
-                  id="carousel-next"
-                  aria-label="Next slide"
-                  style="position: absolute; right: 0.75rem; top: 50%; width: 36px; height: 36px; background: rgba(255,255,255,0.9); border: 2px solid #00AB39; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
               </div>
 
-              <!-- Pagination Dots -->
-              <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
-                {carouselSlides.map((_, i) => (
-                  <button
-                    class={`carousel-dot ${i === 0 ? 'active' : ''}`}
-                    data-slide={i}
-                    aria-label={`Go to slide ${i + 1}`}
-                    style={`width: 10px; height: 10px; border-radius: 50%; border: 2px solid #00AB39; cursor: pointer; transition: all 0.3s; padding: 0; ${i === 0 ? 'background: #00AB39; transform: scale(1.3);' : 'background: transparent;'}`}
-                  ></button>
-                ))}
-              </div>
+              <!-- Navigation Arrows — outside the carousel, overlapping the frame edge -->
+              <button
+                id="carousel-prev"
+                aria-label="Previous slide"
+                style="position: absolute; left: -22px; top: 50%; width: 40px; height: 40px; background: white; border: 2px solid #00AB39; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.12);"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button
+                id="carousel-next"
+                aria-label="Next slide"
+                style="position: absolute; right: -22px; top: 50%; width: 40px; height: 40px; background: white; border: 2px solid #00AB39; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.12);"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00AB39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+
             </div>
+          </div>
+
+          <!-- Pagination Dots — outside parallax-frame so no 3D stacking blocks them -->
+          <div style="display: flex; justify-content: center; gap: 0.625rem; margin-top: 1rem; position: relative; z-index: 10;">
+            {carouselSlides.map((_, i) => (
+              <button
+                class={`carousel-dot ${i === 0 ? 'active' : ''}`}
+                data-slide={i}
+                aria-label={`Go to slide ${i + 1}`}
+                style={`width: 10px; height: 10px; border-radius: 50%; border: 2px solid #00AB39; cursor: pointer; padding: 0; ${i === 0 ? 'background: #00AB39; transform: scale(1.3);' : 'background: transparent;'}`}
+              ></button>
+            ))}
           </div>
         </div>
 
@@ -483,6 +485,10 @@ const features = [
       will-change: opacity, transform;
       transition: opacity 0.8s cubic-bezier(0.23, 1, 0.32, 1),
                   transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+      pointer-events: none; /* invisible slides must not block clicks */
+    }
+    .carousel-slide.active {
+      pointer-events: auto; /* only the visible slide captures events */
     }
     .carousel-slide.entering-right {
       animation: slide-enter-right 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
@@ -526,10 +532,44 @@ const features = [
     #carousel-prev,
     #carousel-next { top: 50%; }
 
+    /* Arrow buttons — hover & active states */
+    #carousel-prev,
+    #carousel-next {
+      transition: background 180ms ease, transform 180ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 180ms ease;
+    }
+    #carousel-prev:hover,
+    #carousel-next:hover {
+      background: #00AB39 !important;
+      box-shadow: 0 4px 16px rgba(0,171,57,0.35) !important;
+    }
+    #carousel-prev:hover svg,
+    #carousel-next:hover svg {
+      stroke: #ffffff;
+    }
+    #carousel-prev:active,
+    #carousel-next:active {
+      transform: translateY(-50%) scale(0.85) !important;
+    }
+    #carousel-prev svg,
+    #carousel-next svg {
+      transition: stroke 180ms ease;
+    }
+
     /* Dot styles */
+    .carousel-dot {
+      transition: background 200ms ease, transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease;
+    }
+    .carousel-dot:hover:not(.active) {
+      background: rgba(0,171,57,0.4) !important;
+      transform: scale(1.2);
+    }
+    .carousel-dot:active {
+      transform: scale(0.85) !important;
+    }
     .carousel-dot.active {
       background: #00AB39 !important;
       transform: scale(1.3) !important;
+      box-shadow: 0 0 0 3px rgba(0,171,57,0.25);
     }
 
     /* Parallax smooth */
@@ -738,23 +778,22 @@ const features = [
       arrows.forEach(({ el, hoverRotate }) => {
         if (!el) return;
 
-        // Always-on float animation handled by CSS (#carousel-prev / #carousel-next)
-
-        // Always keep translateY(-50%) in every transform so the button stays
-        // vertically centred regardless of what else we apply.
+        // On hover: stop float animation, apply scale + rotate via inline transform
+        // (keeps translateY(-50%) so vertical centering from top:50% is preserved).
+        // Background / shadow / SVG color changes are handled by CSS :hover rules.
         el.addEventListener('mouseenter', () => {
           el.style.animation = 'none';
           el.style.transform = `translateY(-50%) scale(1.2) rotate(${hoverRotate})`;
-          el.style.transition = 'transform 200ms ease';
         });
         el.addEventListener('mouseleave', () => {
-          el.style.transform = '';
-          el.style.transition = '';
+          el.style.transform = '';   // let CSS animation take over again
           el.style.animation = 'arrow-float 2s ease-in-out infinite';
         });
+        // Tap / click scale-down — CSS :active handles the same, but JS ensures
+        // translateY(-50%) is kept so the button doesn't jump.
         el.addEventListener('mousedown', () => {
-          el.style.transform = `translateY(-50%) scale(0.85)`;
           el.style.animation = 'none';
+          el.style.transform = `translateY(-50%) scale(0.85)`;
         });
         el.addEventListener('mouseup', () => {
           el.style.transform = `translateY(-50%) scale(1.2) rotate(${hoverRotate})`;

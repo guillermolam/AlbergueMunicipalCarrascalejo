@@ -14,6 +14,7 @@ mod m20260111_000007_government_submissions;
 mod m20260111_000008_notifications;
 mod m20260111_000009_audit_log;
 mod m20260111_000010_seed_synthetic_data;
+mod m20260111_000011_structured_profile_fields;
 pub struct Migrator;
 
 #[async_trait::async_trait]
@@ -30,6 +31,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260111_000008_notifications::Migration),
             Box::new(m20260111_000009_audit_log::Migration),
             Box::new(m20260111_000010_seed_synthetic_data::Migration),
+            Box::new(m20260111_000011_structured_profile_fields::Migration),
         ]
     }
 }

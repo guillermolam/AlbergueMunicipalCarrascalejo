@@ -16,22 +16,22 @@ pub struct GeoapifyFeature {
 
 #[derive(Deserialize, Debug)]
 pub struct GeoapifyProperties {
-    pub formatted:     Option<String>,
+    pub formatted: Option<String>,
     pub address_line1: Option<String>,
-    pub street:        Option<String>,
-    pub housenumber:   Option<String>,
-    pub city:          Option<String>,
-    pub postcode:      Option<String>,
-    pub country_code:  Option<String>,
+    pub street: Option<String>,
+    pub housenumber: Option<String>,
+    pub city: Option<String>,
+    pub postcode: Option<String>,
+    pub country_code: Option<String>,
 }
 
 /// Simplified suggestion returned to the frontend.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AutocompleteSuggestion {
-    pub label:        String,
-    pub street:       String,
-    pub city:         String,
-    pub postcode:     String,
+    pub label: String,
+    pub street: String,
+    pub city: String,
+    pub postcode: String,
     pub country_code: String,
 }
 

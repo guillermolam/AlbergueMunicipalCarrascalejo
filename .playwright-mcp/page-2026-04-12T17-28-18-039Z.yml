@@ -1,0 +1,205 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - img
+  - main [ref=e2]:
+    - main [ref=e4]:
+      - generic [ref=e5]:
+        - img "logo" [ref=e6]
+        - generic [ref=e7]:
+          - heading "Albergue Carrascalejo" [level=2] [ref=e8]
+          - paragraph [ref=e9]: Step 1 of 6
+      - generic [ref=e13]:
+        - generic [ref=e14]: Step 1 of 6
+        - generic [ref=e15]: 17% Complete
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - img [ref=e19]
+          - generic [ref=e26]:
+            - heading "When are you visiting?" [level=1] [ref=e27]
+            - paragraph [ref=e28]: Select your check-in and check-out dates
+          - generic [ref=e29]: Select your stay dates
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - img
+            - generic [ref=e32]:
+              - generic [ref=e33]:
+                - button "Previous month" [ref=e34] [cursor=pointer]:
+                  - img
+                  - img [ref=e35]
+                - heading "April 2026" [level=3] [ref=e37]
+                - button "Next month" [ref=e38] [cursor=pointer]:
+                  - img
+                  - img [ref=e39]
+              - generic [ref=e41]:
+                - generic [ref=e42]: Sun
+                - generic [ref=e43]: Mon
+                - generic [ref=e44]: Tue
+                - generic [ref=e45]: Wed
+                - generic [ref=e46]: Thu
+                - generic [ref=e47]: Fri
+                - generic [ref=e48]: Sat
+              - generic [ref=e49]:
+                - button "2026-04-01 - €15/night - 24 beds left" [disabled] [ref=e53]:
+                  - img
+                  - generic [ref=e54]: "1"
+                - button "2026-04-02 - €15/night - 24 beds left" [disabled] [ref=e55]:
+                  - img
+                  - generic [ref=e56]: "2"
+                - button "2026-04-03 - €15/night - 24 beds left" [disabled] [ref=e57]:
+                  - img
+                  - generic [ref=e58]: "3"
+                - button "2026-04-04 - €15/night - 24 beds left" [disabled] [ref=e59]:
+                  - img
+                  - generic [ref=e60]: "4"
+                - button "2026-04-05 - €15/night - 24 beds left" [disabled] [ref=e61]:
+                  - img
+                  - generic [ref=e62]: "5"
+                - button "2026-04-06 - €15/night - 24 beds left" [disabled] [ref=e63]:
+                  - img
+                  - generic [ref=e64]: "6"
+                - button "2026-04-07 - €15/night - 24 beds left" [disabled] [ref=e65]:
+                  - img
+                  - generic [ref=e66]: "7"
+                - button "2026-04-08 - €15/night - 24 beds left" [disabled] [ref=e67]:
+                  - img
+                  - generic [ref=e68]: "8"
+                - button "2026-04-09 - €15/night - 24 beds left" [disabled] [ref=e69]:
+                  - img
+                  - generic [ref=e70]: "9"
+                - button "2026-04-10 - €15/night - 24 beds left" [disabled] [ref=e71]:
+                  - img
+                  - generic [ref=e72]: "10"
+                - button "2026-04-11 - €15/night - 24 beds left" [disabled] [ref=e73]:
+                  - img
+                  - generic [ref=e74]: "11"
+                - button "2026-04-12 - €15/night - 24 beds left" [ref=e75] [cursor=pointer]:
+                  - img
+                  - generic [ref=e76]: "12"
+                  - generic [ref=e77]: 24 left
+                  - generic [ref=e78]: €15
+                - button "2026-04-13 - €15/night - 24 beds left" [ref=e80] [cursor=pointer]:
+                  - img
+                  - generic [ref=e81]: "13"
+                  - generic [ref=e82]: 24 left
+                  - generic [ref=e83]: €15
+                - button "2026-04-14 - €15/night - 24 beds left" [ref=e84] [cursor=pointer]:
+                  - img
+                  - generic [ref=e85]: "14"
+                  - generic [ref=e86]: 24 left
+                  - generic [ref=e87]: €15
+                - button "2026-04-15 - €15/night - 24 beds left" [ref=e88] [cursor=pointer]:
+                  - img
+                  - generic [ref=e89]: "15"
+                  - generic [ref=e90]: 24 left
+                  - generic [ref=e91]: €15
+                - button "2026-04-16 - €15/night - 24 beds left" [ref=e92] [cursor=pointer]:
+                  - img
+                  - generic [ref=e93]: "16"
+                  - generic [ref=e94]: 24 left
+                  - generic [ref=e95]: €15
+                - button "2026-04-17 - €15/night - 24 beds left" [ref=e96] [cursor=pointer]:
+                  - img
+                  - generic [ref=e97]: "17"
+                  - generic [ref=e98]: 24 left
+                  - generic [ref=e99]: €15
+                - button "2026-04-18 - €15/night - 24 beds left" [ref=e100] [cursor=pointer]:
+                  - img
+                  - generic [ref=e101]: "18"
+                  - generic [ref=e102]: 24 left
+                  - generic [ref=e103]: €15
+                - button "2026-04-19 - €15/night - 24 beds left" [ref=e104] [cursor=pointer]:
+                  - img
+                  - generic [ref=e105]: "19"
+                  - generic [ref=e106]: 24 left
+                  - generic [ref=e107]: €15
+                - button "2026-04-20 - €15/night - 24 beds left" [ref=e108] [cursor=pointer]:
+                  - img
+                  - generic [ref=e109]: "20"
+                  - generic [ref=e110]: 24 left
+                  - generic [ref=e111]: €15
+                - button "2026-04-21 - €15/night - 24 beds left" [ref=e112] [cursor=pointer]:
+                  - img
+                  - generic [ref=e113]: "21"
+                  - generic [ref=e114]: 24 left
+                  - generic [ref=e115]: €15
+                - button "2026-04-22 - €15/night - 24 beds left" [ref=e116] [cursor=pointer]:
+                  - img
+                  - generic [ref=e117]: "22"
+                  - generic [ref=e118]: 24 left
+                  - generic [ref=e119]: €15
+                - button "2026-04-23 - €15/night - 24 beds left" [ref=e120] [cursor=pointer]:
+                  - img
+                  - generic [ref=e121]: "23"
+                  - generic [ref=e122]: 24 left
+                  - generic [ref=e123]: €15
+                - button "2026-04-24 - €15/night - 24 beds left" [ref=e124] [cursor=pointer]:
+                  - img
+                  - generic [ref=e125]: "24"
+                  - generic [ref=e126]: 24 left
+                  - generic [ref=e127]: €15
+                - button "2026-04-25 - €15/night - 24 beds left" [ref=e128] [cursor=pointer]:
+                  - img
+                  - generic [ref=e129]: "25"
+                  - generic [ref=e130]: 24 left
+                  - generic [ref=e131]: €15
+                - button "2026-04-26 - €15/night - 24 beds left" [ref=e132] [cursor=pointer]:
+                  - img
+                  - generic [ref=e133]: "26"
+                  - generic [ref=e134]: 24 left
+                  - generic [ref=e135]: €15
+                - button "2026-04-27 - €15/night - 24 beds left" [ref=e136] [cursor=pointer]:
+                  - img
+                  - generic [ref=e137]: "27"
+                  - generic [ref=e138]: 24 left
+                  - generic [ref=e139]: €15
+                - button "2026-04-28 - €15/night - 24 beds left" [ref=e140] [cursor=pointer]:
+                  - img
+                  - generic [ref=e141]: "28"
+                  - generic [ref=e142]: 24 left
+                  - generic [ref=e143]: €15
+                - button "2026-04-29 - €15/night - 24 beds left" [ref=e144] [cursor=pointer]:
+                  - img
+                  - generic [ref=e145]: "29"
+                  - generic [ref=e146]: 24 left
+                  - generic [ref=e147]: €15
+                - button "2026-04-30 - €15/night - 24 beds left" [ref=e148] [cursor=pointer]:
+                  - img
+                  - generic [ref=e149]: "30"
+                  - generic [ref=e150]: 24 left
+                  - generic [ref=e151]: €15
+          - generic [ref=e152]:
+            - generic [ref=e153]:
+              - generic [ref=e154]:
+                - img [ref=e155]
+                - generic [ref=e158]: Pilgrims
+              - generic [ref=e159]:
+                - button "Remove pilgrim" [disabled] [ref=e160]: −
+                - spinbutton "Number of pilgrims" [ref=e161]: "1"
+                - button "Add pilgrim" [ref=e162] [cursor=pointer]: +
+              - generic [ref=e163]: 1 pilgrim
+            - generic [ref=e164]:
+              - generic [ref=e165]:
+                - generic [ref=e166]: Check-in
+                - generic [ref=e167]: —
+              - img [ref=e168]
+              - generic [ref=e170]:
+                - generic [ref=e171]: Check-out
+                - generic [ref=e172]: —
+      - button "Continue to Peregrinos →" [disabled] [ref=e174]:
+        - img
+        - text: Continue to Peregrinos →
+    - dialog "Leave booking?":
+      - generic:
+        - generic:
+          - img
+        - heading "Leave booking?" [level=2]
+        - paragraph:
+          - text: Your
+          - strong: progress will be lost
+          - text: if you leave now.
+          - text: Are you sure you want to go back home?
+        - generic:
+          - button "Stay & continue"
+          - button "Leave"
+  - button "Volver arriba":
+    - img
