@@ -1,14 +1,28 @@
 version: "3"
 
 # Development tasks for the Albergue Municipal Carrascalejo project
-# This file is included by the root Taskfile.yml
-# Includes @gateway/ and @frontend/ services
+# All backend services are Cloudflare Workers — use `wrangler dev` for local dev.
+# Each service runs on its own port (see .ports.json / comments below).
+#
+# Ports:
+#   8787  document-validation-service  (DOC_VALIDATION_URL)
+#   8788  ocr-service
+#   8789  booking-service
+#   8790  location-service
+#   8791  reviews-service
+#   8792  info-on-arrival-service
+#   8793  notification-service
+#   4321  frontend (Astro SSR via Node adapter in dev)
 
 vars:
-  # Default ports - these will be overridden by port management
-  FRONTEND_PORT: 3000
-  GATEWAY_PORT: 3001
-  AUTH_PORT: 3002
+  FRONTEND_PORT: 4321
+  DOC_VALIDATION_PORT: 8787
+  OCR_PORT: 8788
+  BOOKING_PORT: 8789
+  LOCATION_PORT: 8790
+  REVIEWS_PORT: 8791
+  INFO_PORT: 8792
+  NOTIFICATION_PORT: 8793
 
 tasks:
   default:
@@ -16,155 +30,154 @@ tasks:
     cmds:
       - task --list-all
 
-  # Main development task - builds and starts all services
+  # ── Main dev task ──────────────────────────────────────────────────────────
   run-all:
-    desc: Build and run all services (frontend, gateway, backend) in dev mode
+    desc: Build WASM artifacts then start all services
     cmds:
-      - task: build
+      - task: build-wasm
       - task: start
 
-  # Build all services
-  build:
-    desc: Build all services (frontend, gateway, backend)
-    deps:
-      - frontend
-      - bff
-      - auth-service
-      - booking-service
-      - document-validation-service
-      - info-on-arrival-service
-      - location-service
-      - notification-service
-      - rate-limiter-service
-      - redis-service
-      - reviews-service
-      - security-service
-
-  # Start all services
-  start:
-    desc: Start all development services with Spin (multi-service dev)
+  # ── Build WASM for all Cloudflare Worker services ─────────────────────────
+  build-wasm:
+    desc: Compile all backend services to WASM (worker-build --release)
     cmds:
-      - cd gateway/bff && spin up &
-      - cd backend/auth-service && spin up &
-      - cd backend/booking-service && spin up &
-      - cd backend/document-validation-service && spin up &
-      - cd backend/info-on-arrival-service && spin up &
-      - cd backend/location-service && spin up &
-      - cd backend/notification-service && spin up &
-      - cd backend/rate-limiter-service && spin up &
-      - cd backend/redis-service && spin up &
-      - cd backend/reviews-service && spin up &
-      - cd backend/security-service && spin up &
-      - cd frontend && pnpm dev &
-      - wait
+      - task: build-document-validation
+      - task: build-booking
+      - task: build-location
+      - task: build-reviews
+      - task: build-info
+      - task: build-notification
+      - task: build-ocr
 
-  # Stop all services
+  build-document-validation:
+    desc: Build document-validation-service WASM
+    dir: backend/document-validation-service
+    cmds:
+      - PATH=$HOME/.cargo/bin:$PATH worker-build --release
+
+  build-booking:
+    desc: Build booking-service WASM
+    dir: backend/booking-service
+    cmds:
+      - PATH=$HOME/.cargo/bin:$PATH worker-build --release
+
+  build-location:
+    desc: Build location-service WASM
+    dir: backend/location-service
+    cmds:
+      - PATH=$HOME/.cargo/bin:$PATH worker-build --release
+
+  build-reviews:
+    desc: Build reviews-service WASM
+    dir: backend/reviews-service
+    cmds:
+      - PATH=$HOME/.cargo/bin:$PATH worker-build --release
+
+  build-info:
+    desc: Build info-on-arrival-service WASM
+    dir: backend/info-on-arrival-service
+    cmds:
+      - PATH=$HOME/.cargo/bin:$PATH worker-build --release
+
+  build-notification:
+    desc: Build notification-service WASM
+    dir: backend/notification-service
+    cmds:
+      - PATH=$HOME/.cargo/bin:$PATH worker-build --release
+
+  build-ocr:
+    desc: Build ocr-service WASM
+    dir: backend/ocr-service
+    cmds:
+      - PATH=$HOME/.cargo/bin:$PATH worker-build --release
+
+  # ── Start all services ─────────────────────────────────────────────────────
+  start:
+    desc: Start all Cloudflare Worker services + frontend in parallel
+    cmds:
+      - |
+        (cd backend/document-validation-service && wrangler dev --port {{.DOC_VALIDATION_PORT}} --local 2>&1 | sed 's/^/[doc-validation] /') &
+        (cd backend/booking-service            && wrangler dev --port {{.BOOKING_PORT}}          --local 2>&1 | sed 's/^/[booking] /') &
+        (cd backend/location-service           && wrangler dev --port {{.LOCATION_PORT}}         --local 2>&1 | sed 's/^/[location] /') &
+        (cd backend/reviews-service            && wrangler dev --port {{.REVIEWS_PORT}}          --local 2>&1 | sed 's/^/[reviews] /') &
+        (cd backend/info-on-arrival-service    && wrangler dev --port {{.INFO_PORT}}             --local 2>&1 | sed 's/^/[info] /') &
+        (cd backend/notification-service       && wrangler dev --port {{.NOTIFICATION_PORT}}     --local 2>&1 | sed 's/^/[notification] /') &
+        (cd frontend                           && pnpm dev 2>&1 | sed 's/^/[frontend] /') &
+        wait
+
+  # ── Start individual services ──────────────────────────────────────────────
+  document-validation:
+    desc: Start document-validation-service on port 8787
+    dir: backend/document-validation-service
+    cmds:
+      - wrangler dev --port {{.DOC_VALIDATION_PORT}} --local
+
+  booking:
+    desc: Start booking-service on port 8789
+    dir: backend/booking-service
+    cmds:
+      - wrangler dev --port {{.BOOKING_PORT}} --local
+
+  location:
+    desc: Start location-service on port 8790
+    dir: backend/location-service
+    cmds:
+      - wrangler dev --port {{.LOCATION_PORT}} --local
+
+  reviews:
+    desc: Start reviews-service on port 8791
+    dir: backend/reviews-service
+    cmds:
+      - wrangler dev --port {{.REVIEWS_PORT}} --local
+
+  info:
+    desc: Start info-on-arrival-service on port 8792
+    dir: backend/info-on-arrival-service
+    cmds:
+      - wrangler dev --port {{.INFO_PORT}} --local
+
+  notification:
+    desc: Start notification-service on port 8793
+    dir: backend/notification-service
+    cmds:
+      - wrangler dev --port {{.NOTIFICATION_PORT}} --local
+
+  frontend:
+    desc: Start Astro frontend on port 4321
+    dir: frontend
+    cmds:
+      - pnpm dev
+
+  # ── Stop all services ──────────────────────────────────────────────────────
   stop:
     desc: Stop all development services
     cmds:
-      - pkill -f 'spin up' || true
-      - pkill -f 'bun run dev' || true
+      - pkill -f 'wrangler dev' || true
+      - pkill -f 'pnpm dev' || true
+      - pkill -f 'astro dev' || true
       - echo "✅ All dev services stopped"
 
-  # Restart all services
   restart:
-    desc: Restart development services
+    desc: Restart all development services
     cmds:
       - task: stop
       - task: start
 
-  # Show service status
   status:
-    desc: Show development services status
+    desc: Show running dev services
     cmds:
-      - ps aux | grep 'spin up'
-      - ps aux | grep 'bun run dev'
+      - ps aux | grep -E 'wrangler dev|pnpm dev|astro dev' | grep -v grep || echo "No services running"
 
-  # Clean development environment
   clean:
-    desc: Clean development environment
+    desc: Stop services and clean build artifacts
     cmds:
-      - pkill -f 'spin up' || true
-      - pkill -f 'bun run dev' || true
-      - rm -f .ports.json .env.ports
-      - echo "✅ Development environment cleaned"
+      - task: stop
+      - rm -rf backend/*/build
+      - echo "✅ Build artifacts cleaned"
 
-  # Setup development environment
   setup:
-    desc: Setup development environment
+    desc: Install tools needed for development
     cmds:
-      - ./scripts/dev-setup.sh
-      - ./scripts/port-management.sh generate
-      - echo "✅ Development environment setup complete"
-
-  # Dev task for backend/info-on-arrival-service
-  info-on-arrival-service:
-    desc: Dev task for backend/info-on-arrival-service
-    cmds:
-      - cd backend/info-on-arrival-service && spin build
-
-  # Dev task for backend/auth-service
-  auth-service:
-    desc: Dev task for backend/auth-service
-    cmds:
-      - cd backend/auth-service && spin build
-
-  # Frontend build
-  frontend:
-    desc: Build frontend (dev)
-    cmds:
-      - cd frontend && pnpm run build
-
-  # Gateway BFF build
-  bff:
-    desc: Build gateway/bff (dev)
-    cmds:
-      - cd gateway/bff && spin build
-
-  # Booking service build
-  booking-service:
-    desc: Build backend/booking-service
-    cmds:
-      - cd backend/booking-service && spin build
-
-  # Document validation service build
-  document-validation-service:
-    desc: Build backend/document-validation-service
-    cmds:
-      - cd backend/document-validation-service && spin build
-
-  # Location service build
-  location-service:
-    desc: Build backend/location-service
-    cmds:
-      - cd backend/location-service && spin build
-
-  # Notification service build
-  notification-service:
-    desc: Build backend/notification-service
-    cmds:
-      - cd backend/notification-service && spin build
-
-  # Rate limiter service build
-  rate-limiter-service:
-    desc: Build backend/rate-limiter-service
-    cmds:
-      - cd backend/rate-limiter-service && spin build
-
-  # Redis service build
-  redis-service:
-    desc: Build backend/redis-service
-    cmds:
-      - cd backend/redis-service && spin build
-
-  # Reviews service build
-  reviews-service:
-    desc: Build backend/reviews-service
-    cmds:
-      - cd backend/reviews-service && spin build
-
-  # Security service build
-  security-service:
-    desc: Build backend/security-service
-    cmds:
-      - cd backend/security-service && spin build
+      - cargo install worker-build --locked || true
+      - cd frontend && pnpm install
+      - echo "✅ Dev setup complete"

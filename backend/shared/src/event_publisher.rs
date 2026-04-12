@@ -40,7 +40,7 @@ impl EventPublisher {
                 message: e.to_string(),
             })?;
 
-            let mut headers = worker::Headers::new();
+            let headers = worker::Headers::new();
             headers.set("Content-Type", "application/json").ok();
 
             let mut init = worker::RequestInit::new();

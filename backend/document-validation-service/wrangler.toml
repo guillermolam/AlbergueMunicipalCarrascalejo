@@ -3,21 +3,21 @@ main = "build/worker/shim.mjs"
 compatibility_date = "2024-12-01"
 
 [build]
-command = "cargo install worker-build && worker-build --release"
+# Pre-build: PATH=$HOME/.cargo/bin:$PATH worker-build --release
+command = "PATH=$HOME/.cargo/bin:$PATH worker-build --release"
 
 [vars]
-ENVIRONMENT = "production"
+ENVIRONMENT = "development"
 
-# D1 Database
-[[d1_databases]]
-binding = "DB"
-database_name = "albergue-bookings"
-database_id = "" # Set after `wrangler d1 create albergue-bookings`
-
-# KV for caching
-[[kv_namespaces]]
-binding = "CACHE"
-id = "" # Set after `wrangler kv namespace create CACHE`
-
-[placement]
-mode = "smart"
+# D1 and KV bindings are only needed when the service stores processed results.
+# The image validation endpoint is stateless — no D1/KV required for local dev.
+# Uncomment and fill in the IDs when deploying to Cloudflare production:
+#
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "albergue-bookings"
+# database_id = "YOUR_D1_ID_HERE"
+#
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "YOUR_KV_ID_HERE"
