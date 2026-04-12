@@ -22,7 +22,7 @@ export interface PilgrimProfileDTO {
   lockerNumber: string | null;
   emergency: EmergencyContactProfileDTO | null;
   camino: CaminoProfileDTO;
-  badges: string[];          // earned badge IDs
+  badges: string[]; // earned badge IDs
   vehicles: VehicleDTO[];
   belongings: BelongingDTO[];
 }

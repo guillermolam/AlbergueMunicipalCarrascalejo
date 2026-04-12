@@ -12,20 +12,31 @@ if (!_uid || Astro.locals.role !== 'admin') {
   <!-- Unsaved changes banner -->
   <div id="unsaved-banner" class="alert alert-warning mb-4 hidden">
     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+      ></path>
     </svg>
     <span>You have unsaved changes.</span>
   </div>
 
   <!-- Toast container -->
-  <div id="toast-container" style="position:fixed;top:1rem;right:1rem;z-index:9999;" class="flex flex-col gap-2"></div>
+  <div
+    id="toast-container"
+    style="position:fixed;top:1rem;right:1rem;z-index:9999;"
+    class="flex flex-col gap-2"
+  >
+  </div>
 
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold">Settings</h1>
-        <p class="text-base-content/60 mt-1">Configure pricing, accommodation, booking rules, and more.</p>
+        <p class="text-base-content/60 mt-1">
+          Configure pricing, accommodation, booking rules, and more.
+        </p>
       </div>
     </div>
 
@@ -43,7 +54,6 @@ if (!_uid || Astro.locals.role !== 'admin') {
 
     <!-- ===== TAB: PRICING ===== -->
     <div id="tab-pricing" class="tab-panel space-y-6">
-
       <!-- Base price -->
       <div class="card bg-base-200">
         <div class="card-body">
@@ -52,8 +62,15 @@ if (!_uid || Astro.locals.role !== 'admin') {
           <div class="flex items-center gap-3 mt-2">
             <div class="form-control">
               <label class="label"><span class="label-text">Default Price (&#x20AC;)</span></label>
-              <input id="base-price" type="number" min="0" step="0.5" value="8"
-                class="input input-bordered w-32" oninput="markUnsaved()" />
+              <input
+                id="base-price"
+                type="number"
+                min="0"
+                step="0.5"
+                value="8"
+                class="input input-bordered w-32"
+                oninput="markUnsaved()"
+              />
             </div>
             <div class="mt-8">
               <button class="btn btn-primary" onclick="saveSection('pricing-base')">Save</button>
@@ -66,7 +83,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
       <div class="card bg-base-200">
         <div class="card-body">
           <h2 class="card-title">Monthly Price Overrides</h2>
-          <p class="text-base-content/60 text-sm">Set a specific price for each month. Leave blank to use base price.</p>
+          <p class="text-base-content/60 text-sm">
+            Set a specific price for each month. Leave blank to use base price.
+          </p>
           <div class="overflow-x-auto mt-2">
             <table class="table table-zebra w-full">
               <thead>
@@ -76,7 +95,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
             </table>
           </div>
           <div class="card-actions mt-4">
-            <button class="btn btn-primary" onclick="saveSection('pricing-monthly')">Save Monthly Prices</button>
+            <button class="btn btn-primary" onclick="saveSection('pricing-monthly')"
+              >Save Monthly Prices</button
+            >
           </div>
         </div>
       </div>
@@ -85,7 +106,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
       <div class="card bg-base-200">
         <div class="card-body">
           <h2 class="card-title">Bulk Date Range Override</h2>
-          <p class="text-base-content/60 text-sm">Apply a specific price to a custom date range (e.g., holidays).</p>
+          <p class="text-base-content/60 text-sm">
+            Apply a specific price to a custom date range (e.g., holidays).
+          </p>
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-2">
             <div class="form-control">
               <label class="label"><span class="label-text">From</span></label>
@@ -97,11 +120,19 @@ if (!_uid || Astro.locals.role !== 'admin') {
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Price (&#x20AC;)</span></label>
-              <input id="range-price" type="number" min="0" step="0.5"
-                class="input input-bordered" placeholder="&#x20AC;" />
+              <input
+                id="range-price"
+                type="number"
+                min="0"
+                step="0.5"
+                class="input input-bordered"
+                placeholder="€"
+              />
             </div>
             <div class="mt-8">
-              <button class="btn btn-secondary w-full" onclick="applyDateRange()">Apply to Range</button>
+              <button class="btn btn-secondary w-full" onclick="applyDateRange()"
+                >Apply to Range</button
+              >
             </div>
           </div>
           <div id="date-overrides-list" class="mt-4 space-y-2"></div>
@@ -112,7 +143,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
       <div class="card bg-base-200">
         <div class="card-body">
           <h2 class="card-title">Discount Rules</h2>
-          <p class="text-base-content/60 text-sm">Automatically applied discounts based on booking criteria.</p>
+          <p class="text-base-content/60 text-sm">
+            Automatically applied discounts based on booking criteria.
+          </p>
           <div class="overflow-x-auto mt-2">
             <table class="table w-full">
               <thead>
@@ -122,7 +155,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
             </table>
           </div>
           <div class="card-actions mt-4">
-            <button class="btn btn-primary" onclick="saveSection('pricing-discounts')">Save Discount Rules</button>
+            <button class="btn btn-primary" onclick="saveSection('pricing-discounts')"
+              >Save Discount Rules</button
+            >
           </div>
         </div>
       </div>
@@ -133,35 +168,67 @@ if (!_uid || Astro.locals.role !== 'admin') {
       <div class="card bg-base-200">
         <div class="card-body">
           <h2 class="card-title">Dorm Configuration</h2>
-          <p class="text-base-content/60 text-sm">Define the physical layout of the accommodation.</p>
+          <p class="text-base-content/60 text-sm">
+            Define the physical layout of the accommodation.
+          </p>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
             <div class="form-control">
               <label class="label"><span class="label-text">Number of Dorms</span></label>
-              <input id="num-dorms" type="number" min="1" max="20" value="2"
-                class="input input-bordered" oninput="recalcBeds()" />
+              <input
+                id="num-dorms"
+                type="number"
+                min="1"
+                max="20"
+                value="2"
+                class="input input-bordered"
+                oninput="recalcBeds()"
+              />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Bunks per Dorm</span></label>
-              <input id="num-bunks" type="number" min="1" max="50" value="6"
-                class="input input-bordered" oninput="recalcBeds()" />
+              <input
+                id="num-bunks"
+                type="number"
+                min="1"
+                max="50"
+                value="6"
+                class="input input-bordered"
+                oninput="recalcBeds()"
+              />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Beds per Bunk</span></label>
-              <input id="num-beds" type="number" min="1" max="4" value="2"
-                class="input input-bordered" oninput="recalcBeds()" />
+              <input
+                id="num-beds"
+                type="number"
+                min="1"
+                max="4"
+                value="2"
+                class="input input-bordered"
+                oninput="recalcBeds()"
+              />
             </div>
           </div>
 
           <div class="form-control mt-4">
-            <label class="label"><span class="label-text font-semibold">Total Beds (auto-calculated)</span></label>
-            <input id="total-beds" type="text" readonly value="24"
-              class="input input-bordered input-success bg-success/10 font-bold text-success w-32 cursor-not-allowed" />
+            <label class="label"
+              ><span class="label-text font-semibold">Total Beds (auto-calculated)</span></label
+            >
+            <input
+              id="total-beds"
+              type="text"
+              readonly
+              value="24"
+              class="input input-bordered input-success bg-success/10 font-bold text-success w-32 cursor-not-allowed"
+            />
           </div>
 
           <div id="dorm-diagram" class="mt-4 p-4 bg-base-300 rounded-box text-center"></div>
 
           <div class="card-actions mt-4">
-            <button class="btn btn-primary" onclick="saveSection('accommodation')">Save Configuration</button>
+            <button class="btn btn-primary" onclick="saveSection('accommodation')"
+              >Save Configuration</button
+            >
           </div>
         </div>
       </div>
@@ -183,12 +250,24 @@ if (!_uid || Astro.locals.role !== 'admin') {
               </span>
             </label>
             <div class="flex items-center gap-4">
-              <input id="max-advance" type="range" min="1" max="365" value="365"
+              <input
+                id="max-advance"
+                type="range"
+                min="1"
+                max="365"
+                value="365"
                 class="range range-primary flex-1"
-                oninput="syncAdvance(this.value)" />
-              <input id="max-advance-num" type="number" min="1" max="365" value="365"
+                oninput="syncAdvance(this.value)"
+              />
+              <input
+                id="max-advance-num"
+                type="number"
+                min="1"
+                max="365"
+                value="365"
                 class="input input-bordered w-20"
-                oninput="syncAdvance(this.value)" />
+                oninput="syncAdvance(this.value)"
+              />
             </div>
           </div>
 
@@ -199,8 +278,15 @@ if (!_uid || Astro.locals.role !== 'admin') {
               <label class="label">
                 <span class="label-text font-semibold">Max People per Booking</span>
               </label>
-              <input id="max-people" type="number" min="1" max="20" value="1"
-                class="input input-bordered" oninput="markUnsaved()" />
+              <input
+                id="max-people"
+                type="number"
+                min="1"
+                max="20"
+                value="1"
+                class="input input-bordered"
+                oninput="markUnsaved()"
+              />
               <label class="label">
                 <span class="label-text-alt text-base-content/50">
                   1 person per booking by default (pilgrim credential policy)
@@ -209,28 +295,58 @@ if (!_uid || Astro.locals.role !== 'admin') {
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-semibold">Min Nights</span></label>
-              <input id="min-nights" type="number" min="1" max="30" value="1"
-                class="input input-bordered" oninput="markUnsaved()" />
+              <input
+                id="min-nights"
+                type="number"
+                min="1"
+                max="30"
+                value="1"
+                class="input input-bordered"
+                oninput="markUnsaved()"
+              />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-semibold">Max Nights</span></label>
-              <input id="max-nights" type="number" min="1" max="365" value="14"
-                class="input input-bordered" oninput="markUnsaved()" />
+              <input
+                id="max-nights"
+                type="number"
+                min="1"
+                max="365"
+                value="14"
+                class="input input-bordered"
+                oninput="markUnsaved()"
+              />
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Check-out Time</span></label>
-              <input id="checkout-time" type="time" value="10:00"
-                class="input input-bordered" oninput="markUnsaved()" />
+              <label class="label"
+                ><span class="label-text font-semibold">Check-out Time</span></label
+              >
+              <input
+                id="checkout-time"
+                type="time"
+                value="10:00"
+                class="input input-bordered"
+                oninput="markUnsaved()"
+              />
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Check-in Time</span></label>
-              <input id="checkin-time" type="time" value="14:00"
-                class="input input-bordered" oninput="markUnsaved()" />
+              <label class="label"
+                ><span class="label-text font-semibold">Check-in Time</span></label
+              >
+              <input
+                id="checkin-time"
+                type="time"
+                value="14:00"
+                class="input input-bordered"
+                oninput="markUnsaved()"
+              />
             </div>
           </div>
 
           <div class="card-actions">
-            <button class="btn btn-primary" onclick="saveSection('booking-rules')">Save Booking Rules</button>
+            <button class="btn btn-primary" onclick="saveSection('booking-rules')"
+              >Save Booking Rules</button
+            >
           </div>
         </div>
       </div>
@@ -241,17 +357,28 @@ if (!_uid || Astro.locals.role !== 'admin') {
       <div class="card bg-base-200">
         <div class="card-body">
           <h2 class="card-title">Payment Methods</h2>
-          <p class="text-base-content/60 text-sm mb-4">Toggle which methods guests can use at checkout.</p>
-          <div id="payment-methods-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          <p class="text-base-content/60 text-sm mb-4">
+            Toggle which methods guests can use at checkout.
+          </p>
+          <div
+            id="payment-methods-grid"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+          </div>
           <div class="alert alert-info mt-4">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span>Enabled methods will be shown to guests during checkout.</span>
           </div>
           <div class="card-actions mt-4">
-            <button class="btn btn-primary" onclick="saveSection('payment-methods')">Save Payment Methods</button>
+            <button class="btn btn-primary" onclick="saveSection('payment-methods')"
+              >Save Payment Methods</button
+            >
           </div>
         </div>
       </div>
@@ -259,34 +386,62 @@ if (!_uid || Astro.locals.role !== 'admin') {
 
     <!-- ===== TAB: ID REQUIREMENTS ===== -->
     <div id="tab-id-requirements" class="tab-panel hidden space-y-4">
-
       <div class="card bg-base-200">
         <div class="card-body space-y-4">
           <h2 class="card-title">ID / Passport Requirements</h2>
 
           <label class="label cursor-pointer justify-start gap-4">
-            <input id="req-photo-id" type="checkbox" class="toggle toggle-primary" checked oninput="markUnsaved()" />
+            <input
+              id="req-photo-id"
+              type="checkbox"
+              class="toggle toggle-primary"
+              checked
+              oninput="markUnsaved()"
+            />
             <span class="label-text font-semibold">Require photo ID upload</span>
           </label>
           <label class="label cursor-pointer justify-start gap-4">
-            <input id="req-passport" type="checkbox" class="toggle toggle-primary" checked oninput="markUnsaved()" />
+            <input
+              id="req-passport"
+              type="checkbox"
+              class="toggle toggle-primary"
+              checked
+              oninput="markUnsaved()"
+            />
             <span class="label-text">Accept passport</span>
           </label>
           <label class="label cursor-pointer justify-start gap-4">
-            <input id="req-dni" type="checkbox" class="toggle toggle-primary" checked oninput="markUnsaved()" />
+            <input
+              id="req-dni"
+              type="checkbox"
+              class="toggle toggle-primary"
+              checked
+              oninput="markUnsaved()"
+            />
             <span class="label-text">Accept DNI / ID Card</span>
           </label>
           <label class="label cursor-pointer justify-start gap-4">
-            <input id="req-ocr" type="checkbox" class="toggle toggle-primary" checked oninput="markUnsaved()" />
+            <input
+              id="req-ocr"
+              type="checkbox"
+              class="toggle toggle-primary"
+              checked
+              oninput="markUnsaved()"
+            />
             <span class="label-text">OCR auto-fill from ID</span>
           </label>
 
           <div class="alert">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <span class="text-sm">Spain requires pilgrim identity verification per municipal regulations.</span>
+            <span class="text-sm"
+              >Spain requires pilgrim identity verification per municipal regulations.</span
+            >
           </div>
         </div>
       </div>
@@ -295,18 +450,32 @@ if (!_uid || Astro.locals.role !== 'admin') {
         <div class="card-body space-y-4">
           <h2 class="card-title">Pilgrim Credential</h2>
           <label class="label cursor-pointer justify-start gap-4">
-            <input id="req-credencial" type="checkbox" class="toggle toggle-secondary" oninput="markUnsaved()" />
-            <span class="label-text font-semibold">Require pilgrim credential (credencial del peregrino)</span>
+            <input
+              id="req-credencial"
+              type="checkbox"
+              class="toggle toggle-secondary"
+              oninput="markUnsaved()"
+            />
+            <span class="label-text font-semibold"
+              >Require pilgrim credential (credencial del peregrino)</span
+            >
           </label>
           <label class="label cursor-pointer justify-start gap-4">
-            <input id="req-credencial-scan" type="checkbox" class="toggle toggle-secondary" oninput="markUnsaved()" />
+            <input
+              id="req-credencial-scan"
+              type="checkbox"
+              class="toggle toggle-secondary"
+              oninput="markUnsaved()"
+            />
             <span class="label-text">Scan / photo of credential</span>
           </label>
         </div>
       </div>
 
       <div>
-        <button class="btn btn-primary" onclick="saveSection('id-requirements')">Save ID Requirements</button>
+        <button class="btn btn-primary" onclick="saveSection('id-requirements')"
+          >Save ID Requirements</button
+        >
       </div>
     </div>
 
@@ -315,7 +484,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
       <div class="card bg-base-200">
         <div class="card-body">
           <h2 class="card-title">Pilgrim Info Fields</h2>
-          <p class="text-base-content/60 text-sm mb-4">Control which fields are shown during registration.</p>
+          <p class="text-base-content/60 text-sm mb-4">
+            Control which fields are shown during registration.
+          </p>
           <div class="overflow-x-auto">
             <table class="table w-full">
               <thead>
@@ -328,7 +499,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
             </table>
           </div>
           <div class="card-actions mt-4">
-            <button class="btn btn-primary" onclick="saveSection('pilgrim-fields')">Save Field Configuration</button>
+            <button class="btn btn-primary" onclick="saveSection('pilgrim-fields')"
+              >Save Field Configuration</button
+            >
           </div>
         </div>
       </div>
@@ -336,46 +509,103 @@ if (!_uid || Astro.locals.role !== 'admin') {
 
     <!-- ===== TAB: HOSTEL INFO ===== -->
     <div id="tab-hostel-info" class="tab-panel hidden space-y-6">
-
       <!-- Basic Info -->
       <div class="card bg-base-100 shadow">
         <div class="card-body space-y-4">
           <h2 class="card-title">🏨 Hostel Details</h2>
-          <p class="text-sm text-base-content/60">Public information displayed to guests on the booking page and confirmation emails.</p>
+          <p class="text-sm text-base-content/60">
+            Public information displayed to guests on the booking page and confirmation emails.
+          </p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-control">
               <label class="label"><span class="label-text font-semibold">Hostel Name</span></label>
-              <input id="hostel-name" type="text" class="input input-bordered" value="Albergue Municipal de El Carrascalejo" />
+              <input
+                id="hostel-name"
+                type="text"
+                class="input input-bordered"
+                value="Albergue Municipal de El Carrascalejo"
+              />
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Phone Number</span></label>
-              <input id="hostel-phone" type="tel" class="input input-bordered" value="+34 924 000 000" placeholder="+34 924 000 000" />
+              <label class="label"><span class="label-text font-semibold">Phone Number</span></label
+              >
+              <input
+                id="hostel-phone"
+                type="tel"
+                class="input input-bordered"
+                value="+34 924 000 000"
+                placeholder="+34 924 000 000"
+              />
             </div>
             <div class="form-control md:col-span-2">
               <label class="label"><span class="label-text font-semibold">Address</span></label>
-              <input id="hostel-address" type="text" class="input input-bordered" value="Calle Mayor, 1, 06695 El Carrascalejo, Badajoz, España" />
+              <input
+                id="hostel-address"
+                type="text"
+                class="input input-bordered"
+                value="Calle Mayor, 1, 06695 El Carrascalejo, Badajoz, España"
+              />
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Email Address</span></label>
-              <input id="hostel-email" type="email" class="input input-bordered" value="albergue@carrascalejo.es" placeholder="albergue@example.com" />
+              <label class="label"
+                ><span class="label-text font-semibold">Email Address</span></label
+              >
+              <input
+                id="hostel-email"
+                type="email"
+                class="input input-bordered"
+                value="albergue@carrascalejo.es"
+                placeholder="albergue@example.com"
+              />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text font-semibold">Website</span></label>
-              <input id="hostel-website" type="url" class="input input-bordered" value="https://albergue.carrascalejo.es" placeholder="https://..." />
+              <input
+                id="hostel-website"
+                type="url"
+                class="input input-bordered"
+                value="https://albergue.carrascalejo.es"
+                placeholder="https://..."
+              />
             </div>
             <div class="form-control md:col-span-2">
-              <label class="label"><span class="label-text font-semibold">GPS Coordinates</span></label>
+              <label class="label"
+                ><span class="label-text font-semibold">GPS Coordinates</span></label
+              >
               <div class="flex gap-2">
-                <input id="hostel-lat" type="text" class="input input-bordered flex-1" value="39.3542" placeholder="Latitude" />
-                <input id="hostel-lng" type="text" class="input input-bordered flex-1" value="-5.8791" placeholder="Longitude" />
+                <input
+                  id="hostel-lat"
+                  type="text"
+                  class="input input-bordered flex-1"
+                  value="39.3542"
+                  placeholder="Latitude"
+                />
+                <input
+                  id="hostel-lng"
+                  type="text"
+                  class="input input-bordered flex-1"
+                  value="-5.8791"
+                  placeholder="Longitude"
+                />
               </div>
             </div>
             <div class="form-control md:col-span-2">
-              <label class="label"><span class="label-text font-semibold">Short Description (shown to guests)</span></label>
-              <textarea id="hostel-desc" class="textarea textarea-bordered h-20" placeholder="Brief description of the hostel...">Albergue municipal en el Camino de Santiago, etapa Cáceres–Mérida. 24 camas en 2 dormitorios, con cocina, comedor y jardín.</textarea>
+              <label class="label"
+                ><span class="label-text font-semibold">Short Description (shown to guests)</span
+                ></label
+              >
+              <textarea
+                id="hostel-desc"
+                class="textarea textarea-bordered h-20"
+                placeholder="Brief description of the hostel..."
+                >Albergue municipal en el Camino de Santiago, etapa Cáceres–Mérida. 24 camas en 2
+                dormitorios, con cocina, comedor y jardín.</textarea
+              >
             </div>
           </div>
-          <button class="btn btn-primary" onclick="saveSection('hostel-info')">Save Hostel Info</button>
+          <button class="btn btn-primary" onclick="saveSection('hostel-info')"
+            >Save Hostel Info</button
+          >
         </div>
       </div>
 
@@ -385,24 +615,51 @@ if (!_uid || Astro.locals.role !== 'admin') {
           <h2 class="card-title">🕐 Check-in & Check-out Hours</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Check-in From</span></label>
+              <label class="label"
+                ><span class="label-text font-semibold">Check-in From</span></label
+              >
               <input id="checkin-from" type="time" class="input input-bordered" value="14:00" />
-              <label class="label"><span class="label-text-alt text-base-content/50">Earliest guests may arrive</span></label>
+              <label class="label"
+                ><span class="label-text-alt text-base-content/50">Earliest guests may arrive</span
+                ></label
+              >
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Check-in Until</span></label>
+              <label class="label"
+                ><span class="label-text font-semibold">Check-in Until</span></label
+              >
               <input id="checkin-until" type="time" class="input input-bordered" value="22:00" />
-              <label class="label"><span class="label-text-alt text-base-content/50">Latest check-in accepted</span></label>
+              <label class="label"
+                ><span class="label-text-alt text-base-content/50">Latest check-in accepted</span
+                ></label
+              >
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Check-out By</span></label>
+              <label class="label"><span class="label-text font-semibold">Check-out By</span></label
+              >
               <input id="checkout-by" type="time" class="input input-bordered" value="10:00" />
-              <label class="label"><span class="label-text-alt text-base-content/50">Guests must vacate by this time</span></label>
+              <label class="label"
+                ><span class="label-text-alt text-base-content/50"
+                  >Guests must vacate by this time</span
+                ></label
+              >
             </div>
           </div>
           <div class="alert alert-info text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>These hours are shown to guests on the booking confirmation and the date picker step.</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              class="stroke-current shrink-0 w-5 h-5"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg
+            >
+            <span
+              >These hours are shown to guests on the booking confirmation and the date picker step.</span
+            >
           </div>
           <button class="btn btn-primary" onclick="saveSection('hostel-hours')">Save Hours</button>
         </div>
@@ -414,11 +671,15 @@ if (!_uid || Astro.locals.role !== 'admin') {
           <h2 class="card-title">📋 Hostel Policies</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Quiet Hours From</span></label>
+              <label class="label"
+                ><span class="label-text font-semibold">Quiet Hours From</span></label
+              >
               <input id="quiet-from" type="time" class="input input-bordered" value="22:00" />
             </div>
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Quiet Hours Until</span></label>
+              <label class="label"
+                ><span class="label-text font-semibold">Quiet Hours Until</span></label
+              >
               <input id="quiet-until" type="time" class="input input-bordered" value="07:00" />
             </div>
           </div>
@@ -440,7 +701,9 @@ if (!_uid || Astro.locals.role !== 'admin') {
             <div class="flex items-center justify-between py-2 border-b border-base-200">
               <div>
                 <div class="font-medium">Luggage storage after checkout</div>
-                <div class="text-sm text-base-content/50">Allow bags to be stored after check-out time</div>
+                <div class="text-sm text-base-content/50">
+                  Allow bags to be stored after check-out time
+                </div>
               </div>
               <input id="policy-luggage" type="checkbox" class="toggle toggle-primary" checked />
             </div>
@@ -452,31 +715,52 @@ if (!_uid || Astro.locals.role !== 'admin') {
               <input id="policy-wifi" type="checkbox" class="toggle toggle-primary" checked />
             </div>
           </div>
-          <button class="btn btn-primary" onclick="saveSection('hostel-policies')">Save Policies</button>
+          <button class="btn btn-primary" onclick="saveSection('hostel-policies')"
+            >Save Policies</button
+          >
         </div>
       </div>
-
     </div>
 
     <!-- ===== TAB: SERVICES ===== -->
     <div id="tab-services" class="tab-panel hidden space-y-6">
-
       <div class="card bg-base-100 shadow">
         <div class="card-body">
           <h2 class="card-title">🛁 Additional Services & Prices</h2>
-          <p class="text-sm text-base-content/60">Configure optional services available to guests. These appear on the booking confirmation and at reception.</p>
+          <p class="text-sm text-base-content/60">
+            Configure optional services available to guests. These appear on the booking
+            confirmation and at reception.
+          </p>
 
           <!-- Add new service form -->
           <div class="bg-base-200 rounded-xl p-4 space-y-3">
-            <h3 class="font-semibold text-sm uppercase tracking-wide text-base-content/60">Add New Service</h3>
+            <h3 class="font-semibold text-sm uppercase tracking-wide text-base-content/60">
+              Add New Service
+            </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div class="form-control">
-                <label class="label pb-1"><span class="label-text font-semibold">Service Name</span></label>
-                <input id="svc-name" type="text" class="input input-bordered input-sm" placeholder="e.g. Washing Machine" />
+                <label class="label pb-1"
+                  ><span class="label-text font-semibold">Service Name</span></label
+                >
+                <input
+                  id="svc-name"
+                  type="text"
+                  class="input input-bordered input-sm"
+                  placeholder="e.g. Washing Machine"
+                />
               </div>
               <div class="form-control">
-                <label class="label pb-1"><span class="label-text font-semibold">Price (€)</span></label>
-                <input id="svc-price" type="number" min="0" step="0.5" class="input input-bordered input-sm" placeholder="2.00" />
+                <label class="label pb-1"
+                  ><span class="label-text font-semibold">Price (€)</span></label
+                >
+                <input
+                  id="svc-price"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  class="input input-bordered input-sm"
+                  placeholder="2.00"
+                />
               </div>
               <div class="form-control">
                 <label class="label pb-1"><span class="label-text font-semibold">Unit</span></label>
@@ -491,17 +775,35 @@ if (!_uid || Astro.locals.role !== 'admin') {
                 </select>
               </div>
               <div class="form-control">
-                <label class="label pb-1"><span class="label-text font-semibold">Icon (emoji)</span></label>
-                <input id="svc-icon" type="text" class="input input-bordered input-sm" placeholder="🧺" maxlength="4" value="🛁" />
+                <label class="label pb-1"
+                  ><span class="label-text font-semibold">Icon (emoji)</span></label
+                >
+                <input
+                  id="svc-icon"
+                  type="text"
+                  class="input input-bordered input-sm"
+                  placeholder="🧺"
+                  maxlength="4"
+                  value="🛁"
+                />
               </div>
             </div>
             <div class="form-control">
-              <label class="label pb-1"><span class="label-text font-semibold">Description (optional)</span></label>
-              <input id="svc-desc" type="text" class="input input-bordered input-sm" placeholder="Brief description shown to guests" />
+              <label class="label pb-1"
+                ><span class="label-text font-semibold">Description (optional)</span></label
+              >
+              <input
+                id="svc-desc"
+                type="text"
+                class="input input-bordered input-sm"
+                placeholder="Brief description shown to guests"
+              />
             </div>
             <div class="flex items-center gap-3">
               <button class="btn btn-primary btn-sm" onclick="addService()">+ Add Service</button>
-              <span class="text-sm text-base-content/50">Fill in name and price, then click Add</span>
+              <span class="text-sm text-base-content/50"
+                >Fill in name and price, then click Add</span
+              >
             </div>
           </div>
 
@@ -510,7 +812,8 @@ if (!_uid || Astro.locals.role !== 'admin') {
 
           <div class="mt-4 flex gap-3">
             <button class="btn btn-primary" onclick="saveSection('services')">Save Services</button>
-            <button class="btn btn-ghost btn-sm" onclick="resetServices()">Reset to defaults</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetServices()">Reset to defaults</button
+            >
           </div>
         </div>
       </div>
@@ -519,705 +822,913 @@ if (!_uid || Astro.locals.role !== 'admin') {
       <div class="card bg-base-100 shadow">
         <div class="card-body">
           <h2 class="card-title">👁 Guest-facing preview</h2>
-          <p class="text-sm text-base-content/60">This is how services appear on the booking confirmation email and reception info sheet.</p>
-          <div id="services-preview" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2"></div>
+          <p class="text-sm text-base-content/60">
+            This is how services appear on the booking confirmation email and reception info sheet.
+          </p>
+          <div
+            id="services-preview"
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2"
+          >
+          </div>
         </div>
       </div>
-
     </div>
-
   </div>
 </AdminLayout>
 
 <script is:inline>
-// =====================================================
-// SETTINGS PAGE — VANILLA JS + LOCALSTORAGE
-// Note: All dynamic HTML is built from developer-controlled
-// constant data only. No user-submitted text is rendered as HTML.
-// =====================================================
+  // =====================================================
+  // SETTINGS PAGE — VANILLA JS + LOCALSTORAGE
+  // Note: All dynamic HTML is built from developer-controlled
+  // constant data only. No user-submitted text is rendered as HTML.
+  // =====================================================
 
-// ---- Constants ----
-var MONTHS = ['January','February','March','April','May','June',
-              'July','August','September','October','November','December'];
-var DEFAULT_MONTHLY = [8,8,8,10,10,12,12,12,10,10,8,8];
-var SEASON_LABELS   = ['Low','Low','Low','Mid','Mid','High','High','High','Mid','Mid','Low','Low'];
+  // ---- Constants ----
+  var MONTHS = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  var DEFAULT_MONTHLY = [8, 8, 8, 10, 10, 12, 12, 12, 10, 10, 8, 8];
+  var SEASON_LABELS = [
+    'Low',
+    'Low',
+    'Low',
+    'Mid',
+    'Mid',
+    'High',
+    'High',
+    'High',
+    'Mid',
+    'Mid',
+    'Low',
+    'Low',
+  ];
 
-var PAYMENT_METHODS_DEF = [
-  { id: 'pm-card',   icon: '\u{1F4B3}', label: 'Card',            desc: 'Visa, Mastercard, etc.', enabled: true  },
-  { id: 'pm-cash',   icon: '\u{1F4B5}', label: 'Cash on Arrival', desc: 'Pay at check-in',        enabled: true  },
-  { id: 'pm-bizum',  icon: '\u{1F4F1}', label: 'Bizum',           desc: 'Spanish mobile payment', enabled: true  },
-  { id: 'pm-bank',   icon: '\u{1F3E6}', label: 'Bank Transfer',   desc: 'SEPA bank transfer',     enabled: true  },
-  { id: 'pm-apple',  icon: '\u{1F34E}', label: 'Apple Pay',       desc: 'Apple Pay wallet',       enabled: false },
-  { id: 'pm-google', icon: '\u{1F916}', label: 'Google Pay',      desc: 'Google Pay wallet',      enabled: false },
-];
+  var PAYMENT_METHODS_DEF = [
+    {
+      id: 'pm-card',
+      icon: '\u{1F4B3}',
+      label: 'Card',
+      desc: 'Visa, Mastercard, etc.',
+      enabled: true,
+    },
+    {
+      id: 'pm-cash',
+      icon: '\u{1F4B5}',
+      label: 'Cash on Arrival',
+      desc: 'Pay at check-in',
+      enabled: true,
+    },
+    {
+      id: 'pm-bizum',
+      icon: '\u{1F4F1}',
+      label: 'Bizum',
+      desc: 'Spanish mobile payment',
+      enabled: true,
+    },
+    {
+      id: 'pm-bank',
+      icon: '\u{1F3E6}',
+      label: 'Bank Transfer',
+      desc: 'SEPA bank transfer',
+      enabled: true,
+    },
+    {
+      id: 'pm-apple',
+      icon: '\u{1F34E}',
+      label: 'Apple Pay',
+      desc: 'Apple Pay wallet',
+      enabled: false,
+    },
+    {
+      id: 'pm-google',
+      icon: '\u{1F916}',
+      label: 'Google Pay',
+      desc: 'Google Pay wallet',
+      enabled: false,
+    },
+  ];
 
-var DISCOUNT_RULES_DEF = [
-  { id: 'dc1', label: 'Early booking (>30 days in advance)', enabled: true,  percent: 10 },
-  { id: 'dc2', label: 'Long stay (>6 nights)',               enabled: true,  percent: 15 },
-  { id: 'dc3', label: 'Pilgrim credential',                  enabled: true,  percent:  5 },
-];
+  var DISCOUNT_RULES_DEF = [
+    { id: 'dc1', label: 'Early booking (>30 days in advance)', enabled: true, percent: 10 },
+    { id: 'dc2', label: 'Long stay (>6 nights)', enabled: true, percent: 15 },
+    { id: 'dc3', label: 'Pilgrim credential', enabled: true, percent: 5 },
+  ];
 
-var PILGRIM_FIELDS_DEF = [
-  { id: 'pf-firstname',    label: 'First Name',         status: 'required' },
-  { id: 'pf-lastname',     label: 'Last Name',          status: 'required' },
-  { id: 'pf-lastname2',    label: 'Second Last Name',   status: 'optional' },
-  { id: 'pf-dob',          label: 'Date of Birth',      status: 'required' },
-  { id: 'pf-nationality',  label: 'Nationality',        status: 'required' },
-  { id: 'pf-email',        label: 'Email',              status: 'required' },
-  { id: 'pf-phone',        label: 'Phone',              status: 'optional' },
-  { id: 'pf-zip',          label: 'ZIP / Postal Code',  status: 'optional' },
-  { id: 'pf-city',         label: 'City',               status: 'optional' },
-  { id: 'pf-emergency',    label: 'Emergency Contact',  status: 'optional' },
-  { id: 'pf-route',        label: 'Camino Route',       status: 'optional' },
-  { id: 'pf-startpoint',   label: 'Start Point',        status: 'hidden'   },
-  { id: 'pf-notes',        label: 'Pilgrim Notes',      status: 'hidden'   },
-];
+  var PILGRIM_FIELDS_DEF = [
+    { id: 'pf-firstname', label: 'First Name', status: 'required' },
+    { id: 'pf-lastname', label: 'Last Name', status: 'required' },
+    { id: 'pf-lastname2', label: 'Second Last Name', status: 'optional' },
+    { id: 'pf-dob', label: 'Date of Birth', status: 'required' },
+    { id: 'pf-nationality', label: 'Nationality', status: 'required' },
+    { id: 'pf-email', label: 'Email', status: 'required' },
+    { id: 'pf-phone', label: 'Phone', status: 'optional' },
+    { id: 'pf-zip', label: 'ZIP / Postal Code', status: 'optional' },
+    { id: 'pf-city', label: 'City', status: 'optional' },
+    { id: 'pf-emergency', label: 'Emergency Contact', status: 'optional' },
+    { id: 'pf-route', label: 'Camino Route', status: 'optional' },
+    { id: 'pf-startpoint', label: 'Start Point', status: 'hidden' },
+    { id: 'pf-notes', label: 'Pilgrim Notes', status: 'hidden' },
+  ];
 
-var dateOverrides = [
-  { id: 'ov1', label: 'Easter Week',    from: '2026-04-05', to: '2026-04-13',  price: 15 },
-  { id: 'ov2', label: 'Christmas Week', from: '2026-12-23', to: '2027-01-02',  price: 16 },
-];
+  var dateOverrides = [
+    { id: 'ov1', label: 'Easter Week', from: '2026-04-05', to: '2026-04-13', price: 15 },
+    { id: 'ov2', label: 'Christmas Week', from: '2026-12-23', to: '2027-01-02', price: 16 },
+  ];
 
-var DEFAULT_SERVICES = [
-  { id: 'svc1', icon: '🧺', name: 'Washing Machine', price: 1,   unit: 'per load',  desc: 'Coin-operated washing machine, detergent not included', enabled: true },
-  { id: 'svc2', icon: '🌀', name: 'Dryer',           price: 2,   unit: 'per use',   desc: 'Electric tumble dryer, ~45 min cycle',                  enabled: true },
-  { id: 'svc3', icon: '🛁', name: 'Towel Rental',    price: 1,   unit: 'per day',   desc: 'Clean bath towel, exchanged daily',                     enabled: true },
-  { id: 'svc4', icon: '🔒', name: 'Locker',          price: 1,   unit: 'per night', desc: 'Small personal locker with padlock rental',             enabled: true },
-  { id: 'svc5', icon: '🥐', name: 'Breakfast',       price: 3.5, unit: 'per day',   desc: 'Continental breakfast: coffee, bread, fruit, juice',    enabled: false },
-  { id: 'svc6', icon: '🚲', name: 'Bike Parking',    price: 2,   unit: 'per night', desc: 'Secure covered bicycle storage',                        enabled: true },
-  { id: 'svc7', icon: '📦', name: 'Bag Storage',     price: 1,   unit: 'flat fee',  desc: 'Store your bag after checkout until 6pm',               enabled: true },
-  { id: 'svc8', icon: '⚡', name: 'Device Charging', price: 0.5, unit: 'per hour',  desc: 'Supervised charging station',                           enabled: false },
-];
-var hostelServices = JSON.parse(JSON.stringify(DEFAULT_SERVICES));
+  var DEFAULT_SERVICES = [
+    {
+      id: 'svc1',
+      icon: '🧺',
+      name: 'Washing Machine',
+      price: 1,
+      unit: 'per load',
+      desc: 'Coin-operated washing machine, detergent not included',
+      enabled: true,
+    },
+    {
+      id: 'svc2',
+      icon: '🌀',
+      name: 'Dryer',
+      price: 2,
+      unit: 'per use',
+      desc: 'Electric tumble dryer, ~45 min cycle',
+      enabled: true,
+    },
+    {
+      id: 'svc3',
+      icon: '🛁',
+      name: 'Towel Rental',
+      price: 1,
+      unit: 'per day',
+      desc: 'Clean bath towel, exchanged daily',
+      enabled: true,
+    },
+    {
+      id: 'svc4',
+      icon: '🔒',
+      name: 'Locker',
+      price: 1,
+      unit: 'per night',
+      desc: 'Small personal locker with padlock rental',
+      enabled: true,
+    },
+    {
+      id: 'svc5',
+      icon: '🥐',
+      name: 'Breakfast',
+      price: 3.5,
+      unit: 'per day',
+      desc: 'Continental breakfast: coffee, bread, fruit, juice',
+      enabled: false,
+    },
+    {
+      id: 'svc6',
+      icon: '🚲',
+      name: 'Bike Parking',
+      price: 2,
+      unit: 'per night',
+      desc: 'Secure covered bicycle storage',
+      enabled: true,
+    },
+    {
+      id: 'svc7',
+      icon: '📦',
+      name: 'Bag Storage',
+      price: 1,
+      unit: 'flat fee',
+      desc: 'Store your bag after checkout until 6pm',
+      enabled: true,
+    },
+    {
+      id: 'svc8',
+      icon: '⚡',
+      name: 'Device Charging',
+      price: 0.5,
+      unit: 'per hour',
+      desc: 'Supervised charging station',
+      enabled: false,
+    },
+  ];
+  var hostelServices = JSON.parse(JSON.stringify(DEFAULT_SERVICES));
 
-// ---- Tab switching ----
-function initTabs() {
-  var tabs = document.querySelectorAll('[data-tab]');
-  tabs.forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      tabs.forEach(function(t) { t.classList.remove('tab-active'); });
-      tab.classList.add('tab-active');
-      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.add('hidden'); });
-      var panel = document.getElementById('tab-' + tab.dataset.tab);
-      if (panel) panel.classList.remove('hidden');
+  // ---- Tab switching ----
+  function initTabs() {
+    var tabs = document.querySelectorAll('[data-tab]');
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) {
+          t.classList.remove('tab-active');
+        });
+        tab.classList.add('tab-active');
+        document.querySelectorAll('.tab-panel').forEach(function (p) {
+          p.classList.add('hidden');
+        });
+        var panel = document.getElementById('tab-' + tab.dataset.tab);
+        if (panel) panel.classList.remove('hidden');
+      });
     });
-  });
-}
+  }
 
-// ---- Unsaved changes ----
-var unsavedChanges = false;
-function markUnsaved() {
-  unsavedChanges = true;
-  document.getElementById('unsaved-banner').classList.remove('hidden');
-}
-function clearUnsaved() {
-  unsavedChanges = false;
-  document.getElementById('unsaved-banner').classList.add('hidden');
-}
+  // ---- Unsaved changes ----
+  var unsavedChanges = false;
+  function markUnsaved() {
+    unsavedChanges = true;
+    document.getElementById('unsaved-banner').classList.remove('hidden');
+  }
+  function clearUnsaved() {
+    unsavedChanges = false;
+    document.getElementById('unsaved-banner').classList.add('hidden');
+  }
 
-// ---- Toast ----
-function showToast(message, type) {
-  type = type || 'success';
-  var container = document.getElementById('toast-container');
-  var div = document.createElement('div');
-  div.className = 'alert ' + (type === 'success' ? 'alert-success' : 'alert-error') + ' shadow-lg';
-  var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  icon.setAttribute('class', 'w-5 h-5 shrink-0');
-  icon.setAttribute('fill', 'none');
-  icon.setAttribute('stroke', 'currentColor');
-  icon.setAttribute('viewBox', '0 0 24 24');
-  var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('stroke-linecap', 'round');
-  path.setAttribute('stroke-linejoin', 'round');
-  path.setAttribute('stroke-width', '2');
-  path.setAttribute('d', type === 'success'
-    ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-    : 'M6 18L18 6M6 6l12 12');
-  icon.appendChild(path);
-  var span = document.createElement('span');
-  span.textContent = message;
-  div.appendChild(icon);
-  div.appendChild(span);
-  container.appendChild(div);
-  setTimeout(function() { if (div.parentNode) div.parentNode.removeChild(div); }, 3000);
-}
+  // ---- Toast ----
+  function showToast(message, type) {
+    type = type || 'success';
+    var container = document.getElementById('toast-container');
+    var div = document.createElement('div');
+    div.className =
+      'alert ' + (type === 'success' ? 'alert-success' : 'alert-error') + ' shadow-lg';
+    var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('class', 'w-5 h-5 shrink-0');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute(
+      'd',
+      type === 'success' ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' : 'M6 18L18 6M6 6l12 12'
+    );
+    icon.appendChild(path);
+    var span = document.createElement('span');
+    span.textContent = message;
+    div.appendChild(icon);
+    div.appendChild(span);
+    container.appendChild(div);
+    setTimeout(function () {
+      if (div.parentNode) div.parentNode.removeChild(div);
+    }, 3000);
+  }
 
-// ---- localStorage ----
-function loadSettings() {
-  try { return JSON.parse(localStorage.getItem('albergue_settings') || '{}'); }
-  catch(e) { return {}; }
-}
-function persistSettings(s) {
-  localStorage.setItem('albergue_settings', JSON.stringify(s));
-}
-
-// ---- Save section ----
-function saveSection(section) {
-  var s = loadSettings();
-  if (section === 'pricing-base') {
-    s.basePrice = parseFloat(document.getElementById('base-price').value) || 8;
-  }
-  if (section === 'pricing-monthly') {
-    s.monthlyPrices = getMonthlyPrices();
-  }
-  if (section === 'pricing-discounts') {
-    s.discountRules = getDiscountRules();
-  }
-  if (section === 'accommodation') {
-    s.accommodation = {
-      dorms: parseInt(document.getElementById('num-dorms').value) || 2,
-      bunks: parseInt(document.getElementById('num-bunks').value) || 6,
-      beds:  parseInt(document.getElementById('num-beds').value)  || 2,
-    };
-  }
-  if (section === 'booking-rules') {
-    s.bookingRules = {
-      maxAdvance:   parseInt(document.getElementById('max-advance').value)    || 365,
-      maxPeople:    parseInt(document.getElementById('max-people').value)     || 1,
-      minNights:    parseInt(document.getElementById('min-nights').value)     || 1,
-      maxNights:    parseInt(document.getElementById('max-nights').value)     || 14,
-      checkoutTime: document.getElementById('checkout-time').value           || '10:00',
-      checkinTime:  document.getElementById('checkin-time').value            || '14:00',
-    };
-  }
-  if (section === 'payment-methods') {
-    s.paymentMethods = getPaymentMethodStates();
-  }
-  if (section === 'id-requirements') {
-    s.idRequirements = {
-      photoId:        document.getElementById('req-photo-id').checked,
-      passport:       document.getElementById('req-passport').checked,
-      dni:            document.getElementById('req-dni').checked,
-      ocr:            document.getElementById('req-ocr').checked,
-      credencial:     document.getElementById('req-credencial').checked,
-      credencialScan: document.getElementById('req-credencial-scan').checked,
-    };
-  }
-  if (section === 'pilgrim-fields') {
-    s.pilgrimFields = getPilgrimFieldStates();
-  }
-  if (section === 'hostel-info') {
-    s.hostelInfo = {
-      name:    document.getElementById('hostel-name').value,
-      phone:   document.getElementById('hostel-phone').value,
-      address: document.getElementById('hostel-address').value,
-      email:   document.getElementById('hostel-email').value,
-      website: document.getElementById('hostel-website').value,
-      lat:     document.getElementById('hostel-lat').value,
-      lng:     document.getElementById('hostel-lng').value,
-      desc:    document.getElementById('hostel-desc').value,
-    };
-  }
-  if (section === 'hostel-hours') {
-    s.hostelHours = {
-      checkinFrom:  document.getElementById('checkin-from').value,
-      checkinUntil: document.getElementById('checkin-until').value,
-      checkoutBy:   document.getElementById('checkout-by').value,
-    };
-  }
-  if (section === 'hostel-policies') {
-    s.hostelPolicies = {
-      pets:    document.getElementById('policy-pets').checked,
-      kitchen: document.getElementById('policy-kitchen').checked,
-      luggage: document.getElementById('policy-luggage').checked,
-      wifi:    document.getElementById('policy-wifi').checked,
-      quietFrom:  document.getElementById('quiet-from').value,
-      quietUntil: document.getElementById('quiet-until').value,
-    };
-  }
-  if (section === 'services') {
-    s.services = hostelServices;
-  }
-  s.dateOverrides = dateOverrides;
-  persistSettings(s);
-  clearUnsaved();
-  showToast('Settings saved successfully!');
-}
-
-// ---- Services ----
-function addService() {
-  var name  = document.getElementById('svc-name').value.trim();
-  var price = parseFloat(document.getElementById('svc-price').value);
-  var unit  = document.getElementById('svc-unit').value;
-  var icon  = document.getElementById('svc-icon').value.trim() || '🛁';
-  var desc  = document.getElementById('svc-desc').value.trim();
-  if (!name || isNaN(price)) { showToast('Please enter a name and price.', true); return; }
-  var svc = { id: 'svc' + Date.now(), icon: icon, name: name, price: price, unit: unit, desc: desc, enabled: true };
-  hostelServices.push(svc);
-  document.getElementById('svc-name').value  = '';
-  document.getElementById('svc-price').value = '';
-  document.getElementById('svc-desc').value  = '';
-  markUnsaved();
-  renderServices();
-}
-
-function removeService(id) {
-  hostelServices = hostelServices.filter(function(s) { return s.id !== id; });
-  markUnsaved(); renderServices();
-}
-
-function toggleService(id) {
-  hostelServices.forEach(function(s) { if (s.id === id) s.enabled = !s.enabled; });
-  markUnsaved(); renderServices();
-}
-
-function resetServices() {
-  hostelServices = JSON.parse(JSON.stringify(DEFAULT_SERVICES));
-  markUnsaved(); renderServices();
-}
-
-function renderServices() {
-  var list = document.getElementById('services-list');
-  var preview = document.getElementById('services-preview');
-  if (!list) return;
-  list.innerHTML = '';
-  if (preview) preview.innerHTML = '';
-  hostelServices.forEach(function(svc) {
-    // Admin list row
-    var row = document.createElement('div');
-    row.className = 'flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-50 hover:bg-base-100 transition-colors';
-    row.innerHTML =
-      '<span class="text-2xl w-8 text-center">' + svc.icon + '</span>' +
-      '<div class="flex-1 min-w-0">' +
-        '<div class="font-semibold text-sm">' + svc.name + '</div>' +
-        '<div class="text-xs text-base-content/50">' + (svc.desc || '') + '</div>' +
-      '</div>' +
-      '<span class="badge badge-outline font-mono">€' + svc.price.toFixed(2) + ' ' + svc.unit + '</span>' +
-      '<input type="checkbox" class="toggle toggle-sm toggle-success" ' + (svc.enabled ? 'checked' : '') + ' onchange="toggleService(\'' + svc.id + '\')" title="Enable/disable" />' +
-      '<button class="btn btn-ghost btn-xs text-error" onclick="removeService(\'' + svc.id + '\')" title="Delete">✕</button>';
-    list.appendChild(row);
-
-    // Preview card
-    if (preview && svc.enabled) {
-      var card = document.createElement('div');
-      card.className = 'rounded-xl border border-base-200 bg-base-100 p-3 text-center shadow-sm';
-      card.innerHTML =
-        '<div class="text-3xl mb-1">' + svc.icon + '</div>' +
-        '<div class="font-semibold text-sm">' + svc.name + '</div>' +
-        '<div class="text-primary font-bold">€' + svc.price.toFixed(2) + '</div>' +
-        '<div class="text-xs text-base-content/50">' + svc.unit + '</div>';
-      preview.appendChild(card);
+  // ---- localStorage ----
+  function loadSettings() {
+    try {
+      return JSON.parse(localStorage.getItem('albergue_settings') || '{}');
+    } catch (e) {
+      return {};
     }
-  });
-  if (!hostelServices.length) {
-    list.innerHTML = '<div class="text-center text-base-content/40 py-6">No services configured yet.</div>';
   }
-}
+  function persistSettings(s) {
+    localStorage.setItem('albergue_settings', JSON.stringify(s));
+  }
 
-// ---- Load all settings into DOM ----
-function loadAllSettings() {
-  var s = loadSettings();
-  if (s.basePrice !== undefined) {
-    var bpEl = document.getElementById('base-price');
-    if (bpEl) bpEl.value = s.basePrice;
+  // ---- Save section ----
+  function saveSection(section) {
+    var s = loadSettings();
+    if (section === 'pricing-base') {
+      s.basePrice = parseFloat(document.getElementById('base-price').value) || 8;
+    }
+    if (section === 'pricing-monthly') {
+      s.monthlyPrices = getMonthlyPrices();
+    }
+    if (section === 'pricing-discounts') {
+      s.discountRules = getDiscountRules();
+    }
+    if (section === 'accommodation') {
+      s.accommodation = {
+        dorms: parseInt(document.getElementById('num-dorms').value) || 2,
+        bunks: parseInt(document.getElementById('num-bunks').value) || 6,
+        beds: parseInt(document.getElementById('num-beds').value) || 2,
+      };
+    }
+    if (section === 'booking-rules') {
+      s.bookingRules = {
+        maxAdvance: parseInt(document.getElementById('max-advance').value) || 365,
+        maxPeople: parseInt(document.getElementById('max-people').value) || 1,
+        minNights: parseInt(document.getElementById('min-nights').value) || 1,
+        maxNights: parseInt(document.getElementById('max-nights').value) || 14,
+        checkoutTime: document.getElementById('checkout-time').value || '10:00',
+        checkinTime: document.getElementById('checkin-time').value || '14:00',
+      };
+    }
+    if (section === 'payment-methods') {
+      s.paymentMethods = getPaymentMethodStates();
+    }
+    if (section === 'id-requirements') {
+      s.idRequirements = {
+        photoId: document.getElementById('req-photo-id').checked,
+        passport: document.getElementById('req-passport').checked,
+        dni: document.getElementById('req-dni').checked,
+        ocr: document.getElementById('req-ocr').checked,
+        credencial: document.getElementById('req-credencial').checked,
+        credencialScan: document.getElementById('req-credencial-scan').checked,
+      };
+    }
+    if (section === 'pilgrim-fields') {
+      s.pilgrimFields = getPilgrimFieldStates();
+    }
+    if (section === 'hostel-info') {
+      s.hostelInfo = {
+        name: document.getElementById('hostel-name').value,
+        phone: document.getElementById('hostel-phone').value,
+        address: document.getElementById('hostel-address').value,
+        email: document.getElementById('hostel-email').value,
+        website: document.getElementById('hostel-website').value,
+        lat: document.getElementById('hostel-lat').value,
+        lng: document.getElementById('hostel-lng').value,
+        desc: document.getElementById('hostel-desc').value,
+      };
+    }
+    if (section === 'hostel-hours') {
+      s.hostelHours = {
+        checkinFrom: document.getElementById('checkin-from').value,
+        checkinUntil: document.getElementById('checkin-until').value,
+        checkoutBy: document.getElementById('checkout-by').value,
+      };
+    }
+    if (section === 'hostel-policies') {
+      s.hostelPolicies = {
+        pets: document.getElementById('policy-pets').checked,
+        kitchen: document.getElementById('policy-kitchen').checked,
+        luggage: document.getElementById('policy-luggage').checked,
+        wifi: document.getElementById('policy-wifi').checked,
+        quietFrom: document.getElementById('quiet-from').value,
+        quietUntil: document.getElementById('quiet-until').value,
+      };
+    }
+    if (section === 'services') {
+      s.services = hostelServices;
+    }
+    s.dateOverrides = dateOverrides;
+    persistSettings(s);
+    clearUnsaved();
+    showToast('Settings saved successfully!');
   }
-  if (s.monthlyPrices) restoreMonthlyPrices(s.monthlyPrices);
-  if (s.dateOverrides) { dateOverrides = s.dateOverrides; renderDateOverrides(); }
-  if (s.discountRules) restoreDiscountRules(s.discountRules);
-  if (s.accommodation) {
-    var a = s.accommodation;
-    if (document.getElementById('num-dorms')) document.getElementById('num-dorms').value = a.dorms;
-    if (document.getElementById('num-bunks')) document.getElementById('num-bunks').value = a.bunks;
-    if (document.getElementById('num-beds'))  document.getElementById('num-beds').value  = a.beds;
-    recalcBeds();
-  }
-  if (s.bookingRules) {
-    var r = s.bookingRules;
-    var fields = {
-      'max-advance': r.maxAdvance, 'max-advance-num': r.maxAdvance,
-      'max-people':  r.maxPeople, 'min-nights': r.minNights,
-      'max-nights':  r.maxNights, 'checkout-time': r.checkoutTime,
-      'checkin-time': r.checkinTime,
+
+  // ---- Services ----
+  function addService() {
+    var name = document.getElementById('svc-name').value.trim();
+    var price = parseFloat(document.getElementById('svc-price').value);
+    var unit = document.getElementById('svc-unit').value;
+    var icon = document.getElementById('svc-icon').value.trim() || '🛁';
+    var desc = document.getElementById('svc-desc').value.trim();
+    if (!name || isNaN(price)) {
+      showToast('Please enter a name and price.', true);
+      return;
+    }
+    var svc = {
+      id: 'svc' + Date.now(),
+      icon: icon,
+      name: name,
+      price: price,
+      unit: unit,
+      desc: desc,
+      enabled: true,
     };
-    Object.keys(fields).forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el && fields[id] !== undefined) el.value = fields[id];
+    hostelServices.push(svc);
+    document.getElementById('svc-name').value = '';
+    document.getElementById('svc-price').value = '';
+    document.getElementById('svc-desc').value = '';
+    markUnsaved();
+    renderServices();
+  }
+
+  function removeService(id) {
+    hostelServices = hostelServices.filter(function (s) {
+      return s.id !== id;
     });
-    var lbl = document.getElementById('advance-label');
-    if (lbl && r.maxAdvance) lbl.textContent = r.maxAdvance;
+    markUnsaved();
+    renderServices();
   }
-  if (s.paymentMethods) restorePaymentMethods(s.paymentMethods);
-  if (s.idRequirements) {
-    var i = s.idRequirements;
-    var idMap = {
-      'req-photo-id': i.photoId, 'req-passport': i.passport,
-      'req-dni': i.dni, 'req-ocr': i.ocr,
-      'req-credencial': i.credencial, 'req-credencial-scan': i.credencialScan,
-    };
-    Object.keys(idMap).forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el && idMap[id] !== undefined) el.checked = idMap[id];
+
+  function toggleService(id) {
+    hostelServices.forEach(function (s) {
+      if (s.id === id) s.enabled = !s.enabled;
+    });
+    markUnsaved();
+    renderServices();
+  }
+
+  function resetServices() {
+    hostelServices = JSON.parse(JSON.stringify(DEFAULT_SERVICES));
+    markUnsaved();
+    renderServices();
+  }
+
+  function renderServices() {
+    var list = document.getElementById('services-list');
+    var preview = document.getElementById('services-preview');
+    if (!list) return;
+    list.innerHTML = '';
+    if (preview) preview.innerHTML = '';
+    hostelServices.forEach(function (svc) {
+      // Admin list row
+      var row = document.createElement('div');
+      row.className =
+        'flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-50 hover:bg-base-100 transition-colors';
+      row.innerHTML =
+        '<span class="text-2xl w-8 text-center">' +
+        svc.icon +
+        '</span>' +
+        '<div class="flex-1 min-w-0">' +
+        '<div class="font-semibold text-sm">' +
+        svc.name +
+        '</div>' +
+        '<div class="text-xs text-base-content/50">' +
+        (svc.desc || '') +
+        '</div>' +
+        '</div>' +
+        '<span class="badge badge-outline font-mono">€' +
+        svc.price.toFixed(2) +
+        ' ' +
+        svc.unit +
+        '</span>' +
+        '<input type="checkbox" class="toggle toggle-sm toggle-success" ' +
+        (svc.enabled ? 'checked' : '') +
+        ' onchange="toggleService(\'' +
+        svc.id +
+        '\')" title="Enable/disable" />' +
+        '<button class="btn btn-ghost btn-xs text-error" onclick="removeService(\'' +
+        svc.id +
+        '\')" title="Delete">✕</button>';
+      list.appendChild(row);
+
+      // Preview card
+      if (preview && svc.enabled) {
+        var card = document.createElement('div');
+        card.className = 'rounded-xl border border-base-200 bg-base-100 p-3 text-center shadow-sm';
+        card.innerHTML =
+          '<div class="text-3xl mb-1">' +
+          svc.icon +
+          '</div>' +
+          '<div class="font-semibold text-sm">' +
+          svc.name +
+          '</div>' +
+          '<div class="text-primary font-bold">€' +
+          svc.price.toFixed(2) +
+          '</div>' +
+          '<div class="text-xs text-base-content/50">' +
+          svc.unit +
+          '</div>';
+        preview.appendChild(card);
+      }
+    });
+    if (!hostelServices.length) {
+      list.innerHTML =
+        '<div class="text-center text-base-content/40 py-6">No services configured yet.</div>';
+    }
+  }
+
+  // ---- Load all settings into DOM ----
+  function loadAllSettings() {
+    var s = loadSettings();
+    if (s.basePrice !== undefined) {
+      var bpEl = document.getElementById('base-price');
+      if (bpEl) bpEl.value = s.basePrice;
+    }
+    if (s.monthlyPrices) restoreMonthlyPrices(s.monthlyPrices);
+    if (s.dateOverrides) {
+      dateOverrides = s.dateOverrides;
+      renderDateOverrides();
+    }
+    if (s.discountRules) restoreDiscountRules(s.discountRules);
+    if (s.accommodation) {
+      var a = s.accommodation;
+      if (document.getElementById('num-dorms'))
+        document.getElementById('num-dorms').value = a.dorms;
+      if (document.getElementById('num-bunks'))
+        document.getElementById('num-bunks').value = a.bunks;
+      if (document.getElementById('num-beds')) document.getElementById('num-beds').value = a.beds;
+      recalcBeds();
+    }
+    if (s.bookingRules) {
+      var r = s.bookingRules;
+      var fields = {
+        'max-advance': r.maxAdvance,
+        'max-advance-num': r.maxAdvance,
+        'max-people': r.maxPeople,
+        'min-nights': r.minNights,
+        'max-nights': r.maxNights,
+        'checkout-time': r.checkoutTime,
+        'checkin-time': r.checkinTime,
+      };
+      Object.keys(fields).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && fields[id] !== undefined) el.value = fields[id];
+      });
+      var lbl = document.getElementById('advance-label');
+      if (lbl && r.maxAdvance) lbl.textContent = r.maxAdvance;
+    }
+    if (s.paymentMethods) restorePaymentMethods(s.paymentMethods);
+    if (s.idRequirements) {
+      var i = s.idRequirements;
+      var idMap = {
+        'req-photo-id': i.photoId,
+        'req-passport': i.passport,
+        'req-dni': i.dni,
+        'req-ocr': i.ocr,
+        'req-credencial': i.credencial,
+        'req-credencial-scan': i.credencialScan,
+      };
+      Object.keys(idMap).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && idMap[id] !== undefined) el.checked = idMap[id];
+      });
+    }
+    if (s.pilgrimFields) restorePilgrimFields(s.pilgrimFields);
+  }
+
+  // =====================================================
+  // MONTHLY PRICING
+  // =====================================================
+  function initMonthlyPricingTable() {
+    var tbody = document.getElementById('monthly-pricing-tbody');
+    if (!tbody) return;
+    MONTHS.forEach(function (month, i) {
+      var tr = document.createElement('tr');
+      var tdMonth = document.createElement('td');
+      tdMonth.className = 'font-medium';
+      tdMonth.textContent = month;
+      var tdPrice = document.createElement('td');
+      var input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.step = '0.5';
+      input.value = DEFAULT_MONTHLY[i];
+      input.id = 'month-price-' + i;
+      input.className = 'input input-bordered input-sm w-28';
+      input.addEventListener('input', markUnsaved);
+      tdPrice.appendChild(input);
+      var tdSeason = document.createElement('td');
+      var badge = document.createElement('span');
+      var season = SEASON_LABELS[i];
+      badge.className =
+        'badge ' +
+        (season === 'High' ? 'badge-warning' : season === 'Mid' ? 'badge-info' : 'badge-ghost');
+      badge.textContent = season;
+      tdSeason.appendChild(badge);
+      tr.appendChild(tdMonth);
+      tr.appendChild(tdPrice);
+      tr.appendChild(tdSeason);
+      tbody.appendChild(tr);
     });
   }
-  if (s.pilgrimFields) restorePilgrimFields(s.pilgrimFields);
-}
 
-// =====================================================
-// MONTHLY PRICING
-// =====================================================
-function initMonthlyPricingTable() {
-  var tbody = document.getElementById('monthly-pricing-tbody');
-  if (!tbody) return;
-  MONTHS.forEach(function(month, i) {
-    var tr = document.createElement('tr');
-    var tdMonth = document.createElement('td');
-    tdMonth.className = 'font-medium';
-    tdMonth.textContent = month;
-    var tdPrice = document.createElement('td');
-    var input = document.createElement('input');
-    input.type = 'number';
-    input.min = '0';
-    input.step = '0.5';
-    input.value = DEFAULT_MONTHLY[i];
-    input.id = 'month-price-' + i;
-    input.className = 'input input-bordered input-sm w-28';
-    input.addEventListener('input', markUnsaved);
-    tdPrice.appendChild(input);
-    var tdSeason = document.createElement('td');
-    var badge = document.createElement('span');
-    var season = SEASON_LABELS[i];
-    badge.className = 'badge ' + (season === 'High' ? 'badge-warning' : season === 'Mid' ? 'badge-info' : 'badge-ghost');
-    badge.textContent = season;
-    tdSeason.appendChild(badge);
-    tr.appendChild(tdMonth);
-    tr.appendChild(tdPrice);
-    tr.appendChild(tdSeason);
-    tbody.appendChild(tr);
-  });
-}
-
-function getMonthlyPrices() {
-  return Array.from({length: 12}, function(_, i) {
-    var el = document.getElementById('month-price-' + i);
-    return el ? (parseFloat(el.value) || DEFAULT_MONTHLY[i]) : DEFAULT_MONTHLY[i];
-  });
-}
-
-function restoreMonthlyPrices(prices) {
-  prices.forEach(function(price, i) {
-    var el = document.getElementById('month-price-' + i);
-    if (el) el.value = price;
-  });
-}
-
-// =====================================================
-// DATE RANGE OVERRIDES
-// =====================================================
-function renderDateOverrides() {
-  var container = document.getElementById('date-overrides-list');
-  if (!container) return;
-  while (container.firstChild) container.removeChild(container.firstChild);
-  if (dateOverrides.length === 0) {
-    var p = document.createElement('p');
-    p.className = 'text-base-content/50 text-sm';
-    p.textContent = 'No date overrides configured.';
-    container.appendChild(p);
-    return;
-  }
-  dateOverrides.forEach(function(ov) {
-    var row = document.createElement('div');
-    row.className = 'flex items-center justify-between bg-base-300 rounded-lg px-4 py-2';
-    var left = document.createElement('div');
-    left.className = 'flex items-center gap-3 flex-wrap';
-    var rangeSpan = document.createElement('span');
-    rangeSpan.className = 'badge badge-outline';
-    rangeSpan.textContent = ov.from + ' \u2192 ' + ov.to;
-    var labelSpan = document.createElement('span');
-    labelSpan.className = 'font-medium text-sm';
-    labelSpan.textContent = ov.label || 'Custom range';
-    var priceSpan = document.createElement('span');
-    priceSpan.className = 'badge badge-success';
-    priceSpan.textContent = '\u20AC' + ov.price + '/night';
-    left.appendChild(rangeSpan);
-    left.appendChild(labelSpan);
-    left.appendChild(priceSpan);
-    var delBtn = document.createElement('button');
-    delBtn.className = 'btn btn-ghost btn-xs text-error';
-    delBtn.setAttribute('aria-label', 'Delete override');
-    delBtn.textContent = '\u2715';
-    delBtn.addEventListener('click', function() { deleteDateOverride(ov.id); });
-    row.appendChild(left);
-    row.appendChild(delBtn);
-    container.appendChild(row);
-  });
-}
-
-function applyDateRange() {
-  var from  = document.getElementById('range-from').value;
-  var to    = document.getElementById('range-to').value;
-  var price = parseFloat(document.getElementById('range-price').value);
-  if (!from || !to || isNaN(price)) {
-    showToast('Please fill in all date range fields.', 'error');
-    return;
-  }
-  if (from > to) {
-    showToast('From date must be before To date.', 'error');
-    return;
-  }
-  dateOverrides.push({ id: 'ov' + Date.now(), label: '', from: from, to: to, price: price });
-  document.getElementById('range-from').value  = '';
-  document.getElementById('range-to').value    = '';
-  document.getElementById('range-price').value = '';
-  renderDateOverrides();
-  markUnsaved();
-  showToast('Date range override added.');
-}
-
-function deleteDateOverride(id) {
-  dateOverrides = dateOverrides.filter(function(o) { return o.id !== id; });
-  renderDateOverrides();
-  markUnsaved();
-}
-
-// =====================================================
-// DISCOUNT RULES
-// =====================================================
-function initDiscountRules() {
-  renderDiscountRules(DISCOUNT_RULES_DEF);
-}
-
-function renderDiscountRules(rules) {
-  var tbody = document.getElementById('discount-rules-tbody');
-  if (!tbody) return;
-  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
-  rules.forEach(function(rule) {
-    var tr = document.createElement('tr');
-    // Label cell
-    var tdLabel = document.createElement('td');
-    tdLabel.className = 'font-medium';
-    tdLabel.textContent = rule.label;
-    // Toggle cell
-    var tdToggle = document.createElement('td');
-    var toggle = document.createElement('input');
-    toggle.type = 'checkbox';
-    toggle.id   = 'dc-enabled-' + rule.id;
-    toggle.className = 'toggle toggle-primary toggle-sm';
-    toggle.checked = rule.enabled;
-    toggle.addEventListener('change', markUnsaved);
-    tdToggle.appendChild(toggle);
-    // Percent cell
-    var tdPct = document.createElement('td');
-    var pctWrap = document.createElement('div');
-    pctWrap.className = 'flex items-center gap-1';
-    var pctInput = document.createElement('input');
-    pctInput.type = 'number';
-    pctInput.id  = 'dc-pct-' + rule.id;
-    pctInput.min = '0';
-    pctInput.max = '100';
-    pctInput.value = rule.percent;
-    pctInput.className = 'input input-bordered input-sm w-20';
-    pctInput.addEventListener('input', markUnsaved);
-    var pctLabel = document.createElement('span');
-    pctLabel.className = 'text-base-content/60 text-sm';
-    pctLabel.textContent = '%';
-    pctWrap.appendChild(pctInput);
-    pctWrap.appendChild(pctLabel);
-    tdPct.appendChild(pctWrap);
-    tr.appendChild(tdLabel);
-    tr.appendChild(tdToggle);
-    tr.appendChild(tdPct);
-    tbody.appendChild(tr);
-  });
-}
-
-function getDiscountRules() {
-  return DISCOUNT_RULES_DEF.map(function(rule) {
-    return {
-      id:      rule.id,
-      label:   rule.label,
-      enabled: (document.getElementById('dc-enabled-' + rule.id) || {checked: rule.enabled}).checked,
-      percent: parseFloat((document.getElementById('dc-pct-' + rule.id) || {value: rule.percent}).value) || rule.percent,
-    };
-  });
-}
-
-function restoreDiscountRules(rules) {
-  renderDiscountRules(rules);
-}
-
-// =====================================================
-// DORM DIAGRAM
-// =====================================================
-function recalcBeds() {
-  var dorms = parseInt(document.getElementById('num-dorms').value) || 0;
-  var bunks  = parseInt(document.getElementById('num-bunks').value) || 0;
-  var beds   = parseInt(document.getElementById('num-beds').value) || 0;
-  var total  = dorms * bunks * beds;
-  var totalEl = document.getElementById('total-beds');
-  if (totalEl) totalEl.value = total;
-  updateDormDiagram(dorms, bunks, beds, total);
-  markUnsaved();
-}
-
-function updateDormDiagram(dorms, bunks, beds, total) {
-  var diag = document.getElementById('dorm-diagram');
-  if (!diag) return;
-  while (diag.firstChild) diag.removeChild(diag.firstChild);
-
-  var mathRow = document.createElement('div');
-  mathRow.className = 'flex flex-wrap items-center justify-center gap-2';
-
-  function makeBadge(text, cls) {
-    var b = document.createElement('span');
-    b.className = 'badge badge-lg ' + cls;
-    b.textContent = text;
-    return b;
-  }
-  function makeSep(t) {
-    var s = document.createElement('span');
-    s.className = 'text-lg font-bold';
-    s.textContent = t;
-    return s;
-  }
-  mathRow.appendChild(makeBadge(dorms + ' dorm' + (dorms !== 1 ? 's' : ''), 'badge-primary'));
-  mathRow.appendChild(makeSep('\u00D7'));
-  mathRow.appendChild(makeBadge(bunks + ' bunk' + (bunks !== 1 ? 's' : ''), 'badge-secondary'));
-  mathRow.appendChild(makeSep('\u00D7'));
-  mathRow.appendChild(makeBadge(beds + ' bed' + (beds !== 1 ? 's' : '') + '/bunk', 'badge-accent'));
-  mathRow.appendChild(makeSep('='));
-  mathRow.appendChild(makeBadge(total + ' total beds', 'badge-success text-lg px-4'));
-
-  var iconsRow = document.createElement('div');
-  iconsRow.className = 'mt-3 flex flex-wrap justify-center gap-1';
-  var shown = Math.min(total, 48);
-  for (var i = 0; i < shown; i++) {
-    var cell = document.createElement('div');
-    cell.className = 'w-6 h-6 rounded bg-success/30 border border-success/50 flex items-center justify-center text-xs';
-    cell.title = 'Bed ' + (i + 1);
-    cell.textContent = '\uD83D\uDECF';
-    iconsRow.appendChild(cell);
-  }
-  if (total > 48) {
-    var more = document.createElement('span');
-    more.className = 'text-base-content/50 text-xs self-center';
-    more.textContent = '+' + (total - 48) + ' more';
-    iconsRow.appendChild(more);
-  }
-  diag.appendChild(mathRow);
-  diag.appendChild(iconsRow);
-}
-
-// =====================================================
-// PAYMENT METHODS
-// =====================================================
-function initPaymentMethods() {
-  var grid = document.getElementById('payment-methods-grid');
-  if (!grid) return;
-  PAYMENT_METHODS_DEF.forEach(function(m) {
-    var card = document.createElement('div');
-    card.className = 'card bg-base-300 shadow-sm';
-    var body = document.createElement('div');
-    body.className = 'card-body p-4 flex-row items-start gap-3';
-    var iconEl = document.createElement('span');
-    iconEl.className = 'text-3xl';
-    iconEl.textContent = m.icon;
-    var info = document.createElement('div');
-    info.className = 'flex-1 min-w-0';
-    var name = document.createElement('p');
-    name.className = 'font-semibold';
-    name.textContent = m.label;
-    var desc = document.createElement('p');
-    desc.className = 'text-base-content/60 text-xs';
-    desc.textContent = m.desc;
-    info.appendChild(name);
-    info.appendChild(desc);
-    var toggle = document.createElement('input');
-    toggle.type = 'checkbox';
-    toggle.id   = m.id;
-    toggle.className = 'toggle toggle-primary toggle-sm mt-1';
-    toggle.checked = m.enabled;
-    toggle.addEventListener('change', markUnsaved);
-    body.appendChild(iconEl);
-    body.appendChild(info);
-    body.appendChild(toggle);
-    card.appendChild(body);
-    grid.appendChild(card);
-  });
-}
-
-function getPaymentMethodStates() {
-  return PAYMENT_METHODS_DEF.map(function(m) {
-    var el = document.getElementById(m.id);
-    return { id: m.id, enabled: el ? el.checked : m.enabled };
-  });
-}
-
-function restorePaymentMethods(states) {
-  states.forEach(function(s) {
-    var el = document.getElementById(s.id);
-    if (el) el.checked = s.enabled;
-  });
-}
-
-// =====================================================
-// PILGRIM FIELDS
-// =====================================================
-function initPilgrimFields() {
-  var tbody = document.getElementById('pilgrim-fields-tbody');
-  if (!tbody) return;
-  PILGRIM_FIELDS_DEF.forEach(function(f) {
-    var tr = document.createElement('tr');
-    var tdLabel = document.createElement('td');
-    tdLabel.className = 'font-medium';
-    tdLabel.textContent = f.label;
-    var tdSelect = document.createElement('td');
-    var select = document.createElement('select');
-    select.id = f.id;
-    select.className = 'select select-bordered select-sm';
-    ['required', 'optional', 'hidden'].forEach(function(opt) {
-      var option = document.createElement('option');
-      option.value = opt;
-      option.textContent = opt.charAt(0).toUpperCase() + opt.slice(1);
-      if (f.status === opt) option.selected = true;
-      select.appendChild(option);
+  function getMonthlyPrices() {
+    return Array.from({ length: 12 }, function (_, i) {
+      var el = document.getElementById('month-price-' + i);
+      return el ? parseFloat(el.value) || DEFAULT_MONTHLY[i] : DEFAULT_MONTHLY[i];
     });
-    select.addEventListener('change', markUnsaved);
-    tdSelect.appendChild(select);
-    tr.appendChild(tdLabel);
-    tr.appendChild(tdSelect);
-    tbody.appendChild(tr);
+  }
+
+  function restoreMonthlyPrices(prices) {
+    prices.forEach(function (price, i) {
+      var el = document.getElementById('month-price-' + i);
+      if (el) el.value = price;
+    });
+  }
+
+  // =====================================================
+  // DATE RANGE OVERRIDES
+  // =====================================================
+  function renderDateOverrides() {
+    var container = document.getElementById('date-overrides-list');
+    if (!container) return;
+    while (container.firstChild) container.removeChild(container.firstChild);
+    if (dateOverrides.length === 0) {
+      var p = document.createElement('p');
+      p.className = 'text-base-content/50 text-sm';
+      p.textContent = 'No date overrides configured.';
+      container.appendChild(p);
+      return;
+    }
+    dateOverrides.forEach(function (ov) {
+      var row = document.createElement('div');
+      row.className = 'flex items-center justify-between bg-base-300 rounded-lg px-4 py-2';
+      var left = document.createElement('div');
+      left.className = 'flex items-center gap-3 flex-wrap';
+      var rangeSpan = document.createElement('span');
+      rangeSpan.className = 'badge badge-outline';
+      rangeSpan.textContent = ov.from + ' \u2192 ' + ov.to;
+      var labelSpan = document.createElement('span');
+      labelSpan.className = 'font-medium text-sm';
+      labelSpan.textContent = ov.label || 'Custom range';
+      var priceSpan = document.createElement('span');
+      priceSpan.className = 'badge badge-success';
+      priceSpan.textContent = '\u20AC' + ov.price + '/night';
+      left.appendChild(rangeSpan);
+      left.appendChild(labelSpan);
+      left.appendChild(priceSpan);
+      var delBtn = document.createElement('button');
+      delBtn.className = 'btn btn-ghost btn-xs text-error';
+      delBtn.setAttribute('aria-label', 'Delete override');
+      delBtn.textContent = '\u2715';
+      delBtn.addEventListener('click', function () {
+        deleteDateOverride(ov.id);
+      });
+      row.appendChild(left);
+      row.appendChild(delBtn);
+      container.appendChild(row);
+    });
+  }
+
+  function applyDateRange() {
+    var from = document.getElementById('range-from').value;
+    var to = document.getElementById('range-to').value;
+    var price = parseFloat(document.getElementById('range-price').value);
+    if (!from || !to || isNaN(price)) {
+      showToast('Please fill in all date range fields.', 'error');
+      return;
+    }
+    if (from > to) {
+      showToast('From date must be before To date.', 'error');
+      return;
+    }
+    dateOverrides.push({ id: 'ov' + Date.now(), label: '', from: from, to: to, price: price });
+    document.getElementById('range-from').value = '';
+    document.getElementById('range-to').value = '';
+    document.getElementById('range-price').value = '';
+    renderDateOverrides();
+    markUnsaved();
+    showToast('Date range override added.');
+  }
+
+  function deleteDateOverride(id) {
+    dateOverrides = dateOverrides.filter(function (o) {
+      return o.id !== id;
+    });
+    renderDateOverrides();
+    markUnsaved();
+  }
+
+  // =====================================================
+  // DISCOUNT RULES
+  // =====================================================
+  function initDiscountRules() {
+    renderDiscountRules(DISCOUNT_RULES_DEF);
+  }
+
+  function renderDiscountRules(rules) {
+    var tbody = document.getElementById('discount-rules-tbody');
+    if (!tbody) return;
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    rules.forEach(function (rule) {
+      var tr = document.createElement('tr');
+      // Label cell
+      var tdLabel = document.createElement('td');
+      tdLabel.className = 'font-medium';
+      tdLabel.textContent = rule.label;
+      // Toggle cell
+      var tdToggle = document.createElement('td');
+      var toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.id = 'dc-enabled-' + rule.id;
+      toggle.className = 'toggle toggle-primary toggle-sm';
+      toggle.checked = rule.enabled;
+      toggle.addEventListener('change', markUnsaved);
+      tdToggle.appendChild(toggle);
+      // Percent cell
+      var tdPct = document.createElement('td');
+      var pctWrap = document.createElement('div');
+      pctWrap.className = 'flex items-center gap-1';
+      var pctInput = document.createElement('input');
+      pctInput.type = 'number';
+      pctInput.id = 'dc-pct-' + rule.id;
+      pctInput.min = '0';
+      pctInput.max = '100';
+      pctInput.value = rule.percent;
+      pctInput.className = 'input input-bordered input-sm w-20';
+      pctInput.addEventListener('input', markUnsaved);
+      var pctLabel = document.createElement('span');
+      pctLabel.className = 'text-base-content/60 text-sm';
+      pctLabel.textContent = '%';
+      pctWrap.appendChild(pctInput);
+      pctWrap.appendChild(pctLabel);
+      tdPct.appendChild(pctWrap);
+      tr.appendChild(tdLabel);
+      tr.appendChild(tdToggle);
+      tr.appendChild(tdPct);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function getDiscountRules() {
+    return DISCOUNT_RULES_DEF.map(function (rule) {
+      return {
+        id: rule.id,
+        label: rule.label,
+        enabled: (document.getElementById('dc-enabled-' + rule.id) || { checked: rule.enabled })
+          .checked,
+        percent:
+          parseFloat(
+            (document.getElementById('dc-pct-' + rule.id) || { value: rule.percent }).value
+          ) || rule.percent,
+      };
+    });
+  }
+
+  function restoreDiscountRules(rules) {
+    renderDiscountRules(rules);
+  }
+
+  // =====================================================
+  // DORM DIAGRAM
+  // =====================================================
+  function recalcBeds() {
+    var dorms = parseInt(document.getElementById('num-dorms').value) || 0;
+    var bunks = parseInt(document.getElementById('num-bunks').value) || 0;
+    var beds = parseInt(document.getElementById('num-beds').value) || 0;
+    var total = dorms * bunks * beds;
+    var totalEl = document.getElementById('total-beds');
+    if (totalEl) totalEl.value = total;
+    updateDormDiagram(dorms, bunks, beds, total);
+    markUnsaved();
+  }
+
+  function updateDormDiagram(dorms, bunks, beds, total) {
+    var diag = document.getElementById('dorm-diagram');
+    if (!diag) return;
+    while (diag.firstChild) diag.removeChild(diag.firstChild);
+
+    var mathRow = document.createElement('div');
+    mathRow.className = 'flex flex-wrap items-center justify-center gap-2';
+
+    function makeBadge(text, cls) {
+      var b = document.createElement('span');
+      b.className = 'badge badge-lg ' + cls;
+      b.textContent = text;
+      return b;
+    }
+    function makeSep(t) {
+      var s = document.createElement('span');
+      s.className = 'text-lg font-bold';
+      s.textContent = t;
+      return s;
+    }
+    mathRow.appendChild(makeBadge(dorms + ' dorm' + (dorms !== 1 ? 's' : ''), 'badge-primary'));
+    mathRow.appendChild(makeSep('\u00D7'));
+    mathRow.appendChild(makeBadge(bunks + ' bunk' + (bunks !== 1 ? 's' : ''), 'badge-secondary'));
+    mathRow.appendChild(makeSep('\u00D7'));
+    mathRow.appendChild(
+      makeBadge(beds + ' bed' + (beds !== 1 ? 's' : '') + '/bunk', 'badge-accent')
+    );
+    mathRow.appendChild(makeSep('='));
+    mathRow.appendChild(makeBadge(total + ' total beds', 'badge-success text-lg px-4'));
+
+    var iconsRow = document.createElement('div');
+    iconsRow.className = 'mt-3 flex flex-wrap justify-center gap-1';
+    var shown = Math.min(total, 48);
+    for (var i = 0; i < shown; i++) {
+      var cell = document.createElement('div');
+      cell.className =
+        'w-6 h-6 rounded bg-success/30 border border-success/50 flex items-center justify-center text-xs';
+      cell.title = 'Bed ' + (i + 1);
+      cell.textContent = '\uD83D\uDECF';
+      iconsRow.appendChild(cell);
+    }
+    if (total > 48) {
+      var more = document.createElement('span');
+      more.className = 'text-base-content/50 text-xs self-center';
+      more.textContent = '+' + (total - 48) + ' more';
+      iconsRow.appendChild(more);
+    }
+    diag.appendChild(mathRow);
+    diag.appendChild(iconsRow);
+  }
+
+  // =====================================================
+  // PAYMENT METHODS
+  // =====================================================
+  function initPaymentMethods() {
+    var grid = document.getElementById('payment-methods-grid');
+    if (!grid) return;
+    PAYMENT_METHODS_DEF.forEach(function (m) {
+      var card = document.createElement('div');
+      card.className = 'card bg-base-300 shadow-sm';
+      var body = document.createElement('div');
+      body.className = 'card-body p-4 flex-row items-start gap-3';
+      var iconEl = document.createElement('span');
+      iconEl.className = 'text-3xl';
+      iconEl.textContent = m.icon;
+      var info = document.createElement('div');
+      info.className = 'flex-1 min-w-0';
+      var name = document.createElement('p');
+      name.className = 'font-semibold';
+      name.textContent = m.label;
+      var desc = document.createElement('p');
+      desc.className = 'text-base-content/60 text-xs';
+      desc.textContent = m.desc;
+      info.appendChild(name);
+      info.appendChild(desc);
+      var toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.id = m.id;
+      toggle.className = 'toggle toggle-primary toggle-sm mt-1';
+      toggle.checked = m.enabled;
+      toggle.addEventListener('change', markUnsaved);
+      body.appendChild(iconEl);
+      body.appendChild(info);
+      body.appendChild(toggle);
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+  }
+
+  function getPaymentMethodStates() {
+    return PAYMENT_METHODS_DEF.map(function (m) {
+      var el = document.getElementById(m.id);
+      return { id: m.id, enabled: el ? el.checked : m.enabled };
+    });
+  }
+
+  function restorePaymentMethods(states) {
+    states.forEach(function (s) {
+      var el = document.getElementById(s.id);
+      if (el) el.checked = s.enabled;
+    });
+  }
+
+  // =====================================================
+  // PILGRIM FIELDS
+  // =====================================================
+  function initPilgrimFields() {
+    var tbody = document.getElementById('pilgrim-fields-tbody');
+    if (!tbody) return;
+    PILGRIM_FIELDS_DEF.forEach(function (f) {
+      var tr = document.createElement('tr');
+      var tdLabel = document.createElement('td');
+      tdLabel.className = 'font-medium';
+      tdLabel.textContent = f.label;
+      var tdSelect = document.createElement('td');
+      var select = document.createElement('select');
+      select.id = f.id;
+      select.className = 'select select-bordered select-sm';
+      ['required', 'optional', 'hidden'].forEach(function (opt) {
+        var option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt.charAt(0).toUpperCase() + opt.slice(1);
+        if (f.status === opt) option.selected = true;
+        select.appendChild(option);
+      });
+      select.addEventListener('change', markUnsaved);
+      tdSelect.appendChild(select);
+      tr.appendChild(tdLabel);
+      tr.appendChild(tdSelect);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function getPilgrimFieldStates() {
+    return PILGRIM_FIELDS_DEF.map(function (f) {
+      var el = document.getElementById(f.id);
+      return { id: f.id, status: el ? el.value : f.status };
+    });
+  }
+
+  function restorePilgrimFields(states) {
+    states.forEach(function (s) {
+      var el = document.getElementById(s.id);
+      if (el) el.value = s.status;
+    });
+  }
+
+  // =====================================================
+  // BOOKING RULES SYNC
+  // =====================================================
+  function syncAdvance(val) {
+    document.getElementById('max-advance').value = val;
+    document.getElementById('max-advance-num').value = val;
+    document.getElementById('advance-label').textContent = val;
+    markUnsaved();
+  }
+
+  // =====================================================
+  // INIT
+  // =====================================================
+  document.addEventListener('DOMContentLoaded', function () {
+    initTabs();
+    initMonthlyPricingTable();
+    initDiscountRules();
+    initPaymentMethods();
+    initPilgrimFields();
+    updateDormDiagram(2, 6, 2, 24);
+    renderDateOverrides();
+    // Load saved services or use defaults
+    var saved = loadSettings();
+    if (saved.services && saved.services.length) hostelServices = saved.services;
+    renderServices();
+    loadAllSettings();
   });
-}
-
-function getPilgrimFieldStates() {
-  return PILGRIM_FIELDS_DEF.map(function(f) {
-    var el = document.getElementById(f.id);
-    return { id: f.id, status: el ? el.value : f.status };
-  });
-}
-
-function restorePilgrimFields(states) {
-  states.forEach(function(s) {
-    var el = document.getElementById(s.id);
-    if (el) el.value = s.status;
-  });
-}
-
-// =====================================================
-// BOOKING RULES SYNC
-// =====================================================
-function syncAdvance(val) {
-  document.getElementById('max-advance').value     = val;
-  document.getElementById('max-advance-num').value = val;
-  document.getElementById('advance-label').textContent = val;
-  markUnsaved();
-}
-
-// =====================================================
-// INIT
-// =====================================================
-document.addEventListener('DOMContentLoaded', function() {
-  initTabs();
-  initMonthlyPricingTable();
-  initDiscountRules();
-  initPaymentMethods();
-  initPilgrimFields();
-  updateDormDiagram(2, 6, 2, 24);
-  renderDateOverrides();
-  // Load saved services or use defaults
-  var saved = loadSettings();
-  if (saved.services && saved.services.length) hostelServices = saved.services;
-  renderServices();
-  loadAllSettings();
-});
 </script>

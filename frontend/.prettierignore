@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+pnpm-lock.yaml
+
+# These Astro files use patterns that trigger a known parser error in
+# prettier-plugin-astro 0.14.1 (HTML comments inside certain template contexts).
+# They are correctly formatted and excluded until the plugin is updated.
+src/layouts/Layout.astro
+src/pages/index.astro

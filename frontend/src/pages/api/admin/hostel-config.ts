@@ -37,19 +37,31 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonError('Invalid JSON body');
   }
 
   // Build partial update — only include keys present in the request body
   const allowed: Array<keyof typeof hostelConfig.$inferInsert> = [
-    'name', 'tagline',
-    'addressStreet', 'addressPostcode', 'addressTown', 'addressProvince', 'addressCountry',
-    'phone', 'email', 'website',
-    'latitude', 'longitude',
-    'checkInTime', 'checkOutTime', 'receptionHours',
-    'cif', 'tourismLicense', 'insurancePolicy',
+    'name',
+    'tagline',
+    'addressStreet',
+    'addressPostcode',
+    'addressTown',
+    'addressProvince',
+    'addressCountry',
+    'phone',
+    'email',
+    'website',
+    'latitude',
+    'longitude',
+    'checkInTime',
+    'checkOutTime',
+    'receptionHours',
+    'cif',
+    'tourismLicense',
+    'insurancePolicy',
   ];
 
   const updates: Partial<typeof hostelConfig.$inferInsert> = {

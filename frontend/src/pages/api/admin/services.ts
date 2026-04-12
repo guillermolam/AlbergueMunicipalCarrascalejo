@@ -6,7 +6,16 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql } from 'drizzle-orm';
-import { db, getD1, requireAdmin, json, jsonError, eurToCents, centsToEur, hostelServices } from '../../../db/helpers';
+import {
+  db,
+  getD1,
+  requireAdmin,
+  json,
+  jsonError,
+  eurToCents,
+  centsToEur,
+  hostelServices,
+} from '../../../db/helpers';
 
 export const GET: APIRoute = async ({ locals }) => {
   const deny = requireAdmin(locals);
@@ -17,7 +26,7 @@ export const GET: APIRoute = async ({ locals }) => {
 
   try {
     const rows = await db(d1).select().from(hostelServices).orderBy(hostelServices.id);
-    return json(rows.map(r => ({ ...r, priceEur: centsToEur(r.priceCents) })));
+    return json(rows.map((r) => ({ ...r, priceEur: centsToEur(r.priceCents) })));
   } catch (e) {
     console.error('[admin/services GET]', e);
     return jsonError('Failed to load services', 500);
@@ -33,14 +42,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonError('Invalid JSON body');
   }
 
   const { name, description, icon, priceEur, unit, available, category } = body as {
-    name?: string; description?: string; icon?: string;
-    priceEur?: number; unit?: string; available?: boolean; category?: string;
+    name?: string;
+    description?: string;
+    icon?: string;
+    priceEur?: number;
+    unit?: string;
+    available?: boolean;
+    category?: string;
   };
 
   if (!name?.trim()) return jsonError('name is required');
@@ -49,14 +63,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const inserted = await db(d1)
       .insert(hostelServices)
       .values({
-        name:        name.trim(),
+        name: name.trim(),
         description: description ?? null,
-        icon:        icon        ?? '🏨',
-        priceCents:  eurToCents(priceEur ?? 0),
-        unit:        unit        ?? 'por uso',
-        available:   available === false ? 0 : 1,
-        category:    category   ?? 'general',
-        updatedAt:   sql`(datetime('now'))` as unknown as string,
+        icon: icon ?? '🏨',
+        priceCents: eurToCents(priceEur ?? 0),
+        unit: unit ?? 'por uso',
+        available: available === false ? 0 : 1,
+        category: category ?? 'general',
+        updatedAt: sql`(datetime('now'))` as unknown as string,
       })
       .returning();
 

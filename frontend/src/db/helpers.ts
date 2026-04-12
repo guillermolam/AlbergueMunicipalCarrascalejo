@@ -13,8 +13,17 @@ import { createDb } from './index';
 
 // Re-export schema tables so API routes only need one import
 export {
-  dormitories, pricingRules, hostelServices, hostelConfig,
-  bookings, beds, pricing,
+  dormitories,
+  pricingRules,
+  hostelServices,
+  hostelConfig,
+  bookings,
+  beds,
+  pricing,
+  hostelRules,
+  nearbyAttractions,
+  reviews,
+  reviewScores,
 } from './schema';
 
 /** Return a Drizzle DB instance bound to the runtime D1 database.

@@ -1,6 +1,26 @@
 [
-  {"type":"tip","id":"t1","question":"¿A que hora debo salir cada manana?",   "answer":"Lo ideal es salir entre las 6:00 y 7:00 en verano, o al amanecer en otras epocas. En julio y agosto, madrugar es imprescindible para evitar el calor extremo del mediodia extremeno."},
-  {"type":"tip","id":"t2","question":"¿Cuanta agua necesito llevar?",          "answer":"Minimo 1.5 litros en primavera/otoño, al menos 3 litros en verano. La Via de la Plata tiene fuentes escasas entre etapas. Consulta siempre el mapa de fuentes antes de salir."},
-  {"type":"tip","id":"t3","question":"¿Que hago si me sale una ampolla?",      "answer":"Limpia bien la zona, aplica Compeed y no la revientes si puedes evitarlo. En el albergue encontraras botiquin basico. Si la ampolla es muy grande o se infecta, consulta en el Centro de Salud."},
-  {"type":"tip","id":"t4","question":"¿Necesito la credencial del peregrino?", "answer":"Si. La credencial (pasaporte del peregrino) es necesaria para alojarte en albergues de peregrinos y para obtener la Compostela al llegar a Santiago. Puedes conseguirla en asociaciones jacobeas, catedrales o en el albergue."}
+  {
+    "type": "tip",
+    "id": "t1",
+    "question": "¿A que hora debo salir cada manana?",
+    "answer": "Lo ideal es salir entre las 6:00 y 7:00 en verano, o al amanecer en otras epocas. En julio y agosto, madrugar es imprescindible para evitar el calor extremo del mediodia extremeno."
+  },
+  {
+    "type": "tip",
+    "id": "t2",
+    "question": "¿Cuanta agua necesito llevar?",
+    "answer": "Minimo 1.5 litros en primavera/otoño, al menos 3 litros en verano. La Via de la Plata tiene fuentes escasas entre etapas. Consulta siempre el mapa de fuentes antes de salir."
+  },
+  {
+    "type": "tip",
+    "id": "t3",
+    "question": "¿Que hago si me sale una ampolla?",
+    "answer": "Limpia bien la zona, aplica Compeed y no la revientes si puedes evitarlo. En el albergue encontraras botiquin basico. Si la ampolla es muy grande o se infecta, consulta en el Centro de Salud."
+  },
+  {
+    "type": "tip",
+    "id": "t4",
+    "question": "¿Necesito la credencial del peregrino?",
+    "answer": "Si. La credencial (pasaporte del peregrino) es necesaria para alojarte en albergues de peregrinos y para obtener la Compostela al llegar a Santiago. Puedes conseguirla en asociaciones jacobeas, catedrales o en el albergue."
+  }
 ]

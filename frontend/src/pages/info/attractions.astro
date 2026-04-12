@@ -6,24 +6,32 @@ import annualEvents from '../../content/events/annual.json';
 
 const allEntries = await getCollection('localGuide');
 const attractions = allEntries
-  .filter(e => e.data.type === 'attraction')
+  .filter((e) => e.data.type === 'attraction')
   .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
-  .map(e => ({
-    emoji:   e.data.emoji ?? '📍',
-    name:    e.data.name,
-    type:    e.data.category ?? '',
+  .map((e) => ({
+    emoji: e.data.emoji ?? '📍',
+    name: e.data.name,
+    type: e.data.category ?? '',
     distance: e.data.distance ?? '',
-    desc:    e.body.trim(),
+    desc: e.body.trim(),
     mustSee: e.data.mustSee ?? false,
   }));
 
 // Annual events from JSON data file
-const events = (annualEvents as Array<{ id: string; month: string; monthNum: number; name: string; emoji?: string }>)
+const events = (
+  annualEvents as Array<{
+    id: string;
+    month: string;
+    monthNum: number;
+    name: string;
+    emoji?: string;
+  }>
+)
   .sort((a, b) => a.monthNum - b.monthNum)
-  .map(ev => ({
+  .map((ev) => ({
     month: ev.month,
-    name:  ev.name,
-    desc:  '',   // description shown inline in template
+    name: ev.name,
+    desc: '', // description shown inline in template
   }));
 ---
 
@@ -31,8 +39,9 @@ const events = (annualEvents as Array<{ id: string; month: string; monthNum: num
   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <defs>
       <filter id="sketchy-filter">
-        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"
+        ></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"></feDisplacementMap>
       </filter>
     </defs>
   </svg>
@@ -40,7 +49,15 @@ const events = (annualEvents as Array<{ id: string; month: string; monthNum: num
   <section class="page-hero reveal-section">
     <div class="page-hero-inner">
       <a href="/dashboard" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"></path></svg
+        >
         Volver al Panel
       </a>
       <div class="hero-emoji" aria-hidden="true">🏛️</div>
@@ -50,14 +67,13 @@ const events = (annualEvents as Array<{ id: string; month: string; monthNum: num
   </section>
 
   <div class="page-content">
-
     <!-- Must-see callout -->
     <div class="tip-box reveal-section" style="--delay:0.04s">
       <span class="tip-icon" aria-hidden="true">⭐</span>
       <p class="tip-text">
         <strong>No te pierdas:</strong> Los lugares marcados con
-        <span class="must-badge">Imprescindible</span> son
-        los favoritos de los peregrinos que han pasado por aqui.
+        <span class="must-badge">Imprescindible</span> son los favoritos de los peregrinos que han pasado
+        por aqui.
       </p>
     </div>
 
@@ -65,30 +81,65 @@ const events = (annualEvents as Array<{ id: string; month: string; monthNum: num
     <section class="reveal-section" style="--delay:0.08s">
       <h2 class="section-title">Lugares de Interes</h2>
       <div class="attr-list">
-        {attractions.map((a, i) => (
-          <div class={`attr-card reveal-section ${a.mustSee ? 'attr-must' : ''}`} style={`--delay:${0.1 + i * 0.06}s`}>
-            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-              <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke={a.mustSee ? '#7c3aed' : '#e0e0e0'} stroke-width="1.5" filter="url(#sketchy-filter)" stroke-opacity="0.4"/>
-            </svg>
-            <div class="attr-inner">
-              <span class="attr-emoji" aria-hidden="true">{a.emoji}</span>
-              <div class="attr-body">
-                <div class="attr-title-row">
-                  <h3 class="attr-name">{a.name}</h3>
-                  {a.mustSee && <span class="must-badge">Imprescindible</span>}
+        {
+          attractions.map((a, i) => (
+            <div
+              class={`attr-card reveal-section ${a.mustSee ? 'attr-must' : ''}`}
+              style={`--delay:${0.1 + i * 0.06}s`}
+            >
+              <svg
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="14"
+                  fill="white"
+                  stroke={a.mustSee ? '#7c3aed' : '#e0e0e0'}
+                  stroke-width="1.5"
+                  filter="url(#sketchy-filter)"
+                  stroke-opacity="0.4"
+                />
+              </svg>
+              <div class="attr-inner">
+                <span class="attr-emoji" aria-hidden="true">
+                  {a.emoji}
+                </span>
+                <div class="attr-body">
+                  <div class="attr-title-row">
+                    <h3 class="attr-name">{a.name}</h3>
+                    {a.mustSee && <span class="must-badge">Imprescindible</span>}
+                  </div>
+                  <div class="attr-meta">
+                    <span class="attr-type">{a.type}</span>
+                    <span class="attr-dist">
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        aria-hidden="true"
+                      >
+                        <>
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </>
+                      </svg>
+                      {a.distance}
+                    </span>
+                  </div>
+                  <p class="attr-desc">{a.desc}</p>
                 </div>
-                <div class="attr-meta">
-                  <span class="attr-type">{a.type}</span>
-                  <span class="attr-dist">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    {a.distance}
-                  </span>
-                </div>
-                <p class="attr-desc">{a.desc}</p>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
     </section>
 
@@ -96,113 +147,289 @@ const events = (annualEvents as Array<{ id: string; month: string; monthNum: num
     <section class="events-section reveal-section" style="--delay:0.15s">
       <h2 class="section-title">Eventos Anuales</h2>
       <div class="events-grid">
-        {events.map((ev, i) => (
-          <div class="event-card reveal-section" style={`--delay:${0.17 + i * 0.05}s`}>
-            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-              <rect x="0" y="0" width="100%" height="100%" rx="12" fill="white" stroke="#7c3aed" stroke-width="1" filter="url(#sketchy-filter)" stroke-opacity="0.25"/>
-            </svg>
-            <div class="event-inner">
-              <span class="event-month">{ev.month}</span>
-              <div>
-                <span class="event-name">{ev.name}</span>
+        {
+          events.map((ev, i) => (
+            <div class="event-card reveal-section" style={`--delay:${0.17 + i * 0.05}s`}>
+              <svg
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="12"
+                  fill="white"
+                  stroke="#7c3aed"
+                  stroke-width="1"
+                  filter="url(#sketchy-filter)"
+                  stroke-opacity="0.25"
+                />
+              </svg>
+              <div class="event-inner">
+                <span class="event-month">{ev.month}</span>
+                <div>
+                  <span class="event-name">{ev.name}</span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
     </section>
-
   </div>
 
   <style>
     .page-hero {
       background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #8b5cf6 100%);
-      padding: 2.5rem 1rem 2rem; color: white;
-      position: relative; overflow: hidden;
+      padding: 2.5rem 1rem 2rem;
+      color: white;
+      position: relative;
+      overflow: hidden;
     }
     .page-hero::before {
-      content: ''; position: absolute; top: -40px; right: -40px;
-      width: 200px; height: 200px;
-      background: rgba(255,255,255,0.06); border-radius: 50%;
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 50%;
     }
-    .page-hero-inner { max-width: 1020px; margin: 0 auto; position: relative; z-index: 1; }
+    .page-hero-inner {
+      max-width: 1020px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
     .back-link {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      color: rgba(255,255,255,0.8); text-decoration: none;
-      font-family: var(--font-hand, sans-serif); font-size: 0.85rem;
-      margin-bottom: 1rem; transition: color 200ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      transition: color 200ms ease;
     }
-    .back-link:hover { color: white; }
-    .hero-emoji { font-size: 2.8rem; margin-bottom: 0.4rem; }
+    .back-link:hover {
+      color: white;
+    }
+    .hero-emoji {
+      font-size: 2.8rem;
+      margin-bottom: 0.4rem;
+    }
     .page-title {
       font-family: var(--font-display, sans-serif);
-      font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 0.25rem; color: white;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      margin: 0 0 0.25rem;
+      color: white;
     }
-    .page-subtitle { font-family: var(--font-hand, sans-serif); font-size: 1rem; opacity: 0.85; margin: 0; }
+    .page-subtitle {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 1rem;
+      opacity: 0.85;
+      margin: 0;
+    }
 
-    .page-content { max-width: 1020px; margin: 0 auto; padding: 2rem 1rem 4rem; display: flex; flex-direction: column; gap: 2.5rem; }
-    .section-title { font-family: var(--font-display, sans-serif); font-size: 1.4rem; color: #1a1a1a; margin: 0 0 1rem; }
+    .page-content {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+    .section-title {
+      font-family: var(--font-display, sans-serif);
+      font-size: 1.4rem;
+      color: #1a1a1a;
+      margin: 0 0 1rem;
+    }
 
     .tip-box {
-      display: flex; gap: 0.75rem; align-items: flex-start;
-      background: #f5f3ff; border: 1.5px solid #c4b5fd; border-radius: 12px;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      background: #f5f3ff;
+      border: 1.5px solid #c4b5fd;
+      border-radius: 12px;
       padding: 1rem 1.25rem;
     }
-    .tip-icon { font-size: 1.3rem; flex-shrink: 0; }
-    .tip-text { font-family: var(--font-hand, sans-serif); font-size: 0.88rem; color: #4c1d95; margin: 0; line-height: 1.5; }
+    .tip-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .tip-text {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.88rem;
+      color: #4c1d95;
+      margin: 0;
+      line-height: 1.5;
+    }
     .must-badge {
       display: inline-block;
-      font-family: var(--font-hand, sans-serif); font-size: 0.72rem;
-      background: #ede9fe; color: #6d28d9; border: 1px solid #c4b5fd;
-      border-radius: 50px; padding: 0.1rem 0.5rem;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.72rem;
+      background: #ede9fe;
+      color: #6d28d9;
+      border: 1px solid #c4b5fd;
+      border-radius: 50px;
+      padding: 0.1rem 0.5rem;
     }
 
-    .attr-list { display: flex; flex-direction: column; gap: 1rem; }
-    .attr-card { position: relative; border-radius: 14px; transition: transform 250ms ease; }
-    .attr-card:hover { transform: translateX(4px); }
-    .attr-must .attr-name { color: #6d28d9; }
+    .attr-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .attr-card {
+      position: relative;
+      border-radius: 14px;
+      transition: transform 250ms ease;
+    }
+    .attr-card:hover {
+      transform: translateX(4px);
+    }
+    .attr-must .attr-name {
+      color: #6d28d9;
+    }
     .attr-inner {
-      position: relative; z-index: 2; padding: 1.1rem 1.25rem;
-      display: flex; gap: 1rem; align-items: flex-start;
+      position: relative;
+      z-index: 2;
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
     }
-    .attr-emoji { font-size: 2rem; flex-shrink: 0; margin-top: 0.15rem; }
-    .attr-body { flex: 1; }
-    .attr-title-row { display: flex; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
-    .attr-name { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 1rem; color: #1a1a1a; margin: 0; }
-    .attr-meta { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.45rem; flex-wrap: wrap; }
-    .attr-type { font-family: var(--font-hand, sans-serif); font-size: 0.78rem; color: #888; }
+    .attr-emoji {
+      font-size: 2rem;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+    .attr-body {
+      flex: 1;
+    }
+    .attr-title-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.3rem;
+    }
+    .attr-name {
+      font-family: var(--font-sketch, sans-serif);
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1a1a1a;
+      margin: 0;
+    }
+    .attr-meta {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .attr-type {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.78rem;
+      color: #888;
+    }
     .attr-dist {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      font-family: var(--font-hand, sans-serif); font-size: 0.76rem; color: #7c3aed;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.76rem;
+      color: #7c3aed;
     }
-    .attr-desc { font-family: var(--font-hand, sans-serif); font-size: 0.85rem; color: #555; line-height: 1.5; margin: 0; }
+    .attr-desc {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.85rem;
+      color: #555;
+      line-height: 1.5;
+      margin: 0;
+    }
 
-    .events-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
-    .event-card { position: relative; border-radius: 12px; transition: transform 250ms ease; }
-    .event-card:hover { transform: translateY(-3px); }
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.85rem;
+    }
+    .event-card {
+      position: relative;
+      border-radius: 12px;
+      transition: transform 250ms ease;
+    }
+    .event-card:hover {
+      transform: translateY(-3px);
+    }
     .event-inner {
-      position: relative; z-index: 2; padding: 1rem 1.1rem;
-      display: flex; gap: 1rem; align-items: flex-start;
+      position: relative;
+      z-index: 2;
+      padding: 1rem 1.1rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
     }
     .event-month {
-      font-family: var(--font-display, sans-serif); font-size: 1.1rem;
-      color: #7c3aed; min-width: 36px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;
+      font-family: var(--font-display, sans-serif);
+      font-size: 1.1rem;
+      color: #7c3aed;
+      min-width: 36px;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
     }
-    .event-name { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.9rem; color: #1a1a1a; margin-bottom: 0.2rem; }
-    .event-desc { font-family: var(--font-hand, sans-serif); font-size: 0.8rem; color: #666; }
+    .event-name {
+      display: block;
+      font-family: var(--font-sketch, sans-serif);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #1a1a1a;
+      margin-bottom: 0.2rem;
+    }
+    .event-desc {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.8rem;
+      color: #666;
+    }
 
-    .reveal-section { opacity: 0; transform: translateY(24px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
-    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+    .reveal-section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        opacity 600ms ease calc(var(--delay, 0s)),
+        transform 600ms ease calc(var(--delay, 0s));
+    }
+    .reveal-section.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     @media (max-width: 560px) {
-      .events-grid { grid-template-columns: 1fr; }
+      .events-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 
   <script>
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); } });
-    }, { threshold: 0.07 });
-    document.querySelectorAll('.reveal-section').forEach(el => obs.observe(el));
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('revealed');
+            obs.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.07 }
+    );
+    document.querySelectorAll('.reveal-section').forEach((el) => obs.observe(el));
   </script>
 </Layout>

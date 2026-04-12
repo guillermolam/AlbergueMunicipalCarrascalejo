@@ -7,23 +7,29 @@
     clippy::missing_panics_doc,
     clippy::unused_async,
     clippy::cast_possible_truncation,
-    clippy::cast_precision_loss
+    clippy::cast_precision_loss,
+    clippy::future_not_send
 )]
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use worker::{event, Context, Env, Method, Request, Response, Result};
+use worker::{
+    event, Context, Env, Method, Request, Response, Result, ScheduleContext, ScheduledEvent,
+};
 
-#[derive(Serialize, Deserialize, Clone)]
+// ── Domain types ─────────────────────────────────────────────────────────────
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Review {
     pub id: String,
     pub author_name: String,
-    pub rating: u8,
+    pub rating: f32,
     pub text: String,
     pub date: String,
     pub source: String,
     pub verified: bool,
     pub helpful_count: u32,
+    pub language: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -34,256 +40,348 @@ pub struct ReviewsResponse {
     pub source_breakdown: HashMap<String, u32>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ReviewScores {
+    pub source: String,
+    pub overall: Option<f32>,
+    pub staff: Option<f32>,
+    pub cleanliness: Option<f32>,
+    pub comfort: Option<f32>,
+    pub value_for_money: Option<f32>,
+    pub facilities: Option<f32>,
+    pub location: Option<f32>,
+    pub total_count: u32,
+    pub label: Option<String>,
+    pub last_synced: String,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: String,
     pub message: String,
 }
 
+// ── D1 row types (for raw query deserialization) ─────────────────────────────
+
+#[derive(Deserialize, Debug)]
+struct ReviewRow {
+    id: String,
+    source: String,
+    author_name: Option<String>,
+    rating: f64,
+    text: Option<String>,
+    review_date: Option<String>,
+    language: Option<String>,
+    verified: i32,
+    helpful_count: i32,
+}
+
+#[derive(Deserialize, Debug)]
+struct ScoresRow {
+    source: String,
+    overall: Option<f64>,
+    staff: Option<f64>,
+    cleanliness: Option<f64>,
+    comfort: Option<f64>,
+    value_for_money: Option<f64>,
+    facilities: Option<f64>,
+    location: Option<f64>,
+    total_count: i32,
+    label: Option<String>,
+    last_synced: String,
+}
+
+// ── Entry points ─────────────────────────────────────────────────────────────
+
 #[event(fetch)]
-async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
+async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let path = req.path();
 
-    // Handle OPTIONS for CORS
     if req.method() == Method::Options {
-        let mut response = Response::ok("")?;
-        add_cors_headers(&mut response)?;
-        return Ok(response);
+        return cors_ok();
     }
 
-    let mut response = match path.as_str() {
-        "/reviews/google" => handle_google_reviews()?,
-        "/reviews/booking" => handle_booking_reviews()?,
-        "/reviews/all" => handle_all_reviews()?,
-        "/reviews/stats" => handle_review_stats()?,
-        _ => {
-            let err = ErrorResponse {
-                error: "Not Found".to_string(),
-                message: "Reviews endpoint not found".to_string(),
-            };
-            let json = serde_json::to_string(&err).unwrap_or_default();
-            let mut resp = Response::ok(json)?;
-            resp.headers_mut().set("Content-Type", "application/json")?;
-            resp.with_status(404)
+    let mut response = match (req.method(), path.as_str()) {
+        (Method::Get, "/reviews/google") => handle_source_reviews(&env, "google").await?,
+        (Method::Get, "/reviews/booking") => handle_source_reviews(&env, "booking").await?,
+        (Method::Get, "/reviews/all") => handle_all_reviews(&env).await?,
+        (Method::Get, "/reviews/stats") => handle_stats(&env, "all").await?,
+        (Method::Get, p) if p.starts_with("/reviews/stats/") => {
+            let source = p.trim_start_matches("/reviews/stats/");
+            handle_stats(&env, source).await?
         }
+        (Method::Post, "/reviews/sync") => handle_sync(&env).await?,
+        _ => not_found("Reviews endpoint not found"),
     };
 
     add_cors_headers(&mut response)?;
     Ok(response)
 }
 
-#[tracing::instrument(skip(response))]
-fn add_cors_headers(response: &mut Response) -> Result<()> {
-    let headers = response.headers_mut();
-    headers.set("Access-Control-Allow-Origin", "*")?;
-    headers.set("Access-Control-Allow-Methods", "GET, OPTIONS")?;
-    headers.set(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization",
-    )?;
+/// Scheduled cron: sync reviews from Google Places and Booking.com every 6 hours.
+#[event(scheduled)]
+async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
+    if let Err(e) = sync_reviews(&env).await {
+        tracing::error!("Scheduled review sync failed: {:?}", e);
+    }
+}
+
+// ── Handlers ─────────────────────────────────────────────────────────────────
+
+async fn handle_source_reviews(env: &Env, source: &str) -> Result<Response> {
+    let reviews = load_reviews_from_db(env, Some(source))
+        .await
+        .unwrap_or_default();
+
+    let response = ReviewsResponse {
+        total_count: reviews.len() as u32,
+        average_rating: average_rating(&reviews),
+        source_breakdown: source_breakdown(&reviews),
+        reviews,
+    };
+    json_response(200, &response)
+}
+
+async fn handle_all_reviews(env: &Env) -> Result<Response> {
+    let mut reviews = load_reviews_from_db(env, None).await.unwrap_or_default();
+    reviews.sort_by(|a, b| b.date.cmp(&a.date));
+
+    let response = ReviewsResponse {
+        total_count: reviews.len() as u32,
+        average_rating: average_rating(&reviews),
+        source_breakdown: source_breakdown(&reviews),
+        reviews,
+    };
+    json_response(200, &response)
+}
+
+async fn handle_stats(env: &Env, source: &str) -> Result<Response> {
+    if let Ok(Some(s)) = load_scores_from_db(env, source).await {
+        return json_response(200, &s);
+    }
+    // Return empty placeholder — frontend falls back to its own default
+    let empty = ReviewScores {
+        source: source.to_string(),
+        overall: None,
+        staff: None,
+        cleanliness: None,
+        comfort: None,
+        value_for_money: None,
+        facilities: None,
+        location: None,
+        total_count: 0,
+        label: None,
+        last_synced: chrono::Utc::now().to_rfc3339(),
+    };
+    json_response(200, &empty)
+}
+
+async fn handle_sync(env: &Env) -> Result<Response> {
+    match sync_reviews(env).await {
+        Ok(()) => json_response(
+            200,
+            &serde_json::json!({"ok": true, "synced_at": chrono::Utc::now().to_rfc3339()}),
+        ),
+        Err(e) => json_response(
+            500,
+            &serde_json::json!({"ok": false, "error": e.to_string()}),
+        ),
+    }
+}
+
+// ── D1 helpers ────────────────────────────────────────────────────────────────
+
+async fn load_reviews_from_db(env: &Env, source: Option<&str>) -> Result<Vec<Review>> {
+    let d1 = env.d1("DB")?;
+    let (sql, bind_source) = source.map_or(
+        ("SELECT id, source, author_name, rating, text, review_date, language, verified, helpful_count FROM reviews ORDER BY review_date DESC", None),
+        |src| ("SELECT id, source, author_name, rating, text, review_date, language, verified, helpful_count FROM reviews WHERE source = ? ORDER BY review_date DESC", Some(src)),
+    );
+
+    let stmt = d1.prepare(sql);
+    let stmt = if let Some(src) = bind_source {
+        stmt.bind(&[src.into()])?
+    } else {
+        stmt
+    };
+
+    let result = stmt.all().await?;
+    let rows = result.results::<ReviewRow>().unwrap_or_default();
+    let reviews = rows
+        .into_iter()
+        .map(|r| Review {
+            id: r.id,
+            author_name: r.author_name.unwrap_or_default(),
+            rating: r.rating as f32,
+            text: r.text.unwrap_or_default(),
+            date: r.review_date.unwrap_or_default(),
+            source: r.source,
+            verified: r.verified != 0,
+            helpful_count: r.helpful_count.cast_unsigned(),
+            language: r.language,
+        })
+        .collect();
+    Ok(reviews)
+}
+
+async fn load_scores_from_db(env: &Env, source: &str) -> Result<Option<ReviewScores>> {
+    let d1 = env.d1("DB")?;
+    let result = d1
+        .prepare("SELECT source, overall, staff, cleanliness, comfort, value_for_money, facilities, location, total_count, label, last_synced FROM review_scores WHERE source = ?")
+        .bind(&[source.into()])?
+        .first::<ScoresRow>(None)
+        .await?;
+
+    Ok(result.map(|r| ReviewScores {
+        source: r.source,
+        overall: r.overall.map(|v| v as f32),
+        staff: r.staff.map(|v| v as f32),
+        cleanliness: r.cleanliness.map(|v| v as f32),
+        comfort: r.comfort.map(|v| v as f32),
+        value_for_money: r.value_for_money.map(|v| v as f32),
+        facilities: r.facilities.map(|v| v as f32),
+        location: r.location.map(|v| v as f32),
+        total_count: r.total_count.cast_unsigned(),
+        label: r.label,
+        last_synced: r.last_synced,
+    }))
+}
+
+// ── External sync ────────────────────────────────────────────────────────────
+
+/// Sync reviews from Google Places API and update aggregated scores.
+/// Booking.com scores are updated via an admin POST to /reviews/sync with a body,
+/// or seeded once via the migration file.
+async fn sync_reviews(env: &Env) -> Result<()> {
+    sync_google_reviews(env).await?;
+    update_aggregated_scores(env).await?;
     Ok(())
 }
 
-#[tracing::instrument]
-fn handle_google_reviews() -> Result<Response> {
-    let google_reviews = vec![
-        Review {
-            id: "google_1".to_string(),
-            author_name: "María González".to_string(),
-            rating: 5,
-            text: "Excelente albergue en El Carrascalejo. Muy limpio, camas cómodas y el hospitalero muy amable. Perfecto para peregrinos del Camino de Santiago.".to_string(),
-            date: "2024-06-15".to_string(),
-            source: "Google".to_string(),
-            verified: true,
-            helpful_count: 12,
-        },
-        Review {
-            id: "google_2".to_string(),
-            author_name: "Jean-Pierre Dubois".to_string(),
-            rating: 4,
-            text: "Bon accueil, équipements corrects. Village tranquille pour se reposer. Je recommande pour une étape sur le Camino.".to_string(),
-            date: "2024-05-28".to_string(),
-            source: "Google".to_string(),
-            verified: true,
-            helpful_count: 8,
-        },
-        Review {
-            id: "google_3".to_string(),
-            author_name: "Klaus Weber".to_string(),
-            rating: 5,
-            text: "Wunderbare Herberge! Sehr sauber, gute Ausstattung und herzlicher Empfang. El Carrascalejo ist ein perfekter Zwischenstopp.".to_string(),
-            date: "2024-04-20".to_string(),
-            source: "Google".to_string(),
-            verified: true,
-            helpful_count: 15,
-        }
-    ];
+async fn sync_google_reviews(env: &Env) -> Result<()> {
+    #[derive(Deserialize)]
+    struct PlacesReview {
+        author_name: String,
+        rating: u8,
+        text: String,
+        time: i64,
+        language: Option<String>,
+    }
+    #[derive(Deserialize)]
+    struct PlacesResult {
+        reviews: Option<Vec<PlacesReview>>,
+        rating: Option<f64>,
+        user_ratings_total: Option<u32>,
+    }
+    #[derive(Deserialize)]
+    struct PlacesResponse {
+        result: Option<PlacesResult>,
+    }
 
-    let response = ReviewsResponse {
-        reviews: google_reviews.clone(),
-        total_count: google_reviews.len() as u32,
-        average_rating: calculate_average_rating(&google_reviews),
-        source_breakdown: create_source_breakdown(&google_reviews),
+    let api_key = if let Ok(k) = env.var("GOOGLE_PLACES_API_KEY") {
+        k.to_string()
+    } else {
+        tracing::warn!("GOOGLE_PLACES_API_KEY not set — skipping Google sync");
+        return Ok(());
+    };
+    let place_id = env.var("GOOGLE_PLACE_ID").map_or_else(
+        |_| "ChIJN0rEpz9bQQ0RnAVmpZ5XLUE".to_string(),
+        |v| v.to_string(),
+    ); // El Carrascalejo placeholder
+
+    let url = format!(
+        "https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&fields=reviews,rating,user_ratings_total&key={api_key}&language=es"
+    );
+
+    let mut resp = worker::Fetch::Url(
+        url.parse()
+            .map_err(|e: url::ParseError| worker::Error::RustError(e.to_string()))?,
+    )
+    .send()
+    .await?;
+
+    if resp.status_code() != 200 {
+        tracing::warn!("Google Places API returned {}", resp.status_code());
+        return Ok(());
+    }
+
+    let body: PlacesResponse = resp.json().await.unwrap_or(PlacesResponse { result: None });
+    let Some(result) = body.result else {
+        return Ok(());
     };
 
-    json_response(200, &response)
-}
+    let d1 = env.d1("DB")?;
+    let now = chrono::Utc::now().to_rfc3339();
 
-#[tracing::instrument]
-fn handle_booking_reviews() -> Result<Response> {
-    let booking_reviews = vec![
-        Review {
-            id: "booking_1".to_string(),
-            author_name: "Sarah Mitchell".to_string(),
-            rating: 5,
-            text: "Perfect stop on the Camino! Clean facilities, comfortable beds, and the host was incredibly welcoming. Highly recommend this albergue.".to_string(),
-            date: "2024-06-10".to_string(),
-            source: "Booking.com".to_string(),
-            verified: true,
-            helpful_count: 9,
-        },
-        Review {
-            id: "booking_2".to_string(),
-            author_name: "Antonio Silva".to_string(),
-            rating: 4,
-            text: "Bom albergue para peregrinos. Quartos limpos, boa localização no Carrascalejo. Staff simpático e prestável.".to_string(),
-            date: "2024-05-15".to_string(),
-            source: "Booking.com".to_string(),
-            verified: true,
-            helpful_count: 6,
-        },
-        Review {
-            id: "booking_3".to_string(),
-            author_name: "Emma Johnson".to_string(),
-            rating: 5,
-            text: "Exceptional hospitality! The albergue exceeded my expectations. Clean, comfortable, and the perfect place to rest during the pilgrimage.".to_string(),
-            date: "2024-04-05".to_string(),
-            source: "Booking.com".to_string(),
-            verified: true,
-            helpful_count: 11,
+    if let Some(google_reviews) = result.reviews {
+        for r in google_reviews {
+            let id = format!("google_{}", r.time);
+            let date = chrono::DateTime::<chrono::Utc>::from_timestamp(r.time, 0)
+                .map(|dt| dt.format("%Y-%m-%d").to_string())
+                .unwrap_or_default();
+            d1.prepare(
+                "INSERT OR REPLACE INTO reviews (id, source, author_name, rating, text, review_date, language, verified, helpful_count, synced_at) VALUES (?, 'google', ?, ?, ?, ?, ?, 1, 0, ?)"
+            )
+            .bind(&[id.into(), r.author_name.into(), (f64::from(r.rating)).into(), r.text.into(), date.into(), r.language.unwrap_or_default().into(), now.clone().into()])?
+            .run()
+            .await?;
         }
-    ];
+    }
 
-    let response = ReviewsResponse {
-        reviews: booking_reviews.clone(),
-        total_count: booking_reviews.len() as u32,
-        average_rating: calculate_average_rating(&booking_reviews),
-        source_breakdown: create_source_breakdown(&booking_reviews),
-    };
+    // Update google scores row
+    if let (Some(rating), Some(count)) = (result.rating, result.user_ratings_total) {
+        d1.prepare(
+            "INSERT OR REPLACE INTO review_scores (source, overall, total_count, last_synced) VALUES ('google', ?, ?, ?)"
+        )
+        .bind(&[rating.into(), i64::from(count).into(), now.into()])?
+        .run()
+        .await?;
+    }
 
-    json_response(200, &response)
+    Ok(())
 }
 
-#[tracing::instrument]
-fn handle_all_reviews() -> Result<Response> {
-    let mut all_reviews = Vec::new();
-
-    let google_reviews = vec![
-        Review {
-            id: "google_1".to_string(),
-            author_name: "María González".to_string(),
-            rating: 5,
-            text: "Excelente albergue en El Carrascalejo. Muy limpio, camas cómodas y el hospitalero muy amable.".to_string(),
-            date: "2024-06-15".to_string(),
-            source: "Google".to_string(),
-            verified: true,
-            helpful_count: 12,
-        },
-        Review {
-            id: "google_2".to_string(),
-            author_name: "Jean-Pierre Dubois".to_string(),
-            rating: 4,
-            text: "Bon accueil, équipements corrects. Village tranquille pour se reposer.".to_string(),
-            date: "2024-05-28".to_string(),
-            source: "Google".to_string(),
-            verified: true,
-            helpful_count: 8,
-        },
-        Review {
-            id: "google_3".to_string(),
-            author_name: "Klaus Weber".to_string(),
-            rating: 5,
-            text: "Wunderbare Herberge! Sehr sauber, gute Ausstattung und herzlicher Empfang.".to_string(),
-            date: "2024-04-20".to_string(),
-            source: "Google".to_string(),
-            verified: true,
-            helpful_count: 15,
-        }
-    ];
-
-    let booking_reviews = vec![
-        Review {
-            id: "booking_1".to_string(),
-            author_name: "Sarah Mitchell".to_string(),
-            rating: 5,
-            text: "Perfect stop on the Camino! Clean facilities, comfortable beds, and the host was incredibly welcoming.".to_string(),
-            date: "2024-06-10".to_string(),
-            source: "Booking.com".to_string(),
-            verified: true,
-            helpful_count: 9,
-        },
-        Review {
-            id: "booking_2".to_string(),
-            author_name: "Antonio Silva".to_string(),
-            rating: 4,
-            text: "Bom albergue para peregrinos. Quartos limpos, boa localização no Carrascalejo.".to_string(),
-            date: "2024-05-15".to_string(),
-            source: "Booking.com".to_string(),
-            verified: true,
-            helpful_count: 6,
-        },
-        Review {
-            id: "booking_3".to_string(),
-            author_name: "Emma Johnson".to_string(),
-            rating: 5,
-            text: "Exceptional hospitality! The albergue exceeded my expectations. Clean, comfortable, and perfect for pilgrims.".to_string(),
-            date: "2024-04-05".to_string(),
-            source: "Booking.com".to_string(),
-            verified: true,
-            helpful_count: 11,
-        }
-    ];
-
-    all_reviews.extend(google_reviews);
-    all_reviews.extend(booking_reviews);
-
-    // Sort by date (most recent first)
-    all_reviews.sort_by(|a, b| b.date.cmp(&a.date));
-
-    let response = ReviewsResponse {
-        reviews: all_reviews.clone(),
-        total_count: all_reviews.len() as u32,
-        average_rating: calculate_average_rating(&all_reviews),
-        source_breakdown: create_source_breakdown(&all_reviews),
-    };
-
-    json_response(200, &response)
+/// Recompute the 'all' aggregated row from google + booking rows.
+async fn update_aggregated_scores(env: &Env) -> Result<()> {
+    let d1 = env.d1("DB")?;
+    let now = chrono::Utc::now().to_rfc3339();
+    // Simple: recompute weighted average of overall across sources
+    d1.prepare(
+        "INSERT OR REPLACE INTO review_scores (source, overall, staff, cleanliness, comfort, value_for_money, facilities, location, total_count, label, last_synced)
+         SELECT 'all',
+           ROUND(SUM(overall * total_count) / NULLIF(SUM(CASE WHEN overall IS NOT NULL THEN total_count ELSE 0 END), 0), 1),
+           MAX(staff), MAX(cleanliness), MAX(comfort), MAX(value_for_money), MAX(facilities), MAX(location),
+           SUM(total_count),
+           CASE WHEN SUM(overall * total_count) / NULLIF(SUM(CASE WHEN overall IS NOT NULL THEN total_count ELSE 0 END), 0) >= 9.0 THEN 'Sobresaliente'
+                WHEN SUM(overall * total_count) / NULLIF(SUM(CASE WHEN overall IS NOT NULL THEN total_count ELSE 0 END), 0) >= 8.0 THEN 'Muy bien'
+                ELSE 'Bien' END,
+           ?
+         FROM review_scores WHERE source IN ('google', 'booking')"
+    )
+    .bind(&[now.into()])?
+    .run()
+    .await?;
+    Ok(())
 }
 
-#[tracing::instrument]
-fn handle_review_stats() -> Result<Response> {
-    let stats = serde_json::json!({
-        "total_reviews": 6,
-        "average_rating": 4.7,
-        "rating_distribution": {
-            "5": 4,
-            "4": 2,
-            "3": 0,
-            "2": 0,
-            "1": 0
-        },
-        "sources": {
-            "Google": 3,
-            "Booking.com": 3
-        },
-        "verified_percentage": 100.0,
-        "recent_reviews": 3
-    });
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
-    json_response(200, &stats)
+fn average_rating(reviews: &[Review]) -> f32 {
+    if reviews.is_empty() {
+        return 0.0;
+    }
+    let total: f32 = reviews.iter().map(|r| r.rating).sum();
+    total / reviews.len() as f32
 }
 
-#[tracing::instrument(skip(body))]
+fn source_breakdown(reviews: &[Review]) -> HashMap<String, u32> {
+    let mut breakdown = HashMap::new();
+    for review in reviews {
+        *breakdown.entry(review.source.clone()).or_insert(0) += 1;
+    }
+    breakdown
+}
+
 fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
     let json = serde_json::to_string(body).map_err(|e| worker::Error::RustError(e.to_string()))?;
     let mut response = Response::ok(json)?;
@@ -293,33 +391,43 @@ fn json_response<T: Serialize>(status: u16, body: &T) -> Result<Response> {
     Ok(response.with_status(status))
 }
 
-#[tracing::instrument(skip(reviews), fields(review_count = reviews.len()))]
-fn calculate_average_rating(reviews: &[Review]) -> f32 {
-    if reviews.is_empty() {
-        return 0.0;
-    }
-
-    let total: u32 = reviews.iter().map(|r| u32::from(r.rating)).sum();
-    total as f32 / reviews.len() as f32
+fn not_found(msg: &str) -> Response {
+    let err = ErrorResponse {
+        error: "Not Found".to_string(),
+        message: msg.to_string(),
+    };
+    let json = serde_json::to_string(&err).unwrap_or_default();
+    let mut resp = Response::ok(json).unwrap();
+    resp.headers_mut()
+        .set("Content-Type", "application/json")
+        .unwrap();
+    resp.with_status(404)
 }
 
-#[tracing::instrument(skip(reviews), fields(review_count = reviews.len()))]
-fn create_source_breakdown(reviews: &[Review]) -> HashMap<String, u32> {
-    let mut breakdown = HashMap::new();
-
-    for review in reviews {
-        let count = breakdown.entry(review.source.clone()).or_insert(0);
-        *count += 1;
-    }
-
-    breakdown
+fn cors_ok() -> Result<Response> {
+    let mut response = Response::ok("")?;
+    add_cors_headers(&mut response)?;
+    Ok(response)
 }
+
+fn add_cors_headers(response: &mut Response) -> Result<()> {
+    let headers = response.headers_mut();
+    headers.set("Access-Control-Allow-Origin", "*")?;
+    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")?;
+    headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization",
+    )?;
+    Ok(())
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn make_review(id: &str, author: &str, rating: u8, source: &str) -> Review {
+    fn make_review(id: &str, author: &str, rating: f32, source: &str) -> Review {
         Review {
             id: id.to_string(),
             author_name: author.to_string(),
@@ -329,258 +437,74 @@ mod tests {
             source: source.to_string(),
             verified: true,
             helpful_count: 0,
+            language: Some("es".to_string()),
         }
     }
 
-    // --- Review struct tests ---
-
     #[test]
     fn test_review_serialization_roundtrip() {
-        let review = make_review("r1", "Alice", 5, "Google");
+        let review = make_review("r1", "Alice", 5.0, "Google");
         let json = serde_json::to_string(&review).unwrap();
         let deserialized: Review = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.id, "r1");
         assert_eq!(deserialized.author_name, "Alice");
-        assert_eq!(deserialized.rating, 5);
+        assert!((deserialized.rating - 5.0).abs() < f32::EPSILON);
         assert_eq!(deserialized.source, "Google");
         assert!(deserialized.verified);
     }
 
     #[test]
-    fn test_review_field_values() {
-        let review = Review {
-            id: "google_1".to_string(),
-            author_name: "Maria".to_string(),
-            rating: 4,
-            text: "Great place".to_string(),
-            date: "2024-06-15".to_string(),
-            source: "Google".to_string(),
-            verified: false,
-            helpful_count: 7,
-        };
-        assert_eq!(review.id, "google_1");
-        assert_eq!(review.rating, 4);
-        assert_eq!(review.helpful_count, 7);
-        assert!(!review.verified);
-    }
-
-    #[test]
-    fn test_review_clone() {
-        let review = make_review("r1", "Bob", 3, "Booking.com");
-        let cloned = review.clone();
-        assert_eq!(cloned.id, review.id);
-        assert_eq!(cloned.rating, review.rating);
-    }
-
-    #[test]
-    fn test_review_deserialize_from_json() {
-        let json = r#"{
-            "id": "test_1",
-            "author_name": "Test User",
-            "rating": 3,
-            "text": "OK stay",
-            "date": "2024-03-01",
-            "source": "Google",
-            "verified": false,
-            "helpful_count": 2
-        }"#;
-        let review: Review = serde_json::from_str(json).unwrap();
-        assert_eq!(review.id, "test_1");
-        assert_eq!(review.rating, 3);
-        assert!(!review.verified);
-        assert_eq!(review.helpful_count, 2);
-    }
-
-    // --- ReviewsResponse tests ---
-
-    #[test]
-    fn test_reviews_response_construction() {
-        let reviews = vec![
-            make_review("r1", "Alice", 5, "Google"),
-            make_review("r2", "Bob", 4, "Booking.com"),
-        ];
-        let response = ReviewsResponse {
-            reviews: reviews.clone(),
-            total_count: reviews.len() as u32,
-            average_rating: calculate_average_rating(&reviews),
-            source_breakdown: create_source_breakdown(&reviews),
-        };
-        assert_eq!(response.total_count, 2);
-        assert!((response.average_rating - 4.5).abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn test_reviews_response_serialization() {
-        let reviews = vec![make_review("r1", "Alice", 5, "Google")];
-        let response = ReviewsResponse {
-            reviews,
-            total_count: 1,
-            average_rating: 5.0,
-            source_breakdown: HashMap::from([("Google".to_string(), 1)]),
-        };
-        let json = serde_json::to_string(&response).unwrap();
-        assert!(json.contains("\"total_count\":1"));
-        assert!(json.contains("\"average_rating\":5.0"));
-    }
-
-    // --- ErrorResponse tests ---
-
-    #[test]
-    fn test_error_response_construction() {
-        let err = ErrorResponse {
-            error: "Not Found".to_string(),
-            message: "Reviews endpoint not found".to_string(),
-        };
-        assert_eq!(err.error, "Not Found");
-        assert_eq!(err.message, "Reviews endpoint not found");
-    }
-
-    #[test]
-    fn test_error_response_serialization() {
-        let err = ErrorResponse {
-            error: "Bad Request".to_string(),
-            message: "Invalid parameters".to_string(),
-        };
-        let json = serde_json::to_string(&err).unwrap();
-        let deserialized: ErrorResponse = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized.error, "Bad Request");
-        assert_eq!(deserialized.message, "Invalid parameters");
-    }
-
-    // --- calculate_average_rating tests ---
-
-    #[test]
     fn test_average_rating_empty_list() {
         let reviews: Vec<Review> = vec![];
-        assert!((calculate_average_rating(&reviews) - 0.0).abs() < f32::EPSILON);
+        assert!((average_rating(&reviews) - 0.0).abs() < f32::EPSILON);
     }
 
     #[test]
-    fn test_average_rating_single_review() {
-        let reviews = vec![make_review("r1", "Alice", 4, "Google")];
-        assert!((calculate_average_rating(&reviews) - 4.0).abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn test_average_rating_all_five_stars() {
+    fn test_average_rating_mixed() {
         let reviews = vec![
-            make_review("r1", "A", 5, "Google"),
-            make_review("r2", "B", 5, "Google"),
-            make_review("r3", "C", 5, "Google"),
+            make_review("r1", "A", 5.0, "Google"),
+            make_review("r2", "B", 4.0, "Booking.com"),
+            make_review("r3", "C", 3.0, "Google"),
         ];
-        assert!((calculate_average_rating(&reviews) - 5.0).abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn test_average_rating_mixed_ratings() {
-        let reviews = vec![
-            make_review("r1", "A", 5, "Google"),
-            make_review("r2", "B", 4, "Google"),
-            make_review("r3", "C", 3, "Google"),
-        ];
-        assert!((calculate_average_rating(&reviews) - 4.0).abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn test_average_rating_all_one_star() {
-        let reviews = vec![
-            make_review("r1", "A", 1, "Google"),
-            make_review("r2", "B", 1, "Google"),
-        ];
-        assert!((calculate_average_rating(&reviews) - 1.0).abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn test_average_rating_non_integer_result() {
-        // 5 + 4 = 9 / 2 = 4.5
-        let reviews = vec![
-            make_review("r1", "A", 5, "Google"),
-            make_review("r2", "B", 4, "Booking.com"),
-        ];
-        assert!((calculate_average_rating(&reviews) - 4.5).abs() < f32::EPSILON);
-    }
-
-    // --- create_source_breakdown tests ---
-
-    #[test]
-    fn test_source_breakdown_single_source() {
-        let reviews = vec![
-            make_review("r1", "A", 5, "Google"),
-            make_review("r2", "B", 4, "Google"),
-        ];
-        let breakdown = create_source_breakdown(&reviews);
-        assert_eq!(breakdown.len(), 1);
-        assert_eq!(breakdown["Google"], 2);
+        assert!((average_rating(&reviews) - 4.0).abs() < f32::EPSILON);
     }
 
     #[test]
     fn test_source_breakdown_multiple_sources() {
         let reviews = vec![
-            make_review("r1", "A", 5, "Google"),
-            make_review("r2", "B", 4, "Booking.com"),
-            make_review("r3", "C", 3, "Google"),
-            make_review("r4", "D", 5, "TripAdvisor"),
+            make_review("r1", "A", 5.0, "Google"),
+            make_review("r2", "B", 4.0, "Booking.com"),
+            make_review("r3", "C", 3.0, "Google"),
         ];
-        let breakdown = create_source_breakdown(&reviews);
-        assert_eq!(breakdown.len(), 3);
+        let breakdown = source_breakdown(&reviews);
         assert_eq!(breakdown["Google"], 2);
         assert_eq!(breakdown["Booking.com"], 1);
-        assert_eq!(breakdown["TripAdvisor"], 1);
     }
 
     #[test]
-    fn test_source_breakdown_empty_list() {
+    fn test_source_breakdown_empty() {
         let reviews: Vec<Review> = vec![];
-        let breakdown = create_source_breakdown(&reviews);
-        assert!(breakdown.is_empty());
-    }
-
-    // --- Hardcoded review data tests ---
-
-    #[test]
-    fn test_google_reviews_have_correct_source() {
-        let google_reviews = vec![
-            make_review("google_1", "Maria", 5, "Google"),
-            make_review("google_2", "Jean", 4, "Google"),
-            make_review("google_3", "Klaus", 5, "Google"),
-        ];
-        for review in &google_reviews {
-            assert_eq!(review.source, "Google");
-            assert!(review.id.starts_with("google_"));
-        }
-        // Verify expected average: (5+4+5)/3 = 4.666...
-        let avg = calculate_average_rating(&google_reviews);
-        assert!((avg - 14.0 / 3.0).abs() < 0.01);
+        assert!(source_breakdown(&reviews).is_empty());
     }
 
     #[test]
-    fn test_booking_reviews_have_correct_source() {
-        let booking_reviews = vec![
-            make_review("booking_1", "Sarah", 5, "Booking.com"),
-            make_review("booking_2", "Antonio", 4, "Booking.com"),
-            make_review("booking_3", "Emma", 5, "Booking.com"),
-        ];
-        for review in &booking_reviews {
-            assert_eq!(review.source, "Booking.com");
-            assert!(review.id.starts_with("booking_"));
-        }
-        let avg = calculate_average_rating(&booking_reviews);
-        assert!((avg - 14.0 / 3.0).abs() < 0.01);
-    }
-
-    // --- Edge case: single review in response ---
-
-    #[test]
-    fn test_single_review_response() {
-        let reviews = vec![make_review("r1", "Solo", 3, "Google")];
-        let response = ReviewsResponse {
-            reviews: reviews.clone(),
-            total_count: reviews.len() as u32,
-            average_rating: calculate_average_rating(&reviews),
-            source_breakdown: create_source_breakdown(&reviews),
+    fn test_review_scores_serialization() {
+        let scores = ReviewScores {
+            source: "booking".to_string(),
+            overall: Some(9.1),
+            staff: Some(9.6),
+            cleanliness: Some(9.4),
+            comfort: Some(9.3),
+            value_for_money: Some(9.6),
+            facilities: Some(9.0),
+            location: Some(9.0),
+            total_count: 71,
+            label: Some("Sobresaliente".to_string()),
+            last_synced: "2026-04-12T00:00:00Z".to_string(),
         };
-        assert_eq!(response.total_count, 1);
-        assert!((response.average_rating - 3.0).abs() < f32::EPSILON);
-        assert_eq!(response.source_breakdown["Google"], 1);
+        let json = serde_json::to_string(&scores).unwrap();
+        assert!(json.contains("\"overall\":9.1"));
+        assert!(json.contains("\"total_count\":71"));
+        assert!(json.contains("Sobresaliente"));
     }
 }

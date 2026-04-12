@@ -1,0 +1,1153 @@
+---
+export const prerender = false;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Albergue Carrascalejo – Modelo 3D</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #2a3a50;
+        font-family: system-ui, sans-serif;
+      }
+      #c {
+        width: 100vw;
+        height: 100vh;
+      }
+      #info {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 9;
+        color: #fff;
+        background: rgba(10, 18, 35, 0.72);
+        backdrop-filter: blur(8px);
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        max-width: 205px;
+        pointer-events: none;
+      }
+      #info h2 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+      }
+      #info p {
+        opacity: 0.76;
+        font-size: 0.73rem;
+        line-height: 1.45;
+      }
+      #legend {
+        position: fixed;
+        bottom: 3.8rem;
+        left: 1rem;
+        z-index: 9;
+        color: #fff;
+        background: rgba(10, 18, 35, 0.65);
+        backdrop-filter: blur(6px);
+        padding: 0.55rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.71rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        pointer-events: none;
+      }
+      #legend .r {
+        display: flex;
+        align-items: center;
+        gap: 0.38rem;
+        margin: 0.14rem 0;
+      }
+      #legend .s {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      #hint {
+        position: fixed;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9;
+        color: rgba(255, 255, 255, 0.7);
+        background: rgba(0, 0, 0, 0.42);
+        padding: 0.38rem 1rem;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      #ld {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #2a3a50;
+        color: #fff;
+        font-size: 1rem;
+        z-index: 20;
+        transition: opacity 0.6s;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ld">Cargando modelo 3D…</div>
+    <div id="c"></div>
+    <div id="info">
+      <h2>Albergue Municipal</h2>
+      <p>El Carrascalejo, Cáceres<br />Extremadura · Vía de la Plata</p>
+      <p style="margin-top:.3rem;opacity:.5;font-size:.68rem">
+        Ref. 0830102QD3203S<br />24 plazas · €15/noche · ★ 4.6
+      </p>
+    </div>
+    <div id="legend">
+      <div class="r"><span class="s" style="background:#f0ead8"></span>Albergue (Alas A y B)</div>
+      <div class="r">
+        <span class="s" style="background:#c96c2a"></span>Cubierta árabe terracota
+      </div>
+      <div class="r"><span class="s" style="background:#d4a820"></span>Zócalo ochre</div>
+      <div class="r">
+        <span class="s" style="background:#f0ead8;border:1px solid #ccc"></span>Nave / polideportivo
+      </div>
+      <div class="r"><span class="s" style="background:#a89e78"></span>Parcela (27.290 m²)</div>
+    </div>
+    <div id="hint">Arrastrar: rotar · Rueda: zoom · Clic derecho: desplazar</div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from 'three';
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+      // ── Geo helpers (parcel KML reference point) ─────────────────────────────────
+      const C_LON = -6.33643424,
+        C_LAT = 39.0237316;
+      const LON_M = 111320 * Math.cos((C_LAT * Math.PI) / 180); // ≈86 511 m/°
+      const LAT_M = 111320;
+      function sv(lon, lat) {
+        return new THREE.Vector2((lon - C_LON) * LON_M, -(lat - C_LAT) * LAT_M);
+      }
+
+      // ── KML parcel outer boundary ────────────────────────────────────────────────
+      const PARCEL = [
+        [-6.33683342224783, 39.0239355547523],
+        [-6.33698461893749, 39.0239382886597],
+        [-6.33711270189528, 39.0239598645919],
+        [-6.33759893378039, 39.0241903570446],
+        [-6.33760463600712, 39.0241922892074],
+        [-6.33774067263712, 39.0241343139493],
+        [-6.337905510814, 39.0240997949808],
+        [-6.33808417875299, 39.0241706367513],
+        [-6.33818883506123, 39.0242223092704],
+        [-6.33825689974765, 39.0242305313978],
+        [-6.33825888515365, 39.0242299461059],
+        [-6.33821982095171, 39.0241906736224],
+        [-6.33818395882724, 39.0241614747028],
+        [-6.33814808126133, 39.0241266896211],
+        [-6.33810992962716, 39.0240846450841],
+        [-6.33807640784608, 39.0240454091443],
+        [-6.33804633152809, 39.0240097655833],
+        [-6.33786465599791, 39.0238718479061],
+        [-6.33754684574956, 39.023634126659],
+        [-6.33740691814011, 39.023503536999],
+        [-6.33725335044535, 39.0233086691552],
+        [-6.33722847533949, 39.0233081368273],
+        [-6.33700413298683, 39.0232805505239],
+        [-6.33689833655571, 39.0232675426925],
+        [-6.33680331239796, 39.0232558576139],
+        [-6.33673720182603, 39.0232477296872],
+        [-6.33661879964328, 39.0232331680135],
+        [-6.3364342868886, 39.0232104784132],
+        [-6.33624972729918, 39.0231878057614],
+        [-6.33606520860565, 39.0231651205301],
+        [-6.33590128683075, 39.0231449420303],
+        [-6.33588074268571, 39.0231424139811],
+        [-6.33568267553717, 39.0231180587695],
+        [-6.33577372015411, 39.0229469203798],
+        [-6.33533589540283, 39.0231970621766],
+        [-6.33536181615248, 39.0232218806287],
+        [-6.33504167964385, 39.0234260923926],
+        [-6.33475577374852, 39.023606837565],
+        [-6.3346596931458, 39.0236697259289],
+        [-6.33464608146261, 39.023793838819],
+        [-6.33464057453927, 39.0239987662468],
+        [-6.3345942601072, 39.0241556377655],
+        [-6.33458359211148, 39.0243226935055],
+        [-6.33456403766845, 39.0244466661062],
+        [-6.33457750434695, 39.0244417483687],
+        [-6.33473541134361, 39.0244624741503],
+        [-6.33491902949468, 39.024463160448],
+        [-6.33526189358185, 39.0243995546706],
+        [-6.33552066829085, 39.0243240271547],
+        [-6.33593832877769, 39.0242554634487],
+        [-6.336293132451, 39.0241939278452],
+        [-6.33643141175623, 39.0241163679082],
+        [-6.33654596664503, 39.0240737583096],
+        [-6.33672885058153, 39.0240537062811],
+        [-6.33683342224783, 39.0239355547523],
+      ];
+
+      // KML exact almacén footprint, h=3 m
+      const ALMACEN = [
+        [-6.3372527185697, 39.0239313823508],
+        [-6.33719902007271, 39.0239188936946],
+        [-6.33706411764078, 39.0238913058556],
+        [-6.33704897768603, 39.0239407817408],
+        [-6.33718042159802, 39.0239682004632],
+        [-6.33718571738123, 39.0239532758179],
+        [-6.3372388490359, 39.0239654812414],
+      ];
+
+      // ── Scene ─────────────────────────────────────────────────────────────────────
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x91c5e0);
+      scene.fog = new THREE.Fog(0xb0cfe0, 320, 650);
+
+      const W = window.innerWidth,
+        H = window.innerHeight;
+      // Camera from the SW (road side) to see the west / front face of the hostel
+      const camera = new THREE.PerspectiveCamera(50, W / H, 0.5, 800);
+      camera.position.set(-200, 85, -40);
+      camera.lookAt(-95, 5, 20);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(W, H);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      document.getElementById('c').appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.maxPolarAngle = Math.PI * 0.47;
+      controls.minDistance = 15;
+      controls.maxDistance = 550;
+      controls.target.set(-95, 3, 20);
+      controls.update();
+
+      // ── Lights ───────────────────────────────────────────────────────────────────
+      scene.add(new THREE.HemisphereLight(0xcce8ff, 0xc0a860, 0.72));
+      const sun = new THREE.DirectionalLight(0xfff8e8, 1.65);
+      sun.position.set(120, 160, -80);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.near = 5;
+      sun.shadow.camera.far = 600;
+      sun.shadow.camera.left = -220;
+      sun.shadow.camera.right = 220;
+      sun.shadow.camera.top = 220;
+      sun.shadow.camera.bottom = -220;
+      sun.shadow.bias = -0.001;
+      scene.add(sun);
+
+      // ── Materials ─────────────────────────────────────────────────────────────────
+      const M = {
+        gnd: new THREE.MeshLambertMaterial({ color: 0xa89e78, side: THREE.DoubleSide }), // dry Extremaduran earth
+        far: new THREE.MeshLambertMaterial({ color: 0x9a9268 }),
+        road: new THREE.MeshLambertMaterial({ color: 0x786a52 }),
+        pave: new THREE.MeshLambertMaterial({ color: 0xc8c0a0 }),
+        grv: new THREE.MeshLambertMaterial({ color: 0xbcb090 }), // gravel/packed earth
+        wh: new THREE.MeshLambertMaterial({ color: 0xf0ead8 }), // white render
+        dado: new THREE.MeshLambertMaterial({ color: 0xd4a820 }), // ochre zócalo
+        roof: new THREE.MeshLambertMaterial({ color: 0xc96c2a, side: THREE.DoubleSide }), // terracotta
+        rdk: new THREE.MeshLambertMaterial({ color: 0x8c4a1e }), // ridge / shadow
+        bush: new THREE.MeshLambertMaterial({ color: 0x2a6020 }), // ornamental bushes
+        lawn: new THREE.MeshLambertMaterial({ color: 0x4a8830 }), // grass patches
+        stne: new THREE.MeshLambertMaterial({ color: 0x8a9070 }), // almacén stone
+        iron: new THREE.MeshLambertMaterial({ color: 0x3c3c3c }),
+        wood: new THREE.MeshLambertMaterial({ color: 0x5c3a18 }),
+        gl: new THREE.MeshLambertMaterial({ color: 0x88b4c8, transparent: true, opacity: 0.5 }),
+        trk: new THREE.MeshLambertMaterial({ color: 0x4a3010 }),
+        cyp: new THREE.MeshLambertMaterial({ color: 0x234a1a }), // dark cypress
+        palm: new THREE.MeshLambertMaterial({ color: 0x3a8830 }),
+      };
+
+      // ── Helpers ──────────────────────────────────────────────────────────────────
+      const sh = (m, c = true, r = true) => {
+        m.castShadow = c;
+        m.receiveShadow = r;
+        return m;
+      };
+      function bx(w, h, d, mat, x, y, z, ry = 0) {
+        const m = sh(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat));
+        m.position.set(x, y, z);
+        m.rotation.y = ry;
+        return m;
+      }
+
+      /** Extrude a WGS84 polygon footprint vertically. */
+      function extrudeWGS(coords, h, mat) {
+        const shape = new THREE.Shape(coords.map(([lo, la]) => sv(lo, la)));
+        const geo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
+        const mesh = sh(new THREE.Mesh(geo, mat));
+        mesh.rotation.x = -Math.PI / 2;
+        return mesh;
+      }
+
+      /**
+       * Gabled roof where ridge runs N-S (along Z axis).
+       * Slopes go down to E and W. Gable end fills on N and S.
+       * bx,bz = building world centre; HW=E-W width; HD=N-S depth.
+       */
+      function gabledRoofNS(bxc, bzc, HW, HD, wallH, ridgeH, roofMat, fillMat, ov = 0.55) {
+        const sL = Math.sqrt((HW / 2 + ov) ** 2 + ridgeH ** 2);
+        const ang = Math.atan2(ridgeH, HW / 2 + ov);
+        // West slope (tilts down to the west)
+        const wP = sh(new THREE.Mesh(new THREE.BoxGeometry(sL, 0.32, HD + 2 * ov), roofMat));
+        wP.rotation.z = +ang;
+        wP.position.set(bxc - (HW / 4 + ov / 2), wallH + ridgeH / 2, bzc);
+        scene.add(wP);
+        // East slope
+        const eP = sh(new THREE.Mesh(new THREE.BoxGeometry(sL, 0.32, HD + 2 * ov), roofMat));
+        eP.rotation.z = -ang;
+        eP.position.set(bxc + (HW / 4 + ov / 2), wallH + ridgeH / 2, bzc);
+        scene.add(eP);
+        // Ridge cap
+        scene.add(bx(0.38, 0.4, HD + 2 * ov + 0.1, M.rdk, bxc, wallH + ridgeH, bzc));
+        // Gable end fills (N and S faces, white triangle above wall-top)
+        for (const gz of [bzc - HD / 2, bzc + HD / 2]) {
+          const v = new Float32Array([
+            bxc - HW / 2,
+            wallH,
+            gz,
+            bxc + HW / 2,
+            wallH,
+            gz,
+            bxc,
+            wallH + ridgeH,
+            gz,
+          ]);
+          const g = new THREE.BufferGeometry();
+          g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+          g.computeVertexNormals();
+          scene.add(
+            new THREE.Mesh(
+              g,
+              new THREE.MeshLambertMaterial({ color: 0xf0ead8, side: THREE.DoubleSide })
+            )
+          );
+        }
+      }
+
+      /** Barred window on west face (x=wx, height centre wy, depth wz). */
+      function winW(group, wz, wy, wx, fw = 1.1, fh = 1.3) {
+        const depth = 0.12;
+        // frame
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(depth, fh + 0.16, fw + 0.16), M.dado);
+        fr.position.set(wx, wy, wz);
+        group.add(fr);
+        // glass
+        const gl = new THREE.Mesh(new THREE.BoxGeometry(depth * 0.6, fh, fw), M.gl);
+        gl.position.set(wx - 0.02, wy, wz);
+        group.add(gl);
+        // 3 iron bars
+        for (const b of [-1, 0, 1]) {
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(depth * 0.8, fh * 0.9, 0.04), M.iron);
+          bar.position.set(wx - 0.03, wy, wz + b * (fw / 3));
+          group.add(bar);
+        }
+      }
+
+      /** Simple cypress tree. */
+      function cypress(x, z, h = 9) {
+        scene.add(sh(new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, h * 0.28, 7), M.trk)));
+        scene.children[scene.children.length - 1].position.set(x, h * 0.14, z);
+        const cr = sh(new THREE.Mesh(new THREE.ConeGeometry(h * 0.09, h * 0.8, 7), M.cyp));
+        cr.position.set(x, h * 0.28 + h * 0.4, z);
+        scene.add(cr);
+      }
+
+      /** Sparse holm-oak / olive tree. */
+      function oak(x, z, h = 7, r = 3) {
+        scene.add(sh(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, h * 0.32, 7), M.trk)));
+        scene.children[scene.children.length - 1].position.set(x, h * 0.16, z);
+        const cr = sh(new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), M.cyp));
+        cr.scale.y = 0.65;
+        cr.position.set(x, h * 0.32 + r * 0.65, z);
+        scene.add(cr);
+      }
+
+      // ── Far ground (countryside / road) with terrain undulation ──────────────────
+      const farGnd = sh(
+        new THREE.Mesh(new THREE.PlaneGeometry(900, 900, 56, 56), M.far),
+        false,
+        true
+      );
+      farGnd.rotation.x = -Math.PI / 2;
+      farGnd.position.y = -0.06;
+      scene.add(farGnd);
+      {
+        // Displace vertices for rolling Extremaduran terrain.
+        // PlaneGeometry local: x→world X, y→world -Z, z→world Y (height).
+        const pos = farGnd.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const gx = pos.getX(i),
+            gy = pos.getY(i); // local XY
+          // Flat zone: inside the compound/road corridor (world x≈-125…-20, z≈-55…+50)
+          const inFlat = gx > -130 && gx < -15 && gy > -55 && gy < 55;
+          if (inFlat) {
+            pos.setZ(i, 0.05);
+            continue;
+          }
+          // Gentle hills elsewhere
+          const h =
+            Math.sin(gx * 0.0082 + 0.5) * 2.4 +
+            Math.sin(gy * 0.0068 + 0.9) * 1.8 +
+            Math.cos((gx - gy) * 0.0042) * 1.2 +
+            Math.sin(gx * 0.022) * 0.5 +
+            Math.cos(gy * 0.028) * 0.4;
+          pos.setZ(i, Math.max(h, -0.5));
+        }
+        pos.needsUpdate = true;
+        farGnd.geometry.computeVertexNormals();
+      }
+
+      // ── Parcel ground shape ───────────────────────────────────────────────────────
+      const pShape = new THREE.Shape(PARCEL.map(([lo, la]) => sv(lo, la)));
+      const gMesh = sh(new THREE.Mesh(new THREE.ShapeGeometry(pShape, 3), M.gnd), false, true);
+      gMesh.rotation.x = -Math.PI / 2;
+      gMesh.position.y = -0.02;
+      scene.add(gMesh);
+
+      // ── ROAD (diagonal ~NNW-SSE, runs west of hostel) ────────────────────────────
+      // From Street View GPS: road angle ≈40° west of north (heading ~318° going north)
+      // road group rotated so its length (Z) runs along 318° compass
+      const roadAngle = Math.PI * (-42 / 180); // -42° = NNW direction
+      const rdGrp = new THREE.Group();
+      rdGrp.rotation.y = roadAngle;
+      // asphalt
+      rdGrp.add(sh(new THREE.Mesh(new THREE.BoxGeometry(7, 0.07, 300), M.road), false, true));
+      // centre dashes (thin)
+      rdGrp.add(
+        new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.08, 300),
+          new THREE.MeshLambertMaterial({ color: 0xe8e0c0 })
+        )
+      );
+      // Wide stone-slab sidewalk alongside hostel (photo shows ~4m wide, large tiles)
+      const pave = sh(new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.11, 90), M.pave), false, true);
+      pave.position.x = 5.75;
+      rdGrp.add(pave);
+      // Tile grout lines on sidewalk (subtle)
+      for (let ti = -42; ti <= 42; ti += 2.4) {
+        const tl = new THREE.Mesh(
+          new THREE.BoxGeometry(4.3, 0.115, 0.04),
+          new THREE.MeshLambertMaterial({ color: 0xb0a888 })
+        );
+        tl.position.set(5.75, 0, ti);
+        rdGrp.add(tl);
+      }
+      // Kerb/curb between road and sidewalk
+      const kerb = sh(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 90), M.pave), false, true);
+      kerb.position.x = 3.4;
+      rdGrp.add(kerb);
+      rdGrp.position.set(-128, 0, 8);
+      scene.add(rdGrp);
+
+      // ── Packed-earth access area between road and hostel ─────────────────────────
+      scene.add(sh(bx(30, 0.06, 22, M.grv, -111, 0.03, 20), false, true));
+
+      // ── WING A — main hostel block (west, larger) ─────────────────────────────────
+      // Positioned at world x≈-103, z≈+20 based on Street View triangulation.
+      // Long axis: N-S (20m); width: E-W (13m). Front = WEST face.
+      {
+        const [bxc, bzc, HW, HD, wallH, ridgeH] = [-103, 20, 13, 20, 4, 2.2];
+        const wA = new THREE.Group();
+        wA.position.set(bxc, 0, bzc);
+
+        // Dado (lower 1.15 m ochre strip)
+        wA.add(sh(new THREE.Mesh(new THREE.BoxGeometry(HW, 1.15, HD), M.dado)));
+        wA.children[0].position.set(0, 0.575, 0);
+        // White upper walls
+        wA.add(sh(new THREE.Mesh(new THREE.BoxGeometry(HW, wallH - 1.15, HD), M.wh)));
+        wA.children[1].position.set(0, 1.15 + (wallH - 1.15) / 2, 0);
+
+        // West face details (front facade)
+        const fz = -HD / 2 - 0.07; // west face z offset in local space... wait
+        // Wing A group is at world bxc. The WEST face of the box is at local x=-HW/2=-6.5
+        // But in world space, west face = bxc - HW/2 = -103 - 6.5 = -109.5
+        // The "west" direction in world space = -x direction
+        // So the front face of the building is at local x=-HW/2 = -6.5
+
+        // "ALBERGUE MUNICIPAL" sign panel (on west face)
+        const signPnl = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1, 8), M.dado);
+        signPnl.position.set(-HW / 2 - 0.05, 2.6, 0);
+        wA.add(signPnl);
+
+        // Door (west face, centre)
+        const dr = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.9, 1.8), M.wood);
+        dr.position.set(-HW / 2 - 0.06, 1.45, 5.5);
+        wA.add(dr);
+
+        // Windows on west face: along Z from -HD/2 to +HD/2
+        for (const wz of [-7, -3.5, 0, 3.5, 8.5]) {
+          // frame
+          const fr = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.38, 1.15), M.dado);
+          fr.position.set(-HW / 2 - 0.06, 2.3, wz);
+          wA.add(fr);
+          // glass
+          const gl = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.2, 1.0), M.gl);
+          gl.position.set(-HW / 2 - 0.08, 2.3, wz);
+          wA.add(gl);
+          // iron bars (3 horizontal)
+          for (const by of [1.85, 2.3, 2.75]) {
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 1.0), M.iron);
+            bar.position.set(-HW / 2 - 0.08, by, wz);
+            wA.add(bar);
+          }
+        }
+
+        // East face: 2 small ventilation windows
+        for (const wz of [-5, 5]) {
+          const fr = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 0.8), M.dado);
+          fr.position.set(HW / 2 + 0.05, 2.6, wz);
+          wA.add(fr);
+        }
+
+        scene.add(wA);
+        // Roof (ridge N-S)
+        gabledRoofNS(bxc, bzc, HW, HD, wallH, ridgeH, M.roof, M.wh);
+      }
+
+      // ── WING B — secondary hostel block (east of A) ───────────────────────────────
+      {
+        const [bxc, bzc, HW, HD, wallH, ridgeH] = [-78, 18, 12, 17, 3.9, 2.0];
+        const wB = new THREE.Group();
+        wB.position.set(bxc, 0, bzc);
+
+        wB.add(sh(new THREE.Mesh(new THREE.BoxGeometry(HW, 1.1, HD), M.dado)));
+        wB.children[0].position.set(0, 0.55, 0);
+        wB.add(sh(new THREE.Mesh(new THREE.BoxGeometry(HW, wallH - 1.1, HD), M.wh)));
+        wB.children[1].position.set(0, 1.1 + (wallH - 1.1) / 2, 0);
+
+        // West face windows
+        for (const wz of [-5.5, -1.5, 2.5, 6]) {
+          const fr = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.3, 1.1), M.dado);
+          fr.position.set(-HW / 2 - 0.06, 2.2, wz);
+          wB.add(fr);
+          const gl = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.1, 0.95), M.gl);
+          gl.position.set(-HW / 2 - 0.08, 2.2, wz);
+          wB.add(gl);
+          for (const by of [1.75, 2.2, 2.65]) {
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.95), M.iron);
+            bar.position.set(-HW / 2 - 0.08, by, wz);
+            wB.add(bar);
+          }
+        }
+
+        scene.add(wB);
+        gabledRoofNS(bxc, bzc, HW, HD, wallH, ridgeH, M.roof, M.wh);
+      }
+
+      // ── Gap connection / covered walkway between wings ────────────────────────────
+      scene.add(bx(11, 0.18, 4, M.rdk, -91, 4, 20)); // flat canopy connecting wings
+      for (const px of [-86.5, -95.5]) {
+        scene.add(bx(0.2, 4, 0.2, M.dado, px, 2, 18)); // canopy support posts
+        scene.add(bx(0.2, 4, 0.2, M.dado, px, 2, 22));
+      }
+
+      // ── ALMACÉN (exact cadastral KML footprint, h=3 m) ──────────────────────────
+      {
+        const alm = extrudeWGS(ALMACEN, 3, M.stne);
+        scene.add(alm);
+        const almR = extrudeWGS(ALMACEN, 0.28, M.rdk);
+        almR.position.y = 3;
+        scene.add(almR);
+      }
+
+      // ── NAVE / POLIDEPORTIVO (3rd large building) ─────────────────────────────────
+      // Visible in Oct 2019 Street View to the east, large terracotta-roofed building
+      {
+        const [bxc, bzc, HW, HD, wallH, ridgeH] = [-42, 12, 36, 20, 5, 2.5];
+        const nv = new THREE.Group();
+        nv.position.set(bxc, 0, bzc);
+        nv.add(sh(new THREE.Mesh(new THREE.BoxGeometry(HW, 1.0, HD), M.dado)));
+        nv.children[0].position.set(0, 0.5, 0);
+        nv.add(sh(new THREE.Mesh(new THREE.BoxGeometry(HW, wallH - 1, HD), M.wh)));
+        nv.children[1].position.set(0, 1 + (wallH - 1) / 2, 0);
+        // Large roll-up door (west face)
+        const rvd = new THREE.Mesh(new THREE.BoxGeometry(0.1, wallH * 0.8, 4.5), M.iron);
+        rvd.position.set(-HW / 2 - 0.05, wallH * 0.4, -4);
+        nv.add(rvd);
+        // Windows nave
+        for (const wz of [-7, 0, 7]) {
+          const nwf = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, 1.8), M.dado);
+          nwf.position.set(-HW / 2 - 0.05, 3, wz);
+          nv.add(nwf);
+          const ngl = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.4, 1.6), M.gl);
+          ngl.position.set(-HW / 2 - 0.07, 3, wz);
+          nv.add(ngl);
+        }
+        scene.add(nv);
+        gabledRoofNS(bxc, bzc, HW, HD, wallH, ridgeH, M.roof, M.wh, 0.45);
+      }
+
+      // ── PERIMETER FENCE (chain-link, west side facing road) ──────────────────────
+      // Posts every 4 m along x≈-116 from z≈-5 to z≈42
+      for (let fz = -4; fz <= 40; fz += 4) {
+        scene.add(bx(0.1, 2.1, 0.1, M.iron, -116, 1.05, fz));
+      }
+      // Horizontal rails
+      for (const fy of [0.6, 1.3, 2.0]) {
+        scene.add(bx(0.04, fy < 1 ? fy : fy, 0.04, M.iron, -116, fy, 18));
+        scene.add(bx(48, 0.04, 0.04, M.iron, -116, fy, 18));
+      }
+      // Gate pillars (concrete dado-coloured)
+      for (const pz of [15, 21]) {
+        scene.add(bx(0.22, 2.4, 0.22, M.dado, -116, 1.2, pz));
+      }
+      // A-frame easel gate panels (distinctive Spanish freestanding gate style)
+      // Each panel is pushed open parallel to fence; A-frame legs splay to ground
+      function gatePanel(pz, dir) {
+        // dir: +1 = north panel, -1 = south panel
+        const g = new THREE.Group();
+        const panelZ = pz + dir * 3.5; // panel resting position along fence
+        // Outer frame (4 edges)
+        g.add(bx(0.08, 2.5, 0.08, M.iron, 0, 1.25, panelZ)); // near post
+        g.add(bx(0.08, 2.5, 0.08, M.iron, 5.5, 1.25, panelZ)); // far end
+        g.add(bx(5.5, 0.08, 0.08, M.iron, 2.75, 2.5, panelZ)); // top rail
+        g.add(bx(5.5, 0.08, 0.08, M.iron, 2.75, 0.08, panelZ)); // bottom rail
+        g.add(bx(5.5, 0.06, 0.06, M.iron, 2.75, 1.25, panelZ)); // mid rail
+        // Diagonal mesh struts (cross-bracing)
+        for (const t of [0.35, 0.65]) {
+          const db = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.05, 0.05), M.iron);
+          db.rotation.z = (dir > 0 ? 1 : -1) * Math.atan2(2.5, 5.5) * (t - 0.5) * 2;
+          db.position.set(2.75, 1.25, panelZ);
+          g.add(db);
+        }
+        // A-frame support legs (2 diagonal props from top-corner to ground)
+        for (const fx of [0.5, 5]) {
+          const legLen = Math.sqrt(1.5 ** 2 + 2.5 ** 2);
+          const legAng = Math.atan2(1.5, 2.5);
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, legLen), M.iron);
+          leg.rotation.x = legAng * (dir > 0 ? 1 : -1);
+          leg.position.set(fx, 1.25, panelZ + dir * 1.2);
+          g.add(leg);
+        }
+        g.position.set(-116, 0, 0);
+        scene.add(g);
+      }
+      gatePanel(15, +1); // north panel swung north
+      gatePanel(21, -1); // south panel swung south
+
+      // ── BUSHES along interior of fence (both sides of gate, planted at ~2m intervals)
+      for (let fz = -3; fz <= 42; fz += 2.2) {
+        // Skip the gate opening (~z=15-21)
+        if (fz >= 14.5 && fz <= 21.5) continue;
+        const bh = 0.9 + Math.sin(fz * 1.3) * 0.25; // slight height variation
+        const br = 0.55 + Math.cos(fz * 0.7) * 0.12;
+        const bush = sh(new THREE.Mesh(new THREE.SphereGeometry(br, 6, 5), M.bush));
+        bush.scale.y = 0.72;
+        bush.position.set(-114.2, bh * 0.72, fz);
+        scene.add(bush);
+      }
+      // Extra bushes along south fence of compound
+      for (let fx = -115; fx <= -50; fx += 3.5) {
+        const bh = 0.75 + Math.sin(fx * 0.4) * 0.2;
+        const bush = sh(
+          new THREE.Mesh(new THREE.SphereGeometry(0.5 + Math.random() * 0.15, 6, 4), M.bush)
+        );
+        bush.scale.y = 0.7;
+        bush.position.set(fx, bh * 0.7, -5);
+        scene.add(bush);
+      }
+      // Bushes near building fronts (west face of wings)
+      for (const [x, z, r] of [
+        [-110, 14, 0.6],
+        [-110, 18, 0.55],
+        [-110, 22, 0.6],
+        [-110, 27, 0.5],
+        [-84, 12, 0.55],
+        [-84, 16, 0.6],
+        [-84, 22, 0.55],
+      ]) {
+        const b = sh(new THREE.Mesh(new THREE.SphereGeometry(r, 6, 5), M.bush));
+        b.scale.y = 0.75;
+        b.position.set(x, r * 0.75, z);
+        scene.add(b);
+      }
+
+      // ── GREEN LAWN PATCHES inside compound ───────────────────────────────────────
+      // Strip of grass along west fence interior
+      const lawnW = sh(new THREE.Mesh(new THREE.BoxGeometry(4, 0.04, 40), M.lawn), false, true);
+      lawnW.position.set(-113.5, 0.02, 17);
+      scene.add(lawnW);
+      // Grass patch near nave entrance
+      const lawnN = sh(new THREE.Mesh(new THREE.BoxGeometry(8, 0.04, 6), M.lawn), false, true);
+      lawnN.position.set(-50, 0.02, 28);
+      scene.add(lawnN);
+      // Central compound grass strip
+      const lawnC = sh(new THREE.Mesh(new THREE.BoxGeometry(30, 0.04, 5), M.lawn), false, true);
+      lawnC.position.set(-82, 0.02, 38);
+      scene.add(lawnC);
+
+      // ── ORNATE LAMP POSTS (cast-iron, multiple along road) ────────────────────────
+      // Photo shows 3-4 posts at ~15m intervals along road sidewalk
+      const globeMat = new THREE.MeshLambertMaterial({
+        color: 0xffffee,
+        emissive: 0xcccc66,
+        emissiveIntensity: 0.6,
+        transparent: true,
+        opacity: 0.88,
+      });
+      function addAt(mesh, x, y, z) {
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+        return mesh;
+      }
+      function lampPost(x, z) {
+        addAt(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 1.2, 8), M.iron), x, 0.6, z);
+        addAt(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.14, 4.8, 8), M.iron), x, 3.6, z);
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.06, 6, 10), M.iron);
+        band.rotation.x = Math.PI / 2;
+        addAt(band, x, 3.0, z);
+        addAt(new THREE.Mesh(new THREE.SphereGeometry(0.12, 7, 5), M.iron), x, 5.0, z);
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 1.5), M.iron);
+        addAt(arm, x + 0.75, 6.15, z);
+        addAt(new THREE.Mesh(new THREE.SphereGeometry(0.4, 9, 6), globeMat), x + 1.5, 6.25, z);
+        addAt(
+          new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.4, 0.2, 8), M.iron),
+          x + 1.5,
+          6.62,
+          z
+        );
+      }
+      // Main lamp (at entrance), plus 3 more along road at ~15m intervals
+      lampPost(-118, 18);
+      lampPost(-118, 3);
+      lampPost(-118, -12);
+      lampPost(-118, 33);
+
+      // ── PALM TREES near entrance and building fronts ─────────────────────────────
+      function palm(x, z, h = 6) {
+        // Trunk: narrow slightly flared cylinder
+        const tk = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, h, 7), M.trk));
+        tk.position.set(x, h / 2, z);
+        scene.add(tk);
+        // Fronds: several flat-ish discs splayed at top
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3;
+          const fr = sh(new THREE.Mesh(new THREE.ConeGeometry(0.22, 2.2, 5), M.palm));
+          fr.rotation.z = Math.PI * 0.42;
+          fr.rotation.y = a;
+          fr.position.set(x + Math.cos(a) * 0.7, h + 0.4, z + Math.sin(a) * 0.7);
+          scene.add(fr);
+        }
+        // Crown centre tuft
+        const cn = sh(new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 4), M.palm));
+        cn.scale.y = 0.7;
+        cn.position.set(x, h + 0.6, z);
+        scene.add(cn);
+      }
+
+      // Palm near main entrance
+      palm(-113, 14, 5.5);
+      palm(-113, 24, 6);
+      // Palm near nave entrance
+      palm(-52, 26, 5.5);
+
+      // ── CYPRESS TREES (as seen in Street View alongside fence & building ends) ────
+      for (const [x, z, h] of [
+        [-119, 5, 9],
+        [-119, 10, 11],
+        [-119, 26, 10],
+        [-119, 34, 9],
+        [-107, 31, 10],
+        [-107, 9, 9.5],
+        [-70, 32, 11],
+        [-70, 8, 9],
+        [-40, 32, 10],
+        [-40, 5, 9],
+      ]) {
+        cypress(x, z, h);
+      }
+
+      // ── SPARSE OAK / OLIVE TREES (typical Extremaduran landscape) ────────────────
+      for (const [x, z, h, r] of [
+        [-155, 20, 8, 3.2],
+        [-152, 45, 9, 3.8],
+        [-160, -5, 7, 3],
+        [20, 50, 8, 3.5],
+        [50, 35, 9, 4],
+        [80, 20, 8, 3.2],
+        [100, 40, 10, 4.5],
+        [30, -20, 7, 3],
+        [70, -10, 8, 3.5],
+        [110, -5, 9, 4],
+        [-30, 60, 8, 3.5],
+        [-5, 55, 9, 4],
+      ]) {
+        oak(x, z, h, r);
+      }
+
+      // ── PARK BENCHES on sidewalk (photo shows cast-iron bench with backrest) ────────
+      function sidebench(x, z) {
+        // Seat slats
+        scene.add(bx(1.8, 0.06, 0.42, M.wood, x, 0.5, z));
+        // Back slats
+        const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.06, 0.38), M.wood);
+        bk.rotation.x = Math.PI * 0.12;
+        bk.position.set(x, 0.88, z - 0.24);
+        scene.add(bk);
+        // Cast-iron legs + arm rests
+        for (const lx of [x - 0.82, x + 0.82]) {
+          scene.add(bx(0.06, 0.5, 0.42, M.iron, lx, 0.25, z));
+          scene.add(bx(0.06, 0.45, 0.06, M.iron, lx, 0.68, z - 0.2));
+        }
+      }
+      // 2 benches on sidewalk beside entrance (photo 5 shows bench to right of lamp)
+      sidebench(-120, 30);
+      sidebench(-120, 37);
+
+      // ── TALL INDUSTRIAL CHIMNEY on Wing A (visible prominently in Oct 2019 east photo)
+      // Dark cylindrical flue, rises ~5m above roof ridge (wallH+ridgeH=6.2m → top at ~11.5m)
+      {
+        const chimMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const chimMain = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 5.5, 10), chimMat);
+        chimMain.position.set(-100, 9.0, 16);
+        scene.add(chimMain);
+        // Cap cowl
+        const chimCap = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.5, 10), chimMat);
+        chimCap.position.set(-100, 11.85, 16);
+        scene.add(chimCap);
+      }
+
+      // ── WHITE CHIMNEYS on wings and nave ─────────────────────────────────────────
+      for (const [cx, cy, cz] of [
+        [-105, 7.5, 13],
+        [-101, 7.5, 27],
+        [-80, 7.0, 12],
+        [-76, 7.0, 25],
+        [-35, 8.2, 8],
+        [-28, 8.2, 18],
+      ]) {
+        addAt(new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.22, 1.0, 8), M.wh), cx, cy, cz);
+        scene.add(bx(0.32, 0.15, 0.32, M.iron, cx, cy + 0.58, cz));
+      }
+
+      // ── AIR CONDITIONING UNITS on east face of Wing A and Wing B ─────────────────
+      const acMat = new THREE.MeshLambertMaterial({ color: 0xb0b4b8 });
+      for (const [ax, az] of [
+        [-96, 15],
+        [-96, 22],
+        [-72, 15],
+        [-72, 22],
+      ]) {
+        const ac = sh(new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.55, 0.7), acMat));
+        ac.position.set(ax, 2.8, az);
+        scene.add(ac);
+        scene.add(bx(0.26, 0.04, 0.72, M.iron, ax, 2.52, az));
+      }
+
+      // ── TV ANTENNAS on rooftops ───────────────────────────────────────────────────
+      for (const [ax, ay, az] of [
+        [-103, 7.6, 15],
+        [-78, 7.1, 14],
+        [-42, 8.1, 10],
+      ]) {
+        scene.add(bx(0.04, 1.2, 0.04, M.iron, ax, ay + 0.6, az));
+        scene.add(bx(2.0, 0.04, 0.04, M.iron, ax, ay + 1.2, az));
+        for (const xo of [-0.8, -0.4, 0, 0.4, 0.8]) {
+          scene.add(bx(0.04, 0.04, 0.22, M.iron, ax + xo, ay + 1.2, az));
+        }
+      }
+
+      // ── YELLOW + BLUE WASTE BINS (large 240L wheelie bins, east side of buildings) ─
+      for (const { c, bx: bvx, bz: bvz } of [
+        { c: 0xd4a800, bx: -89, bz: 14.5 },
+        { c: 0xd4a800, bx: -88, bz: 14.5 },
+        { c: 0x2244aa, bx: -87, bz: 14.5 },
+        { c: 0x1a8822, bz: 14.5, bx: -86 },
+      ]) {
+        const bin = sh(
+          new THREE.Mesh(
+            new THREE.BoxGeometry(0.58, 0.98, 0.68),
+            new THREE.MeshLambertMaterial({ color: c })
+          )
+        );
+        bin.position.set(bvx, 0.49, bvz);
+        scene.add(bin);
+        // Lid
+        const lid = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6, 0.07, 0.7),
+          new THREE.MeshLambertMaterial({ color: 0x222222 })
+        );
+        lid.position.set(bvx, 0.99, bvz);
+        scene.add(lid);
+      }
+
+      // ── EAST-SIDE DIRT ACCESS TRACK ───────────────────────────────────────────────
+      // Oct 2019 photos show a sandy track behind/east of the compound
+      const eastTrack = sh(
+        new THREE.Mesh(
+          new THREE.PlaneGeometry(9, 120),
+          new THREE.MeshLambertMaterial({ color: 0xb89e70 })
+        ),
+        false,
+        true
+      );
+      eastTrack.rotation.x = -Math.PI / 2;
+      eastTrack.position.set(-55, 0.005, -10);
+      scene.add(eastTrack);
+
+      // ── PARKED CARS on east dirt track (Oct 2019 photos show white Fiat Panda + silver car)
+      function simpleCar(x, z, ry, bodyColor) {
+        const cg = new THREE.Group();
+        const bm = new THREE.MeshLambertMaterial({ color: bodyColor });
+        // Lower body
+        const bd = sh(new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.72, 3.8), bm));
+        bd.position.set(0, 0.36, 0);
+        cg.add(bd);
+        // Cabin/roof
+        const cb = sh(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.6, 2.0), bm));
+        cb.position.set(0, 0.98, -0.1);
+        cg.add(cb);
+        // Windows
+        const wm = new THREE.MeshLambertMaterial({
+          color: 0x88aacc,
+          transparent: true,
+          opacity: 0.55,
+        });
+        const win = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.48, 1.88), wm);
+        win.position.set(0, 0.98, -0.1);
+        cg.add(win);
+        // Wheels (4)
+        for (const [wx, wz] of [
+          [-0.82, -1.2],
+          [-0.82, 1.2],
+          [0.82, -1.2],
+          [0.82, 1.2],
+        ]) {
+          const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.2, 10), M.iron);
+          wh.rotation.z = Math.PI / 2;
+          wh.position.set(wx, 0.27, wz);
+          cg.add(wh);
+        }
+        cg.position.set(x, 0, z);
+        cg.rotation.y = ry;
+        scene.add(cg);
+      }
+      // White Fiat Panda (car 1 - east side)
+      simpleCar(-85, 26, Math.PI * 0.5, 0xf0ede8);
+      // Silver/grey car (car 2 - east side)
+      simpleCar(-70, 30, Math.PI * 0.5, 0x9aa0a8);
+      // White van parked on east side
+      simpleCar(-60, 22, Math.PI * 0.5, 0xe8e8e0);
+
+      // ── BAR / CAFETERIA STOREFRONT (between wings, dark glass with signs) ──────────
+      // Viewer at x≈-93,z≈+22 looking north sees the bar at z≈15 area
+      {
+        const bfM = new THREE.MeshLambertMaterial({
+          color: 0x080810,
+          transparent: true,
+          opacity: 0.9,
+        });
+        const bSignM = new THREE.MeshLambertMaterial({ color: 0x080808 });
+        // Glass front panel (facing south = +z direction, so thin in Z)
+        const bf = sh(new THREE.Mesh(new THREE.BoxGeometry(7, 3.0, 0.09), bfM));
+        bf.position.set(-91, 1.55, 14.8);
+        scene.add(bf);
+        // Black sign board above glass
+        const bs = new THREE.Mesh(new THREE.BoxGeometry(7, 0.75, 0.1), bSignM);
+        bs.position.set(-91, 3.45, 14.8);
+        scene.add(bs);
+        // Dado base strip matching facade
+        const bd = sh(new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.0, 0.09), M.dado));
+        bd.position.set(-91, 0.5, 14.8);
+        scene.add(bd);
+        // Door frame (centre opening)
+        scene.add(bx(0.08, 3.0, 0.1, M.iron, -87.5, 1.5, 14.8));
+        scene.add(bx(0.08, 3.0, 0.1, M.iron, -94.5, 1.5, 14.8));
+      }
+
+      // ── INTERIOR COURTYARD PAVING (concrete slabs between wings) ──────────────────
+      {
+        const pvM = new THREE.MeshLambertMaterial({ color: 0xc4bea8 });
+        const cp = sh(new THREE.Mesh(new THREE.PlaneGeometry(32, 24), pvM), false, true);
+        cp.rotation.x = -Math.PI / 2;
+        cp.position.set(-90, 0.015, 17);
+        scene.add(cp);
+        // Paver joint lines (2 directions)
+        for (let li = -14; li <= 14; li += 2.8) {
+          const hl = new THREE.Mesh(
+            new THREE.PlaneGeometry(32, 0.04),
+            new THREE.MeshLambertMaterial({ color: 0xa89e8a })
+          );
+          hl.rotation.x = -Math.PI / 2;
+          hl.position.set(-90, 0.02, 17 + li);
+          scene.add(hl);
+        }
+      }
+
+      // ── COLORFUL BUNTING across courtyard ─────────────────────────────────────────
+      {
+        const bunC = [0xee2222, 0x22aa22, 0x2288ee, 0xffcc00, 0xee22aa, 0xff7700];
+        for (const bz of [16.5, 20]) {
+          // two strings
+          scene.add(bx(14, 0.04, 0.04, M.iron, -89, 4.2, bz)); // string wire
+          for (let i = 0; i < 8; i++) {
+            const c = bunC[i % bunC.length];
+            const bg = new THREE.BufferGeometry();
+            const px = -83 - i * 1.7,
+              hlo = 3.7,
+              hhi = 4.2;
+            const v = new Float32Array([px, hlo, bz, px - 0.7, hhi, bz, px - 1.4, hlo, bz]);
+            bg.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+            bg.computeVertexNormals();
+            scene.add(
+              new THREE.Mesh(
+                bg,
+                new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide })
+              )
+            );
+          }
+        }
+      }
+
+      // ── OUTDOOR FURNITURE in courtyard ────────────────────────────────────────────
+      // Stacked black chairs
+      const chairM = new THREE.MeshLambertMaterial({ color: 0x202028 });
+      for (const [fx, fz] of [
+        [-93, 16],
+        [-93, 17.5],
+        [-91.5, 16],
+        [-91, 18.5],
+        [-89.5, 15.8],
+      ]) {
+        const ch = sh(new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.55, 0.52), chairM));
+        ch.position.set(fx, 0.78, fz);
+        scene.add(ch);
+      }
+      // Round tables
+      const tabTop = new THREE.MeshLambertMaterial({ color: 0xb8b0a0 });
+      for (const [tx, tz] of [
+        [-95.5, 17],
+        [-94, 19.5],
+        [-90.5, 17],
+      ]) {
+        const t = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 10), tabTop);
+        t.position.set(tx, 0.82, tz);
+        scene.add(t);
+        scene.add(bx(0.055, 0.82, 0.055, M.iron, tx, 0.41, tz));
+      }
+      // Wine barrels (wooden)
+      for (const [bvx, bvz] of [
+        [-91.5, 15],
+        [-90.8, 15],
+      ]) {
+        const b = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.32, 0.86, 10), M.wood));
+        b.position.set(bvx, 0.43, bvz);
+        scene.add(b);
+      }
+
+      // ── SOLAR PANELS on Wing A east slope ─────────────────────────────────────────
+      // East slope: from ridge (x=-103) down to east edge (x≈-96.5); angle≈17°
+      {
+        const spM = new THREE.MeshLambertMaterial({ color: 0x1a2848 });
+        const ang = Math.atan2(2.2, 7.05);
+        for (const sz of [17, 23]) {
+          const sp = sh(new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.3, 2.1), spM));
+          sp.rotation.z = -ang;
+          sp.position.set(-99.2, 5.55, sz);
+          scene.add(sp);
+          // Silver frame around panel
+          const fr = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 1.38, 2.18),
+            new THREE.MeshLambertMaterial({ color: 0xaaaaaa })
+          );
+          fr.rotation.z = -ang;
+          fr.position.set(-99.2, 5.55, sz);
+          scene.add(fr);
+        }
+        // Solar thermal collector (white cylindrical tank on roof)
+        const stc = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.28, 0.28, 1.6, 8),
+          new THREE.MeshLambertMaterial({ color: 0xd4d0c4 })
+        );
+        stc.rotation.z = Math.PI / 2;
+        stc.position.set(-101, 6.15, 25);
+        scene.add(stc);
+      }
+
+      // ── SATELLITE DISH on Wing A ──────────────────────────────────────────────────
+      {
+        const dM = new THREE.MeshLambertMaterial({ color: 0xcccccc });
+        const dish = new THREE.Mesh(
+          new THREE.SphereGeometry(0.34, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.5),
+          dM
+        );
+        dish.rotation.x = Math.PI * 0.55;
+        dish.position.set(-101, 6.4, 20);
+        scene.add(dish);
+        addAt(
+          new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.55, 6), M.iron),
+          -101,
+          6.1,
+          20
+        );
+      }
+
+      // ── PALM TREES along nave south (interior) face ───────────────────────────────
+      // Oct 2019 photo 2 and Feb 2025 photo 4 show 3 fan palms along nave south wall
+      // Nave south face: z = 12 + 10 = 22
+      palm(-52, 23, 4.8);
+      palm(-44, 23, 5.5);
+      palm(-36, 23, 4.8);
+      cypress(-48, 23, 7); // cypress between palms
+
+      // ── CAMINO WAYMARKER post (yellow shell sign) ─────────────────────────────────
+      scene.add(bx(0.12, 2, 0.12, M.wood, -121, 1, 8));
+      scene.add(
+        bx(0.8, 0.42, 0.07, new THREE.MeshLambertMaterial({ color: 0xf5e040 }), -120.6, 2.12, 8)
+      );
+
+      // ── Remove loader ─────────────────────────────────────────────────────────────
+      const ldEl = document.getElementById('ld');
+      ldEl.style.opacity = '0';
+      setTimeout(() => ldEl.remove(), 700);
+
+      // ── Resize ─────────────────────────────────────────────────────────────────
+      window.addEventListener('resize', () => {
+        const w = innerWidth,
+          h = innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+
+      // ── Render loop ───────────────────────────────────────────────────────────
+      (function loop() {
+        requestAnimationFrame(loop);
+        controls.update();
+        renderer.render(scene, camera);
+      })();
+    </script>
+  </body>
+</html>

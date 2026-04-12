@@ -4,36 +4,38 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Página no encontrada — Albergue Municipal de El Carrascalejo">
-
   <!-- Hidden SVG filter definitions -->
   <svg style="position:absolute;width:0;height:0" aria-hidden="true">
     <defs>
       <filter id="sketchy-filter">
-        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"
+        ></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"></feDisplacementMap>
       </filter>
       <filter id="sketchy-filter-strong">
-        <feTurbulence type="turbulence" baseFrequency="0.05" numOctaves="5" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4"/>
+        <feTurbulence type="turbulence" baseFrequency="0.05" numOctaves="5" result="noise"
+        ></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4"></feDisplacementMap>
       </filter>
     </defs>
   </svg>
 
   <!-- Main centered container -->
-  <section style="
+  <section
+    style="
     min-height: calc(100vh - 140px);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 3rem 1rem;
     background: #FFFFFF;
-  ">
+  "
+  >
     <div style="
       text-align: center;
       max-width: 600px;
       width: 100%;
     ">
-
       <!-- 1. Floating pilgrim emoji -->
       <div
         id="pilgrim-icon"
@@ -115,7 +117,7 @@ import Layout from '../layouts/Layout.astro';
               stroke-dashoffset: 200;
               animation: wave-draw 1s ease 600ms both;
             "
-          />
+          ></path>
         </svg>
       </div>
 
@@ -132,7 +134,8 @@ import Layout from '../layouts/Layout.astro';
           animation-delay: 500ms;
         "
       >
-        La página que buscas no existe o ha sido movida. Pero no te preocupes — el Camino siempre continúa.
+        La página que buscas no existe o ha sido movida. Pero no te preocupes — el Camino siempre
+        continúa.
       </p>
 
       <!-- 6. Error badge (green pill with sketchy SVG border) -->
@@ -152,13 +155,18 @@ import Layout from '../layouts/Layout.astro';
           aria-hidden="true"
         >
           <rect
-            x="2" y="2" width="216" height="34" rx="17" ry="17"
+            x="2"
+            y="2"
+            width="216"
+            height="34"
+            rx="17"
+            ry="17"
             fill="rgba(0,171,57,0.08)"
             stroke="#00AB39"
-            stroke-width="1.5"
-          />
+            stroke-width="1.5"></rect>
         </svg>
-        <span style="
+        <span
+          style="
           position: absolute;
           top: 50%;
           left: 50%;
@@ -168,20 +176,22 @@ import Layout from '../layouts/Layout.astro';
           color: #006b24;
           white-space: nowrap;
           pointer-events: none;
-        ">
+        "
+        >
           Error 404 — Página no encontrada
         </span>
       </div>
 
       <!-- 7. Action buttons -->
-      <div style="
+      <div
+        style="
         display: flex;
         gap: 1.25rem;
         justify-content: center;
         flex-wrap: wrap;
         margin-bottom: 2.75rem;
-      ">
-
+      "
+      >
         <!-- Primary button: Volver al Inicio -->
         <a
           href="/"
@@ -204,13 +214,19 @@ import Layout from '../layouts/Layout.astro';
             style="display:block; filter: url(#sketchy-filter);"
             aria-hidden="true"
           >
-            <rect x="2" y="2" width="186" height="44" rx="22" ry="22"
+            <rect
+              x="2"
+              y="2"
+              width="186"
+              height="44"
+              rx="22"
+              ry="22"
               fill="#00AB39"
               stroke="#006b24"
-              stroke-width="2"
-            />
+              stroke-width="2"></rect>
           </svg>
-          <span style="
+          <span
+            style="
             position: absolute;
             top: 50%;
             left: 50%;
@@ -224,11 +240,15 @@ import Layout from '../layouts/Layout.astro';
             display: flex;
             align-items: center;
             gap: 0.4rem;
-          ">
+          "
+          >
             🏠 Volver al Inicio
           </span>
           <!-- Ripple container -->
-          <span class="btn-ripple-zone" style="position:absolute;inset:0;overflow:hidden;border-radius:22px;pointer-events:none;" aria-hidden="true"></span>
+          <span
+            class="btn-ripple-zone"
+            style="position:absolute;inset:0;overflow:hidden;border-radius:22px;pointer-events:none;"
+            aria-hidden="true"></span>
         </a>
 
         <!-- Secondary button: Más Información -->
@@ -254,13 +274,19 @@ import Layout from '../layouts/Layout.astro';
             style="display:block; filter: url(#sketchy-filter);"
             aria-hidden="true"
           >
-            <rect x="2" y="2" width="186" height="44" rx="22" ry="22"
+            <rect
+              x="2"
+              y="2"
+              width="186"
+              height="44"
+              rx="22"
+              ry="22"
               fill="#FFFFFF"
               stroke="#00AB39"
-              stroke-width="2.5"
-            />
+              stroke-width="2.5"></rect>
           </svg>
-          <span style="
+          <span
+            style="
             position: absolute;
             top: 50%;
             left: 50%;
@@ -274,13 +300,16 @@ import Layout from '../layouts/Layout.astro';
             display: flex;
             align-items: center;
             gap: 0.4rem;
-          ">
+          "
+          >
             ℹ️ Más Información
           </span>
           <!-- Ripple container -->
-          <span class="btn-ripple-zone" style="position:absolute;inset:0;overflow:hidden;border-radius:22px;pointer-events:none;" aria-hidden="true"></span>
+          <span
+            class="btn-ripple-zone"
+            style="position:absolute;inset:0;overflow:hidden;border-radius:22px;pointer-events:none;"
+            aria-hidden="true"></span>
         </a>
-
       </div>
 
       <!-- 8. Inspirational quote card with 9. corner sparkles -->
@@ -314,58 +343,67 @@ import Layout from '../layouts/Layout.astro';
           aria-hidden="true"
         >
           <rect
-            x="1" y="1" width="98" height="98" rx="8" ry="8"
+            x="1"
+            y="1"
+            width="98"
+            height="98"
+            rx="8"
+            ry="8"
             fill="none"
             stroke="#00AB39"
             stroke-width="1.5"
-            vector-effect="non-scaling-stroke"
-          />
+            vector-effect="non-scaling-stroke"></rect>
         </svg>
 
         <!-- 9. Corner sparkle stars -->
         <!-- Top-left (CW) -->
         <svg
           class="corner-sparkle sparkle-tl"
-          width="20" height="20"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           style="position:absolute; top:-10px; left:-10px; z-index:6; fill:#00AB39;"
           aria-hidden="true"
         >
-          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"></path>
         </svg>
         <!-- Top-right (CCW) -->
         <svg
           class="corner-sparkle sparkle-tr"
-          width="20" height="20"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           style="position:absolute; top:-10px; right:-10px; z-index:6; fill:#00AB39;"
           aria-hidden="true"
         >
-          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"></path>
         </svg>
         <!-- Bottom-left (CW) -->
         <svg
           class="corner-sparkle sparkle-bl"
-          width="16" height="16"
+          width="16"
+          height="16"
           viewBox="0 0 24 24"
           style="position:absolute; bottom:-8px; left:-8px; z-index:6; fill:#00AB39;"
           aria-hidden="true"
         >
-          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"></path>
         </svg>
         <!-- Bottom-right (CCW) -->
         <svg
           class="corner-sparkle sparkle-br"
-          width="16" height="16"
+          width="16"
+          height="16"
           viewBox="0 0 24 24"
           style="position:absolute; bottom:-8px; right:-8px; z-index:6; fill:#00AB39;"
           aria-hidden="true"
         >
-          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/>
+          <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"></path>
         </svg>
 
         <!-- Quote text -->
-        <p style="
+        <p
+          style="
           font-family: 'Shadows Into Light', cursive;
           font-size: 1.15rem;
           color: #1A1A1A;
@@ -374,20 +412,22 @@ import Layout from '../layouts/Layout.astro';
           line-height: 1.6;
           position: relative;
           z-index: 1;
-        ">
+        "
+        >
           "El Camino no se termina aquí. Cada paso es una nueva oportunidad."
         </p>
-        <div style="
+        <div
+          style="
           font-family: 'Patrick Hand', cursive;
           font-size: 0.82rem;
           color: #888888;
           position: relative;
           z-index: 1;
-        ">
+        "
+        >
           — Dicho del Camino
         </div>
       </div>
-
     </div>
   </section>
 
@@ -418,8 +458,8 @@ import Layout from '../layouts/Layout.astro';
   >
     ¿Perdiste el camino? Reserva tu cama →&nbsp;<a
       href="/book"
-      style="color: #00AB39; text-decoration: underline; pointer-events: auto;"
-    >/book</a>
+      style="color: #00AB39; text-decoration: underline; pointer-events: auto;">/book</a
+    >
   </div>
 
   <style>
@@ -428,56 +468,114 @@ import Layout from '../layouts/Layout.astro';
     ============================================================ */
 
     @keyframes pilgrim-float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50%       { transform: translateY(-15px) rotate(3deg); }
+      0%,
+      100% {
+        transform: translateY(0) rotate(0deg);
+      }
+      50% {
+        transform: translateY(-15px) rotate(3deg);
+      }
     }
 
     @keyframes bounce-in {
-      0%   { transform: scale(0.5); opacity: 0; }
-      60%  { transform: scale(1.1); opacity: 1; }
-      100% { transform: scale(1); }
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+      }
     }
 
     @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes wave-draw {
-      from { stroke-dashoffset: 200; opacity: 0; }
-      30%  { opacity: 1; }
-      to   { stroke-dashoffset: 0; }
+      from {
+        stroke-dashoffset: 200;
+        opacity: 0;
+      }
+      30% {
+        opacity: 1;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
     }
 
     @keyframes cta-rock {
-      0%, 100% { transform: rotateZ(0deg) translateY(0); }
-      25%       { transform: rotateZ(-1deg) translateY(-2px); }
-      75%       { transform: rotateZ(1deg) translateY(-1px); }
+      0%,
+      100% {
+        transform: rotateZ(0deg) translateY(0);
+      }
+      25% {
+        transform: rotateZ(-1deg) translateY(-2px);
+      }
+      75% {
+        transform: rotateZ(1deg) translateY(-1px);
+      }
     }
 
-    @keyframes sparkle-spin-cw  {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @keyframes sparkle-spin-cw {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
     }
     @keyframes sparkle-spin-ccw {
-      0%   { transform: rotate(360deg); }
-      100% { transform: rotate(0deg); }
+      0% {
+        transform: rotate(360deg);
+      }
+      100% {
+        transform: rotate(0deg);
+      }
     }
 
     @keyframes ripple {
-      0%   { transform: scale(0); opacity: 1; }
-      100% { transform: scale(4); opacity: 0; }
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(4);
+        opacity: 0;
+      }
     }
 
     /* ============================================================
        404 NUMBER — wobble after bounce completes
     ============================================================ */
     @keyframes num-wobble {
-      0%, 100% { transform: rotate(0deg); }
-      20%       { transform: rotate(-2deg); }
-      40%       { transform: rotate(2deg); }
-      60%       { transform: rotate(-1.5deg); }
-      80%       { transform: rotate(1.5deg); }
+      0%,
+      100% {
+        transform: rotate(0deg);
+      }
+      20% {
+        transform: rotate(-2deg);
+      }
+      40% {
+        transform: rotate(2deg);
+      }
+      60% {
+        transform: rotate(-1.5deg);
+      }
+      80% {
+        transform: rotate(1.5deg);
+      }
     }
 
     #num-404 {
@@ -503,7 +601,7 @@ import Layout from '../layouts/Layout.astro';
     ============================================================ */
     .sparkle-tl,
     .sparkle-bl {
-      animation: sparkle-spin-cw  20s linear infinite;
+      animation: sparkle-spin-cw 20s linear infinite;
       transform-origin: center center;
     }
     .sparkle-tr,
@@ -609,7 +707,7 @@ import Layout from '../layouts/Layout.astro';
         const ripple = document.createElement('span');
         ripple.className = 'btn-ripple';
         ripple.style.left = `${e.clientX - rect.left}px`;
-        ripple.style.top  = `${e.clientY - rect.top}px`;
+        ripple.style.top = `${e.clientY - rect.top}px`;
         rippleZone.appendChild(ripple);
 
         ripple.addEventListener('animationend', () => ripple.remove());
@@ -677,5 +775,4 @@ import Layout from '../layouts/Layout.astro';
       });
     }
   </script>
-
 </Layout>

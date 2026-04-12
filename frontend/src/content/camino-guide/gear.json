@@ -1,8 +1,44 @@
 [
-  {"type":"gear","id":"g1","item":"Saco de dormir ligero (hasta 10°C)","icon":"🛏️","essential":true},
-  {"type":"gear","id":"g2","item":"Bastones de trekking plegables",    "icon":"🪄","essential":false},
-  {"type":"gear","id":"g3","item":"Protector solar SPF 50+",            "icon":"🌞","essential":true},
-  {"type":"gear","id":"g4","item":"Botiquin: compeed, ibuprofeno, vendas","icon":"🩹","essential":true},
-  {"type":"gear","id":"g5","item":"Credencial del Peregrino",           "icon":"📜","essential":true},
-  {"type":"gear","id":"g6","item":"Botella de 1.5 L o camelbak",       "icon":"💧","essential":true}
+  {
+    "type": "gear",
+    "id": "g1",
+    "item": "Saco de dormir ligero (hasta 10°C)",
+    "icon": "🛏️",
+    "essential": true
+  },
+  {
+    "type": "gear",
+    "id": "g2",
+    "item": "Bastones de trekking plegables",
+    "icon": "🪄",
+    "essential": false
+  },
+  {
+    "type": "gear",
+    "id": "g3",
+    "item": "Protector solar SPF 50+",
+    "icon": "🌞",
+    "essential": true
+  },
+  {
+    "type": "gear",
+    "id": "g4",
+    "item": "Botiquin: compeed, ibuprofeno, vendas",
+    "icon": "🩹",
+    "essential": true
+  },
+  {
+    "type": "gear",
+    "id": "g5",
+    "item": "Credencial del Peregrino",
+    "icon": "📜",
+    "essential": true
+  },
+  {
+    "type": "gear",
+    "id": "g6",
+    "item": "Botella de 1.5 L o camelbak",
+    "icon": "💧",
+    "essential": true
+  }
 ]

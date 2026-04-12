@@ -6,17 +6,17 @@
  */
 import Layout from '../layouts/Layout.astro';
 
-const UPDATED         = '11 de abril de 2026';
-const TITULAR         = 'SERGIO GUILLÉN BARRENA';
-const ADDRESS         = 'Paraje Cuesta, s/n, 06894 El Carrascalejo (Badajoz), España';
-const PHONE           = '+34 695 90 43 44';
-const EMAIL           = 'elcarrascalejoalbergue@gmail.com';
-const PRICE_BED       = 15;
-const PRICE_PRIVATE   = 40;
-const PRICE_LAUNDRY   = 3;
+const UPDATED = '11 de abril de 2026';
+const TITULAR = 'SERGIO GUILLÉN BARRENA';
+const ADDRESS = 'Paraje Cuesta, s/n, 06894 El Carrascalejo (Badajoz), España';
+const PHONE = '+34 695 90 43 44';
+const EMAIL = 'elcarrascalejoalbergue@gmail.com';
+const PRICE_BED = 15;
+const PRICE_PRIVATE = 40;
+const PRICE_LAUNDRY = 3;
 const TOURISM_LICENSE = 'H-CC-0023';
-const CHECKIN_FROM    = '14:00';
-const CHECKOUT_BY     = '09:00';
+const CHECKIN_FROM = '14:00';
+const CHECKOUT_BY = '09:00';
 const RECEPTION_HOURS = '14:00–22:00';
 ---
 
@@ -29,9 +29,17 @@ const RECEPTION_HOURS = '14:00–22:00';
     <header class="legal-hero">
       <div class="legal-hero-inner">
         <div class="legal-badge">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M9 11l3 3L22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
           </svg>
         </div>
         <h1>Términos y Condiciones</h1>
@@ -42,24 +50,44 @@ const RECEPTION_HOURS = '14:00–22:00';
     <!-- Intro note -->
     <div class="terms-intro-banner">
       <div class="terms-intro-inner">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <p>Bienvenido/a al <strong>Albergue Municipal de El Carrascalejo</strong> (Licencia turística {TOURISM_LICENSE}), situado en la <em>Vía de la Plata</em>, Camino de Santiago. Los presentes Términos regulan toda reserva y estancia en nuestra instalación.</p>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+          ><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline
+            points="9 22 9 12 15 12 15 22"></polyline></svg
+        >
+        <p>
+          Bienvenido/a al <strong>Albergue Municipal de El Carrascalejo</strong> (Licencia turística {
+            TOURISM_LICENSE
+          }), situado en la <em>Vía de la Plata</em>, Camino de Santiago. Los presentes Términos
+          regulan toda reserva y estancia en nuestra instalación.
+        </p>
       </div>
     </div>
 
     <!-- Content -->
     <article class="legal-content">
-
       <section>
         <h2>1. Identificación del prestador</h2>
         <table class="legal-table">
           <tbody>
             <tr><th>Gestor</th><td>{TITULAR}</td></tr>
             <tr><th>Domicilio</th><td>{ADDRESS}</td></tr>
-            <tr><th>Teléfono</th><td><a href={`tel:${PHONE.replace(/\s/g,'')}`}>{PHONE}</a></td></tr>
+            <tr
+              ><th>Teléfono</th><td><a href={`tel:${PHONE.replace(/\s/g, '')}`}>{PHONE}</a></td></tr
+            >
             <tr><th>Email</th><td><a href={`mailto:${EMAIL}`}>{EMAIL}</a></td></tr>
             <tr><th>Licencia turística</th><td>{TOURISM_LICENSE}</td></tr>
-            <tr><th>Propietario del inmueble</th><td>Ayuntamiento de El Carrascalejo (Exp. 2/2024)</td></tr>
+            <tr
+              ><th>Propietario del inmueble</th><td
+                >Ayuntamiento de El Carrascalejo (Exp. 2/2024)</td
+              ></tr
+            >
           </tbody>
         </table>
       </section>
@@ -98,7 +126,10 @@ const RECEPTION_HOURS = '14:00–22:00';
             </tr>
           </tbody>
         </table>
-        <p class="terms-note">Los precios incluyen IVA. Las tarifas pueden revisarse anualmente conforme al IPC. El precio aplicable es el vigente en el momento de confirmar la reserva.</p>
+        <p class="terms-note">
+          Los precios incluyen IVA. Las tarifas pueden revisarse anualmente conforme al IPC. El
+          precio aplicable es el vigente en el momento de confirmar la reserva.
+        </p>
       </section>
 
       <section>
@@ -106,7 +137,16 @@ const RECEPTION_HOURS = '14:00–22:00';
         <div class="schedule-grid">
           <div class="schedule-card">
             <div class="schedule-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                ><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"
+                ></polyline></svg
+              >
             </div>
             <div>
               <strong>Recepción</strong>
@@ -115,7 +155,15 @@ const RECEPTION_HOURS = '14:00–22:00';
           </div>
           <div class="schedule-card">
             <div class="schedule-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                ><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg
+              >
             </div>
             <div>
               <strong>Check-in</strong>
@@ -124,7 +172,24 @@ const RECEPTION_HOURS = '14:00–22:00';
           </div>
           <div class="schedule-card">
             <div class="schedule-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                ><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path
+                  d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line
+                  x1="6"
+                  y1="1"
+                  x2="6"
+                  y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line
+                  x1="14"
+                  y1="1"
+                  x2="14"
+                  y2="4"></line></svg
+              >
             </div>
             <div>
               <strong>Check-out</strong>
@@ -132,37 +197,70 @@ const RECEPTION_HOURS = '14:00–22:00';
             </div>
           </div>
         </div>
-        <p>El albergue permanece abierto todo el año (1 de enero – 31 de diciembre). Las llegadas fuera del horario de recepción deben coordinarse previamente por teléfono o correo electrónico.</p>
+        <p>
+          El albergue permanece abierto todo el año (1 de enero – 31 de diciembre). Las llegadas
+          fuera del horario de recepción deben coordinarse previamente por teléfono o correo
+          electrónico.
+        </p>
       </section>
 
       <section>
         <h2>4. Proceso de reserva</h2>
         <h3>4.1 Reserva directa (sitio web)</h3>
-        <p>La reserva queda confirmada cuando el sistema emite un correo de confirmación con número de referencia. Para ello:</p>
+        <p>
+          La reserva queda confirmada cuando el sistema emite un correo de confirmación con número
+          de referencia. Para ello:
+        </p>
         <ol>
           <li>Seleccione fechas y tipo de alojamiento.</li>
           <li>Facilite sus datos de contacto.</li>
-          <li>Abone el importe íntegro de la estancia mediante tarjeta bancaria (procesado por Stripe con cifrado TLS).</li>
+          <li>
+            Abone el importe íntegro de la estancia mediante tarjeta bancaria (procesado por Stripe
+            con cifrado TLS).
+          </li>
           <li>Recibirá un email de confirmación en los minutos siguientes.</li>
         </ol>
 
         <h3>4.2 Reserva a través de Booking.com</h3>
-        <p>Si reserva a través de Booking.com, aplican adicionalmente las condiciones de dicha plataforma. En caso de conflicto entre estas condiciones y las de Booking.com, prevalecerán las de Booking.com en lo relativo al pago y la cancelación por su plataforma.</p>
+        <p>
+          Si reserva a través de Booking.com, aplican adicionalmente las condiciones de dicha
+          plataforma. En caso de conflicto entre estas condiciones y las de Booking.com,
+          prevalecerán las de Booking.com en lo relativo al pago y la cancelación por su plataforma.
+        </p>
 
         <h3>4.3 Capacidad máxima</h3>
-        <p>El albergue dispone de <strong>24 camas</strong> distribuidas en 3 dormitorios de 8 literas. Las reservas se confirman por orden de solicitud. Le recomendamos reservar con antelación en temporada alta (marzo–octubre).</p>
+        <p>
+          El albergue dispone de <strong>24 camas</strong> distribuidas en 3 dormitorios de 8 literas.
+          Las reservas se confirman por orden de solicitud. Le recomendamos reservar con antelación en
+          temporada alta (marzo–octubre).
+        </p>
       </section>
 
       <section>
         <h2>5. Política de cancelación y modificación</h2>
         <p>Para reservas realizadas directamente a través de este sitio web:</p>
         <ul>
-          <li><strong>Cancelación gratuita</strong> hasta <strong>48 horas antes</strong> de la fecha de llegada → reembolso íntegro.</li>
-          <li><strong>Cancelación con menos de 48 horas de antelación</strong> → se retendrá el importe de <strong>1 noche</strong> como penalización.</li>
-          <li><strong>No-show</strong> (no presentación sin cancelar) → se factura la estancia completa.</li>
-          <li><strong>Modificación</strong> de fechas: sujeta a disponibilidad, sin coste si se solicita con más de 48 horas de antelación.</li>
+          <li>
+            <strong>Cancelación gratuita</strong> hasta <strong>48 horas antes</strong> de la fecha de
+            llegada → reembolso íntegro.
+          </li>
+          <li>
+            <strong>Cancelación con menos de 48 horas de antelación</strong> → se retendrá el importe
+            de <strong>1 noche</strong> como penalización.
+          </li>
+          <li>
+            <strong>No-show</strong> (no presentación sin cancelar) → se factura la estancia completa.
+          </li>
+          <li>
+            <strong>Modificación</strong> de fechas: sujeta a disponibilidad, sin coste si se solicita
+            con más de 48 horas de antelación.
+          </li>
         </ul>
-        <p>Para cancelaciones derivadas de fuerza mayor (enfermedad grave, fallecimiento de familiar directo, causa judicial) estudiaremos cada caso de forma individual. Contacte con nosotros lo antes posible.</p>
+        <p>
+          Para cancelaciones derivadas de fuerza mayor (enfermedad grave, fallecimiento de familiar
+          directo, causa judicial) estudiaremos cada caso de forma individual. Contacte con nosotros
+          lo antes posible.
+        </p>
       </section>
 
       <section>
@@ -171,17 +269,29 @@ const RECEPTION_HOURS = '14:00–22:00';
 
         <h3>6.1 Normas generales</h3>
         <ul>
-          <li>Se prohíbe fumar en el interior de las instalaciones (incluyendo dormitorios, baños y zonas comunes interiores).</li>
+          <li>
+            Se prohíbe fumar en el interior de las instalaciones (incluyendo dormitorios, baños y
+            zonas comunes interiores).
+          </li>
           <li>El albergue mantiene <strong>silencio nocturno a partir de las 22:00 h</strong>.</li>
           <li>No se permite el consumo de alcohol propio en zonas comunes (sí en terraza).</li>
-          <li>Queda prohibida la presencia de personas no alojadas en las instalaciones pasadas las 22:00 h.</li>
-          <li>Los huéspedes son responsables del cuidado de las instalaciones y del equipamiento puesto a su disposición.</li>
+          <li>
+            Queda prohibida la presencia de personas no alojadas en las instalaciones pasadas las
+            22:00 h.
+          </li>
+          <li>
+            Los huéspedes son responsables del cuidado de las instalaciones y del equipamiento
+            puesto a su disposición.
+          </li>
         </ul>
 
         <h3>6.2 Dormitorios</h3>
         <ul>
           <li>Se proporcionan ropa de cama y almohada; el uso de saco de dormir es opcional.</li>
-          <li>Cada cama dispone de taquilla con llave para objetos de valor (llave entregada en recepción).</li>
+          <li>
+            Cada cama dispone de taquilla con llave para objetos de valor (llave entregada en
+            recepción).
+          </li>
           <li>Las luces de los dormitorios se apagarán a las 22:30 h.</li>
           <li>No se permite comer ni beber en los dormitorios.</li>
         </ul>
@@ -189,19 +299,29 @@ const RECEPTION_HOURS = '14:00–22:00';
         <h3>6.3 Instalaciones comunes</h3>
         <ul>
           <li>La cocina compartida debe dejarse limpia y ordenada después de cada uso.</li>
-          <li>No se guardarán alimentos en la nevera más de 24 horas sin identificar; el personal retirará los no identificados.</li>
+          <li>
+            No se guardarán alimentos en la nevera más de 24 horas sin identificar; el personal
+            retirará los no identificados.
+          </li>
           <li>Los baños y duchas deben dejarse limpios tras su uso.</li>
         </ul>
 
         <h3>6.4 Mascotas</h3>
         <ul>
-          <li>Se admiten mascotas previa solicitud y pago de la tarifa correspondiente (€40/estancia).</li>
+          <li>
+            Se admiten mascotas previa solicitud y pago de la tarifa correspondiente (€40/estancia).
+          </li>
           <li>Las mascotas deben estar vacunadas y tener documentación en regla.</li>
-          <li>No se permite el acceso de mascotas a dormitorios ni a la zona de restaurante/bar.</li>
+          <li>
+            No se permite el acceso de mascotas a dormitorios ni a la zona de restaurante/bar.
+          </li>
         </ul>
 
         <h3>6.5 Incumplimiento</h3>
-        <p>El incumplimiento grave o reiterado de las normas de estancia podrá dar lugar al abandono inmediato del albergue sin derecho a reembolso, a criterio del personal.</p>
+        <p>
+          El incumplimiento grave o reiterado de las normas de estancia podrá dar lugar al abandono
+          inmediato del albergue sin derecho a reembolso, a criterio del personal.
+        </p>
       </section>
 
       <section>
@@ -225,8 +345,15 @@ const RECEPTION_HOURS = '14:00–22:00';
 
       <section>
         <h2>8. Responsabilidad sobre objetos personales</h2>
-        <p>El albergue no se hace responsable de la pérdida, robo o daño de objetos personales de los huéspedes. Se recomienda encarecidamente utilizar las taquillas con llave disponibles en los dormitorios para guardar objetos de valor.</p>
-        <p>Los objetos olvidados se custodiarán durante <strong>30 días</strong> y, si no son reclamados, se entregarán a organismos benéficos.</p>
+        <p>
+          El albergue no se hace responsable de la pérdida, robo o daño de objetos personales de los
+          huéspedes. Se recomienda encarecidamente utilizar las taquillas con llave disponibles en
+          los dormitorios para guardar objetos de valor.
+        </p>
+        <p>
+          Los objetos olvidados se custodiarán durante <strong>30 días</strong> y, si no son reclamados,
+          se entregarán a organismos benéficos.
+        </p>
       </section>
 
       <section>
@@ -234,20 +361,43 @@ const RECEPTION_HOURS = '14:00–22:00';
         <p>En caso de disconformidad, el huésped puede:</p>
         <ol>
           <li>Comunicarlo verbalmente al responsable del albergue.</li>
-          <li>Solicitar y cumplimentar la <strong>hoja de quejas y reclamaciones</strong>, disponible en recepción conforme a la normativa de turismo de Extremadura.</li>
-          <li>Enviar su reclamación por escrito a <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Le responderemos en un plazo máximo de <strong>10 días hábiles</strong>.</li>
+          <li>
+            Solicitar y cumplimentar la <strong>hoja de quejas y reclamaciones</strong>, disponible
+            en recepción conforme a la normativa de turismo de Extremadura.
+          </li>
+          <li>
+            Enviar su reclamación por escrito a <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Le
+            responderemos en un plazo máximo de <strong>10 días hábiles</strong>.
+          </li>
         </ol>
-        <p>Si no obtiene una respuesta satisfactoria, puede acudir al Servicio de Consumo de la Junta de Extremadura o a la <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">Plataforma de Resolución de Litigios en Línea de la UE</a>.</p>
+        <p>
+          Si no obtiene una respuesta satisfactoria, puede acudir al Servicio de Consumo de la Junta
+          de Extremadura o a la <a
+            href="https://ec.europa.eu/consumers/odr"
+            target="_blank"
+            rel="noopener noreferrer">Plataforma de Resolución de Litigios en Línea de la UE</a
+          >.
+        </p>
       </section>
 
       <section>
         <h2>10. Tratamiento de datos en las reservas</h2>
-        <p>Los datos facilitados al realizar una reserva se tratan conforme a la <a href="/privacidad">Política de Privacidad</a>. La reserva no puede gestionarse sin proporcionar los datos obligatorios (nombre, contacto, fechas).</p>
+        <p>
+          Los datos facilitados al realizar una reserva se tratan conforme a la <a
+            href="/privacidad">Política de Privacidad</a
+          >. La reserva no puede gestionarse sin proporcionar los datos obligatorios (nombre,
+          contacto, fechas).
+        </p>
       </section>
 
       <section>
         <h2>11. Modificaciones de estas condiciones</h2>
-        <p>Nos reservamos el derecho a modificar estas condiciones en cualquier momento. Los cambios se publicarán en este sitio web con al menos <strong>15 días</strong> de antelación a su entrada en vigor. Las reservas realizadas antes de los cambios se regirán por las condiciones vigentes en el momento de la confirmación.</p>
+        <p>
+          Nos reservamos el derecho a modificar estas condiciones en cualquier momento. Los cambios
+          se publicarán en este sitio web con al menos <strong>15 días</strong> de antelación a su entrada
+          en vigor. Las reservas realizadas antes de los cambios se regirán por las condiciones vigentes
+          en el momento de la confirmación.
+        </p>
       </section>
 
       <section>
@@ -259,14 +409,22 @@ const RECEPTION_HOURS = '14:00–22:00';
           <li>Decreto 182/2016 sobre Alojamientos Turísticos de Extremadura.</li>
           <li>Ley de Servicios de la Sociedad de la Información (LSSI-CE).</li>
         </ul>
-        <p>Para la resolución de controversias, las partes se someten a los Juzgados y Tribunales de <strong>Badajoz</strong>, salvo que la normativa de consumo establezca un fuero diferente en beneficio del consumidor.</p>
+        <p>
+          Para la resolución de controversias, las partes se someten a los Juzgados y Tribunales de <strong
+            >Badajoz</strong
+          >, salvo que la normativa de consumo establezca un fuero diferente en beneficio del
+          consumidor.
+        </p>
       </section>
 
       <div class="legal-contact-box">
         <h3>¿Necesita ayuda o tiene alguna consulta?</h3>
-        <p>Llámenos al <a href={`tel:${PHONE.replace(/\s/g,'')}`}>{PHONE}</a> (horario de recepción {RECEPTION_HOURS}) o escriba a <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Estaremos encantados de ayudarle.</p>
+        <p>
+          Llámenos al <a href={`tel:${PHONE.replace(/\s/g, '')}`}>{PHONE}</a> (horario de recepción {
+            RECEPTION_HOURS
+          }) o escriba a <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. Estaremos encantados de ayudarle.
+        </p>
       </div>
-
     </article>
   </main>
 </Layout>
@@ -292,7 +450,7 @@ const RECEPTION_HOURS = '14:00–22:00';
     justify-content: center;
     width: 52px;
     height: 52px;
-    background: rgba(255,255,255,0.12);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 50%;
     margin-bottom: 1rem;
   }
@@ -352,7 +510,7 @@ const RECEPTION_HOURS = '14:00–22:00';
     color: #1a3a2e;
     margin: 0 0 1rem;
     padding-bottom: 0.4rem;
-    border-bottom: 2px solid #00AB39;
+    border-bottom: 2px solid #00ab39;
     display: inline-block;
   }
   .legal-content h3 {
@@ -376,7 +534,7 @@ const RECEPTION_HOURS = '14:00–22:00';
     margin-bottom: 0.4rem;
   }
   .legal-content a {
-    color: #00AB39;
+    color: #00ab39;
     text-decoration: none;
     font-weight: 500;
   }
@@ -430,7 +588,7 @@ const RECEPTION_HOURS = '14:00–22:00';
     border: 1px solid #dde8dd;
     border-radius: 10px;
     padding: 1rem 1.1rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   }
   .schedule-icon {
     display: flex;
@@ -441,7 +599,7 @@ const RECEPTION_HOURS = '14:00–22:00';
     background: #e8f5e9;
     border-radius: 50%;
     flex-shrink: 0;
-    color: #00AB39;
+    color: #00ab39;
   }
   .schedule-card strong {
     display: block;
@@ -468,7 +626,7 @@ const RECEPTION_HOURS = '14:00–22:00';
     margin-top: 2.5rem;
     padding: 1.5rem 2rem;
     background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
-    border-left: 4px solid #00AB39;
+    border-left: 4px solid #00ab39;
     border-radius: 0 8px 8px 0;
   }
   .legal-contact-box h3 {

@@ -38,7 +38,9 @@ export function mapPricingRule(raw: Record<string, unknown>): PricingRuleDTO {
     pricePerNight: Number(raw.price_per_night ?? raw.pricePerNight ?? 15),
     currency: String(raw.currency ?? 'EUR'),
     seasonalMultiplier: Number(raw.seasonal_multiplier ?? raw.seasonalMultiplier ?? 1.0),
-    effectiveDate: String(raw.effective_date ?? raw.effectiveDate ?? new Date().toISOString().slice(0, 10)),
+    effectiveDate: String(
+      raw.effective_date ?? raw.effectiveDate ?? new Date().toISOString().slice(0, 10)
+    ),
     specialEvent: raw.special_event ? String(raw.special_event) : null,
   };
 }
@@ -49,7 +51,8 @@ export function mapEmergencyContact(raw: Record<string, unknown>): EmergencyCont
     type: (raw.type ?? 'local') as EmergencyContactDTO['type'],
     name: String(raw.name ?? ''),
     number,
-    href: number.startsWith('+') || /^\d/.test(number) ? `tel:${number.replace(/\s/g, '')}` : number,
+    href:
+      number.startsWith('+') || /^\d/.test(number) ? `tel:${number.replace(/\s/g, '')}` : number,
     emoji: String(raw.emoji ?? '📞'),
   };
 }
@@ -60,7 +63,11 @@ export function mapContact(raw: Record<string, unknown>): HostelContactDTO {
   const tg = raw.telegram ? String(raw.telegram) : null;
   return {
     phone,
-    whatsapp: wa ? (wa.startsWith('https://') ? wa : `https://wa.me/${wa.replace(/[^0-9]/g, '')}`) : null,
+    whatsapp: wa
+      ? wa.startsWith('https://')
+        ? wa
+        : `https://wa.me/${wa.replace(/[^0-9]/g, '')}`
+      : null,
     telegram: tg ? (tg.startsWith('https://') ? tg : `https://t.me/${tg.replace('@', '')}`) : null,
     email: String(raw.email ?? ''),
   };

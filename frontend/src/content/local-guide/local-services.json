@@ -1,8 +1,56 @@
 [
-  {"id": "taxi",         "type": "local-service", "name": "Taxi Local",           "emoji": "🚕", "category": "Transporte",  "phone": "",              "order": 1},
-  {"id": "salud",        "type": "local-service", "name": "Centro de Salud",      "emoji": "🏥", "category": "Salud",       "phone": "",              "order": 2},
-  {"id": "gasolinera",   "type": "local-service", "name": "Gasolinera",           "emoji": "⛽", "category": "Servicios",   "phone": "",              "order": 3},
-  {"id": "cajero",       "type": "local-service", "name": "Cajero Automatico",    "emoji": "🏦", "category": "Servicios",   "phone": "",              "order": 4},
-  {"id": "super",        "type": "local-service", "name": "Supermercado",         "emoji": "🛒", "category": "Compras",     "phone": "",              "order": 5},
-  {"id": "taller",       "type": "local-service", "name": "Taller Mecanico",      "emoji": "🔧", "category": "Servicios",   "phone": "",              "order": 6}
+  {
+    "id": "taxi",
+    "type": "local-service",
+    "name": "Taxi Local",
+    "emoji": "🚕",
+    "category": "Transporte",
+    "phone": "",
+    "order": 1
+  },
+  {
+    "id": "salud",
+    "type": "local-service",
+    "name": "Centro de Salud",
+    "emoji": "🏥",
+    "category": "Salud",
+    "phone": "",
+    "order": 2
+  },
+  {
+    "id": "gasolinera",
+    "type": "local-service",
+    "name": "Gasolinera",
+    "emoji": "⛽",
+    "category": "Servicios",
+    "phone": "",
+    "order": 3
+  },
+  {
+    "id": "cajero",
+    "type": "local-service",
+    "name": "Cajero Automatico",
+    "emoji": "🏦",
+    "category": "Servicios",
+    "phone": "",
+    "order": 4
+  },
+  {
+    "id": "super",
+    "type": "local-service",
+    "name": "Supermercado",
+    "emoji": "🛒",
+    "category": "Compras",
+    "phone": "",
+    "order": 5
+  },
+  {
+    "id": "taller",
+    "type": "local-service",
+    "name": "Taller Mecanico",
+    "emoji": "🔧",
+    "category": "Servicios",
+    "phone": "",
+    "order": 6
+  }
 ]

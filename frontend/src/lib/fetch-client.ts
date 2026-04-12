@@ -130,7 +130,7 @@ class ApiClient {
 
   private async parseError(response: Response): Promise<ApiError> {
     try {
-      const errorData = await response.json() as Record<string, unknown>;
+      const errorData = (await response.json()) as Record<string, unknown>;
       return {
         message: String(errorData.message ?? `HTTP ${response.status}: ${response.statusText}`),
         status: response.status,

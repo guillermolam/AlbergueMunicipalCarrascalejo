@@ -1,5 +1,23 @@
 [
-  {"id": "beds",     "type": "feature", "icon": "home",        "title": "2 dormitorios con 12 literas cada uno",          "order": 1},
-  {"id": "location", "type": "feature", "icon": "map-pin",     "title": "Ubicacion historica en la Via de la Plata",      "order": 2},
-  {"id": "modern",   "type": "feature", "icon": "check-circle","title": "Instalaciones modernas y hospitalidad calida",   "order": 3}
+  {
+    "id": "beds",
+    "type": "feature",
+    "icon": "home",
+    "title": "2 dormitorios con 12 literas cada uno",
+    "order": 1
+  },
+  {
+    "id": "location",
+    "type": "feature",
+    "icon": "map-pin",
+    "title": "Ubicacion historica en la Via de la Plata",
+    "order": 2
+  },
+  {
+    "id": "modern",
+    "type": "feature",
+    "icon": "check-circle",
+    "title": "Instalaciones modernas y hospitalidad calida",
+    "order": 3
+  }
 ]

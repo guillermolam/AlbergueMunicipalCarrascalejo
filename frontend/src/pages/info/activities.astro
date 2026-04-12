@@ -7,33 +7,40 @@ import gearData from '../../content/camino-guide/gear.json';
 
 const allEntries = await getCollection('localGuide');
 const activities = allEntries
-  .filter(e => e.data.type === 'activity')
+  .filter((e) => e.data.type === 'activity')
   .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
-  .map(e => ({
-    emoji:      e.data.emoji ?? '🥾',
-    name:       e.data.name,
-    category:   e.data.category ?? '',
+  .map((e) => ({
+    emoji: e.data.emoji ?? '🥾',
+    name: e.data.name,
+    category: e.data.category ?? '',
     difficulty: e.data.difficulty ?? 'Baja',
-    duration:   e.data.duration ?? '',
-    distance:   e.data.distance ?? '',
-    desc:       e.body.trim(),
-    color:      e.data.color ?? '#059669',
+    duration: e.data.duration ?? '',
+    distance: e.data.distance ?? '',
+    desc: e.body.trim(),
+    color: e.data.color ?? '#059669',
   }));
 
-type SeasonEntry = { type: 'season'; id: string; season: string; icon: string; when: string; note: string };
-type GearEntry   = { type: 'gear';   id: string; item: string;   icon: string; essential: boolean };
+type SeasonEntry = {
+  type: 'season';
+  id: string;
+  season: string;
+  icon: string;
+  when: string;
+  note: string;
+};
+type GearEntry = { type: 'gear'; id: string; item: string; icon: string; essential: boolean };
 
-const seasons = (seasonsData as SeasonEntry[]).map(s => ({
+const seasons = (seasonsData as SeasonEntry[]).map((s) => ({
   season: s.season,
-  icon:   s.icon,
-  when:   s.when,
-  note:   s.note,
+  icon: s.icon,
+  when: s.when,
+  note: s.note,
 }));
 
-const gear = (gearData as GearEntry[]).map(g => ({
-  icon:  g.icon,
-  label: g.item.split(' ')[0],   // first word as label
-  tip:   g.item,
+const gear = (gearData as GearEntry[]).map((g) => ({
+  icon: g.icon,
+  label: g.item.split(' ')[0], // first word as label
+  tip: g.item,
 }));
 ---
 
@@ -41,8 +48,9 @@ const gear = (gearData as GearEntry[]).map(g => ({
   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <defs>
       <filter id="sketchy-filter">
-        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"
+        ></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"></feDisplacementMap>
       </filter>
     </defs>
   </svg>
@@ -50,7 +58,15 @@ const gear = (gearData as GearEntry[]).map(g => ({
   <section class="page-hero reveal-section">
     <div class="page-hero-inner">
       <a href="/dashboard" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"></path></svg
+        >
         Volver al Panel
       </a>
       <div class="hero-emoji" aria-hidden="true">🥾</div>
@@ -60,39 +76,86 @@ const gear = (gearData as GearEntry[]).map(g => ({
   </section>
 
   <div class="page-content">
-
     <!-- Activities grid -->
     <section class="reveal-section" style="--delay:0.05s">
       <h2 class="section-title">Que Hacer</h2>
       <div class="act-grid">
-        {activities.map((a, i) => (
-          <div class="act-card reveal-section" style={`--delay:${0.07 + i * 0.05}s; --card-color:${a.color};`}>
-            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-              <rect x="0" y="0" width="100%" height="100%" rx="14" fill="white" stroke={a.color} stroke-width="1.5" filter="url(#sketchy-filter)" stroke-opacity="0.35"/>
-            </svg>
-            <div class="act-inner">
-              <div class="act-header">
-                <span class="act-emoji" aria-hidden="true">{a.emoji}</span>
-                <div>
-                  <span class="act-category" style={`color:${a.color}`}>{a.category}</span>
-                  <h3 class="act-name">{a.name}</h3>
+        {
+          activities.map((a, i) => (
+            <div
+              class="act-card reveal-section"
+              style={`--delay:${0.07 + i * 0.05}s; --card-color:${a.color};`}
+            >
+              <svg
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="14"
+                  fill="white"
+                  stroke={a.color}
+                  stroke-width="1.5"
+                  filter="url(#sketchy-filter)"
+                  stroke-opacity="0.35"
+                />
+              </svg>
+              <div class="act-inner">
+                <div class="act-header">
+                  <span class="act-emoji" aria-hidden="true">
+                    {a.emoji}
+                  </span>
+                  <div>
+                    <span class="act-category" style={`color:${a.color}`}>
+                      {a.category}
+                    </span>
+                    <h3 class="act-name">{a.name}</h3>
+                  </div>
+                </div>
+                <p class="act-desc">{a.desc}</p>
+                <div class="act-chips">
+                  <span class="act-chip">
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      aria-hidden="true"
+                    >
+                      <>
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </>
+                    </svg>
+                    {a.duration}
+                  </span>
+                  <span class="act-chip">
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M3 17l6-6 4 4 8-8" />
+                    </svg>
+                    {a.distance}
+                  </span>
+                  <span class={`diff-chip diff-${a.difficulty.toLowerCase()}`}>{a.difficulty}</span>
                 </div>
               </div>
-              <p class="act-desc">{a.desc}</p>
-              <div class="act-chips">
-                <span class="act-chip">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  {a.duration}
-                </span>
-                <span class="act-chip">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/></svg>
-                  {a.distance}
-                </span>
-                <span class={`diff-chip diff-${a.difficulty.toLowerCase()}`}>{a.difficulty}</span>
-              </div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
     </section>
 
@@ -100,19 +163,36 @@ const gear = (gearData as GearEntry[]).map(g => ({
     <section class="reveal-section" style="--delay:0.15s">
       <h2 class="section-title">Cuando Venir</h2>
       <div class="season-grid">
-        {seasons.map((s, i) => (
-          <div class="season-card reveal-section" style={`--delay:${0.17 + i * 0.05}s`}>
-            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-              <rect x="0" y="0" width="100%" height="100%" rx="12" fill="white" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-filter)"/>
-            </svg>
-            <div class="season-inner">
-              <span class="season-emoji" aria-hidden="true">{s.icon}</span>
-              <span class="season-name">{s.season}</span>
-              <span class="season-when">{s.when}</span>
-              <p class="season-note">{s.note}</p>
+        {
+          seasons.map((s, i) => (
+            <div class="season-card reveal-section" style={`--delay:${0.17 + i * 0.05}s`}>
+              <svg
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="12"
+                  fill="white"
+                  stroke="#e0e0e0"
+                  stroke-width="1.5"
+                  filter="url(#sketchy-filter)"
+                />
+              </svg>
+              <div class="season-inner">
+                <span class="season-emoji" aria-hidden="true">
+                  {s.icon}
+                </span>
+                <span class="season-name">{s.season}</span>
+                <span class="season-when">{s.when}</span>
+                <p class="season-note">{s.note}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
     </section>
 
@@ -120,119 +200,338 @@ const gear = (gearData as GearEntry[]).map(g => ({
     <section class="gear-section reveal-section" style="--delay:0.2s">
       <h2 class="section-title">Equipo Recomendado</h2>
       <div class="gear-list">
-        {[
-          { icon: '👟', label: 'Calzado', tip: 'Botas de trekking con tobillera para etapas. Sandalias para el pueblo.' },
-          { icon: '🎒', label: 'Mochila', tip: 'Entre 35–45 L. No mas del 10% de tu peso corporal.' },
-          { icon: '💧', label: 'Agua',    tip: 'Lleva al menos 2 L. Las fuentes publicas estan senalizadas.' },
-          { icon: '☂️', label: 'Tiempo',  tip: 'Consulta la prevision. El sol extremeno es muy intenso en verano.' },
-          { icon: '🗺️', label: 'Mapa',   tip: 'Descarga Maps.me o Wikiloc con la ruta antes de salir.' },
-          { icon: '🩹', label: 'Botiquin', tip: 'Compeed para ampollas — imprescindible en el Camino.' },
-        ].map(g => (
-          <div class="gear-item">
-            <span class="gear-emoji" aria-hidden="true">{g.icon}</span>
-            <div>
-              <span class="gear-label">{g.label}</span>
-              <span class="gear-tip">{g.tip}</span>
+        {
+          [
+            {
+              icon: '👟',
+              label: 'Calzado',
+              tip: 'Botas de trekking con tobillera para etapas. Sandalias para el pueblo.',
+            },
+            {
+              icon: '🎒',
+              label: 'Mochila',
+              tip: 'Entre 35–45 L. No mas del 10% de tu peso corporal.',
+            },
+            {
+              icon: '💧',
+              label: 'Agua',
+              tip: 'Lleva al menos 2 L. Las fuentes publicas estan senalizadas.',
+            },
+            {
+              icon: '☂️',
+              label: 'Tiempo',
+              tip: 'Consulta la prevision. El sol extremeno es muy intenso en verano.',
+            },
+            {
+              icon: '🗺️',
+              label: 'Mapa',
+              tip: 'Descarga Maps.me o Wikiloc con la ruta antes de salir.',
+            },
+            {
+              icon: '🩹',
+              label: 'Botiquin',
+              tip: 'Compeed para ampollas — imprescindible en el Camino.',
+            },
+          ].map((g) => (
+            <div class="gear-item">
+              <span class="gear-emoji" aria-hidden="true">
+                {g.icon}
+              </span>
+              <div>
+                <span class="gear-label">{g.label}</span>
+                <span class="gear-tip">{g.tip}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
     </section>
-
   </div>
 
   <style>
     .page-hero {
       background: linear-gradient(135deg, #78350f 0%, #b45309 60%, #d97706 100%);
-      padding: 2.5rem 1rem 2rem; color: white;
-      position: relative; overflow: hidden;
+      padding: 2.5rem 1rem 2rem;
+      color: white;
+      position: relative;
+      overflow: hidden;
     }
     .page-hero::before {
-      content: ''; position: absolute; top: -40px; right: -40px;
-      width: 200px; height: 200px;
-      background: rgba(255,255,255,0.06); border-radius: 50%;
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 50%;
     }
-    .page-hero-inner { max-width: 1020px; margin: 0 auto; position: relative; z-index: 1; }
+    .page-hero-inner {
+      max-width: 1020px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
     .back-link {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      color: rgba(255,255,255,0.8); text-decoration: none;
-      font-family: var(--font-hand, sans-serif); font-size: 0.85rem;
-      margin-bottom: 1rem; transition: color 200ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      transition: color 200ms ease;
     }
-    .back-link:hover { color: white; }
-    .hero-emoji { font-size: 2.8rem; margin-bottom: 0.4rem; }
+    .back-link:hover {
+      color: white;
+    }
+    .hero-emoji {
+      font-size: 2.8rem;
+      margin-bottom: 0.4rem;
+    }
     .page-title {
       font-family: var(--font-display, sans-serif);
-      font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 0.25rem; color: white;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      margin: 0 0 0.25rem;
+      color: white;
     }
-    .page-subtitle { font-family: var(--font-hand, sans-serif); font-size: 1rem; opacity: 0.85; margin: 0; }
+    .page-subtitle {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 1rem;
+      opacity: 0.85;
+      margin: 0;
+    }
 
-    .page-content { max-width: 1020px; margin: 0 auto; padding: 2rem 1rem 4rem; display: flex; flex-direction: column; gap: 2.5rem; }
-    .section-title { font-family: var(--font-display, sans-serif); font-size: 1.4rem; color: #1a1a1a; margin: 0 0 1rem; }
+    .page-content {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+    .section-title {
+      font-family: var(--font-display, sans-serif);
+      font-size: 1.4rem;
+      color: #1a1a1a;
+      margin: 0 0 1rem;
+    }
 
     /* Activities grid */
-    .act-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-    .act-card { position: relative; border-radius: 14px; transition: transform 250ms ease; }
-    .act-card:hover { transform: translateY(-4px); }
-    .act-inner { position: relative; z-index: 2; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
-    .act-header { display: flex; gap: 0.75rem; align-items: flex-start; }
-    .act-emoji { font-size: 2rem; flex-shrink: 0; }
-    .act-category { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.1rem; }
-    .act-name { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.9rem; color: #1a1a1a; margin: 0; }
-    .act-desc { font-family: var(--font-hand, sans-serif); font-size: 0.82rem; color: #555; line-height: 1.45; margin: 0; }
-    .act-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .act-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    .act-card {
+      position: relative;
+      border-radius: 14px;
+      transition: transform 250ms ease;
+    }
+    .act-card:hover {
+      transform: translateY(-4px);
+    }
+    .act-inner {
+      position: relative;
+      z-index: 2;
+      padding: 1.1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .act-header {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .act-emoji {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+    .act-category {
+      display: block;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.1rem;
+    }
+    .act-name {
+      font-family: var(--font-sketch, sans-serif);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #1a1a1a;
+      margin: 0;
+    }
+    .act-desc {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.82rem;
+      color: #555;
+      line-height: 1.45;
+      margin: 0;
+    }
+    .act-chips {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
     .act-chip {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      font-family: var(--font-hand, sans-serif); font-size: 0.72rem; color: #666;
-      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 50px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.72rem;
+      color: #666;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 50px;
       padding: 0.15rem 0.5rem;
     }
-    .diff-chip { display: inline-block; font-family: var(--font-hand, sans-serif); font-size: 0.72rem; border-radius: 50px; padding: 0.15rem 0.5rem; }
-    .diff-baja   { background: #dcfce7; color: #166534; }
-    .diff-media  { background: #fef9c3; color: #92400e; }
-    .diff-alta   { background: #fee2e2; color: #991b1b; }
+    .diff-chip {
+      display: inline-block;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.72rem;
+      border-radius: 50px;
+      padding: 0.15rem 0.5rem;
+    }
+    .diff-baja {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .diff-media {
+      background: #fef9c3;
+      color: #92400e;
+    }
+    .diff-alta {
+      background: #fee2e2;
+      color: #991b1b;
+    }
 
     /* Seasons */
-    .season-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; }
-    .season-card { position: relative; border-radius: 12px; transition: transform 250ms ease; }
-    .season-card:hover { transform: translateY(-3px); }
-    .season-inner {
-      position: relative; z-index: 2; padding: 1rem 0.85rem;
-      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.2rem;
+    .season-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.85rem;
     }
-    .season-emoji { font-size: 1.8rem; margin-bottom: 0.2rem; }
-    .season-name { font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.85rem; color: #1a1a1a; }
-    .season-when { font-family: var(--font-hand, sans-serif); font-size: 0.72rem; color: #b45309; }
-    .season-note { font-family: var(--font-hand, sans-serif); font-size: 0.75rem; color: #666; margin: 0.2rem 0 0; line-height: 1.35; }
+    .season-card {
+      position: relative;
+      border-radius: 12px;
+      transition: transform 250ms ease;
+    }
+    .season-card:hover {
+      transform: translateY(-3px);
+    }
+    .season-inner {
+      position: relative;
+      z-index: 2;
+      padding: 1rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.2rem;
+    }
+    .season-emoji {
+      font-size: 1.8rem;
+      margin-bottom: 0.2rem;
+    }
+    .season-name {
+      font-family: var(--font-sketch, sans-serif);
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #1a1a1a;
+    }
+    .season-when {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.72rem;
+      color: #b45309;
+    }
+    .season-note {
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.75rem;
+      color: #666;
+      margin: 0.2rem 0 0;
+      line-height: 1.35;
+    }
 
     /* Gear */
-    .gear-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .gear-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
     .gear-item {
-      display: flex; gap: 0.7rem; align-items: flex-start;
-      background: white; border: 1.5px solid rgba(180,83,9,0.15); border-radius: 12px;
+      display: flex;
+      gap: 0.7rem;
+      align-items: flex-start;
+      background: white;
+      border: 1.5px solid rgba(180, 83, 9, 0.15);
+      border-radius: 12px;
       padding: 0.875rem 1rem;
     }
-    .gear-emoji { font-size: 1.5rem; flex-shrink: 0; }
-    .gear-label { display: block; font-family: var(--font-sketch, sans-serif); font-weight: 700; font-size: 0.85rem; color: #1a1a1a; margin-bottom: 0.2rem; }
-    .gear-tip { display: block; font-family: var(--font-hand, sans-serif); font-size: 0.78rem; color: #666; line-height: 1.4; }
+    .gear-emoji {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .gear-label {
+      display: block;
+      font-family: var(--font-sketch, sans-serif);
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #1a1a1a;
+      margin-bottom: 0.2rem;
+    }
+    .gear-tip {
+      display: block;
+      font-family: var(--font-hand, sans-serif);
+      font-size: 0.78rem;
+      color: #666;
+      line-height: 1.4;
+    }
 
-    .reveal-section { opacity: 0; transform: translateY(24px); transition: opacity 600ms ease calc(var(--delay,0s)), transform 600ms ease calc(var(--delay,0s)); }
-    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+    .reveal-section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        opacity 600ms ease calc(var(--delay, 0s)),
+        transform 600ms ease calc(var(--delay, 0s));
+    }
+    .reveal-section.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     @media (max-width: 700px) {
-      .act-grid { grid-template-columns: 1fr; }
-      .season-grid { grid-template-columns: repeat(2, 1fr); }
-      .gear-list { grid-template-columns: repeat(2, 1fr); }
+      .act-grid {
+        grid-template-columns: 1fr;
+      }
+      .season-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .gear-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
     @media (max-width: 480px) {
-      .gear-list { grid-template-columns: 1fr; }
+      .gear-list {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 
   <script>
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); } });
-    }, { threshold: 0.07 });
-    document.querySelectorAll('.reveal-section').forEach(el => obs.observe(el));
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('revealed');
+            obs.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.07 }
+    );
+    document.querySelectorAll('.reveal-section').forEach((el) => obs.observe(el));
   </script>
 </Layout>

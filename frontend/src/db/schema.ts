@@ -15,114 +15,191 @@ import { sql } from 'drizzle-orm';
 // ── Admin-configurable tables (migration 0002) ────────────────────────────────
 
 export const dormitories = sqliteTable('dormitories', {
-  id:        integer('id').primaryKey({ autoIncrement: true }),
-  name:      text('name').notNull(),
-  roomType:  text('room_type').notNull().default('dormitory'),
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  roomType: text('room_type').notNull().default('dormitory'),
   bedsCount: integer('beds_count').notNull().default(12),
-  active:    integer('active').notNull().default(1),      // 0 | 1
-  notes:     text('notes'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
-  updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
+  active: integer('active').notNull().default(1), // 0 | 1
+  notes: text('notes'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
 });
 
 export const pricingRules = sqliteTable('pricing_rules', {
-  id:                integer('id').primaryKey({ autoIncrement: true }),
+  id: integer('id').primaryKey({ autoIncrement: true }),
   accommodationType: text('accommodation_type').notNull().default('dormitory'),
-  priceCents:        integer('price_cents').notNull().default(1500),
-  currency:          text('currency').notNull().default('EUR'),
-  validFrom:         text('valid_from'),
-  validUntil:        text('valid_until'),
-  label:             text('label'),
-  active:            integer('active').notNull().default(1),
-  createdAt:         text('created_at').notNull().default(sql`(datetime('now'))`),
-  updatedAt:         text('updated_at').notNull().default(sql`(datetime('now'))`),
+  priceCents: integer('price_cents').notNull().default(1500),
+  currency: text('currency').notNull().default('EUR'),
+  validFrom: text('valid_from'),
+  validUntil: text('valid_until'),
+  label: text('label'),
+  active: integer('active').notNull().default(1),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
 });
 
 export const hostelServices = sqliteTable('hostel_services', {
-  id:          integer('id').primaryKey({ autoIncrement: true }),
-  name:        text('name').notNull(),
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
   description: text('description'),
-  icon:        text('icon').notNull().default('🏨'),
-  priceCents:  integer('price_cents').notNull().default(0),
-  unit:        text('unit').notNull().default('por uso'),
-  available:   integer('available').notNull().default(1),
-  category:    text('category').notNull().default('general'),
-  createdAt:   text('created_at').notNull().default(sql`(datetime('now'))`),
-  updatedAt:   text('updated_at').notNull().default(sql`(datetime('now'))`),
+  icon: text('icon').notNull().default('🏨'),
+  priceCents: integer('price_cents').notNull().default(0),
+  unit: text('unit').notNull().default('por uso'),
+  available: integer('available').notNull().default(1),
+  category: text('category').notNull().default('general'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
 });
 
 export const hostelConfig = sqliteTable('hostel_config', {
-  id:               integer('id').primaryKey().default(1),
-  name:             text('name').notNull().default('Albergue Municipal de El Carrascalejo'),
-  tagline:          text('tagline'),
-  addressStreet:    text('address_street'),
-  addressPostcode:  text('address_postcode'),
-  addressTown:      text('address_town'),
-  addressProvince:  text('address_province'),
-  addressCountry:   text('address_country'),
-  phone:            text('phone'),
-  email:            text('email'),
-  website:          text('website'),
-  latitude:         real('latitude'),
-  longitude:        real('longitude'),
-  checkInTime:      text('check_in_time'),
-  checkOutTime:     text('check_out_time'),
-  receptionHours:   text('reception_hours'),
-  cif:              text('cif'),
-  tourismLicense:   text('tourism_license'),
-  insurancePolicy:  text('insurance_policy'),
-  updatedAt:        text('updated_at').notNull().default(sql`(datetime('now'))`),
+  id: integer('id').primaryKey().default(1),
+  name: text('name').notNull().default('Albergue Municipal de El Carrascalejo'),
+  tagline: text('tagline'),
+  addressStreet: text('address_street'),
+  addressPostcode: text('address_postcode'),
+  addressTown: text('address_town'),
+  addressProvince: text('address_province'),
+  addressCountry: text('address_country'),
+  phone: text('phone'),
+  email: text('email'),
+  website: text('website'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  checkInTime: text('check_in_time'),
+  checkOutTime: text('check_out_time'),
+  receptionHours: text('reception_hours'),
+  cif: text('cif'),
+  tourismLicense: text('tourism_license'),
+  insurancePolicy: text('insurance_policy'),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
 });
 
 // ── Core operational tables (migration 0001) ──────────────────────────────────
 
 export const bookings = sqliteTable('bookings', {
-  id:              text('id').primaryKey(),
-  pilgrimId:       integer('pilgrim_id'),
-  guestName:       text('guest_name'),
-  guestEmail:      text('guest_email'),
-  guestPhone:      text('guest_phone'),
-  roomType:        text('room_type').notNull().default('dormitory'),
-  checkIn:         text('check_in').notNull(),
-  checkOut:        text('check_out'),
-  numGuests:       integer('num_guests').notNull().default(1),
-  totalPrice:      integer('total_price').notNull().default(800),
-  status:          text('status').default('pending'),
-  paymentStatus:   text('payment_status').default('unpaid'),
+  id: text('id').primaryKey(),
+  pilgrimId: integer('pilgrim_id'),
+  guestName: text('guest_name'),
+  guestEmail: text('guest_email'),
+  guestPhone: text('guest_phone'),
+  roomType: text('room_type').notNull().default('dormitory'),
+  checkIn: text('check_in').notNull(),
+  checkOut: text('check_out'),
+  numGuests: integer('num_guests').notNull().default(1),
+  totalPrice: integer('total_price').notNull().default(800),
+  status: text('status').default('pending'),
+  paymentStatus: text('payment_status').default('unpaid'),
   specialRequests: text('special_requests'),
-  createdAt:       text('created_at').default(sql`(datetime('now'))`),
-  updatedAt:       text('updated_at').default(sql`(datetime('now'))`),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
 export const beds = sqliteTable('beds', {
-  id:            integer('id').primaryKey({ autoIncrement: true }),
-  roomNumber:    text('room_number').notNull(),
-  bedNumber:     integer('bed_number').notNull(),
-  roomType:      text('room_type').notNull().default('dormitory'),
-  status:        text('status').notNull().default('available'),
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  roomNumber: text('room_number').notNull(),
+  bedNumber: integer('bed_number').notNull(),
+  roomType: text('room_type').notNull().default('dormitory'),
+  status: text('status').notNull().default('available'),
   pricePerNight: integer('price_per_night').notNull().default(800),
-  createdAt:     text('created_at').default(sql`(datetime('now'))`),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
 });
 
 export const pricing = sqliteTable('pricing', {
-  id:               integer('id').primaryKey({ autoIncrement: true }),
+  id: integer('id').primaryKey({ autoIncrement: true }),
   accommodationType: text('accommodation_type').notNull(),
-  pricePerNight:    integer('price_per_night').notNull(),
-  currency:         text('currency').default('EUR'),
-  validFrom:        text('valid_from').default(sql`(date('now'))`),
-  validUntil:       text('valid_until'),
-  createdAt:        text('created_at').default(sql`(datetime('now'))`),
+  pricePerNight: integer('price_per_night').notNull(),
+  currency: text('currency').default('EUR'),
+  validFrom: text('valid_from').default(sql`(date('now'))`),
+  validUntil: text('valid_until'),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+});
+
+// ── Extended hostel_config columns (migration 0005) ───────────────────────────
+// These mirror the ALTER TABLE additions in 0005_reviews_and_rules.sql.
+// hostelConfig table above gains these runtime columns; we extend the type here.
+export const hostelConfigExtended = hostelConfig; // same table, extended cols added via migration
+
+// ── House rules (migration 0005) ──────────────────────────────────────────────
+export const hostelRules = sqliteTable('hostel_rules', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  rule: text('rule').notNull(),
+  category: text('category').notNull().default('general'),
+  active: integer('active').notNull().default(1),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
+// ── Nearby attractions (migration 0005) ───────────────────────────────────────
+export const nearbyAttractions = sqliteTable('nearby_attractions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  description: text('description'),
+  distanceKm: real('distance_km').notNull(),
+  icon: text('icon').notNull().default('📍'),
+  active: integer('active').notNull().default(1),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
+// ── Reviews cache (migration 0005) ────────────────────────────────────────────
+export const reviews = sqliteTable('reviews', {
+  id: text('id').primaryKey(),
+  source: text('source').notNull(), // 'google' | 'booking'
+  authorName: text('author_name'),
+  rating: real('rating').notNull(),
+  text: text('text'),
+  reviewDate: text('review_date'),
+  language: text('language').default('es'),
+  verified: integer('verified').notNull().default(0),
+  helpfulCount: integer('helpful_count').notNull().default(0),
+  syncedAt: text('synced_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ── Aggregated review scores (migration 0005) ─────────────────────────────────
+export const reviewScores = sqliteTable('review_scores', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  source: text('source').notNull(), // 'google' | 'booking' | 'all'
+  overall: real('overall'),
+  staff: real('staff'),
+  cleanliness: real('cleanliness'),
+  comfort: real('comfort'),
+  valueForMoney: real('value_for_money'),
+  facilities: real('facilities'),
+  location: real('location'),
+  totalCount: integer('total_count').notNull().default(0),
+  label: text('label'),
+  lastSynced: text('last_synced')
+    .notNull()
+    .default(sql`(datetime('now'))`),
 });
 
 // ── Inferred types ────────────────────────────────────────────────────────────
 
-export type Dormitory    = typeof dormitories.$inferSelect;
+export type Dormitory = typeof dormitories.$inferSelect;
 export type NewDormitory = typeof dormitories.$inferInsert;
-export type PricingRule    = typeof pricingRules.$inferSelect;
+export type PricingRule = typeof pricingRules.$inferSelect;
 export type NewPricingRule = typeof pricingRules.$inferInsert;
-export type HostelService    = typeof hostelServices.$inferSelect;
+export type HostelService = typeof hostelServices.$inferSelect;
 export type NewHostelService = typeof hostelServices.$inferInsert;
-export type HostelConfig    = typeof hostelConfig.$inferSelect;
+export type HostelConfig = typeof hostelConfig.$inferSelect;
 export type NewHostelConfig = typeof hostelConfig.$inferInsert;
-export type Booking    = typeof bookings.$inferSelect;
+export type Booking = typeof bookings.$inferSelect;
 export type NewBooking = typeof bookings.$inferInsert;
+export type HostelRule = typeof hostelRules.$inferSelect;
+export type NearbyAttraction = typeof nearbyAttractions.$inferSelect;
+export type Review = typeof reviews.$inferSelect;
+export type ReviewScore = typeof reviewScores.$inferSelect;

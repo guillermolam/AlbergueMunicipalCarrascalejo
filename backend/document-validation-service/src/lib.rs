@@ -45,6 +45,8 @@ pub mod domain;
 pub mod infrastructure;
 pub mod ports;
 
+use crate::domain::image_classifier::EuIdClassifier;
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct DocumentValidationResult {
     pub status: String,
@@ -228,6 +230,7 @@ async fn fetch(mut req: Request, _env: Env, _ctx: Context) -> Result<Response> {
         (Method::Post, "/validate/dni") => handle_dni_validation(&mut req).await,
         (Method::Post, "/validate/nie") => handle_nie_validation(&mut req).await,
         (Method::Post, "/validate/passport") => handle_passport_validation(&mut req).await,
+        (Method::Post, "/validate/image-upload") => handle_image_upload_validation(&mut req).await,
         _ => {
             let result = DocumentValidationResult {
                 status: "error".to_string(),
@@ -322,6 +325,124 @@ async fn handle_passport_validation(req: &mut Request) -> Result<Response> {
     };
 
     build_validation_response(&result)
+}
+
+/// POST /validate/image-upload
+///
+/// Validates an uploaded document image against Cloudflare Images constraints
+/// and runs the heuristic EU-ID classifier to detect document type and side.
+///
+/// Request body (JSON):
+/// ```json
+/// {
+///   "image_data": "<base64-encoded bytes>",
+///   "mime_type":  "image/jpeg",
+///   "declared_type": "dni"   // "dni" | "passport" — what the user selected
+/// }
+/// ```
+///
+/// Response (JSON):
+/// ```json
+/// {
+///   "format_valid": true,
+///   "size_valid": true,
+///   "dimensions_valid": true,
+///   "width": 1200,
+///   "height": 756,
+///   "file_size_bytes": 184320,
+///   "errors": [],
+///   "classification": {
+///     "doc_type": "eu_id_card",
+///     "side": "front",
+///     "confidence": 0.87,
+///     "aspect_ratio": 1.587,
+///     "has_mrz_zone": false,
+///     "mrz_rows_detected": 0,
+///     "has_photo_region": true,
+///     "country_hint": null,
+///     "warnings": []
+///   },
+///   "type_mismatch": false,
+///   "side_warning": null
+/// }
+/// ```
+async fn handle_image_upload_validation(req: &mut Request) -> Result<Response> {
+    use base64::{engine::general_purpose::STANDARD, Engine as _};
+
+    let body = req.text().await?;
+    let payload: serde_json::Value =
+        serde_json::from_str(&body).map_err(|e| worker::Error::RustError(e.to_string()))?;
+
+    let image_b64 = payload["image_data"].as_str().unwrap_or("");
+    let mime_type = payload["mime_type"].as_str().unwrap_or("image/jpeg");
+    let declared_type = payload["declared_type"].as_str().unwrap_or("unknown");
+
+    if image_b64.is_empty() {
+        let result = serde_json::json!({
+            "format_valid": false,
+            "size_valid": false,
+            "dimensions_valid": false,
+            "width": null,
+            "height": null,
+            "file_size_bytes": 0,
+            "errors": ["No image data provided"],
+            "classification": null,
+            "type_mismatch": false,
+            "side_warning": null
+        });
+        let mut resp = Response::from_json(&result)?;
+        resp.headers_mut().set("Access-Control-Allow-Origin", "*")?;
+        return Ok(resp);
+    }
+
+    let image_bytes = STANDARD
+        .decode(image_b64)
+        .map_err(|e| worker::Error::RustError(format!("base64 decode error: {e}")))?;
+
+    let validation = EuIdClassifier::validate_and_classify(&image_bytes, Some(mime_type));
+
+    // Check for declared-vs-detected type mismatch
+    let type_mismatch = validation.classification.as_ref().is_some_and(|c| {
+        use crate::domain::image_classifier::DetectedDocType;
+        match declared_type {
+            "dni" | "nie" => c.doc_type == DetectedDocType::Passport,
+            "passport" => c.doc_type == DetectedDocType::EuIdCard,
+            _ => false,
+        }
+    });
+
+    // Generate a side warning for DNI/NIE uploads
+    let side_warning: Option<String> = validation.classification.as_ref().and_then(|c| {
+        use crate::domain::image_classifier::DetectedSide;
+        if declared_type == "dni" || declared_type == "nie" {
+            match c.side {
+                DetectedSide::Unknown if c.confidence < 0.5 => {
+                    Some("Could not determine if this is the front or back — please ensure the full card is visible.".to_string())
+                }
+                _ => None,
+            }
+        } else {
+            None
+        }
+    });
+
+    let result = serde_json::json!({
+        "format_valid":      validation.format_valid,
+        "size_valid":        validation.size_valid,
+        "dimensions_valid":  validation.dimensions_valid,
+        "width":             validation.width,
+        "height":            validation.height,
+        "file_size_bytes":   validation.file_size_bytes,
+        "errors":            validation.errors,
+        "classification":    validation.classification,
+        "type_mismatch":     type_mismatch,
+        "side_warning":      side_warning,
+    });
+
+    let mut resp = Response::from_json(&result)?;
+    resp.headers_mut().set("Access-Control-Allow-Origin", "*")?;
+    resp.headers_mut().set("Content-Type", "application/json")?;
+    Ok(resp)
 }
 
 #[cfg(test)]

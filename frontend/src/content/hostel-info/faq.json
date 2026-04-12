@@ -1,5 +1,23 @@
 [
-  {"id": "faq1", "type": "faq", "title": "¿Que es la Via de la Plata?",      "answer": "Una de las rutas mas antiguas del Camino de Santiago, con 1.000 km desde Sevilla. Pasa por Merida, Caceres y Salamanca siguiendo la calzada romana.",                                   "order": 1},
-  {"id": "faq2", "type": "faq", "title": "¿Como llego al albergue?",         "answer": "A pie por la Via de la Plata (GR-66), en coche por la N-630, o en autobus desde Merida o Caceres. El albergue esta en el centro del pueblo.",                                             "order": 2},
-  {"id": "faq3", "type": "faq", "title": "¿Que necesito llevar en la mochila?","answer": "Saco de dormir, ropa ligera, protector solar, botiquin basico, credencial del peregrino y fondos para al menos 15 € al dia. El albergue provee sabanas y mantas.",                     "order": 3}
+  {
+    "id": "faq1",
+    "type": "faq",
+    "title": "¿Que es la Via de la Plata?",
+    "answer": "Una de las rutas mas antiguas del Camino de Santiago, con 1.000 km desde Sevilla. Pasa por Merida, Caceres y Salamanca siguiendo la calzada romana.",
+    "order": 1
+  },
+  {
+    "id": "faq2",
+    "type": "faq",
+    "title": "¿Como llego al albergue?",
+    "answer": "A pie por la Via de la Plata (GR-66), en coche por la N-630, o en autobus desde Merida o Caceres. El albergue esta en el centro del pueblo.",
+    "order": 2
+  },
+  {
+    "id": "faq3",
+    "type": "faq",
+    "title": "¿Que necesito llevar en la mochila?",
+    "answer": "Saco de dormir, ropa ligera, protector solar, botiquin basico, credencial del peregrino y fondos para al menos 15 € al dia. El albergue provee sabanas y mantas.",
+    "order": 3
+  }
 ]

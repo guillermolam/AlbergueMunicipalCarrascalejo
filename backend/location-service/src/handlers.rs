@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use worker::{Fetch, Method, Request, RequestInit, Response, Result, Url};
+use worker::{Env, Fetch, Method, Request, RequestInit, Response, Result, Url};
 
 use crate::models::{AutocompleteSuggestion, CacheConfig, GeoapifyFeatureCollection};
 use crate::service::LocationService;
@@ -8,26 +8,28 @@ use shared::response::{ApiResponse, Status};
 
 pub struct RequestHandler {
     service: Arc<std::sync::Mutex<LocationService>>,
+    env: Option<Env>,
 }
 
 impl Default for RequestHandler {
     fn default() -> Self {
-        Self::new()
+        Self::new(None)
     }
 }
 
 impl RequestHandler {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(env: Option<Env>) -> Self {
         let service = LocationService::with_memory_cache(Some(CacheConfig::default()));
         Self {
             service: Arc::new(std::sync::Mutex::new(service)),
+            env,
         }
     }
 
     #[cfg(test)]
     pub const fn with_service(service: Arc<std::sync::Mutex<LocationService>>) -> Self {
-        Self { service }
+        Self { service, env: None }
     }
 
     pub async fn handle_request(&self, req: Request) -> Result<Response> {
@@ -35,16 +37,13 @@ impl RequestHandler {
         let path = request_path.split('?').next().unwrap_or("");
 
         match (req.method(), path) {
-            (Method::Options, _) => {
-                Response::ok("")
-                    .and_then(|mut resp| {
-                        let headers = resp.headers_mut();
-                        headers.set("Access-Control-Allow-Origin", "*")?;
-                        headers.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")?;
-                        headers.set("Access-Control-Allow-Headers", "Content-Type")?;
-                        Ok(resp)
-                    })
-            }
+            (Method::Options, _) => Response::ok("").and_then(|mut resp| {
+                let headers = resp.headers_mut();
+                headers.set("Access-Control-Allow-Origin", "*")?;
+                headers.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")?;
+                headers.set("Access-Control-Allow-Headers", "Content-Type")?;
+                Ok(resp)
+            }),
             // ── Address autocomplete (Geoapify) ───────────────────────────────
             (Method::Get, "/api/autocomplete") => self.autocomplete(&req).await,
             (Method::Get, p) if p.starts_with("/api/countries/") => {
@@ -72,15 +71,16 @@ impl RequestHandler {
             .map(|(k, v)| (k.into_owned(), v.into_owned()))
             .collect();
 
-        let text = query.get("text").map(String::as_str).unwrap_or("").trim();
+        let text = query.get("text").map_or("", String::as_str).trim();
         if text.len() < 2 {
             return self.json_response(&serde_json::json!({ "suggestions": [] }), Status::OK);
         }
 
-        // Read API key from Worker environment via global JS interop.
-        // In CF Workers, env vars set in wrangler.toml / secrets are accessed via Env.
-        // Here we read the GEOAPIFY_API_KEY var bound to the worker environment.
-        let api_key = worker::Env::var("GEOAPIFY_API_KEY")
+        // Read API key from Worker environment (bound via wrangler.toml / CF secrets).
+        let api_key = self
+            .env
+            .as_ref()
+            .and_then(|e| e.var("GEOAPIFY_API_KEY").ok())
             .map(|v| v.to_string())
             .unwrap_or_default();
         if api_key.is_empty() {
@@ -88,18 +88,18 @@ impl RequestHandler {
             return self.internal_error("Geocoding service not configured");
         }
 
-        let lang        = query.get("lang").map(String::as_str).unwrap_or("es");
-        let limit       = query.get("limit").map(String::as_str).unwrap_or("6");
+        let lang = query.get("lang").map_or("es", String::as_str);
+        let limit = query.get("limit").map_or("6", String::as_str);
         let countrycode = query.get("countrycode").cloned().unwrap_or_default();
 
         let mut geo_url = Url::parse("https://api.geoapify.com/v1/geocode/autocomplete")
             .map_err(|e| worker::Error::RustError(format!("URL parse error: {e}")))?;
         {
             let mut pairs = geo_url.query_pairs_mut();
-            pairs.append_pair("text",   text);
+            pairs.append_pair("text", text);
             pairs.append_pair("apiKey", &api_key);
-            pairs.append_pair("lang",   lang);
-            pairs.append_pair("limit",  limit);
+            pairs.append_pair("lang", lang);
+            pairs.append_pair("limit", limit);
             if !countrycode.is_empty() {
                 pairs.append_pair("filter", &format!("countrycode:{countrycode}"));
             }
@@ -135,17 +135,23 @@ impl RequestHandler {
                     }
                 };
                 AutocompleteSuggestion {
-                    label:        p.formatted.or(p.address_line1).unwrap_or_else(|| street.clone()),
+                    label: p
+                        .formatted
+                        .or(p.address_line1)
+                        .unwrap_or_else(|| street.clone()),
                     street,
-                    city:         p.city.unwrap_or_default(),
-                    postcode:     p.postcode.unwrap_or_default(),
+                    city: p.city.unwrap_or_default(),
+                    postcode: p.postcode.unwrap_or_default(),
                     country_code: p.country_code.unwrap_or_default().to_uppercase(),
                 }
             })
             .filter(|s| !s.label.is_empty())
             .collect();
 
-        self.json_response(&serde_json::json!({ "suggestions": suggestions }), Status::OK)
+        self.json_response(
+            &serde_json::json!({ "suggestions": suggestions }),
+            Status::OK,
+        )
     }
 
     async fn get_country(&self, code: &str) -> Result<Response> {

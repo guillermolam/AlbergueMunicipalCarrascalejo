@@ -6,7 +6,7 @@ export interface DocumentValidationRequest {
 
 export interface DocumentValidationResponse {
   valid: boolean;
-  confidence: number;   // 0–1
+  confidence: number; // 0–1
   checksumValid: boolean;
   extractedData: {
     documentNumber: string;

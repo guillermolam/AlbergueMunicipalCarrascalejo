@@ -5,24 +5,33 @@ import Layout from '../layouts/Layout.astro';
 
 const p = Astro.url.searchParams;
 
-const confCode    = p.get('conf')     ?? ('CONF-' + Math.random().toString(36).substring(2, 8).toUpperCase());
-const bookingRef  = p.get('ref')      ?? ('BK-'   + Date.now().toString(36).toUpperCase().slice(-6));
-const pilgrimName = p.get('name')     ?? 'Peregrino';
-const checkin     = p.get('checkin')  ?? new Date().toISOString().split('T')[0];
-const checkout    = p.get('checkout') ?? new Date(Date.now() + 86_400_000).toISOString().split('T')[0];
-const nights      = Math.max(1, Number(p.get('nights') ?? 1));
-const persons     = Math.max(1, Number(p.get('persons') ?? 1));
-const total       = Number(p.get('total') ?? nights * 8);
-const bed         = p.get('bed')      ?? '';
-const isOffline   = p.get('offline')  === '1';
+const confCode =
+  p.get('conf') ?? 'CONF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+const bookingRef = p.get('ref') ?? 'BK-' + Date.now().toString(36).toUpperCase().slice(-6);
+const pilgrimName = p.get('name') ?? 'Peregrino';
+const checkin = p.get('checkin') ?? new Date().toISOString().split('T')[0];
+const checkout = p.get('checkout') ?? new Date(Date.now() + 86_400_000).toISOString().split('T')[0];
+const nights = Math.max(1, Number(p.get('nights') ?? 1));
+const persons = Math.max(1, Number(p.get('persons') ?? 1));
+const total = Number(p.get('total') ?? nights * 8);
+const bed = p.get('bed') ?? '';
+const isOffline = p.get('offline') === '1';
 
-const checkinFmt  = new Date(checkin  + 'T12:00:00').toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
-const checkoutFmt = new Date(checkout + 'T12:00:00').toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+const checkinFmt = new Date(checkin + 'T12:00:00').toLocaleDateString('es-ES', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+const checkoutFmt = new Date(checkout + 'T12:00:00').toLocaleDateString('es-ES', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
 
 // Google Calendar deep-link using the real dates
-const calStart = checkin.replace(/-/g, '')  + 'T140000';
-const calEnd   = checkout.replace(/-/g, '') + 'T100000';
-const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue+Municipal+El+Carrascalejo&dates=${calStart}/${calEnd}&details=Reserva+Via+de+la+Plata`;
+const calStart = checkin.replace(/-/g, '') + 'T140000';
+const calEnd = checkout.replace(/-/g, '') + 'T100000';
+const calUrl = `https://calendar.google.com/calendar/r/eventedit?text=Albergue+Municipal+El+Carrascalejo&dates=${calStart}/${calEnd}&details=Reserva+Via+de+la+Plata`;
 ---
 
 <Layout title="Reserva Confirmada — Albergue Municipal de El Carrascalejo">
@@ -30,23 +39,35 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <defs>
       <filter id="sketchy-filter">
-        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"
+        ></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"></feDisplacementMap>
       </filter>
     </defs>
   </svg>
 
   <!-- Confetti layer -->
-  <div id="confetti-layer" style="position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden" aria-hidden="true"></div>
+  <div
+    id="confetti-layer"
+    style="position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden"
+    aria-hidden="true"
+  >
+  </div>
 
   <section class="confirmed-page">
     <div class="confirmed-container">
-
       <!-- SUCCESS CHECKMARK -->
       <div class="check-wrap reveal-section">
         <svg class="big-check" viewBox="0 0 120 120" fill="none" aria-label="Reserva confirmada">
-          <circle class="check-circle" cx="60" cy="60" r="54" stroke="var(--green)" stroke-width="5"/>
-          <path class="check-mark" d="M34 60 L52 78 L86 42" stroke="var(--green)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="check-circle" cx="60" cy="60" r="54" stroke="var(--green)" stroke-width="5"
+          ></circle>
+          <path
+            class="check-mark"
+            d="M34 60 L52 78 L86 42"
+            stroke="var(--green)"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
         </svg>
       </div>
 
@@ -55,7 +76,12 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
         <h1 class="confirmed-title">¡Reserva Confirmada!</h1>
         <div class="title-wave" aria-hidden="true">
           <svg viewBox="0 0 320 16" preserveAspectRatio="none">
-            <path d="M0,8 Q27,0 53,8 T106,8 T160,8 T213,8 T266,8 T320,8" fill="none" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/>
+            <path
+              d="M0,8 Q27,0 53,8 T106,8 T160,8 T213,8 T266,8 T320,8"
+              fill="none"
+              stroke="var(--gold)"
+              stroke-width="3"
+              stroke-linecap="round"></path>
           </svg>
         </div>
         <p class="camino-msg">See you on the Camino!</p>
@@ -64,25 +90,49 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
       <!-- MAIN CARD — fade-in-up handles its own entrance (800ms delay, both fill) -->
       <div class="booking-details-card">
         <svg class="card-border-svg" preserveAspectRatio="none" aria-hidden="true">
-          <rect x="5" y="7" width="calc(100% - 10px)" height="calc(100% - 12px)" rx="16"
-            fill="rgba(0,0,0,0.08)" filter="blur(6px)"/>
-          <rect x="0" y="0" width="100%" height="100%" rx="16"
-            fill="white" stroke="var(--black)" stroke-width="2.5"
-            filter="url(#sketchy-filter)"/>
-          <rect x="5" y="5" width="calc(100% - 10px)" height="calc(100% - 10px)" rx="14"
-            fill="none" stroke="var(--green)" stroke-width="1.2" opacity="0.3"
-            filter="url(#sketchy-filter)"/>
+          <rect
+            x="5"
+            y="7"
+            width="calc(100% - 10px)"
+            height="calc(100% - 12px)"
+            rx="16"
+            fill="rgba(0,0,0,0.08)"
+            filter="blur(6px)"></rect>
+          <rect
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+            rx="16"
+            fill="white"
+            stroke="var(--black)"
+            stroke-width="2.5"
+            filter="url(#sketchy-filter)"></rect>
+          <rect
+            x="5"
+            y="5"
+            width="calc(100% - 10px)"
+            height="calc(100% - 10px)"
+            rx="14"
+            fill="none"
+            stroke="var(--green)"
+            stroke-width="1.2"
+            opacity="0.3"
+            filter="url(#sketchy-filter)"></rect>
         </svg>
 
         <div class="card-body">
-
           <!-- Offline warning (shown only when API was unavailable at booking time) -->
-          {isOffline && (
-            <div style="background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-family:'Patrick Hand',cursive;font-size:0.85rem;color:#5D4E37;display:flex;align-items:center;gap:0.5rem">
-              <span>⚠️</span>
-              <span>Reserva guardada localmente — se sincronizará cuando el servidor esté disponible.</span>
-            </div>
-          )}
+          {
+            isOffline && (
+              <div style="background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-family:'Patrick Hand',cursive;font-size:0.85rem;color:#5D4E37;display:flex;align-items:center;gap:0.5rem">
+                <span>⚠️</span>
+                <span>
+                  Reserva guardada localmente — se sincronizará cuando el servidor esté disponible.
+                </span>
+              </div>
+            )
+          }
 
           <!-- Reference header -->
           <div class="ref-header">
@@ -98,13 +148,21 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
 
           <!-- Details grid -->
           <div class="details-grid">
-
             <!-- Pilgrim info -->
             <div class="detail-block">
               <h3 class="detail-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--green)"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
                 </svg>
                 Peregrino
               </h3>
@@ -115,11 +173,20 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
             <!-- Dates -->
             <div class="detail-block">
               <h3 class="detail-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--green)"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
                 Fechas
               </h3>
@@ -129,7 +196,15 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
                   <span class="date-val">{checkinFmt}</span>
                 </div>
                 <div class="date-arrow" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--green)"
+                    stroke-width="2.5"
+                    stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+                  >
                 </div>
                 <div class="date-item">
                   <span class="date-label">Salida</span>
@@ -153,15 +228,23 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
                 <span class="stay-lbl">total a pagar</span>
               </div>
             </div>
-
           </div>
 
           <!-- Important info -->
           <div class="info-banner">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--gold)"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
             <ul class="info-list-sm">
               <li>Check-in: 14:00 — 22:00 | Check-out: antes de las 10:00</li>
@@ -173,63 +256,148 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
           <!-- Actions -->
           <div class="action-btns">
             <button type="button" class="btn-sketchy-action btn-calendar" id="calendar-btn">
-              <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-                <rect x="4" y="5" width="calc(100% - 8px)" height="calc(100% - 8px)" rx="12" fill="black" filter="blur(4px)" opacity="0.15"/>
-                <rect x="0" y="0" width="100%" height="100%" rx="12" fill="var(--blue)" stroke="var(--black)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+              <svg
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="4"
+                  y="5"
+                  width="calc(100% - 8px)"
+                  height="calc(100% - 8px)"
+                  rx="12"
+                  fill="black"
+                  filter="blur(4px)"
+                  opacity="0.15"></rect>
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="12"
+                  fill="var(--blue)"
+                  stroke="var(--black)"
+                  stroke-width="2.5"
+                  filter="url(#sketchy-filter)"></rect>
               </svg>
               <span class="action-btn-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2"></rect><line
+                    x1="16"
+                    y1="2"
+                    x2="16"
+                    y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"
+                  ></line>
                 </svg>
                 Add to Calendar
               </span>
             </button>
 
             <button type="button" class="btn-sketchy-action btn-pdf" id="pdf-btn">
-              <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" aria-hidden="true">
-                <rect x="4" y="5" width="calc(100% - 8px)" height="calc(100% - 8px)" rx="12" fill="black" filter="blur(4px)" opacity="0.15"/>
-                <rect x="0" y="0" width="100%" height="100%" rx="12" fill="var(--black)" stroke="var(--green)" stroke-width="2.5" filter="url(#sketchy-filter)"/>
+              <svg
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="4"
+                  y="5"
+                  width="calc(100% - 8px)"
+                  height="calc(100% - 8px)"
+                  rx="12"
+                  fill="black"
+                  filter="blur(4px)"
+                  opacity="0.15"></rect>
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="12"
+                  fill="var(--black)"
+                  stroke="var(--green)"
+                  stroke-width="2.5"
+                  filter="url(#sketchy-filter)"></rect>
               </svg>
               <span class="action-btn-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
                 Download PDF
               </span>
             </button>
           </div>
-
         </div>
       </div>
 
       <!-- Footer nav -->
       <div class="confirmed-footer reveal-section" style="--delay:0.35s">
         <a href="/" class="footer-link footer-home">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M5 12l7-7M5 12l7 7"/></svg>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            aria-hidden="true"><path d="M5 12h14M5 12l7-7M5 12l7 7"></path></svg
+          >
           Volver al Inicio
         </a>
         <a href="/book" class="footer-link footer-new">Nueva Reserva</a>
         <a href="/dashboard" class="footer-link footer-dash">Mi Panel</a>
       </div>
-
     </div>
   </section>
 
   <style>
     .confirmed-page {
       min-height: calc(100vh - 180px);
-      display: flex; align-items: flex-start; justify-content: center;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
       padding: 3rem 1rem 5rem;
       background: linear-gradient(160deg, var(--green-light) 0%, white 50%);
     }
-    .confirmed-container { width: 100%; max-width: 680px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+    .confirmed-container {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
 
     /* Check animation */
-    .check-wrap { display: flex; justify-content: center; }
-    .big-check { width: 120px; height: 120px; }
+    .check-wrap {
+      display: flex;
+      justify-content: center;
+    }
+    .big-check {
+      width: 120px;
+      height: 120px;
+    }
     .check-circle {
       stroke-dasharray: 340;
       stroke-dashoffset: 340;
@@ -242,15 +410,21 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
     }
 
     /* Heading */
-    .confirmed-heading { text-align: center; }
+    .confirmed-heading {
+      text-align: center;
+    }
     .confirmed-title {
       font-family: var(--font-display);
-      font-size: clamp(2.2rem,6vw,3.5rem);
+      font-size: clamp(2.2rem, 6vw, 3.5rem);
       color: var(--black);
       margin: 0 0 0.2rem;
-      animation: bounce-in 600ms cubic-bezier(0.34,1.56,0.64,1) 1100ms both;
+      animation: bounce-in 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 1100ms both;
     }
-    .title-wave { width: 280px; height: 16px; margin: 0 auto 0.5rem; }
+    .title-wave {
+      width: 280px;
+      height: 16px;
+      margin: 0 auto 0.5rem;
+    }
     /* Wave path receives stroke-draw animation */
     .title-wave path {
       stroke-dasharray: 340;
@@ -267,137 +441,361 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
 
     /* Card */
     .booking-details-card {
-      position: relative; border-radius: 16px; width: 100%;
+      position: relative;
+      border-radius: 16px;
+      width: 100%;
       animation: fade-in-up 500ms ease 800ms both;
     }
-    .card-border-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-    .card-body { position: relative; z-index: 2; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .card-border-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .card-body {
+      position: relative;
+      z-index: 2;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
 
     /* Ref header */
     .ref-header {
-      display: flex; justify-content: space-between; align-items: center;
-      background: var(--green-light); border-radius: var(--r-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--green-light);
+      border-radius: var(--r-md);
       padding: 1rem 1.25rem;
-      border: 1.5px solid rgba(0,171,57,0.25);
+      border: 1.5px solid rgba(0, 171, 57, 0.25);
     }
-    .ref-label { display: block; font-family: var(--font-hand); font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
-    .ref-val { font-family: var(--font-sketch); font-weight: 700; font-size: 1.3rem; color: var(--green); letter-spacing: 0.06em; }
-    .ref-ref { font-family: var(--font-sketch); font-weight: 700; font-size: 1rem; color: var(--black); }
-    .ref-booking { text-align: right; }
+    .ref-label {
+      display: block;
+      font-family: var(--font-hand);
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.2rem;
+    }
+    .ref-val {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 1.3rem;
+      color: var(--green);
+      letter-spacing: 0.06em;
+    }
+    .ref-ref {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--black);
+    }
+    .ref-booking {
+      text-align: right;
+    }
 
     /* Details grid */
-    .details-grid { display: flex; flex-direction: column; gap: 1.25rem; }
+    .details-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
     .detail-block {
-      background: white; border: 1.5px solid rgba(0,171,57,0.15);
-      border-radius: var(--r-md); padding: 1rem 1.25rem;
+      background: white;
+      border: 1.5px solid rgba(0, 171, 57, 0.15);
+      border-radius: var(--r-md);
+      padding: 1rem 1.25rem;
     }
     .detail-title {
-      display: flex; align-items: center; gap: 0.4rem;
-      font-family: var(--font-sketch); font-weight: 700; font-size: 0.9rem;
-      text-transform: uppercase; letter-spacing: 0.04em; color: var(--black);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--black);
       margin: 0 0 0.5rem;
     }
-    .detail-val { font-family: var(--font-display); font-size: 1.3rem; color: var(--black); margin: 0 0 0.2rem; }
-    .detail-sub { font-family: var(--font-hand); font-size: 0.85rem; color: #888; margin: 0; }
-    .dates-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .date-item { display: flex; flex-direction: column; gap: 0.1rem; }
-    .date-label { font-family: var(--font-hand); font-size: 0.75rem; color: #888; }
-    .date-val { font-family: var(--font-sketch); font-weight: 700; font-size: 0.95rem; color: var(--black); }
-    .date-arrow { color: var(--green); }
+    .detail-val {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      color: var(--black);
+      margin: 0 0 0.2rem;
+    }
+    .detail-sub {
+      font-family: var(--font-hand);
+      font-size: 0.85rem;
+      color: #888;
+      margin: 0;
+    }
+    .dates-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .date-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+    .date-label {
+      font-family: var(--font-hand);
+      font-size: 0.75rem;
+      color: #888;
+    }
+    .date-val {
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--black);
+    }
+    .date-arrow {
+      color: var(--green);
+    }
 
     /* Stay stats */
-    .stays-row { display: flex; gap: 1rem; }
+    .stays-row {
+      display: flex;
+      gap: 1rem;
+    }
     .stay-stat {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
-      background: var(--green-light); border-radius: var(--r-md); padding: 1rem;
-      border: 1.5px solid rgba(0,171,57,0.2);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      background: var(--green-light);
+      border-radius: var(--r-md);
+      padding: 1rem;
+      border: 1.5px solid rgba(0, 171, 57, 0.2);
       text-align: center;
     }
-    .total-stat { background: white; border-color: var(--green); }
-    .stay-num { font-family: var(--font-display); font-size: 1.8rem; color: var(--black); }
-    .stay-lbl { font-family: var(--font-hand); font-size: 0.78rem; color: #666; }
+    .total-stat {
+      background: white;
+      border-color: var(--green);
+    }
+    .stay-num {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      color: var(--black);
+    }
+    .stay-lbl {
+      font-family: var(--font-hand);
+      font-size: 0.78rem;
+      color: #666;
+    }
 
     /* Info banner */
     .info-banner {
-      background: rgba(234,193,2,0.1);
-      border: 1.5px solid rgba(234,193,2,0.3);
+      background: rgba(234, 193, 2, 0.1);
+      border: 1.5px solid rgba(234, 193, 2, 0.3);
       border-radius: var(--r-md);
       padding: 1rem 1.25rem;
-      display: flex; gap: 0.75rem; align-items: flex-start;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
     }
-    .info-banner svg { flex-shrink: 0; margin-top: 2px; }
-    .info-list-sm { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-    .info-list-sm li { font-family: var(--font-hand); font-size: 0.85rem; color: #555; }
+    .info-banner svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .info-list-sm {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .info-list-sm li {
+      font-family: var(--font-hand);
+      font-size: 0.85rem;
+      color: #555;
+    }
 
     /* Action buttons */
-    .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .action-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
     .btn-sketchy-action {
       position: relative;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 0.875rem 1.25rem;
-      border: none; background: transparent; cursor: pointer;
-      transition: transform 200ms ease; overflow: hidden;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: transform 200ms ease;
+      overflow: hidden;
       animation: cta-rock 3s ease-in-out infinite;
     }
-    .btn-sketchy-action:nth-child(2) { animation-delay: 0.4s; }
+    .btn-sketchy-action:nth-child(2) {
+      animation-delay: 0.4s;
+    }
     .btn-sketchy-action:hover {
       transform: scale(1.05) translateY(-3px);
       animation: none; /* pause rocking on hover */
     }
-    .btn-sketchy-action:active { transform: scale(0.95); animation: none; }
+    .btn-sketchy-action:active {
+      transform: scale(0.95);
+      animation: none;
+    }
     .action-btn-label {
-      position: relative; z-index: 2;
-      font-family: var(--font-sketch); font-weight: 700; font-size: 0.9rem;
-      color: white; text-transform: uppercase; letter-spacing: 0.04em;
-      display: flex; align-items: center; gap: 0.4rem;
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-sketch);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
     }
 
     /* Footer */
-    .confirmed-footer { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
-    .footer-link { font-family: var(--font-hand); font-size: 0.95rem; text-decoration: none; transition: opacity 200ms; display: flex; align-items: center; gap: 0.3rem; }
-    .footer-home { color: var(--green); font-weight: 600; }
-    .footer-new, .footer-dash { color: #888; }
-    .footer-link:hover { opacity: 0.75; }
+    .confirmed-footer {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .footer-link {
+      font-family: var(--font-hand);
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: opacity 200ms;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .footer-home {
+      color: var(--green);
+      font-weight: 600;
+    }
+    .footer-new,
+    .footer-dash {
+      color: #888;
+    }
+    .footer-link:hover {
+      opacity: 0.75;
+    }
 
     /* Ripple */
-    .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.4); transform: scale(0); animation: ripple-anim 600ms linear; pointer-events: none; }
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: ripple-anim 600ms linear;
+      pointer-events: none;
+    }
 
     /* Animations */
-    @keyframes draw-circle { to { stroke-dashoffset: 0; } }
-    @keyframes draw-check  { to { stroke-dashoffset: 0; } }
+    @keyframes draw-circle {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    @keyframes draw-check {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
     /* bounce-in: matches global figma-design.css spec */
     @keyframes bounce-in {
-      0%   { transform: scale(0.5) rotateZ(-5deg); opacity: 0; }
-      40%  { transform: scale(1.1) rotateZ(2deg);  opacity: 1; }
-      70%  { transform: scale(0.95) rotateZ(-1deg); }
-      100% { transform: scale(1) rotateZ(0deg); }
+      0% {
+        transform: scale(0.5) rotateZ(-5deg);
+        opacity: 0;
+      }
+      40% {
+        transform: scale(1.1) rotateZ(2deg);
+        opacity: 1;
+      }
+      70% {
+        transform: scale(0.95) rotateZ(-1deg);
+      }
+      100% {
+        transform: scale(1) rotateZ(0deg);
+      }
     }
     /* stroke-draw: for wave underline and SVG borders */
     @keyframes stroke-draw {
-      from { stroke-dashoffset: 340; opacity: 0; }
-      10%  { opacity: 1; }
-      to   { stroke-dashoffset: 0; }
+      from {
+        stroke-dashoffset: 340;
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
     }
     /* fade-in-up: for camino-msg and card entrance */
     @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     /* cta-rock: idle wobble for action buttons */
     @keyframes cta-rock {
-      0%, 100% { transform: rotate(0deg) translateY(0); }
-      20%       { transform: rotate(-1deg) translateY(-1px); }
-      40%       { transform: rotate(1deg) translateY(0); }
-      60%       { transform: rotate(-0.5deg) translateY(-1px); }
-      80%       { transform: rotate(0.5deg) translateY(0); }
+      0%,
+      100% {
+        transform: rotate(0deg) translateY(0);
+      }
+      20% {
+        transform: rotate(-1deg) translateY(-1px);
+      }
+      40% {
+        transform: rotate(1deg) translateY(0);
+      }
+      60% {
+        transform: rotate(-0.5deg) translateY(-1px);
+      }
+      80% {
+        transform: rotate(0.5deg) translateY(0);
+      }
     }
-    @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
-    @keyframes float-up { 0% { transform: translateY(0) scale(1); opacity:1; } 100% { transform: translateY(-90vh) scale(0.4); opacity:0; } }
+    @keyframes ripple-anim {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+    @keyframes float-up {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-90vh) scale(0.4);
+        opacity: 0;
+      }
+    }
 
     .reveal-section {
       opacity: 0;
       transform: translateY(28px);
-      transition: opacity 0.6s ease calc(var(--delay, 0s)), transform 0.6s ease calc(var(--delay, 0s));
+      transition:
+        opacity 0.6s ease calc(var(--delay, 0s)),
+        transform 0.6s ease calc(var(--delay, 0s));
     }
     .reveal-section.revealed,
     .reveal-section.visible {
@@ -406,19 +804,36 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
     }
 
     @media (max-width: 520px) {
-      .action-btns { grid-template-columns: 1fr; }
-      .stays-row { flex-direction: column; }
-      .ref-header { flex-direction: column; gap: 0.75rem; }
-      .ref-booking { text-align: left; }
+      .action-btns {
+        grid-template-columns: 1fr;
+      }
+      .stays-row {
+        flex-direction: column;
+      }
+      .ref-header {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .ref-booking {
+        text-align: left;
+      }
     }
   </style>
 
   <script>
     // Scroll reveal
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); observer.unobserve(e.target); } });
-    }, { threshold: 0.08 });
-    document.querySelectorAll('.reveal-section').forEach(el => observer.observe(el));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('revealed');
+            observer.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.08 }
+    );
+    document.querySelectorAll('.reveal-section').forEach((el) => observer.observe(el));
 
     // Confetti burst — 12 directional particles, green/gold alternating, 3 cycles
     function burstConfetti() {
@@ -428,7 +843,7 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
       const cy = window.innerHeight / 2;
 
       for (let index = 0; index < 12; index++) {
-        const angle = index * 30 * Math.PI / 180;
+        const angle = (index * 30 * Math.PI) / 180;
         const dx = Math.cos(angle) * 100;
         const dy = Math.sin(angle) * 100;
         const color = colors[index % 2];
@@ -450,9 +865,13 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
 
         // Animate: scale 0→1.5→0, opacity 0→1→0, translate outward
         const keyframes: Keyframe[] = [
-          { transform: `translate(-50%,-50%) scale(0) translate(0,0)`,     opacity: 0 },
-          { transform: `translate(-50%,-50%) scale(1.5) translate(${dx * 0.6}px,${dy * 0.6}px)`, opacity: 1, offset: 0.4 },
-          { transform: `translate(-50%,-50%) scale(0) translate(${dx}px,${dy}px)`,   opacity: 0 },
+          { transform: `translate(-50%,-50%) scale(0) translate(0,0)`, opacity: 0 },
+          {
+            transform: `translate(-50%,-50%) scale(1.5) translate(${dx * 0.6}px,${dy * 0.6}px)`,
+            opacity: 1,
+            offset: 0.4,
+          },
+          { transform: `translate(-50%,-50%) scale(0) translate(${dx}px,${dy}px)`, opacity: 0 },
         ];
         const anim = dot.animate(keyframes, {
           duration: 1000,
@@ -479,8 +898,8 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
     });
 
     // Ripple
-    document.querySelectorAll('.btn-sketchy-action').forEach(btn => {
-      btn.addEventListener('click', function(e) {
+    document.querySelectorAll('.btn-sketchy-action').forEach((btn) => {
+      btn.addEventListener('click', function (e) {
         const me = e as MouseEvent;
         const el = this as HTMLElement;
         const rect = el.getBoundingClientRect();
@@ -489,8 +908,8 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
         const size = Math.max(rect.width, rect.height);
         r.style.width = size + 'px';
         r.style.height = size + 'px';
-        r.style.left = (me.clientX - rect.left - size / 2) + 'px';
-        r.style.top = (me.clientY - rect.top - size / 2) + 'px';
+        r.style.left = me.clientX - rect.left - size / 2 + 'px';
+        r.style.top = me.clientY - rect.top - size / 2 + 'px';
         el.appendChild(r);
         setTimeout(() => r.remove(), 700);
       });
@@ -519,7 +938,7 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
         return toastContainer;
       }
 
-      (window as any).showToast = function(
+      (window as any).showToast = function (
         icon: string,
         title: string,
         message: string = '',
@@ -579,12 +998,20 @@ const calUrl   = `https://calendar.google.com/calendar/r/eventedit?text=Albergue
     // Calendar button — URL computed server-side from real booking dates
     document.getElementById('calendar-btn')!.addEventListener('click', () => {
       window.open(`${calUrl}`, '_blank', 'noopener');
-      (window as any).showToast('\u{1F4C5}', 'Calendario abierto', 'Se ha abierto Google Calendar con tu reserva.');
+      (window as any).showToast(
+        '\u{1F4C5}',
+        'Calendario abierto',
+        'Se ha abierto Google Calendar con tu reserva.'
+      );
     });
 
     // PDF button
     document.getElementById('pdf-btn')!.addEventListener('click', () => {
-      (window as any).showToast('\u{1F5A8}', 'Preparando impresion', 'Se abrira el dialogo en un momento...');
+      (window as any).showToast(
+        '\u{1F5A8}',
+        'Preparando impresion',
+        'Se abrira el dialogo en un momento...'
+      );
       setTimeout(() => window.print(), 600);
     });
   </script>

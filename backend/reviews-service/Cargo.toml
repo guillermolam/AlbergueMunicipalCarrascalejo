@@ -13,7 +13,8 @@ thiserror = "1.0"
 tracing = "0.1"
 
 # Cloudflare Workers SDK
-worker = "0.7.5"
+worker = { version = "0.7.5", features = ["d1"] }
+url = "2"
 
 # Shared
 shared = { path = "../shared" }

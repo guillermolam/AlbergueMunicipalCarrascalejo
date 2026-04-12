@@ -7,7 +7,16 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { eq, sql } from 'drizzle-orm';
-import { db, getD1, requireAdmin, json, jsonError, eurToCents, centsToEur, hostelServices } from '../../../../db/helpers';
+import {
+  db,
+  getD1,
+  requireAdmin,
+  json,
+  jsonError,
+  eurToCents,
+  centsToEur,
+  hostelServices,
+} from '../../../../db/helpers';
 
 function withEur(row: typeof hostelServices.$inferSelect) {
   return { ...row, priceEur: centsToEur(row.priceCents) };
@@ -45,7 +54,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonError('Invalid JSON body');
   }
@@ -55,17 +64,22 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   };
 
   const { available, priceEur, description, name, icon, unit, category } = body as {
-    available?: boolean; priceEur?: number; description?: string | null;
-    name?: string; icon?: string; unit?: string; category?: string;
+    available?: boolean;
+    priceEur?: number;
+    description?: string | null;
+    name?: string;
+    icon?: string;
+    unit?: string;
+    category?: string;
   };
 
-  if (available   !== undefined) updates.available   = available ? 1 : 0;
-  if (priceEur    !== undefined) updates.priceCents  = eurToCents(priceEur);
+  if (available !== undefined) updates.available = available ? 1 : 0;
+  if (priceEur !== undefined) updates.priceCents = eurToCents(priceEur);
   if (description !== undefined) updates.description = description ?? null;
-  if (name        !== undefined) updates.name        = name;
-  if (icon        !== undefined) updates.icon        = icon;
-  if (unit        !== undefined) updates.unit        = unit;
-  if (category    !== undefined) updates.category    = category;
+  if (name !== undefined) updates.name = name;
+  if (icon !== undefined) updates.icon = icon;
+  if (unit !== undefined) updates.unit = unit;
+  if (category !== undefined) updates.category = category;
 
   try {
     const rows = await db(d1)

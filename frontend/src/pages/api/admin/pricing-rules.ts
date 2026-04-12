@@ -6,18 +6,31 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { eq, sql } from 'drizzle-orm';
-import { db, getD1, requireAdmin, json, jsonError, eurToCents, centsToEur, pricingRules } from '../../../db/helpers';
+import {
+  db,
+  getD1,
+  requireAdmin,
+  json,
+  jsonError,
+  eurToCents,
+  centsToEur,
+  pricingRules,
+} from '../../../db/helpers';
 
 export const GET: APIRoute = async ({ locals }) => {
   const deny = requireAdmin(locals);
   if (deny) return deny;
 
   const d1 = await getD1();
-  if (!d1) return jsonError('Database not available in local Vite dev — use wrangler dev or the backend api-service', 503);
+  if (!d1)
+    return jsonError(
+      'Database not available in local Vite dev — use wrangler dev or the backend api-service',
+      503
+    );
 
   try {
     const rules = await db(d1).select().from(pricingRules).orderBy(pricingRules.id);
-    return json(rules.map(r => ({ ...r, priceEur: centsToEur(r.priceCents) })));
+    return json(rules.map((r) => ({ ...r, priceEur: centsToEur(r.priceCents) })));
   } catch (e) {
     console.error('[admin/pricing-rules GET]', e);
     return jsonError('Failed to load pricing rules', 500);
@@ -33,7 +46,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonError('Invalid JSON body');
   }
@@ -56,11 +69,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       .values({
         accommodationType: accommodationType as 'dormitory' | 'private',
         priceCents: eurToCents(priceEur),
-        validFrom:  validFrom  ?? null,
+        validFrom: validFrom ?? null,
         validUntil: validUntil ?? null,
-        label:      label      ?? null,
-        active:     active === false ? 0 : 1,
-        updatedAt:  sql`(datetime('now'))`,
+        label: label ?? null,
+        active: active === false ? 0 : 1,
+        updatedAt: sql`(datetime('now'))`,
       })
       .returning();
 

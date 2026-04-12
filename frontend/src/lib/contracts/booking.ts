@@ -13,7 +13,7 @@ export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'online';
 export interface BookingDTO {
   id: string;
   referenceNumber: string;
-  checkInDate: string;   // ISO date "YYYY-MM-DD"
+  checkInDate: string; // ISO date "YYYY-MM-DD"
   checkOutDate: string;
   nights: number;
   numberOfPersons: number;
@@ -63,5 +63,5 @@ export interface AvailabilityResponse {
   pricePerNight: number;
   totalPrice: number;
   currency: string;
-  expires: string;   // ISO timestamp — reservation holds until
+  expires: string; // ISO timestamp — reservation holds until
 }

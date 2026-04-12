@@ -1,14 +1,103 @@
 [
-  {"type":"badge","id":"first_step",    "emoji":"👣","name":"Primer Paso",         "description":"Has registrado tu primera etapa del Camino",        "auto":true, "criterion":"stages >= 1"},
-  {"type":"badge","id":"five_stages",   "emoji":"🥇","name":"5 Etapas",            "description":"Has completado 5 etapas del Camino",                "auto":true, "criterion":"stages >= 5"},
-  {"type":"badge","id":"ten_stages",    "emoji":"🏅","name":"10 Etapas",           "description":"Has completado 10 etapas del Camino",               "auto":true, "criterion":"stages >= 10"},
-  {"type":"badge","id":"twenty_stages", "emoji":"🎖️","name":"20 Etapas",           "description":"Has completado 20 etapas del Camino",               "auto":true, "criterion":"stages >= 20"},
-  {"type":"badge","id":"carrascalejo",  "emoji":"⛺","name":"El Carrascalejo",     "description":"Has pernoctado en el Albergue Municipal de El Carrascalejo","auto":false},
-  {"type":"badge","id":"via_plata",     "emoji":"🏛️","name":"Via de la Plata",     "description":"Has completado la Via de la Plata entera",           "auto":true, "criterion":"stages >= 39"},
-  {"type":"badge","id":"madrugador",    "emoji":"🌅","name":"Madrugador",          "description":"Has salido antes de las 6:00 AM",                   "auto":false},
-  {"type":"badge","id":"veterano",      "emoji":"🎒","name":"Veterano",            "description":"Has completado mas de un Camino",                   "auto":false},
-  {"type":"badge","id":"fotografo",     "emoji":"📸","name":"Fotografo del Camino","description":"Has compartido fotos del Camino",                   "auto":false},
-  {"type":"badge","id":"hospitalero",   "emoji":"🤝","name":"Hospitalero",         "description":"Has ayudado a otros peregrinos",                    "auto":false},
-  {"type":"badge","id":"donativo",      "emoji":"💛","name":"Donativo",            "description":"Has dejado un donativo en el Camino",               "auto":false},
-  {"type":"badge","id":"peregrino_pro", "emoji":"⭐","name":"Peregrino Pro",       "description":"Has completado mas de 500 km a pie",                "auto":false}
+  {
+    "type": "badge",
+    "id": "first_step",
+    "emoji": "👣",
+    "name": "Primer Paso",
+    "description": "Has registrado tu primera etapa del Camino",
+    "auto": true,
+    "criterion": "stages >= 1"
+  },
+  {
+    "type": "badge",
+    "id": "five_stages",
+    "emoji": "🥇",
+    "name": "5 Etapas",
+    "description": "Has completado 5 etapas del Camino",
+    "auto": true,
+    "criterion": "stages >= 5"
+  },
+  {
+    "type": "badge",
+    "id": "ten_stages",
+    "emoji": "🏅",
+    "name": "10 Etapas",
+    "description": "Has completado 10 etapas del Camino",
+    "auto": true,
+    "criterion": "stages >= 10"
+  },
+  {
+    "type": "badge",
+    "id": "twenty_stages",
+    "emoji": "🎖️",
+    "name": "20 Etapas",
+    "description": "Has completado 20 etapas del Camino",
+    "auto": true,
+    "criterion": "stages >= 20"
+  },
+  {
+    "type": "badge",
+    "id": "carrascalejo",
+    "emoji": "⛺",
+    "name": "El Carrascalejo",
+    "description": "Has pernoctado en el Albergue Municipal de El Carrascalejo",
+    "auto": false
+  },
+  {
+    "type": "badge",
+    "id": "via_plata",
+    "emoji": "🏛️",
+    "name": "Via de la Plata",
+    "description": "Has completado la Via de la Plata entera",
+    "auto": true,
+    "criterion": "stages >= 39"
+  },
+  {
+    "type": "badge",
+    "id": "madrugador",
+    "emoji": "🌅",
+    "name": "Madrugador",
+    "description": "Has salido antes de las 6:00 AM",
+    "auto": false
+  },
+  {
+    "type": "badge",
+    "id": "veterano",
+    "emoji": "🎒",
+    "name": "Veterano",
+    "description": "Has completado mas de un Camino",
+    "auto": false
+  },
+  {
+    "type": "badge",
+    "id": "fotografo",
+    "emoji": "📸",
+    "name": "Fotografo del Camino",
+    "description": "Has compartido fotos del Camino",
+    "auto": false
+  },
+  {
+    "type": "badge",
+    "id": "hospitalero",
+    "emoji": "🤝",
+    "name": "Hospitalero",
+    "description": "Has ayudado a otros peregrinos",
+    "auto": false
+  },
+  {
+    "type": "badge",
+    "id": "donativo",
+    "emoji": "💛",
+    "name": "Donativo",
+    "description": "Has dejado un donativo en el Camino",
+    "auto": false
+  },
+  {
+    "type": "badge",
+    "id": "peregrino_pro",
+    "emoji": "⭐",
+    "name": "Peregrino Pro",
+    "description": "Has completado mas de 500 km a pie",
+    "auto": false
+  }
 ]

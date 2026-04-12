@@ -110,6 +110,38 @@ fn add_cors_headers(response: &mut Response) -> Result<()> {
 
 use serde_json::Value;
 
+// ── Phone number validation ───────────────────────────────────────────────────
+
+/// Validate a phone number string using the `phonenumber` crate (Google libphonenumber port).
+/// `country_hint` is an ISO 3166-1 alpha-2 country code used when the number has no `+` prefix.
+/// Returns `Ok(e164)` on success or a descriptive error string on failure.
+fn validate_phone(raw: &str, country_hint: Option<&str>) -> std::result::Result<String, String> {
+    use phonenumber::{country, Mode, PhoneNumber};
+
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return Err("Phone number cannot be empty".to_string());
+    }
+
+    // Reject anything that looks like it contains letters (text only, numbers required)
+    if raw.chars().any(char::is_alphabetic) {
+        return Err("Phone number must contain digits only, no letters".to_string());
+    }
+
+    let country_id: Option<country::Id> = country_hint.and_then(|s| s.parse().ok());
+
+    let parsed: PhoneNumber =
+        phonenumber::parse(country_id, raw).map_err(|e| format!("Invalid phone number: {e}"))?;
+
+    if !phonenumber::is_valid(&parsed) {
+        return Err(format!(
+            "Phone number '{raw}' is not valid for the given country"
+        ));
+    }
+
+    Ok(parsed.format().mode(Mode::E164).to_string())
+}
+
 #[instrument]
 fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
     // Placeholder: Implement WhatsApp API call to register client
@@ -128,16 +160,31 @@ async fn create_booking(req: &mut Request) -> Result<Response> {
         Err(err) => return error_response(400, &format!("Invalid JSON: {err}")),
     };
 
-    let guest_phone = body_json
+    let guest_phone_raw = body_json
         .get("guest_phone")
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
+    // ── Phone validation ──────────────────────────────────────────────────────
+    // country_hint comes from the hidden phoneCountryCode field (ISO 3166-1 alpha-2).
+    let phone_country_hint = body_json.get("phone_country_code").and_then(|v| v.as_str());
+
+    let guest_phone_e164 = if guest_phone_raw.is_empty() {
+        None
+    } else {
+        match validate_phone(guest_phone_raw, phone_country_hint) {
+            Ok(e164) => Some(e164),
+            Err(msg) => return error_response(422, &format!("Phone validation failed: {msg}")),
+        }
+    };
+
     // Read WhatsApp business phone number from env (not available in Workers, use empty default)
     let whatsapp_business_phone = String::new();
 
-    if !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
-        register_whatsapp_client(guest_phone, &whatsapp_business_phone);
+    if let Some(ref phone) = guest_phone_e164 {
+        if !whatsapp_business_phone.is_empty() {
+            register_whatsapp_client(phone, &whatsapp_business_phone);
+        }
     }
 
     // Create booking as before
@@ -153,11 +200,7 @@ async fn create_booking(req: &mut Request) -> Result<Response> {
             .and_then(|v| v.as_str())
             .unwrap_or("guest@example.com")
             .to_string(),
-        guest_phone: if guest_phone.is_empty() {
-            None
-        } else {
-            Some(guest_phone.to_string())
-        },
+        guest_phone: guest_phone_e164,
         room_type: body_json
             .get("room_type")
             .and_then(|v| v.as_str())

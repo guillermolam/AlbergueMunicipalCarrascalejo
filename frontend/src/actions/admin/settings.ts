@@ -12,8 +12,13 @@ import { defineAction, type ActionAPIContext } from 'astro:actions';
 import { z } from 'astro:schema';
 import { eq, sql } from 'drizzle-orm';
 import {
-  db, eurToCents, centsToEur,
-  pricingRules, dormitories, hostelServices, hostelConfig,
+  db,
+  eurToCents,
+  centsToEur,
+  pricingRules,
+  dormitories,
+  hostelServices,
+  hostelConfig,
 } from '../../db/helpers';
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
@@ -30,20 +35,27 @@ const now = () => sql`(datetime('now'))`;
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 export const adminSettings = {
-
   /**
    * Upsert a pricing rule.
    * Creates a new rule if id is omitted; updates existing if id is provided.
    */
   upsertPricingRule: defineAction({
     input: z.object({
-      id:                z.number().int().positive().optional(),
+      id: z.number().int().positive().optional(),
       accommodationType: z.enum(['dormitory', 'private']).default('dormitory'),
-      priceEur:          z.number().min(0).max(500),
-      validFrom:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-      validUntil:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-      label:             z.string().max(100).optional().nullable(),
-      active:            z.boolean().default(true),
+      priceEur: z.number().min(0).max(500),
+      validFrom: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      validUntil: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      label: z.string().max(100).optional().nullable(),
+      active: z.boolean().default(true),
     }),
     handler: async (input, context) => {
       assertAdmin(context);
@@ -55,11 +67,11 @@ export const adminSettings = {
           .set({
             accommodationType: input.accommodationType,
             priceCents,
-            validFrom:  input.validFrom  ?? null,
+            validFrom: input.validFrom ?? null,
             validUntil: input.validUntil ?? null,
-            label:      input.label      ?? null,
-            active:     input.active ? 1 : 0,
-            updatedAt:  now() as unknown as string,
+            label: input.label ?? null,
+            active: input.active ? 1 : 0,
+            updatedAt: now() as unknown as string,
           })
           .where(eq(pricingRules.id, input.id))
           .returning();
@@ -72,11 +84,11 @@ export const adminSettings = {
         .values({
           accommodationType: input.accommodationType,
           priceCents,
-          validFrom:  input.validFrom  ?? null,
+          validFrom: input.validFrom ?? null,
           validUntil: input.validUntil ?? null,
-          label:      input.label      ?? null,
-          active:     input.active ? 1 : 0,
-          updatedAt:  now() as unknown as string,
+          label: input.label ?? null,
+          active: input.active ? 1 : 0,
+          updatedAt: now() as unknown as string,
         })
         .returning();
       return { ...rows[0], priceEur: centsToEur(rows[0].priceCents) };
@@ -86,9 +98,9 @@ export const adminSettings = {
   /** Toggle available / update price + description on a hostel service. */
   updateService: defineAction({
     input: z.object({
-      id:          z.number().int().positive(),
-      priceEur:    z.number().min(0).max(200).optional(),
-      available:   z.boolean().optional(),
+      id: z.number().int().positive(),
+      priceEur: z.number().min(0).max(200).optional(),
+      available: z.boolean().optional(),
       description: z.string().max(200).optional().nullable(),
     }),
     handler: async (input, context) => {
@@ -97,8 +109,8 @@ export const adminSettings = {
       const updates: Partial<typeof hostelServices.$inferInsert> = {
         updatedAt: now() as unknown as string,
       };
-      if (input.priceEur    !== undefined) updates.priceCents  = eurToCents(input.priceEur);
-      if (input.available   !== undefined) updates.available   = input.available ? 1 : 0;
+      if (input.priceEur !== undefined) updates.priceCents = eurToCents(input.priceEur);
+      if (input.available !== undefined) updates.available = input.available ? 1 : 0;
       if (input.description !== undefined) updates.description = input.description ?? null;
 
       const rows = await db()
@@ -114,8 +126,8 @@ export const adminSettings = {
   /** Update check-in / check-out / reception hours in hostel_config. */
   updateSchedule: defineAction({
     input: z.object({
-      checkInTime:    z.string().regex(/^\d{2}:\d{2}$/),
-      checkOutTime:   z.string().regex(/^\d{2}:\d{2}$/),
+      checkInTime: z.string().regex(/^\d{2}:\d{2}$/),
+      checkOutTime: z.string().regex(/^\d{2}:\d{2}$/),
       receptionHours: z.string().max(30),
     }),
     handler: async (input, context) => {
@@ -132,10 +144,10 @@ export const adminSettings = {
   /** Update dormitory bed count, active flag, or notes. */
   updateDormitory: defineAction({
     input: z.object({
-      id:        z.number().int().positive(),
+      id: z.number().int().positive(),
       bedsCount: z.number().int().min(1).max(100).optional(),
-      active:    z.boolean().optional(),
-      notes:     z.string().max(255).optional().nullable(),
+      active: z.boolean().optional(),
+      notes: z.string().max(255).optional().nullable(),
     }),
     handler: async (input, context) => {
       assertAdmin(context);
@@ -144,8 +156,8 @@ export const adminSettings = {
         updatedAt: now() as unknown as string,
       };
       if (input.bedsCount !== undefined) updates.bedsCount = input.bedsCount;
-      if (input.active    !== undefined) updates.active    = input.active ? 1 : 0;
-      if (input.notes     !== undefined) updates.notes     = input.notes ?? null;
+      if (input.active !== undefined) updates.active = input.active ? 1 : 0;
+      if (input.notes !== undefined) updates.notes = input.notes ?? null;
 
       const rows = await db()
         .update(dormitories)
@@ -160,20 +172,20 @@ export const adminSettings = {
   /** Update hostel identity / address / contact / legal info. */
   updateHostelInfo: defineAction({
     input: z.object({
-      name:            z.string().min(2).max(120).optional(),
-      tagline:         z.string().max(120).optional().nullable(),
-      addressStreet:   z.string().max(120).optional().nullable(),
+      name: z.string().min(2).max(120).optional(),
+      tagline: z.string().max(120).optional().nullable(),
+      addressStreet: z.string().max(120).optional().nullable(),
       addressPostcode: z.string().max(10).optional().nullable(),
-      addressTown:     z.string().max(80).optional().nullable(),
+      addressTown: z.string().max(80).optional().nullable(),
       addressProvince: z.string().max(80).optional().nullable(),
-      addressCountry:  z.string().max(80).optional().nullable(),
-      phone:           z.string().max(20).optional().nullable(),
-      email:           z.string().email().optional().nullable(),
-      website:         z.string().url().optional().nullable(),
-      latitude:        z.number().min(-90).max(90).optional().nullable(),
-      longitude:       z.number().min(-180).max(180).optional().nullable(),
-      cif:             z.string().max(20).optional().nullable(),
-      tourismLicense:  z.string().max(40).optional().nullable(),
+      addressCountry: z.string().max(80).optional().nullable(),
+      phone: z.string().max(20).optional().nullable(),
+      email: z.string().email().optional().nullable(),
+      website: z.string().url().optional().nullable(),
+      latitude: z.number().min(-90).max(90).optional().nullable(),
+      longitude: z.number().min(-180).max(180).optional().nullable(),
+      cif: z.string().max(20).optional().nullable(),
+      tourismLicense: z.string().max(40).optional().nullable(),
       insurancePolicy: z.string().max(40).optional().nullable(),
     }),
     handler: async (input, context) => {

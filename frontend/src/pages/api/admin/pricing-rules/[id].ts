@@ -6,7 +6,16 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { eq, sql } from 'drizzle-orm';
-import { db, getD1, requireAdmin, json, jsonError, eurToCents, centsToEur, pricingRules } from '../../../../db/helpers';
+import {
+  db,
+  getD1,
+  requireAdmin,
+  json,
+  jsonError,
+  eurToCents,
+  centsToEur,
+  pricingRules,
+} from '../../../../db/helpers';
 
 export const PUT: APIRoute = async ({ params, request, locals }) => {
   const deny = requireAdmin(locals);
@@ -20,7 +29,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonError('Invalid JSON body');
   }
@@ -30,17 +39,21 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   };
 
   const { accommodationType, priceEur, validFrom, validUntil, label, active } = body as {
-    accommodationType?: string; priceEur?: number;
-    validFrom?: string | null;  validUntil?: string | null;
-    label?: string | null;      active?: boolean;
+    accommodationType?: string;
+    priceEur?: number;
+    validFrom?: string | null;
+    validUntil?: string | null;
+    label?: string | null;
+    active?: boolean;
   };
 
-  if (accommodationType !== undefined) updates.accommodationType = accommodationType as 'dormitory' | 'private';
-  if (priceEur !== undefined)          updates.priceCents = eurToCents(priceEur);
-  if (validFrom  !== undefined)        updates.validFrom  = validFrom ?? null;
-  if (validUntil !== undefined)        updates.validUntil = validUntil ?? null;
-  if (label      !== undefined)        updates.label      = label ?? null;
-  if (active     !== undefined)        updates.active     = active ? 1 : 0;
+  if (accommodationType !== undefined)
+    updates.accommodationType = accommodationType as 'dormitory' | 'private';
+  if (priceEur !== undefined) updates.priceCents = eurToCents(priceEur);
+  if (validFrom !== undefined) updates.validFrom = validFrom ?? null;
+  if (validUntil !== undefined) updates.validUntil = validUntil ?? null;
+  if (label !== undefined) updates.label = label ?? null;
+  if (active !== undefined) updates.active = active ? 1 : 0;
 
   try {
     const rows = await db(d1)
@@ -71,10 +84,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   if (!d1) return jsonError('Database not available in local Vite dev — use wrangler dev', 503);
 
   try {
-    const rows = await db(d1)
-      .delete(pricingRules)
-      .where(eq(pricingRules.id, id))
-      .returning();
+    const rows = await db(d1).delete(pricingRules).where(eq(pricingRules.id, id)).returning();
 
     if (!rows.length) return jsonError('Pricing rule not found', 404);
     return json({ deleted: true, id });

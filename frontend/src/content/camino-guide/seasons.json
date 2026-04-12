@@ -1,6 +1,34 @@
 [
-  {"type":"season","id":"spring","season":"Primavera","icon":"🌸","when":"Mar–May","note":"Mejor epoca: flores silvestres y temperatura ideal 12–22°C. Sin calor extremo."},
-  {"type":"season","id":"summer","season":"Verano",   "icon":"☀️","when":"Jun–Ago","note":"Calor intenso, hasta 42°C. Sal antes de las 7h. Lleva minimo 3 litros de agua."},
-  {"type":"season","id":"autumn","season":"Otoño",    "icon":"🍂","when":"Sep–Nov","note":"Excelente: temperaturas suaves, pocos peregrinos y dehesa en sus colores."},
-  {"type":"season","id":"winter","season":"Invierno", "icon":"❄️","when":"Dic–Feb","note":"Poco transitado. Frio pero manejable. Equipamiento de lluvia imprescindible."}
+  {
+    "type": "season",
+    "id": "spring",
+    "season": "Primavera",
+    "icon": "🌸",
+    "when": "Mar–May",
+    "note": "Mejor epoca: flores silvestres y temperatura ideal 12–22°C. Sin calor extremo."
+  },
+  {
+    "type": "season",
+    "id": "summer",
+    "season": "Verano",
+    "icon": "☀️",
+    "when": "Jun–Ago",
+    "note": "Calor intenso, hasta 42°C. Sal antes de las 7h. Lleva minimo 3 litros de agua."
+  },
+  {
+    "type": "season",
+    "id": "autumn",
+    "season": "Otoño",
+    "icon": "🍂",
+    "when": "Sep–Nov",
+    "note": "Excelente: temperaturas suaves, pocos peregrinos y dehesa en sus colores."
+  },
+  {
+    "type": "season",
+    "id": "winter",
+    "season": "Invierno",
+    "icon": "❄️",
+    "when": "Dic–Feb",
+    "note": "Poco transitado. Frio pero manejable. Equipamiento de lluvia imprescindible."
+  }
 ]

@@ -15,7 +15,9 @@
 
 function warn(fn: string) {
   if (import.meta.env.DEV) {
-    console.warn(`[redis stub] ${fn}() called — Redis is not available in Cloudflare Workers. Use KV instead.`);
+    console.warn(
+      `[redis stub] ${fn}() called — Redis is not available in Cloudflare Workers. Use KV instead.`
+    );
   }
 }
 

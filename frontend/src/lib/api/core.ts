@@ -13,9 +13,7 @@ export interface ApiError {
   code?: string;
 }
 
-export type ApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: ApiError };
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
 
 function getAuthHeader(): Record<string, string> {
   if (typeof localStorage === 'undefined') return {};
@@ -50,7 +48,9 @@ export async function apiFetch<T>(
       try {
         const errBody = (await res.json()) as { message?: string; error?: string };
         message = errBody.message ?? errBody.error ?? message;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       return { ok: false, error: { status: res.status, message } };
     }
 

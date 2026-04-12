@@ -111,17 +111,17 @@ const uid = `ml-${Math.random().toString(36).slice(2, 9)}`;
     private _map: maplibregl.Map | null = null;
 
     connectedCallback() {
-      const uid          = this.dataset.uid ?? 'map';
-      const lat          = parseFloat(this.dataset.lat  ?? '0');
-      const lng          = parseFloat(this.dataset.lng  ?? '0');
-      const zoom         = parseFloat(this.dataset.zoom ?? '14');
-      const style        = this.dataset.style  ?? 'https://tiles.openfreemap.org/styles/liberty';
-      const interactive  = this.dataset.interactive  !== 'false';
-      const scrollZoom   = this.dataset.scrollZoom   === 'true';
-      const showMarker   = this.dataset.marker        !== 'false';
-      const markerTitle  = this.dataset.markerTitle   ?? '';
-      const markerSub    = this.dataset.markerSubtitle ?? '';
-      const showControls = this.dataset.controls      !== 'false';
+      const uid = this.dataset.uid ?? 'map';
+      const lat = parseFloat(this.dataset.lat ?? '0');
+      const lng = parseFloat(this.dataset.lng ?? '0');
+      const zoom = parseFloat(this.dataset.zoom ?? '14');
+      const style = this.dataset.style ?? 'https://tiles.openfreemap.org/styles/liberty';
+      const interactive = this.dataset.interactive !== 'false';
+      const scrollZoom = this.dataset.scrollZoom === 'true';
+      const showMarker = this.dataset.marker !== 'false';
+      const markerTitle = this.dataset.markerTitle ?? '';
+      const markerSub = this.dataset.markerSubtitle ?? '';
+      const showControls = this.dataset.controls !== 'false';
 
       const container = document.getElementById(uid);
       if (!container) return;
@@ -141,17 +141,11 @@ const uid = `ml-${Math.random().toString(36).slice(2, 9)}`;
       if (!scrollZoom) map.scrollZoom.disable();
 
       // Attribution (compact)
-      map.addControl(
-        new maplibregl.AttributionControl({ compact: true }),
-        'bottom-left',
-      );
+      map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 
       // Navigation controls (+/−)
       if (showControls) {
-        map.addControl(
-          new maplibregl.NavigationControl({ showCompass: false }),
-          'top-right',
-        );
+        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
       }
 
       // Custom SVG pin marker — built via DOM API (no innerHTML, safe from XSS)
@@ -167,7 +161,7 @@ const uid = `ml-${Math.random().toString(36).slice(2, 9)}`;
           detail: { map },
           bubbles: true,
           composed: true,
-        }),
+        })
       );
     }
 
@@ -181,36 +175,39 @@ const uid = `ml-${Math.random().toString(36).slice(2, 9)}`;
       lng: number,
       lat: number,
       title: string,
-      subtitle: string,
+      subtitle: string
     ) {
       const NS = 'http://www.w3.org/2000/svg';
 
       // ── SVG pin ───────────────────────────────────────────────────────────
       const svg = document.createElementNS(NS, 'svg');
-      svg.setAttribute('width',   '36');
-      svg.setAttribute('height',  '44');
+      svg.setAttribute('width', '36');
+      svg.setAttribute('height', '44');
       svg.setAttribute('viewBox', '0 0 36 44');
       svg.setAttribute('aria-hidden', 'true');
 
       const shadow = document.createElementNS(NS, 'ellipse');
-      shadow.setAttribute('cx', '18'); shadow.setAttribute('cy', '42');
-      shadow.setAttribute('rx', '8'); shadow.setAttribute('ry', '2.5');
+      shadow.setAttribute('cx', '18');
+      shadow.setAttribute('cy', '42');
+      shadow.setAttribute('rx', '8');
+      shadow.setAttribute('ry', '2.5');
       shadow.setAttribute('fill', 'rgba(0,0,0,0.22)');
       svg.appendChild(shadow);
 
       const body = document.createElementNS(NS, 'path');
       body.setAttribute(
         'd',
-        'M18 2C10.268 2 4 8.268 4 16c0 10 14 28 14 28S32 26 32 16C32 8.268 25.732 2 18 2z',
+        'M18 2C10.268 2 4 8.268 4 16c0 10 14 28 14 28S32 26 32 16C32 8.268 25.732 2 18 2z'
       );
-      body.setAttribute('fill',         '#00AB39');
-      body.setAttribute('stroke',       'white');
+      body.setAttribute('fill', '#00AB39');
+      body.setAttribute('stroke', 'white');
       body.setAttribute('stroke-width', '2');
       svg.appendChild(body);
 
       const dot = document.createElementNS(NS, 'circle');
-      dot.setAttribute('cx', '18'); dot.setAttribute('cy', '16');
-      dot.setAttribute('r',  '5.5');
+      dot.setAttribute('cx', '18');
+      dot.setAttribute('cy', '16');
+      dot.setAttribute('r', '5.5');
       dot.setAttribute('fill', 'white');
       svg.appendChild(dot);
 
@@ -235,13 +232,9 @@ const uid = `ml-${Math.random().toString(36).slice(2, 9)}`;
         wrap.appendChild(sub);
       }
 
-      const popup = new maplibregl.Popup({ offset: 38, closeButton: false })
-        .setDOMContent(wrap);
+      const popup = new maplibregl.Popup({ offset: 38, closeButton: false }).setDOMContent(wrap);
 
-      new maplibregl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .setPopup(popup)
-        .addTo(map);
+      new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).setPopup(popup).addTo(map);
 
       // Open popup automatically once the style has loaded
       map.on('load', () => popup.addTo(map));

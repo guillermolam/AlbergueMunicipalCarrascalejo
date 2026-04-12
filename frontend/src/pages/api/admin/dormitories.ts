@@ -33,14 +33,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonError('Invalid JSON body');
   }
 
   const { name, roomType, bedsCount, active, notes } = body as {
-    name?: string; roomType?: string; bedsCount?: number;
-    active?: boolean; notes?: string;
+    name?: string;
+    roomType?: string;
+    bedsCount?: number;
+    active?: boolean;
+    notes?: string;
   };
 
   if (!name?.trim()) return jsonError('name is required');
@@ -50,11 +53,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const inserted = await db(d1)
       .insert(dormitories)
       .values({
-        name:      name.trim(),
-        roomType:  (roomType ?? 'dormitory') as 'dormitory' | 'private',
+        name: name.trim(),
+        roomType: (roomType ?? 'dormitory') as 'dormitory' | 'private',
         bedsCount: bedsCount,
-        active:    active === false ? 0 : 1,
-        notes:     notes ?? null,
+        active: active === false ? 0 : 1,
+        notes: notes ?? null,
         updatedAt: sql`(datetime('now'))` as unknown as string,
       })
       .returning();

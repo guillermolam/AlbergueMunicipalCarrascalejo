@@ -32,7 +32,8 @@
 
 /* Wobble — continuous gentle rocking on logo, heart, stat boxes, buttons */
 @keyframes wobble {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) rotateZ(0deg);
   }
   25% {
@@ -45,7 +46,8 @@
 
 /* Pulse glow — stat values and green dots */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -57,7 +59,8 @@
 
 /* Pulse dot — small indicator dots pulse with shadow ring */
 @keyframes pulse-dot {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
     box-shadow: 0 0 0 0 rgba(0, 171, 57, 0.4);
@@ -71,7 +74,8 @@
 
 /* Float — floating particles and decorative elements */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -129,7 +133,8 @@
 
 /* Background SVG circle drift — slow ambient movement */
 @keyframes bg-drift {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1) rotate(0deg);
   }
   33% {
@@ -191,15 +196,26 @@
 
 /* Bounce in — element appears with spring bounce and slight rotation */
 @keyframes bounce-in {
-  0%   { transform: scale(0.5) rotateZ(-5deg); opacity: 0; }
-  40%  { transform: scale(1.1) rotateZ(2deg);  opacity: 1; }
-  70%  { transform: scale(0.95) rotateZ(-1deg); }
-  100% { transform: scale(1) rotateZ(0deg); }
+  0% {
+    transform: scale(0.5) rotateZ(-5deg);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.1) rotateZ(2deg);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(0.95) rotateZ(-1deg);
+  }
+  100% {
+    transform: scale(1) rotateZ(0deg);
+  }
 }
 
 /* Heartbeat — for the heart icon */
 @keyframes heartbeat {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translateY(0);
   }
   14% {
@@ -218,11 +234,22 @@
 
 /* CTA rock — subtle idle rocking for call-to-action buttons */
 @keyframes cta-rock {
-  0%, 100% { transform: rotate(0deg) translateY(0); }
-  20%       { transform: rotate(-1deg) translateY(-1px); }
-  40%       { transform: rotate(1deg) translateY(0); }
-  60%       { transform: rotate(-0.5deg) translateY(-1px); }
-  80%       { transform: rotate(0.5deg) translateY(0); }
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  20% {
+    transform: rotate(-1deg) translateY(-1px);
+  }
+  40% {
+    transform: rotate(1deg) translateY(0);
+  }
+  60% {
+    transform: rotate(-0.5deg) translateY(-1px);
+  }
+  80% {
+    transform: rotate(0.5deg) translateY(0);
+  }
 }
 
 /* Wave underline — wave SVG underline animates in */
@@ -275,20 +302,38 @@
 }
 
 /* Stagger children of .fade-in */
-.fade-in > *:nth-child(1) { animation-delay: 0ms; }
-.fade-in > *:nth-child(2) { animation-delay: 80ms; }
-.fade-in > *:nth-child(3) { animation-delay: 160ms; }
-.fade-in > *:nth-child(4) { animation-delay: 240ms; }
-.fade-in > *:nth-child(5) { animation-delay: 320ms; }
-.fade-in > *:nth-child(6) { animation-delay: 400ms; }
-.fade-in > *:nth-child(7) { animation-delay: 480ms; }
-.fade-in > *:nth-child(8) { animation-delay: 560ms; }
+.fade-in > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.fade-in > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+.fade-in > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+.fade-in > *:nth-child(4) {
+  animation-delay: 240ms;
+}
+.fade-in > *:nth-child(5) {
+  animation-delay: 320ms;
+}
+.fade-in > *:nth-child(6) {
+  animation-delay: 400ms;
+}
+.fade-in > *:nth-child(7) {
+  animation-delay: 480ms;
+}
+.fade-in > *:nth-child(8) {
+  animation-delay: 560ms;
+}
 
 /* Fade in up — initial hidden state; JS adds .in-view */
 .fade-in-up {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .fade-in-up.in-view {
@@ -318,7 +363,9 @@
 .reveal {
   opacity: 0;
   transform: translateY(32px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
 }
 
 .reveal.visible {
@@ -330,7 +377,9 @@
 .reveal-left {
   opacity: 0;
   transform: translateX(-32px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
 }
 
 .reveal-left.visible {
@@ -342,7 +391,9 @@
 .reveal-right {
   opacity: 0;
   transform: translateX(32px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
 }
 
 .reveal-right.visible {
@@ -354,7 +405,9 @@
 .reveal-section {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 .reveal-section.visible,
 .reveal-section.revealed {
@@ -362,17 +415,41 @@
   transform: translateY(0);
 }
 /* Stagger via --delay CSS variable */
-.reveal-section[style*="--delay"] {
+.reveal-section[style*='--delay'] {
   transition-delay: var(--delay, 0s);
 }
 
 /* Stagger delays for reveal groups */
-.reveal:nth-child(1), .reveal-left:nth-child(1), .reveal-right:nth-child(1) { transition-delay: 0ms; }
-.reveal:nth-child(2), .reveal-left:nth-child(2), .reveal-right:nth-child(2) { transition-delay: 80ms; }
-.reveal:nth-child(3), .reveal-left:nth-child(3), .reveal-right:nth-child(3) { transition-delay: 160ms; }
-.reveal:nth-child(4), .reveal-left:nth-child(4), .reveal-right:nth-child(4) { transition-delay: 240ms; }
-.reveal:nth-child(5), .reveal-left:nth-child(5), .reveal-right:nth-child(5) { transition-delay: 320ms; }
-.reveal:nth-child(6), .reveal-left:nth-child(6), .reveal-right:nth-child(6) { transition-delay: 400ms; }
+.reveal:nth-child(1),
+.reveal-left:nth-child(1),
+.reveal-right:nth-child(1) {
+  transition-delay: 0ms;
+}
+.reveal:nth-child(2),
+.reveal-left:nth-child(2),
+.reveal-right:nth-child(2) {
+  transition-delay: 80ms;
+}
+.reveal:nth-child(3),
+.reveal-left:nth-child(3),
+.reveal-right:nth-child(3) {
+  transition-delay: 160ms;
+}
+.reveal:nth-child(4),
+.reveal-left:nth-child(4),
+.reveal-right:nth-child(4) {
+  transition-delay: 240ms;
+}
+.reveal:nth-child(5),
+.reveal-left:nth-child(5),
+.reveal-right:nth-child(5) {
+  transition-delay: 320ms;
+}
+.reveal:nth-child(6),
+.reveal-left:nth-child(6),
+.reveal-right:nth-child(6) {
+  transition-delay: 400ms;
+}
 
 /* ==========================================================================
    FLOATING PARTICLES
@@ -384,13 +461,27 @@
 }
 
 /* Staggered delays via nth-child */
-.float-particle:nth-child(2n)  { animation-delay: 1s; }
-.float-particle:nth-child(3n)  { animation-delay: 2s; }
-.float-particle:nth-child(4n)  { animation-delay: 0.5s; }
-.float-particle:nth-child(5n)  { animation-delay: 1.5s; }
-.float-particle:nth-child(6n)  { animation-delay: 2.5s; }
-.float-particle:nth-child(7n)  { animation-delay: 0.8s; }
-.float-particle:nth-child(8n)  { animation-delay: 1.8s; }
+.float-particle:nth-child(2n) {
+  animation-delay: 1s;
+}
+.float-particle:nth-child(3n) {
+  animation-delay: 2s;
+}
+.float-particle:nth-child(4n) {
+  animation-delay: 0.5s;
+}
+.float-particle:nth-child(5n) {
+  animation-delay: 1.5s;
+}
+.float-particle:nth-child(6n) {
+  animation-delay: 2.5s;
+}
+.float-particle:nth-child(7n) {
+  animation-delay: 0.8s;
+}
+.float-particle:nth-child(8n) {
+  animation-delay: 1.8s;
+}
 
 /* ==========================================================================
    PULSING DOT — Green indicator
@@ -399,7 +490,7 @@
 .pulse-dot {
   width: 8px;
   height: 8px;
-  background: #00AB39;
+  background: #00ab39;
   border-radius: 50%;
   animation: pulse-dot 2s ease-in-out infinite;
   position: absolute;
@@ -414,7 +505,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: #00AB39;
+  background: #00ab39;
   border-radius: 50%;
   animation: pulse-dot 2s ease-in-out infinite;
   flex-shrink: 0;
@@ -444,28 +535,28 @@
 .bg-pattern circle:nth-child(1) {
   animation-duration: 22s;
   animation-delay: 0s;
-  fill: #00AB39;
+  fill: #00ab39;
 }
 
 .bg-pattern .bg-circle:nth-child(2),
 .bg-pattern circle:nth-child(2) {
   animation-duration: 26s;
   animation-delay: -5s;
-  fill: #00AB39;
+  fill: #00ab39;
 }
 
 .bg-pattern .bg-circle:nth-child(3),
 .bg-pattern circle:nth-child(3) {
   animation-duration: 30s;
   animation-delay: -10s;
-  fill: #00AB39;
+  fill: #00ab39;
 }
 
 .bg-pattern .bg-circle:nth-child(4),
 .bg-pattern circle:nth-child(4) {
   animation-duration: 24s;
   animation-delay: -3s;
-  fill: #EAC102;
+  fill: #eac102;
   opacity: 0.07;
 }
 
@@ -473,7 +564,7 @@
 .bg-pattern circle:nth-child(5) {
   animation-duration: 28s;
   animation-delay: -7s;
-  fill: #EAC102;
+  fill: #eac102;
   opacity: 0.07;
 }
 
@@ -481,7 +572,7 @@
 .bg-pattern circle:nth-child(6) {
   animation-duration: 32s;
   animation-delay: -14s;
-  fill: #ED1C24;
+  fill: #ed1c24;
   opacity: 0.05;
 }
 
@@ -489,7 +580,7 @@
 .bg-pattern circle:nth-child(7) {
   animation-duration: 20s;
   animation-delay: -2s;
-  fill: #0071BC;
+  fill: #0071bc;
   opacity: 0.05;
 }
 
@@ -504,18 +595,20 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.85rem 2rem;
-  font-family: "Cabin Sketch", cursive;
+  font-family: 'Cabin Sketch', cursive;
   font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #FFFFFF;
+  color: #ffffff;
   background: transparent;
   border: none;
   cursor: pointer;
   text-decoration: none;
   animation: wobble 4s ease-in-out infinite;
-  transition: transform 200ms ease, filter 200ms ease;
+  transition:
+    transform 200ms ease,
+    filter 200ms ease;
   overflow: visible;
 }
 
@@ -537,7 +630,7 @@
 }
 
 .sketchy-btn svg rect.btn-fill {
-  fill: #00AB39;
+  fill: #00ab39;
   rx: 10;
   stroke: #006b24;
   stroke-width: 2;
@@ -603,13 +696,13 @@
 /* Gold variant */
 .sketchy-btn-gold svg rect.btn-fill,
 .sketchy-btn--gold svg rect.btn-fill {
-  fill: #EAC102;
+  fill: #eac102;
   stroke: #b89700;
 }
 
 .sketchy-btn-gold,
 .sketchy-btn--gold {
-  color: #1A1A1A;
+  color: #1a1a1a;
 }
 
 .sketchy-btn-gold:hover svg rect.btn-fill,
@@ -621,27 +714,27 @@
 .sketchy-btn-outline svg rect.btn-fill,
 .sketchy-btn--outline svg rect.btn-fill {
   fill: transparent;
-  stroke: #00AB39;
+  stroke: #00ab39;
 }
 
 .sketchy-btn-outline,
 .sketchy-btn--outline {
-  color: #00AB39;
+  color: #00ab39;
 }
 
 .sketchy-btn-outline:hover,
 .sketchy-btn--outline:hover {
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .sketchy-btn-outline:hover svg rect.btn-fill,
 .sketchy-btn--outline:hover svg rect.btn-fill {
-  fill: #00AB39;
+  fill: #00ab39;
 }
 
 /* Red variant */
 .sketchy-btn--red svg rect.btn-fill {
-  fill: #ED1C24;
+  fill: #ed1c24;
   stroke: #b81620;
 }
 
@@ -664,8 +757,10 @@
   position: relative;
   border-radius: 12px;
   overflow: visible;
-  background: #FFFFFF;
-  transition: transform 300ms ease, box-shadow 300ms ease;
+  background: #ffffff;
+  transition:
+    transform 300ms ease,
+    box-shadow 300ms ease;
 }
 
 .sketchy-card:hover {
@@ -694,7 +789,7 @@
 .sketchy-card > svg.card-border rect.card-stroke {
   fill: none;
   rx: 10;
-  stroke: #1A1A1A;
+  stroke: #1a1a1a;
   stroke-width: 2;
   filter: url(#sketchy-filter);
   transition: stroke 200ms ease;
@@ -703,7 +798,7 @@
 .sketchy-card > svg.card-border rect.card-stroke-inner {
   fill: none;
   rx: 10;
-  stroke: #1A1A1A;
+  stroke: #1a1a1a;
   stroke-width: 1;
   opacity: 0.3;
   filter: url(#sketchy-filter);
@@ -725,16 +820,16 @@
 
 /* Card typography */
 .sketchy-card .card-title {
-  font-family: "Shadows Into Light", cursive;
+  font-family: 'Shadows Into Light', cursive;
   font-size: 1.25rem;
-  color: #1A1A1A;
+  color: #1a1a1a;
   margin-bottom: 0.5rem;
 }
 
 .sketchy-card .card-text {
-  font-family: "Patrick Hand", cursive;
+  font-family: 'Patrick Hand', cursive;
   font-size: 1rem;
-  color: #1A1A1A;
+  color: #1a1a1a;
   line-height: 1.6;
 }
 
@@ -750,9 +845,9 @@
   padding: 0.375rem 1rem;
   border-radius: 9999px;
   cursor: pointer;
-  font-family: "Patrick Hand", cursive;
+  font-family: 'Patrick Hand', cursive;
   font-size: 0.875rem;
-  color: #00AB39;
+  color: #00ab39;
   background: transparent;
   transition: all 200ms ease;
 }
@@ -773,7 +868,7 @@
 .sketchy-pill svg rect {
   fill: none;
   rx: 20;
-  stroke: #00AB39;
+  stroke: #00ab39;
   stroke-width: 2;
   filter: url(#sketchy-filter);
 }
@@ -799,7 +894,9 @@
   animation: wobble 3s ease-in-out infinite;
   cursor: default;
   border-radius: 12px;
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .stat-box:hover {
@@ -828,9 +925,9 @@
 
 .stat-box > svg.stat-border rect,
 .stat-box > svg.stat-border rect.stat-stroke {
-  fill: #FFFFFF;
+  fill: #ffffff;
   rx: 10;
-  stroke: #00AB39;
+  stroke: #00ab39;
   stroke-width: 2.5;
   stroke-dasharray: 400;
   stroke-dashoffset: 0;
@@ -842,10 +939,10 @@
 .stat-value {
   position: relative;
   z-index: 2;
-  font-family: "Shadows Into Light", cursive;
+  font-family: 'Shadows Into Light', cursive;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #00AB39;
+  color: #00ab39;
   line-height: 1;
   animation: pulse-glow 3s ease-in-out infinite;
 }
@@ -854,7 +951,7 @@
 .stat-label {
   position: relative;
   z-index: 2;
-  font-family: "Cabin Sketch", cursive;
+  font-family: 'Cabin Sketch', cursive;
   font-size: 0.75rem;
   text-transform: uppercase;
   color: #6b7280;
@@ -867,7 +964,7 @@
 .stat-sublabel {
   position: relative;
   z-index: 2;
-  font-family: "Patrick Hand", cursive;
+  font-family: 'Patrick Hand', cursive;
   font-size: 0.75rem;
   color: #9ca3af;
   margin-top: 0.125rem;
@@ -882,10 +979,18 @@
 }
 
 /* Stagger wobble delays for multiple stat boxes */
-.stat-box:nth-child(1) { animation-delay: 0s; }
-.stat-box:nth-child(2) { animation-delay: 0.4s; }
-.stat-box:nth-child(3) { animation-delay: 0.8s; }
-.stat-box:nth-child(4) { animation-delay: 1.2s; }
+.stat-box:nth-child(1) {
+  animation-delay: 0s;
+}
+.stat-box:nth-child(2) {
+  animation-delay: 0.4s;
+}
+.stat-box:nth-child(3) {
+  animation-delay: 0.8s;
+}
+.stat-box:nth-child(4) {
+  animation-delay: 1.2s;
+}
 
 /* ==========================================================================
    WAVE UNDERLINE — SVG wavy underline decoration
@@ -903,24 +1008,28 @@
   left: 0;
   right: 0;
   height: 8px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%2300AB39' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%2300AB39' stroke-width='2' fill='none'/%3E%3C/svg%3E")
+    bottom center / 120px 8px repeat-x;
   opacity: 0.85;
   pointer-events: none;
 }
 
 /* Gold wave variant */
 .wave-underline--gold::after {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23EAC102' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23EAC102' stroke-width='2' fill='none'/%3E%3C/svg%3E")
+    bottom center / 120px 8px repeat-x;
 }
 
 /* Red wave variant */
 .wave-underline--red::after {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23ED1C24' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23ED1C24' stroke-width='2' fill='none'/%3E%3C/svg%3E")
+    bottom center / 120px 8px repeat-x;
 }
 
 /* White wave variant (for dark backgrounds) */
 .wave-underline--white::after {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23FFFFFF' stroke-width='2' fill='none'/%3E%3C/svg%3E") bottom center / 120px 8px repeat-x;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0,4 Q5,1 10,4 T20,4 T30,4 T40,4 T50,4 T60,4 T70,4 T80,4 T90,4 T100,4 T110,4 T120,4' stroke='%23FFFFFF' stroke-width='2' fill='none'/%3E%3C/svg%3E")
+    bottom center / 120px 8px repeat-x;
 }
 
 /* ==========================================================================
@@ -958,7 +1067,7 @@
 .parallax-frame .carousel-card > svg.carousel-border rect {
   fill: none;
   rx: 20;
-  stroke: #00AB39;
+  stroke: #00ab39;
   stroke-width: 2.5;
   filter: url(#sketchy-filter);
 }
@@ -972,7 +1081,7 @@
 }
 
 .parallax-frame .carousel-card .carousel-card-title {
-  font-family: "Shadows Into Light", cursive;
+  font-family: 'Shadows Into Light', cursive;
   font-size: 1.375rem;
 }
 
@@ -982,9 +1091,18 @@
   transform-origin: center center;
 }
 
-.carousel-sparkle:nth-child(2) { animation-delay: -1s; animation-duration: 3s; }
-.carousel-sparkle:nth-child(3) { animation-delay: -2s; animation-duration: 5s; }
-.carousel-sparkle:nth-child(4) { animation-delay: -3s; animation-duration: 4.5s; }
+.carousel-sparkle:nth-child(2) {
+  animation-delay: -1s;
+  animation-duration: 3s;
+}
+.carousel-sparkle:nth-child(3) {
+  animation-delay: -2s;
+  animation-duration: 5s;
+}
+.carousel-sparkle:nth-child(4) {
+  animation-delay: -3s;
+  animation-duration: 4.5s;
+}
 
 /* ==========================================================================
    NAVIGATION LINKS — Underline hover effect
@@ -992,8 +1110,8 @@
 
 .nav-link {
   position: relative;
-  color: #1A1A1A;
-  font-family: "Patrick Hand", cursive;
+  color: #1a1a1a;
+  font-family: 'Patrick Hand', cursive;
   font-size: 0.95rem;
   text-decoration: none;
   padding: 0.25rem 0;
@@ -1007,12 +1125,12 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: #00AB39;
+  background: #00ab39;
   transition: width 200ms ease;
 }
 
 .nav-link:hover {
-  color: #00AB39;
+  color: #00ab39;
   text-decoration: none;
 }
 
@@ -1021,7 +1139,7 @@
 }
 
 .nav-link.active {
-  color: #00AB39;
+  color: #00ab39;
 }
 
 .nav-link.active::after {
@@ -1058,24 +1176,27 @@
 .input-sketchy {
   width: 100%;
   padding: 0.75rem 1rem;
-  font-family: "Patrick Hand", cursive;
+  font-family: 'Patrick Hand', cursive;
   font-size: 1rem;
-  color: #1A1A1A;
-  background: #FFFFFF;
+  color: #1a1a1a;
+  background: #ffffff;
   border: 2px solid #d1d5db;
   border-radius: 10px;
   outline: none;
-  transition: border-color 200ms ease, box-shadow 200ms ease, transform 150ms ease;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 150ms ease;
   filter: url(#sketchy-filter-subtle);
 }
 
 .input-sketchy::placeholder {
   color: #9ca3af;
-  font-family: "Patrick Hand", cursive;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .input-sketchy:focus {
-  border-color: #00AB39;
+  border-color: #00ab39;
   box-shadow: 0 0 0 3px rgba(0, 171, 57, 0.15);
   transform: translateY(-1px);
 }
@@ -1109,7 +1230,7 @@ textarea.input-sketchy {
 
 .carousel-dot.active {
   transform: scale(1.4);
-  background: #00AB39;
+  background: #00ab39;
 }
 
 .carousel-dot:hover:not(.active) {
@@ -1125,7 +1246,10 @@ textarea.input-sketchy {
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px);
-  transition: opacity 300ms ease, transform 300ms ease, background 200ms ease;
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease,
+    background 200ms ease;
 }
 
 .back-to-top.visible {
@@ -1161,9 +1285,9 @@ textarea.input-sketchy {
    ========================================================================== */
 
 .site-title {
-  font-family: "Shadows Into Light", cursive;
+  font-family: 'Shadows Into Light', cursive;
   font-size: 2.5rem;
-  color: #00AB39;
+  color: #00ab39;
   animation: wobble 4s ease-in-out infinite;
   display: inline-block;
   transform-origin: center bottom;
@@ -1186,9 +1310,9 @@ textarea.input-sketchy {
    ========================================================================== */
 
 .section-subtitle {
-  font-family: "Patrick Hand", cursive;
+  font-family: 'Patrick Hand', cursive;
   font-size: 1.125rem;
-  color: #1A1A1A;
+  color: #1a1a1a;
   opacity: 0.85;
 }
 
@@ -1197,7 +1321,7 @@ textarea.input-sketchy {
    ========================================================================== */
 
 .peregrino-label {
-  font-family: "Cabin Sketch", cursive;
+  font-family: 'Cabin Sketch', cursive;
   font-size: 1.25rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1212,7 +1336,7 @@ textarea.input-sketchy {
 .heart-wobble {
   display: inline-block;
   animation: heartbeat 1.5s ease-in-out infinite;
-  color: #ED1C24;
+  color: #ed1c24;
   transform-origin: center center;
 }
 
@@ -1222,28 +1346,28 @@ textarea.input-sketchy {
 
 .footer {
   background: #004d1f;
-  color: #FFFFFF;
+  color: #ffffff;
   padding: 2rem 1rem;
 }
 
 .footer a {
-  color: #E8F5E9;
+  color: #e8f5e9;
   transition: color 200ms ease;
 }
 
 .footer a:hover {
-  color: #EAC102;
+  color: #eac102;
   text-decoration: none;
 }
 
 .footer .footer-title {
-  font-family: "Shadows Into Light", cursive;
+  font-family: 'Shadows Into Light', cursive;
   font-size: 1.25rem;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .footer .footer-text {
-  font-family: "Patrick Hand", cursive;
+  font-family: 'Patrick Hand', cursive;
   font-size: 0.95rem;
   opacity: 0.85;
 }
@@ -1263,8 +1387,20 @@ textarea.input-sketchy {
 
 .sketchy-bg {
   background-image:
-    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 11px),
-    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 11px);
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 0, 0, 0.02) 10px,
+      rgba(0, 0, 0, 0.02) 11px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 0, 0, 0.02) 10px,
+      rgba(0, 0, 0, 0.02) 11px
+    );
 }
 
 /* Paper texture overlay */
@@ -1348,7 +1484,7 @@ textarea.input-sketchy {
   position: absolute;
   inset: -2px;
   pointer-events: none;
-  border: 2px solid #00AB39;
+  border: 2px solid #00ab39;
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   opacity: 0.18;
 }
@@ -1368,7 +1504,7 @@ textarea.input-sketchy {
   gap: 0.25rem;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  font-family: "Cabin Sketch", cursive;
+  font-family: 'Cabin Sketch', cursive;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1376,7 +1512,7 @@ textarea.input-sketchy {
 }
 
 .badge-green {
-  background: #E8F5E9;
+  background: #e8f5e9;
   color: #006b24;
 }
 
@@ -1387,12 +1523,12 @@ textarea.input-sketchy {
 
 .badge-red {
   background: #fdecea;
-  color: #ED1C24;
+  color: #ed1c24;
 }
 
 .badge-blue {
   background: #e6f2fa;
-  color: #0071BC;
+  color: #0071bc;
 }
 
 /* ==========================================================================
@@ -1406,7 +1542,7 @@ textarea.input-sketchy {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 12px;
-  font-family: "Cabin Sketch", cursive;
+  font-family: 'Cabin Sketch', cursive;
   font-weight: 700;
   font-size: 0.875rem;
   text-transform: uppercase;
@@ -1418,8 +1554,8 @@ textarea.input-sketchy {
 }
 
 .btn-primary {
-  background: #00AB39;
-  color: #FFFFFF;
+  background: #00ab39;
+  color: #ffffff;
   box-shadow: 0 4px 12px rgba(0, 171, 57, 0.3);
 }
 
@@ -1431,8 +1567,8 @@ textarea.input-sketchy {
 }
 
 .btn-secondary {
-  background: #EAC102;
-  color: #1A1A1A;
+  background: #eac102;
+  color: #1a1a1a;
   box-shadow: 0 4px 12px rgba(234, 193, 2, 0.3);
 }
 
@@ -1445,13 +1581,13 @@ textarea.input-sketchy {
 
 .btn-outline {
   background: transparent;
-  border: 2px solid #00AB39;
-  color: #00AB39;
+  border: 2px solid #00ab39;
+  color: #00ab39;
 }
 
 .btn-outline:hover {
-  background: #00AB39;
-  color: #FFFFFF;
+  background: #00ab39;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -1461,7 +1597,7 @@ textarea.input-sketchy {
 }
 
 .btn-ghost:hover {
-  background: #E8F5E9;
+  background: #e8f5e9;
   color: #004d1f;
   text-decoration: none;
 }
@@ -1486,9 +1622,11 @@ textarea.input-sketchy {
    ========================================================================== */
 
 .card {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
   border: 1px solid #e2e8f0;
   transition: all 200ms ease;
@@ -1496,7 +1634,9 @@ textarea.input-sketchy {
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 .card-compact {
@@ -1504,7 +1644,9 @@ textarea.input-sketchy {
 }
 
 .card-elevated {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 /* ==========================================================================
@@ -1554,7 +1696,8 @@ textarea.input-sketchy {
 @media (max-width: 640px) {
   /* Reduce wobble amplitude on mobile */
   @keyframes wobble {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0) rotateZ(0deg);
     }
     25% {
@@ -1567,7 +1710,8 @@ textarea.input-sketchy {
 
   /* Reduce float range on mobile */
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0);
     }
     50% {
@@ -1769,7 +1913,7 @@ textarea.input-sketchy {
   padding: 0.875rem 1.25rem;
   font-family: 'Patrick Hand', cursive;
   font-size: 0.95rem;
-  color: #1A1A1A;
+  color: #1a1a1a;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   pointer-events: auto;
   display: flex;
@@ -1779,7 +1923,9 @@ textarea.input-sketchy {
   max-width: 380px;
   transform: translateY(100%);
   opacity: 0;
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.3s ease;
 }
 
 .toast.show {
@@ -1790,7 +1936,9 @@ textarea.input-sketchy {
 .toast.hide {
   transform: translateY(40%);
   opacity: 0;
-  transition: transform 0.3s ease, opacity 0.2s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.2s ease;
 }
 
 .toast-icon {
@@ -1821,15 +1969,23 @@ textarea.input-sketchy {
   color: #9ca3af;
   font-size: 1rem;
   line-height: 1;
-  transition: color 200ms ease, transform 200ms ease;
+  transition:
+    color 200ms ease,
+    transform 200ms ease;
 }
 
 .toast-close:hover {
-  color: #ED1C24;
+  color: #ed1c24;
   transform: rotate(90deg);
 }
 
 /* Toast type variants */
-.toast--error   { border-color: rgba(237, 28, 36, 0.3); }
-.toast--warning { border-color: rgba(234, 193, 2, 0.4); }
-.toast--info    { border-color: rgba(0, 113, 188, 0.3); }
+.toast--error {
+  border-color: rgba(237, 28, 36, 0.3);
+}
+.toast--warning {
+  border-color: rgba(234, 193, 2, 0.4);
+}
+.toast--info {
+  border-color: rgba(0, 113, 188, 0.3);
+}

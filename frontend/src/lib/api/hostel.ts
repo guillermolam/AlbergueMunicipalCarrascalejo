@@ -22,13 +22,17 @@ import type {
 export async function getServices(token?: string): Promise<HostelServiceDTO[]> {
   const result = await serverFetch<unknown[]>('/api/accommodation/services', {}, token);
   if (!result.ok) return [];
-  return (Array.isArray(result.data) ? result.data : []).map(s =>
+  return (Array.isArray(result.data) ? result.data : []).map((s) =>
     mapService(s as Record<string, unknown>)
   );
 }
 
 export async function getSchedule(token?: string): Promise<HostelScheduleDTO> {
-  const result = await serverFetch<Record<string, unknown>>('/api/accommodation/schedule', {}, token);
+  const result = await serverFetch<Record<string, unknown>>(
+    '/api/accommodation/schedule',
+    {},
+    token
+  );
   if (!result.ok) return DEFAULT_SCHEDULE;
   return mapSchedule(result.data);
 }
@@ -37,7 +41,11 @@ export async function getPricingRules(token?: string): Promise<PricingRuleDTO[]>
   const result = await serverFetch<unknown>('/api/pricing', {}, token);
   if (!result.ok) return [];
   const data = result.data as Record<string, unknown>;
-  const list = Array.isArray(data) ? data : Array.isArray(data?.pricing) ? data.pricing as unknown[] : [];
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.pricing)
+      ? (data.pricing as unknown[])
+      : [];
   return (list as Record<string, unknown>[]).map(mapPricingRule);
 }
 
@@ -48,7 +56,7 @@ export async function getEffectivePrice(
 ): Promise<number> {
   const rules = await getPricingRules(_token);
   const applicable = rules
-    .filter(r => r.roomType === roomType && r.effectiveDate <= checkIn)
+    .filter((r) => r.roomType === roomType && r.effectiveDate <= checkIn)
     .sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate));
   if (!applicable.length) return 15; // fallback default
   const rule = applicable[0];
@@ -58,20 +66,28 @@ export async function getEffectivePrice(
 export async function getEmergencyContacts(token?: string): Promise<EmergencyContactDTO[]> {
   const result = await serverFetch<unknown[]>('/api/info/emergency-contacts', {}, token);
   if (!result.ok) return [];
-  return (Array.isArray(result.data) ? result.data : []).map(c =>
+  return (Array.isArray(result.data) ? result.data : []).map((c) =>
     mapEmergencyContact(c as Record<string, unknown>)
   );
 }
 
 export async function getHostelContact(token?: string): Promise<HostelContactDTO | null> {
-  const result = await serverFetch<Record<string, unknown>>('/api/info/carrascalejo-info', {}, token);
+  const result = await serverFetch<Record<string, unknown>>(
+    '/api/info/carrascalejo-info',
+    {},
+    token
+  );
   if (!result.ok) return null;
   const raw = result.data?.contact ?? result.data;
   return mapContact(raw as Record<string, unknown>);
 }
 
 export async function getWifiConfig(userToken: string): Promise<HostelWifiDTO | null> {
-  const result = await serverFetch<Record<string, unknown>>('/api/accommodation/wifi', {}, userToken);
+  const result = await serverFetch<Record<string, unknown>>(
+    '/api/accommodation/wifi',
+    {},
+    userToken
+  );
   if (!result.ok) return null;
   return {
     ssid: String(result.data.ssid ?? ''),
@@ -112,12 +128,7 @@ export async function getHostelInfo(token?: string): Promise<HostelConfig | null
 }
 
 export async function getDashboardStats(adminToken: string): Promise<DashboardStatsDTO> {
-  const result = await serverFetch<Record<string, unknown>>(
-    '/api/dashboard/stats',
-    {},
-    adminToken
-  );
+  const result = await serverFetch<Record<string, unknown>>('/api/dashboard/stats', {}, adminToken);
   if (!result.ok) return DEFAULT_STATS;
   return mapDashboardStats(result.data);
 }
-

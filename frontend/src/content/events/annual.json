@@ -1,6 +1,12 @@
 [
-  {"id": "easter",    "month": "Abr",  "monthNum": 4,  "name": "Semana Santa",          "emoji": "✝️"},
-  {"id": "jamon",     "month": "Jun",  "monthNum": 6,  "name": "Feria del Cerdo Iberico","emoji": "🐷"},
-  {"id": "fiesta",    "month": "Ago",  "monthNum": 8,  "name": "Fiesta Mayor",           "emoji": "🎊"},
-  {"id": "camino",    "month": "Oct",  "monthNum": 10, "name": "Jornadas del Camino",    "emoji": "🚶"}
+  { "id": "easter", "month": "Abr", "monthNum": 4, "name": "Semana Santa", "emoji": "✝️" },
+  {
+    "id": "jamon",
+    "month": "Jun",
+    "monthNum": 6,
+    "name": "Feria del Cerdo Iberico",
+    "emoji": "🐷"
+  },
+  { "id": "fiesta", "month": "Ago", "monthNum": 8, "name": "Fiesta Mayor", "emoji": "🎊" },
+  { "id": "camino", "month": "Oct", "monthNum": 10, "name": "Jornadas del Camino", "emoji": "🚶" }
 ]

@@ -10,7 +10,7 @@ const defaultDest = role === 'admin' ? '/admin' : '/dashboard';
 const from = Astro.url.searchParams.get('from') ?? defaultDest;
 if (userId) {
   // Upgrade generic /dashboard redirect to /admin for admins
-  const dest = (from === '/dashboard' && role === 'admin') ? '/admin' : from;
+  const dest = from === '/dashboard' && role === 'admin' ? '/admin' : from;
   return Astro.redirect(dest, 302);
 }
 ---
@@ -19,26 +19,33 @@ if (userId) {
   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <defs>
       <filter id="sketchy-filter">
-        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="noise"
+        ></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"></feDisplacementMap>
       </filter>
     </defs>
   </svg>
 
   <section class="auth-page">
     <div class="auth-container reveal-section">
-
       <!-- Hero header -->
       <div class="auth-top">
         <div class="auth-heart wobble-heart" aria-hidden="true">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            <path
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            ></path>
           </svg>
         </div>
         <h1 class="auth-title">Bienvenido</h1>
         <div class="auth-title-wave" aria-hidden="true">
           <svg viewBox="0 0 220 14" preserveAspectRatio="none">
-            <path d="M0,7 Q18,0 36,7 T72,7 T108,7 T144,7 T180,7 T220,7" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"/>
+            <path
+              d="M0,7 Q18,0 36,7 T72,7 T108,7 T144,7 T180,7 T220,7"
+              fill="none"
+              stroke="var(--green)"
+              stroke-width="2.5"
+              stroke-linecap="round"></path>
           </svg>
         </div>
         <p class="auth-subtitle">Accede a tu cuenta de peregrino</p>
@@ -80,7 +87,6 @@ if (userId) {
           }}
         />
       </div>
-
     </div>
   </section>
 
@@ -103,24 +109,40 @@ if (userId) {
     }
 
     /* Hero header */
-    .auth-top { text-align: center; }
+    .auth-top {
+      text-align: center;
+    }
     .auth-heart {
-      width: 64px; height: 64px;
+      width: 64px;
+      height: 64px;
       background: var(--green);
       border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       margin: 0 auto 1rem;
-      box-shadow: 0 4px 20px rgba(0,171,57,0.35);
+      box-shadow: 0 4px 20px rgba(0, 171, 57, 0.35);
     }
-    .wobble-heart { animation: wobble-anim 3s ease-in-out infinite; }
+    .wobble-heart {
+      animation: wobble-anim 3s ease-in-out infinite;
+    }
     .auth-title {
       font-family: var(--font-display);
       font-size: 2.4rem;
       color: var(--black);
       margin: 0 0 0.15rem;
     }
-    .auth-title-wave { width: 180px; height: 14px; margin: 0 auto 0.5rem; }
-    .auth-subtitle { font-family: var(--font-hand); font-size: 1rem; color: #666; margin: 0; }
+    .auth-title-wave {
+      width: 180px;
+      height: 14px;
+      margin: 0 auto 0.5rem;
+    }
+    .auth-subtitle {
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      color: #666;
+      margin: 0;
+    }
 
     /* Clerk component wrapper */
     .clerk-wrapper {
@@ -138,7 +160,7 @@ if (userId) {
     :global(.clerk-card) {
       border-radius: 16px !important;
       border: 2.5px solid var(--black) !important;
-      box-shadow: 4px 6px 0 rgba(0,0,0,0.08) !important;
+      box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.08) !important;
       padding: 2rem !important;
       background: white !important;
       width: 100% !important;
@@ -153,7 +175,7 @@ if (userId) {
     :global(.clerk-social-btn) {
       border: 2px solid #e0e0e0 !important;
       border-radius: 12px !important;
-      font-family: "Cabin Sketch", cursive !important;
+      font-family: 'Cabin Sketch', cursive !important;
       font-weight: 700 !important;
       text-transform: uppercase !important;
       letter-spacing: 0.03em !important;
@@ -161,56 +183,85 @@ if (userId) {
     }
     :global(.clerk-social-btn:hover) {
       transform: translateY(-2px) !important;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
     }
     :global(.clerk-btn-primary) {
       background: var(--green) !important;
       border-radius: 12px !important;
-      font-family: "Cabin Sketch", cursive !important;
+      font-family: 'Cabin Sketch', cursive !important;
       font-weight: 700 !important;
       text-transform: uppercase !important;
       letter-spacing: 0.04em !important;
       font-size: 1rem !important;
     }
     :global(.clerk-divider-line) {
-      background: rgba(0,171,57,0.2) !important;
+      background: rgba(0, 171, 57, 0.2) !important;
     }
     :global(.clerk-divider-text) {
-      font-family: "Patrick Hand", cursive !important;
+      font-family: 'Patrick Hand', cursive !important;
       color: #999 !important;
       font-size: 0.82rem !important;
     }
     :global(.clerk-footer-link) {
       color: var(--green) !important;
-      font-family: "Patrick Hand", cursive !important;
+      font-family: 'Patrick Hand', cursive !important;
     }
 
     /* Animations */
     @keyframes wobble-anim {
-      0%, 100% { transform: rotate(0deg) scale(1); }
-      15% { transform: rotate(-8deg) scale(1.05); }
-      30% { transform: rotate(6deg) scale(1.03); }
-      45% { transform: rotate(-4deg) scale(1.01); }
-      60% { transform: rotate(3deg); }
+      0%,
+      100% {
+        transform: rotate(0deg) scale(1);
+      }
+      15% {
+        transform: rotate(-8deg) scale(1.05);
+      }
+      30% {
+        transform: rotate(6deg) scale(1.03);
+      }
+      45% {
+        transform: rotate(-4deg) scale(1.01);
+      }
+      60% {
+        transform: rotate(3deg);
+      }
     }
     @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .reveal-section {
-      opacity: 0; transform: translateY(24px);
-      transition: opacity 600ms ease, transform 600ms ease;
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        opacity 600ms ease,
+        transform 600ms ease;
     }
-    .reveal-section.revealed { opacity: 1; transform: translateY(0); }
+    .reveal-section.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 
   <script>
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('revealed'); observer.unobserve(e.target); }
-      });
-    }, { threshold: 0.05 });
-    document.querySelectorAll('.reveal-section').forEach(el => observer.observe(el));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('revealed');
+            observer.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+    document.querySelectorAll('.reveal-section').forEach((el) => observer.observe(el));
   </script>
 </Layout>

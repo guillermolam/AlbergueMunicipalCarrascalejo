@@ -44,7 +44,7 @@ export function mapPilgrimProfile(raw: Record<string, unknown>): PilgrimProfileD
     },
     badges: Array.isArray(raw.badges) ? (raw.badges as unknown[]).map(String) : [],
     vehicles: Array.isArray(raw.vehicles)
-      ? (raw.vehicles as Record<string, unknown>[]).map(v => ({
+      ? (raw.vehicles as Record<string, unknown>[]).map((v) => ({
           id: String(v.id ?? ''),
           type: String(v.type ?? ''),
           plate: String(v.plate ?? ''),
@@ -54,7 +54,7 @@ export function mapPilgrimProfile(raw: Record<string, unknown>): PilgrimProfileD
         }))
       : [],
     belongings: Array.isArray(raw.belongings)
-      ? (raw.belongings as Record<string, unknown>[]).map(b => ({
+      ? (raw.belongings as Record<string, unknown>[]).map((b) => ({
           id: String(b.id ?? ''),
           category: String(b.category ?? ''),
           name: String(b.name ?? ''),

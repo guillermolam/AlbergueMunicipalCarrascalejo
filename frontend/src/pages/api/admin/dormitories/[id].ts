@@ -41,7 +41,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return jsonError('Invalid JSON body');
   }
@@ -51,17 +51,20 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   };
 
   const { name, bedsCount, active, notes, roomType } = body as {
-    name?: string; bedsCount?: number; active?: boolean;
-    notes?: string | null; roomType?: string;
+    name?: string;
+    bedsCount?: number;
+    active?: boolean;
+    notes?: string | null;
+    roomType?: string;
   };
 
-  if (name      !== undefined) updates.name      = name.trim();
+  if (name !== undefined) updates.name = name.trim();
   if (bedsCount !== undefined) {
     if (bedsCount < 1) return jsonError('bedsCount must be ≥ 1');
     updates.bedsCount = bedsCount;
   }
-  if (active   !== undefined) updates.active   = active ? 1 : 0;
-  if (notes    !== undefined) updates.notes    = notes ?? null;
+  if (active !== undefined) updates.active = active ? 1 : 0;
+  if (notes !== undefined) updates.notes = notes ?? null;
   if (roomType !== undefined) updates.roomType = roomType as 'dormitory' | 'private';
 
   try {
@@ -90,10 +93,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   if (!d1) return jsonError('Database not available in local Vite dev — use wrangler dev', 503);
 
   try {
-    const rows = await db(d1)
-      .delete(dormitories)
-      .where(eq(dormitories.id, id))
-      .returning();
+    const rows = await db(d1).delete(dormitories).where(eq(dormitories.id, id)).returning();
 
     if (!rows.length) return jsonError('Dormitory not found', 404);
     return json({ deleted: true, id });

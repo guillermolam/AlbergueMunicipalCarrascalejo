@@ -68,8 +68,8 @@ export function getServerConfig(): ServerConfig {
     camino: {
       maxBookingDays: Number(serverEnv('CAMINO_MAX_BOOKING_DAYS') ?? 30),
       minBookingDays: Number(serverEnv('CAMINO_MIN_BOOKING_DAYS') ?? 1),
-      checkInTime:    serverEnv('CAMINO_CHECK_IN_TIME')    ?? '14:00',
-      checkOutTime:   serverEnv('CAMINO_CHECK_OUT_TIME')   ?? '11:00',
+      checkInTime: serverEnv('CAMINO_CHECK_IN_TIME') ?? '14:00',
+      checkOutTime: serverEnv('CAMINO_CHECK_OUT_TIME') ?? '11:00',
       maxGuestsPerRoom: Number(serverEnv('CAMINO_MAX_GUESTS_PER_ROOM') ?? 8),
       emergencyContact: serverEnv('CAMINO_EMERGENCY_CONTACT') ?? '+34-924-000-000',
     },
@@ -94,5 +94,5 @@ export function getEnvironment(): 'development' | 'staging' | 'production' {
   return 'development';
 }
 
-export const isProduction  = () => getEnvironment() === 'production';
+export const isProduction = () => getEnvironment() === 'production';
 export const isDevelopment = () => getEnvironment() === 'development';
