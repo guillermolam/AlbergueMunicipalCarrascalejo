@@ -1,4 +1,5 @@
 ---
+// LanguageSelectorIsland.astro - Language selector with search/autocomplete
 import { i18nStore, type Locale } from '@/stores/i18nStore';
 
 interface LanguageSelectorIslandProps {
@@ -10,53 +11,51 @@ interface LanguageSelectorIslandProps {
 interface Language {
   code: Locale;
   name: string;
+  native_name: string;
   flag: string;
+  is_active: boolean;
+  display_order: number;
 }
 
-// Fetch the 15 most-spoken Camino languages + all co-official Spanish languages
-// via the gateway island.  Alpine will dispatch the request and handle the
-// asynchronous response so we can keep the island fully SSR-compatible.
+// Fetch languages from language-service Worker
+// Falls back to hardcoded list if service unavailable
 const languages: Language[] = await (async () => {
   try {
-    // Fire-and-forget non-blocking call to our gateway
-    const res = await fetch('/api/gateway/camino-languages', {
+    const res = await fetch('/api/languages', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      keepalive: true,
     });
 
-    if (!res.ok) throw new Error(`Gateway error: ${res.status}`);
+    if (!res.ok) throw new Error(`Language service error: ${res.status}`);
 
-    // Gateway returns: [{code, name, flag}, ...]
     const data = await res.json();
-    return data;
+    return data.filter((lang: Language) => lang.is_active).sort((a: Language, b: Language) => a.display_order - b.display_order);
   } catch (error) {
-    console.warn('Failed to fetch languages from gateway:', error);
-    // Fallback: minimal safe set if gateway or API is unreachable
+    console.warn('Failed to fetch languages from service:', error);
+    // Fallback: Top 15 + Spanish regional
     return [
-      { code: 'es', name: 'Español', flag: '🇪🇸' },
-      { code: 'en', name: 'English', flag: '🇬🇧' },
-      { code: 'fr', name: 'Français', flag: '🇫🇷' },
-      { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-      { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-      { code: 'pt', name: 'Português', flag: '🇵🇹' },
-      { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
-      { code: 'pl', name: 'Polski', flag: '🇵🇱' },
-      { code: 'ko', name: '한국어', flag: '🇰🇷' },
-      { code: 'ja', name: '日本語', flag: '🇯🇵' },
-      { code: 'zh', name: '中文', flag: '🇨🇳' },
-      { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-      { code: 'cs', name: 'Čeština', flag: '🇨🇿' },
-      { code: 'sk', name: 'Slovenčina', flag: '🇸🇰' },
-      { code: 'hu', name: 'Magyar', flag: '🇭🇺' },
-      { code: 'ca', name: 'Català', flag: '🏴' },
-      { code: 'eu', name: 'Euskara', flag: '🏴' },
-      { code: 'gl', name: 'Galego', flag: '🏴' },
-      { code: 'oc', name: 'Occitan (Aranés)', flag: '🏴' },
-      { code: 'Gode', name: 'Gothic', flag: '🏴' },
+      { code: 'es', name: 'Spanish', native_name: 'Español', flag: '🇪🇸', is_active: true, display_order: 1 },
+      { code: 'en', name: 'English', native_name: 'English', flag: '🇬🇧', is_active: true, display_order: 2 },
+      { code: 'zh', name: 'Chinese', native_name: '中文', flag: '🇨🇳', is_active: true, display_order: 3 },
+      { code: 'hi', name: 'Hindi', native_name: 'हिन्दी', flag: '🇮🇳', is_active: true, display_order: 4 },
+      { code: 'ar', name: 'Arabic', native_name: 'العربية', flag: '🇸🇦', is_active: true, display_order: 5 },
+      { code: 'pt', name: 'Portuguese', native_name: 'Português', flag: '🇵🇹', is_active: true, display_order: 6 },
+      { code: 'ru', name: 'Russian', native_name: 'Русский', flag: '🇷🇺', is_active: true, display_order: 7 },
+      { code: 'ja', name: 'Japanese', native_name: '日本語', flag: '🇯🇵', is_active: true, display_order: 8 },
+      { code: 'de', name: 'German', native_name: 'Deutsch', flag: '🇩🇪', is_active: true, display_order: 9 },
+      { code: 'fr', name: 'French', native_name: 'Français', flag: '🇫🇷', is_active: true, display_order: 10 },
+      { code: 'it', name: 'Italian', native_name: 'Italiano', flag: '🇮🇹', is_active: true, display_order: 11 },
+      { code: 'ko', name: 'Korean', native_name: '한국어', flag: '🇰🇷', is_active: true, display_order: 12 },
+      { code: 'id', name: 'Indonesian', native_name: 'Bahasa Indonesia', flag: '🇮🇩', is_active: true, display_order: 13 },
+      { code: 'tr', name: 'Turkish', native_name: 'Türkçe', flag: '🇹🇷', is_active: true, display_order: 14 },
+      { code: 'vi', name: 'Vietnamese', native_name: 'Tiếng Việt', flag: '🇻🇳', is_active: true, display_order: 15 },
+      { code: 'ca', name: 'Catalan', native_name: 'Català', flag: '🏴', is_active: true, display_order: 16 },
+      { code: 'eu', name: 'Basque', native_name: 'Euskara', flag: '🏴', is_active: true, display_order: 17 },
+      { code: 'gl', name: 'Galician', native_name: 'Galego', flag: '🏴', is_active: true, display_order: 18 },
+      { code: 'ast', name: 'Asturian', native_name: 'Asturianu', flag: '🏴󠁥󠁳󠁡󠁳󠁿', is_active: true, display_order: 19 },
     ];
   }
 })();
@@ -69,6 +68,11 @@ const currentLanguage = languages.find((lang) => lang.code === currentLocale) ||
 const componentId = `language-selector-${Math.random().toString(36).substring(2, 11)}`;
 
 const { class: className = '', showFlags = true, compact = false } = Astro.props;
+
+// Group languages: Top languages first, then all alphabetically
+const topLanguages = ['es', 'en', 'zh', 'fr', 'de'];
+const topLangObjects = languages.filter(l => topLanguages.includes(l.code));
+const otherLanguages = languages.filter(l => !topLanguages.includes(l.code));
 ---
 
 <div
@@ -76,14 +80,37 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
   class={`language-selector relative ${className}`}
   x-data={`{
     isOpen: false,
+    searchQuery: '',
     currentLanguage: ${JSON.stringify(currentLanguage)},
     languages: ${JSON.stringify(languages)},
+    topLanguages: ${JSON.stringify(topLangObjects)},
+    otherLanguages: ${JSON.stringify(otherLanguages)},
     selectedLanguage: ${JSON.stringify(currentLanguage.code)},
+    
+    get filteredLanguages() {
+      const query = this.searchQuery.toLowerCase().trim();
+      if (!query) return null;
+      
+      return this.languages.filter(lang => 
+        lang.name.toLowerCase().includes(query) ||
+        lang.native_name.toLowerCase().includes(query) ||
+        lang.code.toLowerCase().includes(query)
+      );
+    },
+    
+    get displayLanguages() {
+      if (this.searchQuery.trim()) {
+        return this.filteredLanguages;
+      }
+      return null;
+    },
     
     toggleDropdown() {
       this.isOpen = !this.isOpen;
       if (this.isOpen) {
+        this.searchQuery = '';
         this.$nextTick(() => {
+          this.$refs.searchInput?.focus();
           this.$refs.dropdown.focus();
         });
       }
@@ -94,55 +121,34 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
       this.isOpen = false;
       
       try {
-        // Use async, non-blocking request to gateway API
-        const response = await fetch('/api/auth/change-language', {
+        const response = await fetch('/api/change-language', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
           },
-          body: JSON.stringify({ 
-            locale: code,
-            timestamp: new Date().toISOString()
-          }),
-          // Use keepalive for non-blocking requests
+          body: JSON.stringify({ locale: code }),
           keepalive: true
         });
 
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          // Update HTML lang attribute
+        if (response.ok) {
           document.documentElement.lang = code;
-          // Update current language display
           this.currentLanguage = this.languages.find(lang => lang.code === code);
-          
-          // Use client-side navigation instead of full reload for better UX
-          if (window.location.pathname !== window.location.pathname) {
-            window.location.reload();
-          }
-        } else {
-          throw new Error(data.error || 'Failed to change language');
+          window.location.reload();
         }
       } catch (error) {
         console.error('Language change failed:', error);
-        // Could show a user-friendly error message here
-        // For now, revert the selection
         this.selectedLanguage = this.currentLanguage.code;
       }
     },
     
     closeDropdown() {
       this.isOpen = false;
+      this.searchQuery = '';
     },
     
     handleKeydown(event) {
       if (event.key === 'Escape') {
         this.closeDropdown();
-      } else if (event.key === 'Enter' || event.key === ' ') {
-        if (!this.isOpen) {
-          this.toggleDropdown();
-        }
       }
     }
   }`}
@@ -163,41 +169,32 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
     x-on:keydown="handleKeydown"
     class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200"
     x-bind:class="{'text-sm': ${compact}}"
-    aria-label="Seleccionar idioma"
+    aria-label="Select language"
     aria-expanded="false"
     aria-haspopup="true"
     aria-controls={`${componentId}-dropdown`}
     x-ref="trigger"
   >
-    {/* Flag Display */}
     {showFlags && <span class="text-lg" aria-hidden="true" x-text="currentLanguage.flag" />}
 
-    {/* Language Name/Code */}
     <span
       class="font-medium text-gray-700"
-      x-text="${compact ? 'currentLanguage.code.toUpperCase()' : 'currentLanguage.name'}"></span>
+      x-text="${compact ? 'currentLanguage.code.toUpperCase()' : 'currentLanguage.native_name'}"></span>
 
-    {/* Custom SVG Arrow with RoughJS styling */}
     <svg
       class="w-4 h-4 text-gray-500 transition-transform duration-200"
       viewBox="0 0 24 24"
       aria-hidden="true"
       x-bind:class="{ 'rotate-180': isOpen }"
     >
-      <path
-        d="M19 9l-7 7-7-7"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        fill="none"></path>
+      <path d="M19 9l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
     </svg>
   </button>
 
-  {/* Dropdown Menu */}
+  {/* Dropdown Menu with Search */}
   <div
     id={`${componentId}-dropdown`}
-    class="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+    class="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
     role="menu"
     aria-labelledby={`${componentId}-trigger`}
     x-show="isOpen"
@@ -210,48 +207,107 @@ const { class: className = '', showFlags = true, compact = false } = Astro.props
     x-ref="dropdown"
     tabindex="-1"
   >
-    <div class="py-1">
-      {
-        languages.map((language) => (
-          <button
-            type="button"
-            x-on:click={`selectLanguage('${language.code}')`}
-            class="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150"
-            x-bind:class={`selectedLanguage === '${language.code}' ? 'bg-primary-50 text-primary-700' : 'text-gray-700'`}
-            aria-label={`Cambiar a ${language.name}`}
-            role="menuitem"
-            x-bind:aria-selected={`selectedLanguage === '${language.code}'`}
-          >
-            {/* Language Flag */}
-            {showFlags && (
-              <span class="text-lg" aria-hidden="true" x-text={JSON.stringify(language.flag)} />
-            )}
+    {/* Search Input */}
+    <div class="p-2 border-b border-gray-100">
+      <input
+        type="text"
+        x-ref="searchInput"
+        x-model="searchQuery"
+        placeholder="Search languages..."
+        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        @click.stop
+      />
+    </div>
 
-            {/* Language Info */}
-            <div class="flex-1">
-              <div class="font-medium" x-text={JSON.stringify(language.name)} />
-              <div
-                class="text-sm text-gray-500"
-                x-text={JSON.stringify(language.code.toUpperCase())}
-              />
+    {/* Language List */}
+    <div class="py-1 max-h-80 overflow-y-auto">
+      {/* Search Results */}
+      <template x-if="displayLanguages">
+        <div>
+          <template x-for="lang in displayLanguages" :key="lang.code">
+            <button
+              type="button"
+              x-on:click={`selectLanguage(lang.code)`}
+              class="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150"
+              x-bind:class="selectedLanguage === lang.code ? 'bg-primary-50 text-primary-700' : 'text-gray-700'"
+              role="menuitem"
+            >
+              {showFlags && <span class="text-lg" x-text="lang.flag" />}
+              <div class="flex-1">
+                <div class="font-medium" x-text="lang.native_name" />
+                <div class="text-sm text-gray-500" x-text="lang.name + ' (' + lang.code.toUpperCase() + ')'" />
+              </div>
+              <template x-if="selectedLanguage === lang.code">
+                <svg class="w-4 h-4 text-primary-600" viewBox="0 0 24 24">
+                  <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                </svg>
+              </template>
+            </button>
+          </template>
+          <template x-if="displayLanguages.length === 0">
+            <div class="px-4 py-3 text-sm text-gray-500 text-center">
+              No languages found for "<span x-text="searchQuery"></span>"
             </div>
+          </template>
+        </div>
+      </template>
 
-            {/* Checkmark for selected language */}
-            {currentLanguage.code === language.code && (
-              <svg class="w-4 h-4 text-primary-600" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M5 13l4 4L19 7"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  fill="none"
-                />
-              </svg>
-            )}
-          </button>
-        ))
-      }
+      {/* Default: Top Languages */}
+      <template x-if="!displayLanguages && topLanguages.length > 0">
+        <div>
+          <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            Popular
+          </div>
+          <template x-for="lang in topLanguages.filter(t => languages.some(l => l.code === t))" :key="lang">
+            <button
+              type="button"
+              x-on:click={`selectLanguage(lang)`}
+              class="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150"
+              x-bind:class="selectedLanguage === lang ? 'bg-primary-50 text-primary-700' : 'text-gray-700'"
+              role="menuitem"
+            >
+              {showFlags && <span class="text-lg" x-text="languages.find(l => l.code === lang)?.flag" />}
+              <div class="flex-1">
+                <div class="font-medium" x-text="languages.find(l => l.code === lang)?.native_name" />
+              </div>
+              <template x-if="selectedLanguage === lang">
+                <svg class="w-4 h-4 text-primary-600" viewBox="0 0 24 24">
+                  <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                </svg>
+              </template>
+            </button>
+          </template>
+        </div>
+      </template>
+
+      {/* All Languages */}
+      <template x-if="!displayLanguages">
+        <div>
+          <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            All Languages
+          </div>
+          <template x-for="lang in otherLanguages" :key="lang.code">
+            <button
+              type="button"
+              x-on:click={`selectLanguage(lang.code)`}
+              class="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150"
+              x-bind:class="selectedLanguage === lang.code ? 'bg-primary-50 text-primary-700' : 'text-gray-700'"
+              role="menuitem"
+            >
+              {showFlags && <span class="text-lg" x-text="lang.flag" />}
+              <div class="flex-1">
+                <div class="font-medium" x-text="lang.native_name" />
+                <div class="text-sm text-gray-500" x-text="lang.name + ' (' + lang.code.toUpperCase() + ')'" />
+              </div>
+              <template x-if="selectedLanguage === lang.code">
+                <svg class="w-4 h-4 text-primary-600" viewBox="0 0 24 24">
+                  <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                </svg>
+              </template>
+            </button>
+          </template>
+        </div>
+      </template>
     </div>
   </div>
 </div>

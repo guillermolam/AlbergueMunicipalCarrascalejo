@@ -1,18 +1,29 @@
 name = "language-service"
-main = "src/lib.rs"
+main = "build/worker/shim.mjs"
 compatibility_date = "2024-12-01"
+
+[build]
+command = "cargo install -q worker-build --version 0.2.0 && worker-build --release"
 
 [vars]
 ENVIRONMENT = "production"
 
+# ── KV: language catalog (optional override of the static list) ──────────────
+# Create with: `wrangler kv namespace create LANGUAGES`
+# then paste the returned `id` below.
 [[kv_namespaces]]
 binding = "LANGUAGES"
-id = "" # Set after `wrangler kv namespace create LANGUAGES`
+id = ""
 
+# ── KV: translation cache ────────────────────────────────────────────────────
+# Create with: `wrangler kv namespace create TRANSLATIONS`
 [[kv_namespaces]]
 binding = "TRANSLATIONS"
-id = "" # Set after `wrangler kv namespace create TRANSLATIONS`
+id = ""
 
+# ── Cloudflare Workers AI (for real translations) ────────────────────────────
+# Requires the account to have Workers AI enabled. Safe to leave if unused —
+# the worker falls back to a placeholder translator.
 [ai]
 binding = "AI"
 

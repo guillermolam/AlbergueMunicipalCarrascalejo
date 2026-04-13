@@ -1,0 +1,10 @@
+spin_manifest_version = "1"
+name = "retto-ocr"
+version = "0.1.0"
+trigger = { type = "http", base = "/" }
+
+[[component]]
+id = "retto"
+source = "retto_wasm.wasm"
+[component.trigger]
+route = "/ocr"

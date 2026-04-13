@@ -1,8 +1,21 @@
+[package]
+name = "language-service"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
+# Cloudflare Workers SDK
 worker = "0.7.5"
+
+# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+# Error handling
 anyhow = "1.0"
 
-[package.metadata.workspaces]
-exclude = ["shared"]
+# Logging / panic hook
+console_error_panic_hook = "0.1.7"

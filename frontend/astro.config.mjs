@@ -2,7 +2,12 @@ import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import node from '@astrojs/node';
 import clerk from '@clerk/astro';
-import { wuchale } from 'wuchale/vite';
+// NOTE: Wuchale's Vite plugin is intentionally disabled — its markup
+// rewriter produces malformed esbuild output on SVG-heavy .astro files
+// (`Expected "]" but found "}"`). Extraction via `npx wuchale` CLI still
+// works and catalogs live in src/locales/*.po, ready to flip on once the
+// upstream bug is fixed. Runtime i18n is handled by Astro's native
+// routing + /api/languages fallback catalog.
 
 // Use the Node adapter in local dev (avoids miniflare/workerd startup overhead).
 // Use the Cloudflare adapter for production builds (wrangler deploy / CF Workers).

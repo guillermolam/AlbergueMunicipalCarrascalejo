@@ -1,4 +1,4 @@
-﻿# Runtime Scripts
+# Runtime Scripts
 
 This directory contains small client-side runtime modules used for progressive enhancement.
 
