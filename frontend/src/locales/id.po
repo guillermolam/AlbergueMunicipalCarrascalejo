@@ -152,49 +152,73 @@ msgstr "Albergue Municipal El Carrascalejo"
 #. 0: rt in; 1: ce Pr; 2: { title\\: string;
 #: src/components/Stats.astro
 msgid "Stat {0}: {1}{2}"
-msgstr ""
+msgstr "Stat {0}: {1}{2}"
 
 #: src/components/UserProfile.astro
 msgid "Pendiente"
-msgstr ""
+msgstr "Pendiente"
 
 #: src/components/UserProfile.astro
 msgid "Confirmado"
-msgstr ""
+msgstr "Confirmado"
 
 #: src/components/UserProfile.astro
 msgid "Cancelado"
-msgstr ""
+msgstr "Cancelado"
 
 #: src/components/UserProfile.astro
 msgid "Estado desconocido"
-msgstr ""
+msgstr "Estado desconocido"
 
 #. 0: pilgrim.name
 #: src/components/UserProfile.astro
 msgid "Hola, {0}"
-msgstr ""
+msgstr "Hola, {0}"
 
 #: src/components/UserProfile.astro
 msgid "País:"
-msgstr ""
+msgstr "País:"
 
 #: src/components/UserProfile.astro
 msgid "Teléfono:"
-msgstr ""
+msgstr "Teléfono:"
 
 #: src/components/UserProfile.astro
 msgid "Llegada:"
-msgstr ""
+msgstr "Llegada:"
 
 #: src/components/UserProfile.astro
 msgid "Cerrar sesión"
-msgstr ""
+msgstr "Cerrar sesión"
 
 #: src/components/UserProfile.astro
 msgid "Bienvenido peregrino"
-msgstr ""
+msgstr "Bienvenido peregrino"
 
 #: src/components/UserProfile.astro
 msgid "Iniciar sesión"
-msgstr ""
+msgstr "Iniciar sesión"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service status"
+msgstr "Service status"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Static snapshot"
+msgstr "Static snapshot"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service"
+msgstr "Service"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Status"
+msgstr "Status"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Response"
+msgstr "Response"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Message"
+msgstr "Message"

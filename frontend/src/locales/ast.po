@@ -198,3 +198,27 @@ msgstr ""
 #: src/components/UserProfile.astro
 msgid "Iniciar sesión"
 msgstr ""
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service status"
+msgstr ""
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Static snapshot"
+msgstr ""
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service"
+msgstr ""
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Status"
+msgstr ""
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Response"
+msgstr ""
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Message"
+msgstr ""

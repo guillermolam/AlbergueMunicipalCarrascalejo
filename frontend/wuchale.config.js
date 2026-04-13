@@ -2,7 +2,7 @@
 import { defineConfig } from "wuchale";
 import { adapter } from "@wuchale/astro";
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 
 const LOCALES = [
   "es", "en", "zh", "hi", "ar", "pt", "ru", "ja", "de", "fr",
@@ -29,65 +29,35 @@ export default defineConfig({
     gl: "es",
     ast: "es",
   },
-  // Auto-translate missing .po entries via OpenAI. The API key comes from
-  // 1Password at runtime — run extraction through `op run`:
+  // Auto-translate via Anthropic Claude Haiku. API key comes from 1Password:
   //
   //   op run --env-file=.env.wuchale -- pnpm wuchale:translate
   //
-  // where `.env.wuchale` contains:
-  //   OPENAI_API_KEY="op://Employee/OpenAI - API Key/password"
+  // where .env.wuchale contains:
+  //   ANTHROPIC_API_KEY="op://_Personal/Anthropic Claude - API Key/password"
   //
-  // Without the env var `ai` is a no-op translator (returns input unchanged)
-  // so a plain `npx wuchale` doesn't make accidental paid API calls.
+  // Without the env var this is a no-op (no accidental API calls on plain extract).
   ai: {
-    name: "GPT-5",
-    batchSize: 50,
+    name: "Claude Haiku",
+    batchSize: 20,
     parallel: 1,
     group: {},
     translate: async (messages, instruction) => {
-      if (!process.env.OPENAI_API_KEY) {
-        // No key — return input untouched; Wuchale will keep the catalog
-        // entry as "fuzzy" / untranslated.
+      if (!process.env.ANTHROPIC_API_KEY) {
         return messages;
       }
-      // Wuchale calls JSON.parse() on our return value, so we MUST emit a
-      // JSON array string matching the input array's length/order. We force
-      // json_object mode and append an explicit JSON-only instruction.
-      const jsonInstruction =
-        instruction +
-        "\n\nIMPORTANT: Respond with ONLY a valid JSON array of translated strings, " +
-        "in the SAME order and count as the input. Do not wrap in markdown fences, " +
-        "do not include prose, commentary, or object keys — output MUST be a bare " +
-        'JSON array, e.g. ["translated 1","translated 2"]. Preserve all ' +
-        "placeholders like {0}, {1}, %s, %d verbatim.";
+      // `messages` is already a JSON string: [{id, context, references}…]
+      // `instruction` from Wuchale already specifies the exact output schema
+      // and says "Respond ONLY with raw compact JSON." — relay both as-is.
       const { text } = await generateText({
-        model: openai("gpt-4o-mini"),
-        system: jsonInstruction,
-        prompt:
-          "Translate this JSON array. Input:\n" +
-          JSON.stringify(messages) +
-          "\n\nReturn a JSON array of the translations, same length and order.",
-        providerOptions: {
-          openai: {
-            responseFormat: { type: "json_object" },
-          },
-        },
+        model: anthropic("claude-haiku-4-5-20251001"),
+        system: instruction,
+        prompt: messages,
       });
-      // Strip markdown fences defensively (models sometimes ignore json mode).
+      // Strip markdown fences defensively.
       let cleaned = text.trim();
       if (cleaned.startsWith("```")) {
         cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-      }
-      // If the model returned {"translations":[...]} instead of a bare array,
-      // unwrap it.
-      if (cleaned.startsWith("{")) {
-        try {
-          const obj = JSON.parse(cleaned);
-          const firstArr = Object.values(obj).find((v) => Array.isArray(v));
-          if (firstArr) return JSON.stringify(firstArr);
-        } catch {
-          /* fall through */
-        }
       }
       return cleaned;
     },

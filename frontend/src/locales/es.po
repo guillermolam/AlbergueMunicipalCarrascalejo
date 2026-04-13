@@ -198,3 +198,27 @@ msgstr "Bienvenido peregrino"
 #: src/components/UserProfile.astro
 msgid "Iniciar sesión"
 msgstr "Iniciar sesión"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service status"
+msgstr "Service status"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Static snapshot"
+msgstr "Static snapshot"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service"
+msgstr "Service"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Status"
+msgstr "Status"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Response"
+msgstr "Response"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Message"
+msgstr "Message"

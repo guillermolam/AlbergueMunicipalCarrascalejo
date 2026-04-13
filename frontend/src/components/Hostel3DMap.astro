@@ -1,0 +1,25 @@
+---
+---
+<!-- Hostel3DMap.astro: Pure Astro + MapLibreGL, no React -->
+<div id="hostel-3dmap" style="width: 100vw; height: 600px; position: relative;"></div>
+
+<script type="module">
+  import maplibregl from 'maplibre-gl';
+  // Hostel location and parcel polygon
+  const HOSTEL_COORDS = [-6.33643424, 39.0237316];
+  const MAP_STYLE = "https://demotiles.maplibre.org/style.json";
+
+  let map;
+  const container = document.getElementById('hostel-3dmap');
+  if (container && !container.dataset.initialized) {
+    map = new maplibregl.Map({
+      container: container,
+      style: MAP_STYLE,
+      center: HOSTEL_COORDS,
+      zoom: 17.2,
+      pitch: 45,
+      bearing: -20,
+    });
+    container.dataset.initialized = 'true';
+  }
+</script>

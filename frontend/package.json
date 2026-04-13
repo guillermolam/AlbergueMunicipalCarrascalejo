@@ -24,7 +24,7 @@
     "preview": "wrangler types && astro preview",
     "clean": "rimraf dist .astro node_modules/.cache",
     "wuchale:extract": "wuchale --clean",
-    "wuchale:translate": "node --env-file=.env.wuchale node_modules/wuchale/dist/cli/index.js --sync",
+    "wuchale:translate": "op run --env-file=.env.wuchale -- node node_modules/wuchale/dist/cli/index.js --sync",
     "wuchale:check": "wuchale check",
     "astro-check": "astro check",
     "format": "prettier --write .",
@@ -43,6 +43,7 @@
     "db:introspect": "drizzle-kit introspect --config drizzle.config.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.69",
     "@ai-sdk/openai": "^3.0.52",
     "@clerk/astro": "^3.0.12",
     "@fontsource/cabin-sketch": "^5.2.8",
