@@ -1,0 +1,41 @@
+---
+import { Hostel3DThreeJS } from '../components';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Albergue Carrascalejo – 3D Edificios (Extremadura, Spain)</title>
+    <style>
+      html, body { width: 100vw; height: 100vh; margin: 0; padding: 0; }
+      #info {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 9;
+        color: #fff;
+        background: rgba(10, 18, 35, 0.72);
+        backdrop-filter: blur(8px);
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        max-width: 205px;
+        pointer-events: none;
+      }
+      #info h2 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem; }
+      #info p { opacity: 0.76; font-size: 0.73rem; line-height: 1.45; }
+    </style>
+  </head>
+  <body>
+    <div id="info">
+      <h2>Albergue Municipal</h2>
+      <p>El Carrascalejo, Cáceres<br />Extremadura · Vía de la Plata</p>
+      <p style="margin-top:.3rem;opacity:.5;font-size:.68rem">
+        Ref. 0830102QD3203S<br />24 plazas · €15/noche · ★ 4.6
+      </p>
+    </div>
+    <Hostel3DThreeJS client:only="react" />
+  </body>
+</html>

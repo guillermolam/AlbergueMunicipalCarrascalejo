@@ -1,0 +1,9 @@
+{
+	"dependencies": {
+		"@deck.gl/layers": "^9.2.11",
+		"@deck.gl/react": "^9.2.11"
+	},
+	"devDependencies": {
+		"@types/maplibre-gl": "^1.14.0"
+	}
+}

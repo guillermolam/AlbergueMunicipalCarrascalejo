@@ -1,4 +1,4 @@
-﻿# 9. Architectural Decisions
+# 9. Architectural Decisions
 
 All formal decisions live as ADRs.
 

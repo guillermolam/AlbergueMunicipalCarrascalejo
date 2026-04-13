@@ -1,4 +1,4 @@
-﻿# ADR 0007: Event publishing via mqtt-broker-service (MQTT topics/webhooks)
+# ADR 0007: Event publishing via mqtt-broker-service (MQTT topics/webhooks)
 
 - Status: proposed
 - Date: 2026-01-12

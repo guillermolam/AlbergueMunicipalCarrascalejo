@@ -1,4 +1,4 @@
-﻿# ADR 0001: Adopt Spin + Wasm components
+# ADR 0001: Adopt Spin + Wasm components
 
 - Status: accepted
 - Date: 2026-01-12

@@ -1,10 +1,23 @@
-//! language-service — Cloudflare Worker for i18n language catalog and translation.
+//! language-service — Cloudflare Worker for **dynamic** i18n content only.
+//!
+//! Scope (intentional):
+//!   - Static UI strings are handled by Wuchale at build time (see
+//!     `frontend/wuchale.config.js`). This worker MUST NOT be used to translate
+//!     static UI copy — that would duplicate Wuchale's .po catalogs and cost
+//!     unnecessary AI calls.
+//!   - Use this worker ONLY for user-generated / CMS-edited / runtime content
+//!     (pilgrim notes, hostel descriptions, admin messages, etc.).
 //!
 //! Endpoints:
 //!   GET  /                — health check
 //!   GET  /api/languages   — return the 19 supported languages
 //!   POST /api/languages   — create/register a language (stored in KV if bound)
-//!   POST /api/translate   — translate text via Workers AI (if `AI` binding set)
+//!   POST /api/translate   — translate dynamic text via Workers AI (if `AI` binding set)
+//!
+//! Security:
+//!   - `target_locale` and `source_locale` are validated against a 19-entry
+//!     allow-list before any KV write or AI call to prevent arbitrary locale
+//!     injection / cache poisoning.
 //!
 //! Bindings (optional):
 //!   - KV `LANGUAGES`     — override language catalog persisted across requests
@@ -17,6 +30,20 @@
 
 use serde::{Deserialize, Serialize};
 use worker::{console_log, event, Context, Env, Method, Request, Response, Result};
+
+// ---------------------------------------------------------------------------
+// Allow-list of supported locales (must match Wuchale config + frontend)
+// ---------------------------------------------------------------------------
+
+pub const SUPPORTED_LOCALES: &[&str] = &[
+    "es", "en", "zh", "hi", "ar", "pt", "ru", "ja", "de", "fr", "it", "ko",
+    "id", "tr", "vi", "ca", "eu", "gl", "ast",
+];
+
+#[must_use]
+pub fn is_supported_locale(code: &str) -> bool {
+    SUPPORTED_LOCALES.contains(&code)
+}
 
 // ---------------------------------------------------------------------------
 // Data models
@@ -98,6 +125,15 @@ async fn handle_create_language(req: &mut Request, env: &Env) -> Result<Response
         }
     };
 
+    // Guard: refuse locales outside the allow-list. Prevents arbitrary KV
+    // entries and keeps the catalog consistent with the frontend enum.
+    if !is_supported_locale(&lang.code) {
+        return Response::error(
+            format!("Unsupported locale '{}': must be one of {:?}", lang.code, SUPPORTED_LOCALES),
+            400,
+        );
+    }
+
     // Append to KV catalog if bound.
     if let Ok(kv) = env.kv("LANGUAGES") {
         let mut catalog: Vec<Language> = match kv.get("catalog").text().await {
@@ -123,6 +159,23 @@ async fn handle_translate(req: &mut Request, _env: &Env) -> Result<Response> {
     };
 
     let source = tr.source_locale.as_deref().unwrap_or("es");
+
+    // Guard: both locales must be in the allow-list before any AI/KV work.
+    if !is_supported_locale(source) {
+        return Response::error(format!("Unsupported source_locale '{source}'"), 400);
+    }
+    if !is_supported_locale(&tr.target_locale) {
+        return Response::error(
+            format!("Unsupported target_locale '{}'", tr.target_locale),
+            400,
+        );
+    }
+
+    // Cap request size to keep worker costs bounded (defense in depth).
+    if tr.text.len() > 4_096 {
+        return Response::error("text too long (max 4096 bytes)", 413);
+    }
+
     // Placeholder — swap with a real `env.ai("AI")` call once Workers AI is enabled.
     let translated = format!(
         "[{}→{}] {}",
@@ -205,6 +258,24 @@ mod tests {
     #[test]
     fn catalog_has_19_entries() {
         assert_eq!(get_initial_languages().len(), 19);
+    }
+
+    #[test]
+    fn allowlist_matches_initial_catalog() {
+        let catalog_codes: std::collections::HashSet<_> =
+            get_initial_languages().into_iter().map(|l| l.code).collect();
+        let allow_codes: std::collections::HashSet<_> =
+            SUPPORTED_LOCALES.iter().map(|s| (*s).to_string()).collect();
+        assert_eq!(catalog_codes, allow_codes);
+    }
+
+    #[test]
+    fn is_supported_locale_rejects_junk() {
+        assert!(is_supported_locale("es"));
+        assert!(is_supported_locale("ast"));
+        assert!(!is_supported_locale("xx"));
+        assert!(!is_supported_locale(""));
+        assert!(!is_supported_locale("../../etc/passwd"));
     }
 
     #[test]

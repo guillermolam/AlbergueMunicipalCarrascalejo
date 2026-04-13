@@ -1,4 +1,4 @@
-﻿# 4. Solution Strategy
+# 4. Solution Strategy
 
 Core strategy:
 - Static-first frontend using Astro, enhanced progressively (HTMX) when needed

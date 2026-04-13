@@ -1,4 +1,4 @@
-﻿# 10. Quality Requirements
+# 10. Quality Requirements
 
 Quality requirements are expressed as:
 - Quality goals (section 1)

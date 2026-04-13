@@ -1,4 +1,4 @@
-﻿# 12. Glossary
+# 12. Glossary
 
 - ADR: Architectural Decision Record
 - arc42: Architecture documentation structure (12 sections)

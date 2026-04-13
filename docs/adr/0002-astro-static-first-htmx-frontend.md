@@ -1,4 +1,4 @@
-﻿# ADR 0002: Use Astro static-first + HTMX for the frontend
+# ADR 0002: Use Astro static-first + HTMX for the frontend
 
 - Status: accepted
 - Date: 2026-01-12

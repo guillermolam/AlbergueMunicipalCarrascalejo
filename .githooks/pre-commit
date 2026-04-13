@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Repo-local pre-commit hook. Activate with:
+#   git config core.hooksPath .githooks
+# (overrides your global core.hooksPath for this repo only.)
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+"$repo_root/scripts/check-bom.sh"

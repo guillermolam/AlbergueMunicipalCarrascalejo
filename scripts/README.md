@@ -1,4 +1,4 @@
-﻿# Scripts
+# Scripts
 
 This directory contains reusable scripts invoked by taskfiles and CI.
 

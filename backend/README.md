@@ -1,4 +1,4 @@
-﻿# Backend (Rust + Spin)
+# Backend (Rust + Spin)
 
 This directory is a Cargo workspace containing Spin-compatible Rust services compiled to WebAssembly.
 

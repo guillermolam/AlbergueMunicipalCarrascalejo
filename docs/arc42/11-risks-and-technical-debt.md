@@ -1,4 +1,4 @@
-﻿# 11. Risks and Technical Debt
+# 11. Risks and Technical Debt
 
 ## 11.1 Known risks
 

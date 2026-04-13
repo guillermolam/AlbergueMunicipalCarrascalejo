@@ -1,4 +1,4 @@
-﻿# Tests
+# Tests
 
 This directory contains test assets and test runners for the system.
 

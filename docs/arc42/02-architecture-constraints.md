@@ -1,4 +1,4 @@
-﻿# 2. Architecture Constraints
+# 2. Architecture Constraints
 
 This section captures non-negotiable constraints (technical and organizational).
 

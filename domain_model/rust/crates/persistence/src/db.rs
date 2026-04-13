@@ -1,4 +1,4 @@
-﻿use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use std::time::Duration;
 
 pub async fn connect(database_url: &str) -> Result<DatabaseConnection, sea_orm::DbErr> {

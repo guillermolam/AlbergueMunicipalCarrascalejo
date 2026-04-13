@@ -1,4 +1,4 @@
-﻿version: "3"
+version: "3"
 
 vars:
   RUST_DIR: "./domain_model/rust"

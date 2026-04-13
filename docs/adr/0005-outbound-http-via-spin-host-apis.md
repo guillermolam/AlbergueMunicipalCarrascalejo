@@ -1,4 +1,4 @@
-﻿# ADR 0005: Outbound HTTP from Wasm uses Spin host APIs
+# ADR 0005: Outbound HTTP from Wasm uses Spin host APIs
 
 - Status: accepted
 - Date: 2026-01-12

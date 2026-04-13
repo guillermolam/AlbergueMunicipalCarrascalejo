@@ -23,6 +23,9 @@
     "build": "wrangler types && astro build",
     "preview": "wrangler types && astro preview",
     "clean": "rimraf dist .astro node_modules/.cache",
+    "wuchale:extract": "wuchale --clean",
+    "wuchale:translate": "node --env-file=.env.wuchale node_modules/wuchale/dist/cli/index.js --sync",
+    "wuchale:check": "wuchale check",
     "astro-check": "astro check",
     "format": "prettier --write .",
     "lint": "tsc -p tsconfig.typecheck.json --noEmit",
@@ -40,6 +43,7 @@
     "db:introspect": "drizzle-kit introspect --config drizzle.config.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.52",
     "@clerk/astro": "^3.0.12",
     "@fontsource/cabin-sketch": "^5.2.8",
     "@fontsource/londrina-sketch": "^5.2.8",
@@ -47,6 +51,7 @@
     "@supabase/supabase-js": "^2.103.0",
     "@types/three": "^0.183.1",
     "@wuchale/astro": "^0.3.1",
+    "ai": "^6.0.158",
     "alpinejs": "^3.15.11",
     "astro": "^6.1.5",
     "clsx": "^2.1.1",
@@ -81,6 +86,11 @@
   },
   "packageManager": "pnpm@10.29.3",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "msw", "sharp", "workerd"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw",
+      "sharp",
+      "workerd"
+    ]
   }
 }

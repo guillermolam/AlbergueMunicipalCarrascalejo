@@ -1,4 +1,4 @@
-﻿# Turso / libSQL Embedded Replicas
+# Turso / libSQL Embedded Replicas
 
 ## Objetivo
 

@@ -1,4 +1,4 @@
-﻿# 6. Runtime View
+# 6. Runtime View
 
 Representative runtime scenarios are shown below.
 

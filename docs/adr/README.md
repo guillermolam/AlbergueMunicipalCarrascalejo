@@ -1,4 +1,4 @@
-﻿# ADRs (Architectural Decision Records)
+# ADRs (Architectural Decision Records)
 
 This folder contains Architectural Decision Records.
 

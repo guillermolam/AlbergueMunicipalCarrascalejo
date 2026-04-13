@@ -1,4 +1,4 @@
-﻿# 7. Deployment View
+# 7. Deployment View
 
 ## 7.1 Typical deployment
 

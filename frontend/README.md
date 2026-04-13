@@ -1,4 +1,4 @@
-﻿# Albergue Municipal Carrascalejo - Frontend
+# Albergue Municipal Carrascalejo - Frontend
 
 Static Astro frontend served as static assets.
 

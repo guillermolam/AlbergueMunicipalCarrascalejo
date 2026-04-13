@@ -1,4 +1,4 @@
-﻿# Architecture Documentation (arc42)
+# Architecture Documentation (arc42)
 
 This is the main architecture documentation set, following the arc42 structure.
 

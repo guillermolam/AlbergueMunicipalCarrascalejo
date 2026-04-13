@@ -1,4 +1,4 @@
-﻿# 3. System Scope and Context
+# 3. System Scope and Context
 
 ## 3.1 Business context
 

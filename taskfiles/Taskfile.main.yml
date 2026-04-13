@@ -1,4 +1,4 @@
-﻿# Complete development and deployment pipeline
+# Complete development and deployment pipeline
 # Integrates frontend, backend, gateway, and Spin/Fermyon deployment
 
 version: "3"

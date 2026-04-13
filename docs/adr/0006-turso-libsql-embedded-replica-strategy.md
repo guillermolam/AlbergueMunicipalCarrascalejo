@@ -1,4 +1,4 @@
-﻿# ADR 0006: Turso/libSQL embedded replica strategy
+# ADR 0006: Turso/libSQL embedded replica strategy
 
 - Status: accepted
 - Date: 2026-01-12

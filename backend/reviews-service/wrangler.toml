@@ -3,7 +3,7 @@ main = "build/worker/shim.mjs"
 compatibility_date = "2024-12-01"
 
 [build]
-command = "cargo install worker-build && worker-build --release"
+command = "PATH=$HOME/.cargo/bin:$PATH worker-build --release"
 
 [vars]
 ENVIRONMENT = "production"
@@ -14,12 +14,12 @@ ENVIRONMENT = "production"
 [[d1_databases]]
 binding = "DB"
 database_name = "albergue-bookings"
-database_id = "" # Set after `wrangler d1 create albergue-bookings`
+database_id = "local_dev_stub" # Set after `wrangler d1 create albergue-bookings`
 
 # KV for caching scraped review HTML (optional)
 [[kv_namespaces]]
 binding = "REVIEWS_CACHE"
-id = "" # Set after `wrangler kv:namespace create REVIEWS_CACHE`
+id = "local_dev_stub" # Set after `wrangler kv:namespace create REVIEWS_CACHE`
 
 # Cron: sync reviews from Google Places every 6 hours
 [triggers]

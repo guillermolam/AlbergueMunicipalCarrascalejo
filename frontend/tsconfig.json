@@ -1,10 +1,12 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "types": ["astro/client"],
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["astro/client"],
     "target": "ES2022"
   },
   "include": [".astro/types.d.ts", "**/*"],

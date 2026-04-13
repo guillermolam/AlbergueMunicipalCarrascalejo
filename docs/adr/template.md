@@ -1,4 +1,4 @@
-﻿# ADR NNNN: Title
+# ADR NNNN: Title
 
 - Status: proposed | accepted | superseded
 - Date: YYYY-MM-DD

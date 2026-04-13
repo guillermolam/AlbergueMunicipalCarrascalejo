@@ -1,4 +1,4 @@
-﻿# UX Documentation
+# UX Documentation
 
 Central hub for UX and UI documentation for the Albergue Municipal Carrascalejo frontend.
 

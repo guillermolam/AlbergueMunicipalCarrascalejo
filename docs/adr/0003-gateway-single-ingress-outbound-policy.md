@@ -1,4 +1,4 @@
-﻿# ADR 0003: Gateway is the single ingress and enforces outbound policy
+# ADR 0003: Gateway is the single ingress and enforces outbound policy
 
 - Status: accepted
 - Date: 2026-01-12

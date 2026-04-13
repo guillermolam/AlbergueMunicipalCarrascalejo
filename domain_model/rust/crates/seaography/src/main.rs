@@ -1,4 +1,4 @@
-﻿#![deny(warnings)]
+#![deny(warnings)]
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]

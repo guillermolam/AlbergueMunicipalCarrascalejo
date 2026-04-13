@@ -1,4 +1,4 @@
-﻿# 1. Introduction and Goals
+# 1. Introduction and Goals
 
 Albergue Municipal Carrascalejo is a web system for managing information and operations of a municipal hostel (Camino de Santiago / Vía de la Plata). It is designed for static-first delivery, with a gateway that centralizes all integration and backend traffic, and Spin/Wasm-compatible Rust services.
 

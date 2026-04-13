@@ -140,3 +140,61 @@ msgstr "🗺️ Próximas Etapas"
 #: src/components/Head.astro
 msgid "Albergue Municipal Carrascalejo"
 msgstr "Albergue Municipal Carrascalejo"
+
+#: src/components/Hero.astro
+msgid "Hero background"
+msgstr "Hero background"
+
+#: src/components/MapLibre.astro
+msgid "Albergue Municipal El Carrascalejo"
+msgstr "Albergue Municipal El Carrascalejo"
+
+#. 0: rt in; 1: ce Pr; 2: { title\\: string;
+#: src/components/Stats.astro
+msgid "Stat {0}: {1}{2}"
+msgstr "Stat {0}: {1}{2}"
+
+#: src/components/UserProfile.astro
+msgid "Pendiente"
+msgstr "Pendiente"
+
+#: src/components/UserProfile.astro
+msgid "Confirmado"
+msgstr "Confirmado"
+
+#: src/components/UserProfile.astro
+msgid "Cancelado"
+msgstr "Cancelado"
+
+#: src/components/UserProfile.astro
+msgid "Estado desconocido"
+msgstr "Estado desconocido"
+
+#. 0: pilgrim.name
+#: src/components/UserProfile.astro
+msgid "Hola, {0}"
+msgstr "Hola, {0}"
+
+#: src/components/UserProfile.astro
+msgid "País:"
+msgstr "País:"
+
+#: src/components/UserProfile.astro
+msgid "Teléfono:"
+msgstr "Teléfono:"
+
+#: src/components/UserProfile.astro
+msgid "Llegada:"
+msgstr "Llegada:"
+
+#: src/components/UserProfile.astro
+msgid "Cerrar sesión"
+msgstr "Cerrar sesión"
+
+#: src/components/UserProfile.astro
+msgid "Bienvenido peregrino"
+msgstr "Bienvenido peregrino"
+
+#: src/components/UserProfile.astro
+msgid "Iniciar sesión"
+msgstr "Iniciar sesión"

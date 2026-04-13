@@ -140,3 +140,61 @@ msgstr ""
 #: src/components/Head.astro
 msgid "Albergue Municipal Carrascalejo"
 msgstr ""
+
+#: src/components/Hero.astro
+msgid "Hero background"
+msgstr ""
+
+#: src/components/MapLibre.astro
+msgid "Albergue Municipal El Carrascalejo"
+msgstr ""
+
+#. 0: rt in; 1: ce Pr; 2: { title\\: string;
+#: src/components/Stats.astro
+msgid "Stat {0}: {1}{2}"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Pendiente"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Confirmado"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Cancelado"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Estado desconocido"
+msgstr ""
+
+#. 0: pilgrim.name
+#: src/components/UserProfile.astro
+msgid "Hola, {0}"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "País:"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Teléfono:"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Llegada:"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Cerrar sesión"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Bienvenido peregrino"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Iniciar sesión"
+msgstr ""

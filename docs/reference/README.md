@@ -1,4 +1,4 @@
-﻿# Reference Documentation
+# Reference Documentation
 
 These notes are supporting references used by the arc42 documentation.
 

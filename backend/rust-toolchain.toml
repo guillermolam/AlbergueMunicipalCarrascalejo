@@ -1,0 +1,11 @@
+# Pin the backend workspace to rustup's stable toolchain with the wasm32
+# target pre-installed. This prevents the "/opt/homebrew/bin/cargo" (Homebrew
+# rust) vs "~/.cargo/bin/cargo" (rustup) mismatch that causes
+# `error[E0463]: can't find crate for core` when building Cloudflare Workers
+# locally. `rustup` reads this file automatically when cargo is invoked in
+# any subdirectory of `backend/`.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

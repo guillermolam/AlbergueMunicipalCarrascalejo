@@ -1,4 +1,4 @@
-﻿# 8. Cross-cutting Concepts
+# 8. Cross-cutting Concepts
 
 ## 8.1 Security and secrets
 

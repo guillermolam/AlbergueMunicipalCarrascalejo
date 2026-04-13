@@ -1,4 +1,4 @@
-﻿# 5. Building Block View
+# 5. Building Block View
 
 This section describes the main building blocks and their responsibilities.
 

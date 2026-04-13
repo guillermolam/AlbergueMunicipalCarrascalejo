@@ -1,4 +1,4 @@
-﻿# Taskfiles
+# Taskfiles
 
 This directory contains task definitions for the project task runner (go-task).
 

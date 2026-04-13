@@ -1,4 +1,4 @@
-﻿# Domain Model (DDD) + SeaORM + Seaography (Turso/SQLite)
+# Domain Model (DDD) + SeaORM + Seaography (Turso/SQLite)
 
 This folder is the **domain model baseline** for the Albergue Municipal Carrascalejo system.
 

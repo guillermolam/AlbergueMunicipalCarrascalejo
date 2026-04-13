@@ -1,4 +1,4 @@
-﻿use sea_orm_migration::{
+use sea_orm_migration::{
   prelude::*,
   sea_orm::ConnectionTrait,
 };

@@ -1,4 +1,4 @@
-﻿# Documentation
+# Documentation
 
 This folder is the canonical home for project documentation intended to render well on GitHub.
 
