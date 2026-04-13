@@ -976,6 +976,28 @@ const PKD_CSS = `
   border-top-color:#00ab39; border-radius:50%; animation:pkd-spin .6s linear infinite;
 }
 @keyframes pkd-spin { to { transform:rotate(360deg); } }
+
+/* ── Material Symbols (Google Fonts icon provider) ── */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.pkd-mi { font-size: 18px; vertical-align: middle; flex-shrink: 0; }
+.pkd-mi.sm { font-size: 14px; }
+.pkd-mi.lg { font-size: 28px; }
+.pkd-mi.xl { font-size: 40px; }
+.pkd-mi.filled { font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
 `;
 
 function ensurePkdStyles(): void {
@@ -999,6 +1021,32 @@ function iconSpan(svgStr: string, extraCss = ''): HTMLSpanElement {
   const s = document.createElement('span');
   s.style.cssText = `display:inline-flex;align-items:center;flex-shrink:0${extraCss ? ';' + extraCss : ''}`;
   s.appendChild(parseSvg(svgStr));
+  return s;
+}
+
+/**
+ * Google Material Symbols icon helper.
+ * Uses the Material Symbols Outlined font loaded in Layout.astro.
+ *
+ * @param name   Material Symbols ligature name (e.g. 'mail', 'person', 'check_circle')
+ * @param size   Size modifier: 'sm' | '' | 'lg' | 'xl'
+ * @param filled Whether to use the filled variant
+ * @param color  Optional CSS color
+ */
+function mi(
+  name: string,
+  size: 'sm' | '' | 'lg' | 'xl' = '',
+  filled = false,
+  color = ''
+): HTMLSpanElement {
+  const s = document.createElement('span');
+  s.className =
+    'material-symbols-outlined pkd-mi' +
+    (size ? ' ' + size : '') +
+    (filled ? ' filled' : '');
+  s.textContent = name;
+  s.setAttribute('aria-hidden', 'true');
+  if (color) s.style.color = color;
   return s;
 }
 
@@ -1597,7 +1645,11 @@ export class PilgrimCardIsland {
 
     // Front half
     const frontHalf = el('div', `pkd-upload-half${this.state.frontImageUrl ? ' uploaded' : ''}`);
-    frontHalf.appendChild(el('div', 'pkd-upload-half-label', 'FRENTE'));
+    const frontLbl = el('div', 'pkd-upload-half-label');
+    frontLbl.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:.3rem';
+    frontLbl.appendChild(mi('photo_camera_front', 'sm', false, '#2d5a3d'));
+    frontLbl.appendChild(document.createTextNode('FRENTE'));
+    frontHalf.appendChild(frontLbl);
     if (this.state.uploading && this.state.uploadStep === 'front') {
       frontHalf.appendChild(parseSvg(I_SPIN));
     } else if (this.state.frontImageUrl) {
@@ -1615,7 +1667,11 @@ export class PilgrimCardIsland {
 
     // Back half
     const backHalf = el('div', `pkd-upload-half${this.state.backImageUrl ? ' uploaded' : ''}`);
-    backHalf.appendChild(el('div', 'pkd-upload-half-label', 'DORSO'));
+    const backLbl = el('div', 'pkd-upload-half-label');
+    backLbl.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:.3rem';
+    backLbl.appendChild(mi('photo_camera_back', 'sm', false, '#2d5a3d'));
+    backLbl.appendChild(document.createTextNode('DORSO'));
+    backHalf.appendChild(backLbl);
     if (this.state.uploading && this.state.uploadStep === 'back') {
       backHalf.appendChild(parseSvg(I_SPIN));
     } else if (this.state.backImageUrl) {
@@ -1774,8 +1830,9 @@ export class PilgrimCardIsland {
     body.appendChild(this.buildProgressDots(step, totalSteps, 'Tipo de documento'));
 
     const info = el('p');
-    info.style.cssText = 'margin:0 0 .75rem;font-size:.8rem;color:#555;text-align:center;font-family:var(--font-h)';
-    info.textContent = 'Selecciona el tipo de documento de identidad';
+    info.style.cssText = 'margin:0 0 .75rem;font-size:.8rem;color:#555;text-align:center;font-family:var(--font-h);display:flex;align-items:center;justify-content:center;gap:.4rem';
+    info.appendChild(mi('badge', '', false, '#00ab39'));
+    info.appendChild(document.createTextNode('Selecciona el tipo de documento de identidad'));
     body.appendChild(info);
 
     const row = el('div', 'pkd-docsel-row');
@@ -1784,7 +1841,11 @@ export class PilgrimCardIsland {
     const isCardType = this.state.docType !== 'passport';
     const cardOption = el('div', `pkd-docsel-card${isCardType ? ' selected' : ''}`);
     cardOption.appendChild(parseSvg(I_CARD_FRONT_ILLUS));
-    cardOption.appendChild(el('div', 'pkd-docsel-title', 'DNI / NIE / ID UE'));
+    const cardTitle = el('div', 'pkd-docsel-title');
+    cardTitle.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:.3rem';
+    cardTitle.appendChild(mi('credit_card', '', false, '#2d5a3d'));
+    cardTitle.appendChild(document.createTextNode('DNI / NIE / ID UE'));
+    cardOption.appendChild(cardTitle);
 
     // Sub-pills for card subtypes
     const pills = el('div', 'pkd-docsel-sub-pills');
@@ -1814,7 +1875,11 @@ export class PilgrimCardIsland {
     // ── Passport option ──
     const passOption = el('div', `pkd-docsel-card${this.state.docType === 'passport' ? ' selected' : ''}`);
     passOption.appendChild(parseSvg(I_PASSPORT_ILLUS));
-    passOption.appendChild(el('div', 'pkd-docsel-title', 'Pasaporte'));
+    const passTitle = el('div', 'pkd-docsel-title');
+    passTitle.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:.3rem';
+    passTitle.appendChild(mi('book_2', '', false, '#2d5a3d'));
+    passTitle.appendChild(document.createTextNode('Pasaporte'));
+    passOption.appendChild(passTitle);
     passOption.addEventListener('click', () => {
       this.state.docType = 'passport';
       setPilgrimData(this.opts.pilgrimIndex, { 'f-doc-type': 'passport' });
@@ -1825,7 +1890,10 @@ export class PilgrimCardIsland {
     body.appendChild(row);
 
     // Continue button
-    const nextBtn = el('button', 'pkd-btn', 'Continuar →');
+    const nextBtn = el('button', 'pkd-btn');
+    nextBtn.appendChild(mi('photo_camera', '', false, '#ffffff'));
+    nextBtn.appendChild(document.createTextNode(' Subir documento'));
+    nextBtn.appendChild(mi('arrow_forward', 'sm', false, '#ffffff'));
     nextBtn.addEventListener('click', () => {
       this.state.phase = 'upload';
       this.state.uploadStep = 'front';
@@ -1884,7 +1952,11 @@ export class PilgrimCardIsland {
     body.appendChild(this.buildProgressDots(0, 5, 'Identificación'));
 
     const section = el('div', 'pkd-section');
-    section.appendChild(el('label', 'pkd-label', 'EMAIL DE CONTACTO (OPCIONAL)'));
+    const emailLabel = el('label', 'pkd-label');
+    emailLabel.style.cssText = 'display:flex;align-items:center;gap:.35rem';
+    emailLabel.appendChild(mi('mail', 'sm', false, '#2d5a3d'));
+    emailLabel.appendChild(document.createTextNode('EMAIL DE CONTACTO (OPCIONAL)'));
+    section.appendChild(emailLabel);
 
     const emailRow = el('div', 'pkd-email-row');
     const input = el('input', 'pkd-input') as HTMLInputElement;

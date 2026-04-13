@@ -15,6 +15,7 @@
  */
 
 import { bookingDatesStore, setBed } from '../../stores/bookingDatesStore';
+import { pilgrimStores } from '../../stores/bookingPilgrims';
 import { clearEl, parseSVG } from '../../utils/booking/svgIcons';
 
 // ── Color palette (matches book.astro FRAME / bedColors) ──────────────────
@@ -69,7 +70,7 @@ function createBunkSVG(
   for (let i = 1; i <= 4; i++) {
     slats += `<rect x="${3 + i * 6}" y="5" width="1.8" height="54" rx="0.6" fill="${F.mid}" stroke="${F.dark}" stroke-width="0.4"/>`;
   }
-  return `<svg viewBox="0 0 65 72" fill="none" style="filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.12))">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 65 72" fill="none" style="filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.12))">
     <ellipse cx="32" cy="69" rx="28" ry="3" fill="rgba(0,0,0,0.06)"/>
     <path d="M36,62 L36,6 Q36,3 39,2 L58,2 Q61,3 61,6 L61,62" fill="${F.light}" stroke="${F.dark}" stroke-width="1" opacity="0.7"/>
     <rect x="40" y="5" width="1.5" height="56" rx="0.5" fill="${F.mid}" stroke="${F.dark}" stroke-width="0.3" opacity="0.6"/>
@@ -559,7 +560,10 @@ export function initBedSelectionIsland(opts: BedSelectionIslandOptions = {}): vo
     const bedReady  = document.getElementById('bed-ready');
     const hint      = document.getElementById('bed-hint');
 
-    const personLabel = persons > 1 ? ` (Pilgrim ${activePerson + 1})` : '';
+    const activePd = pilgrimStores[activePerson]?.get();
+    const activeFirst = (activePd?.['f-first'] ?? '').trim();
+    const activeName = activeFirst || `Pilgrim ${activePerson + 1}`;
+    const personLabel = persons > 1 ? ` (${activeName})` : '';
 
     if (allPersonsDone && infoCard && bedReady && hint) {
       infoCard.style.display = '';
@@ -615,7 +619,7 @@ export function initBedSelectionIsland(opts: BedSelectionIslandOptions = {}): vo
       if (hint) {
         hint.textContent =
           persons > 1
-            ? `Select a bed for Pilgrim ${activePerson + 1}`
+            ? `Select a bed for ${activeName}`
             : 'Select a bed for your stay';
         hint.style.color = '#D4A017';
       }
@@ -642,7 +646,13 @@ export function initBedSelectionIsland(opts: BedSelectionIslandOptions = {}): vo
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = `person-tab${p === activePerson ? ' active' : ''}${done ? ' done' : ''}`;
-      btn.textContent = `Pilgrim ${p + 1}`;
+      const pd = pilgrimStores[p]?.get();
+      const first = (pd?.['f-first'] ?? '').trim();
+      const last  = (pd?.['f-last']  ?? '').trim();
+      const nameLabel = first
+        ? (last ? `${first} ${last.charAt(0)}.` : first)
+        : `Pilgrim ${p + 1}`;
+      btn.textContent = nameLabel;
       const pi = p;
       btn.addEventListener('click', () => {
         activePerson = pi;
