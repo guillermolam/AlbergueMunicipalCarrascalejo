@@ -2,6 +2,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import node from '@astrojs/node';
 import clerk from '@clerk/astro';
+import { wuchale } from 'wuchale/vite';
 
 // Use the Node adapter in local dev (avoids miniflare/workerd startup overhead).
 // Use the Cloudflare adapter for production builds (wrangler deploy / CF Workers).
@@ -16,6 +17,41 @@ export default defineConfig({
     : node({ mode: 'standalone' }),
 
   output: 'server',
+
+  // Astro i18n routing (prefixDefaultLocale: false = /book, /en/book)
+  i18n: {
+    defaultLocale: 'es',
+    locales: [
+      'es', 'en', 'zh', 'hi', 'ar', 'pt', 'ru', 'ja', 'de', 'fr',
+      'it', 'ko', 'id', 'tr', 'vi', 'ca', 'eu', 'gl', 'ast'
+    ],
+    routing: {
+      prefixDefaultLocale: false,
+      // redirectToDefaultLocale is only valid when prefixDefaultLocale: true,
+      // so it's omitted here to avoid "infinite loop" validation errors.
+      fallbackType: 'rewrite',
+    },
+    fallback: {
+      en: 'es',
+      fr: 'es',
+      de: 'es',
+      it: 'es',
+      pt: 'es',
+      zh: 'es',
+      ja: 'es',
+      ko: 'es',
+      ru: 'es',
+      hi: 'es',
+      ar: 'es',
+      id: 'es',
+      tr: 'es',
+      vi: 'es',
+      ca: 'es',
+      eu: 'es',
+      gl: 'es',
+      ast: 'es',
+    },
+  },
 
   integrations: [
     clerk(),
@@ -133,6 +169,7 @@ export default defineConfig({
   },
 
   vite: {
+    plugins: [wuchale()],
     build: {
       target: 'es2022',
       minify: 'esbuild',
