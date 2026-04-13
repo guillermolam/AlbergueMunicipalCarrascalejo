@@ -222,3 +222,79 @@ msgstr "Response"
 #: src/components/admin/ServiceStatus.astro
 msgid "Message"
 msgstr "Message"
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Select Your Bed"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Choose from our comfortable dormitories"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "<0/>Full"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "<0/>Partial"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "<0/>Selected"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "<0/>Occupied"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Select bed for:"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Your stay:"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Your Bed Schedule"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "<0/> Dormitory 1 <1>(Beds 1-12)</1>"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "<0/> Dormitory 2 <1>(Beds 13-24)</1>"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Bed #1"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Bottom Bunk"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Bunk #1"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Dormitory 1"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Ready!"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Your bed is reserved"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Hover over a bed to see availability, tap to assign"
+msgstr ""
+
+#: src/components/booking/StepBedSelection.astro
+msgid "Bed #1 — Top Bunk"
+msgstr ""
