@@ -189,3 +189,4 @@ runtime-config.toml
 
 # === FIRECRAWL CACHE ===
 **/.firecrawl/
+backend/retto-js-worker/retto
