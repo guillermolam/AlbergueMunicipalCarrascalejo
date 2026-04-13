@@ -5,6 +5,12 @@ compatibility_flags = ["nodejs_compat"]
 
 account_id = "798e36259a38e6217cc9987ce0bf1316"
 
+# Vite config to pre-compile the retto-wasm package
+[env.preview.vite]
+optimizeDeps = { include = ["@nekoimageland/retto-wasm"] }
+
+# Serve public folder as static assets
 [env.preview]
+node_compat = true
 
 [env.production]

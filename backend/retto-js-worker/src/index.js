@@ -1,16 +1,13 @@
 /**
- * Retto OCR Worker - NOT WORKING
+ * Retto OCR Worker - NOT COMPATIBLE WITH CLOUDFLARE WORKERS
  * 
- * This worker attempts to use @nekoimageland/retto-wasm for PaddleOCR
- * but the npm package is incompatible with Cloudflare Workers due to:
- * 1. Rolldown bundler generating createRequire(import.meta.url) which crashes
- * 2. Internal module imports that aren't exported in package.json
- * 3. URL-based WASM loading that doesn't work in Workers
+ * The @nekoimageland/retto-wasm npm package is fundamentally incompatible
+ * with Cloudflare Workers because it internally tries to fetch:
+ *   file:///public/retto_wasm.wasm
  * 
- * ENDPOINT: https://retto-ocr-worker.guillermolam-m.workers.dev
- * STATUS: Not working - needs fundamental package changes
+ * This file:// URL scheme doesn't work in workerd runtime.
  * 
- * For now, use the existing Tesseract ocr-service at port 8788
+ * The package would need to be forked and modified to support Workers.
  */
 
 export default {
@@ -18,24 +15,35 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+
     if (path === '/health') {
       return new Response(JSON.stringify({
         service: 'retto-ocr',
-        status: 'error',
+        status: 'not-compatible',
         engine: 'paddleocr-wasm',
         ready: false,
-        error: 'Package incompatible with Cloudflare Workers'
+        error: 'Package uses file:// URLs which dont work in workerd'
       }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
     return new Response(JSON.stringify({
-      error: 'Retto OCR not available - using Tesseract instead',
-      tesseract_url: 'http://localhost:8788'
+      error: 'Retto OCR not available',
+      message: 'The retto-wasm package is not compatible with Cloudflare Workers',
+      alternative: 'Use Tesseract ocr-service at http://localhost:8788'
     }), {
       status: 503,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   },
 };
