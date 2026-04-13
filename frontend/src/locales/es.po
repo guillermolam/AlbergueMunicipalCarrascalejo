@@ -298,3 +298,27 @@ msgstr "Hover over a bed to see availability, tap to assign"
 #: src/components/booking/StepBedSelection.astro
 msgid "Bed #1 — Top Bunk"
 msgstr "Bed #1 — Top Bunk"
+
+#: src/components/booking/StepConfirmed.astro
+msgid "¡Reserva Confirmada!"
+msgstr "¡Reserva Confirmada!"
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Recibirás una confirmación por email. ¡Buen Camino! 🥾"
+msgstr "Recibirás una confirmación por email. ¡Buen Camino! 🥾"
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Reference"
+msgstr "Reference"
+
+#: src/components/booking/StepConfirmed.astro
+msgid "ALB-2026-XXXX"
+msgstr "ALB-2026-XXXX"
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Ver Confirmación"
+msgstr "Ver Confirmación"
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Mi Dashboard"
+msgstr "Mi Dashboard"

@@ -298,3 +298,27 @@ msgstr ""
 #: src/components/booking/StepBedSelection.astro
 msgid "Bed #1 — Top Bunk"
 msgstr ""
+
+#: src/components/booking/StepConfirmed.astro
+msgid "¡Reserva Confirmada!"
+msgstr ""
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Recibirás una confirmación por email. ¡Buen Camino! 🥾"
+msgstr ""
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Reference"
+msgstr ""
+
+#: src/components/booking/StepConfirmed.astro
+msgid "ALB-2026-XXXX"
+msgstr ""
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Ver Confirmación"
+msgstr ""
+
+#: src/components/booking/StepConfirmed.astro
+msgid "Mi Dashboard"
+msgstr ""
