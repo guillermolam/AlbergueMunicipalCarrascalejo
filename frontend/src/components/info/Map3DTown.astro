@@ -3,7 +3,7 @@
 // No props needed; coordinates are baked in (39.0237972, -6.3373782)
 ---
 
-<div class="map3d-town-wrap">
+<div class="map3d-town-wrap" data-active="false">
   <canvas id="map3d-town" aria-label="Mapa 3D de El Carrascalejo en la Vía de la Plata"></canvas>
   <div class="map3d-legend" aria-hidden="true">
     <span class="legend-dot legend-dot--route"></span><span>Vía de la Plata</span>
@@ -15,9 +15,13 @@
 
 <script type="module">
 import * as THREE from 'three';
+import { attachSectionActive } from '../../lib/three/sectionActive';
 
 const canvas = document.getElementById('map3d-town');
 if (!canvas) throw new Error('map3d-town canvas missing');
+
+const root = canvas.closest('.map3d-town-wrap');
+if (!root) throw new Error('map3d-town root missing');
 
 const wrap = canvas.parentElement;
 let W = wrap.clientWidth, H = wrap.clientHeight;
@@ -227,11 +231,13 @@ canvas.addEventListener('mousemove', (e) => {
   const rect = canvas.getBoundingClientRect();
   mouse.x = ((e.clientX - rect.left) / W) * 2 - 1;
   mouse.y = -((e.clientY - rect.top) / H) * 2 + 1;
+  if (reducedMotion) renderFrame();
 });
 
 canvas.addEventListener('mouseleave', () => {
   mouse.set(-9, -9);
   if (labelEl) labelEl.textContent = '';
+  if (reducedMotion) renderFrame();
 });
 
 // Auto-rotation state
@@ -245,6 +251,7 @@ window.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
   autoTheta -= (e.clientX - prevX) * 0.005;
   prevX = e.clientX;
+  if (reducedMotion) renderFrame();
 });
 
 // Touch support
@@ -254,12 +261,16 @@ window.addEventListener('touchmove', (e) => {
   if (!isDragging) return;
   autoTheta -= (e.touches[0].clientX - prevX) * 0.005;
   prevX = e.touches[0].clientX;
+  if (reducedMotion) renderFrame();
 }, { passive: true });
 
 // Animation
 let frame = 0;
-function animate() {
-  requestAnimationFrame(animate);
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+let running = false;
+let raf = 0;
+
+function renderFrame() {
   frame++;
 
   if (!isDragging) autoTheta += 0.003;
@@ -272,23 +283,21 @@ function animate() {
   // Beacon pulse
   for (const t of townObjects) {
     if (t.name.includes('Carrascalejo')) {
-      const beacon = t.mesh.children.find(c => c instanceof THREE.PointLight);
+      const beacon = t.mesh.children.find((c) => c instanceof THREE.PointLight);
       if (beacon) beacon.intensity = 1.2 + Math.sin(frame * 0.06) * 0.8;
     }
   }
 
   // Hover detection
   raycaster.setFromCamera(mouse, camera);
-  const meshes = townObjects.map(t => t.mesh);
+  const meshes = townObjects.map((t) => t.mesh);
   const hits = raycaster.intersectObjects(meshes, true);
   if (hits.length > 0) {
     // Walk up to find group
     let obj = hits[0].object;
-    while (obj.parent && !townObjects.find(t => t.mesh === obj)) obj = obj.parent;
-    const found = townObjects.find(t => t.mesh === obj);
-    if (found && labelEl) {
-      labelEl.textContent = found.km ? `${found.name}  (km ${found.km})` : found.name;
-    }
+    while (obj.parent && !townObjects.find((t) => t.mesh === obj)) obj = obj.parent;
+    const found = townObjects.find((t) => t.mesh === obj);
+    if (found && labelEl) labelEl.textContent = found.km ? `${found.name}  (km ${found.km})` : found.name;
     canvas.style.cursor = 'pointer';
   } else {
     if (labelEl) labelEl.textContent = '';
@@ -297,7 +306,40 @@ function animate() {
 
   renderer.render(scene, camera);
 }
-animate();
+
+function tick() {
+  if (!running) return;
+  raf = requestAnimationFrame(tick);
+  renderFrame();
+}
+
+function start() {
+  if (reducedMotion) {
+    renderFrame();
+    return;
+  }
+  if (running) return;
+  running = true;
+  tick();
+}
+
+function stop() {
+  running = false;
+  if (raf) cancelAnimationFrame(raf);
+  raf = 0;
+}
+
+// Auto-start/stop is still driven via data-active.
+attachSectionActive(root, {
+  auto: true,
+  onChange(active) {
+    if (active) start();
+    else stop();
+  },
+});
+
+// First paint so it never shows a blank canvas.
+renderFrame();
 
 // Resize
 const ro = new ResizeObserver(() => {
@@ -306,6 +348,7 @@ const ro = new ResizeObserver(() => {
   renderer.setSize(W, H);
   camera.aspect = W / H;
   camera.updateProjectionMatrix();
+  if (reducedMotion) renderFrame();
 });
 ro.observe(wrap);
 </script>

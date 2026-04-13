@@ -1,0 +1,178 @@
+---
+// PracticalScene.astro — Minimal compass + clock scene (non-interactive).
+---
+
+<div id="scene-practical" class="section-scene" data-active="false">
+  <canvas id="scene-practical-canvas" aria-hidden="true"></canvas>
+</div>
+
+<script type="module">
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+  import { cssVarColorInt } from '../../../lib/three/cssColor';
+
+  const root = document.getElementById('scene-practical');
+  const canvas = document.getElementById('scene-practical-canvas');
+  if (!root || !canvas) throw new Error('[PracticalScene] root/canvas missing');
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  let runtime = null;
+  let runtimePromise = null;
+
+  async function init() {
+    const THREE = await import('three');
+
+    const cWhite = cssVarColorInt('--white', 0xffffff);
+    const cBlack = cssVarColorInt('--black', 0x1a1a1a);
+    const cRed = cssVarColorInt('--red', 0xed1c24);
+    const cGreen = cssVarColorInt('--green', 0x00ab39);
+    const cGold = cssVarColorInt('--gold', 0xeac102);
+
+    let W = root.clientWidth;
+    let H = root.clientHeight;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 50);
+    camera.position.set(0, 4.0, 9.0);
+    camera.lookAt(0, 1.5, 0);
+
+    scene.add(new THREE.AmbientLight(cWhite, 0.95));
+    const sun = new THREE.DirectionalLight(cWhite, 0.85);
+    sun.position.set(6, 10, 4);
+    scene.add(sun);
+
+    // Compass base (disc).
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.2, 3.2, 0.28, 40),
+      new THREE.MeshStandardMaterial({ color: cGreen, roughness: 0.95, transparent: true, opacity: 0.18 })
+    );
+    base.position.y = 0.25;
+    scene.add(base);
+
+    // Compass ring.
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(3.0, 0.09, 10, 64),
+      new THREE.MeshStandardMaterial({ color: cBlack, roughness: 0.7, transparent: true, opacity: 0.25 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.45;
+    scene.add(ring);
+
+    // Needle.
+    const needle = new THREE.Group();
+    const needleNorth = new THREE.Mesh(
+      new THREE.ConeGeometry(0.18, 1.8, 10),
+      new THREE.MeshStandardMaterial({ color: cRed, roughness: 0.55 })
+    );
+    needleNorth.position.set(0, 1.25, 0);
+    const needleSouth = new THREE.Mesh(
+      new THREE.ConeGeometry(0.16, 1.5, 10),
+      new THREE.MeshStandardMaterial({ color: cGold, roughness: 0.6 })
+    );
+    needleSouth.position.set(0, 0.6, 0);
+    needleSouth.rotation.x = Math.PI;
+    needle.add(needleNorth, needleSouth);
+    needle.rotation.x = -Math.PI / 2;
+    needle.position.y = 0.65;
+    scene.add(needle);
+
+    // Clock face floating above.
+    const face = new THREE.Mesh(
+      new THREE.CircleGeometry(1.55, 40),
+      new THREE.MeshStandardMaterial({ color: cWhite, roughness: 0.9, transparent: true, opacity: 0.55 })
+    );
+    face.position.set(0, 2.15, -0.4);
+    face.rotation.x = -Math.PI / 2.2;
+    scene.add(face);
+
+    const handMat = new THREE.MeshStandardMaterial({ color: cBlack, roughness: 0.8 });
+    const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.85, 0.06), handMat);
+    const minHand = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.12, 0.05), handMat);
+    hourHand.position.set(0, 2.18, -0.35);
+    minHand.position.set(0, 2.18, -0.35);
+    hourHand.rotation.x = -Math.PI / 2.2;
+    minHand.rotation.x = -Math.PI / 2.2;
+    scene.add(hourHand, minHand);
+
+    function renderFrame() {
+      const now = new Date();
+      const mins = now.getMinutes() + now.getSeconds() / 60;
+      const hrs = (now.getHours() % 12) + mins / 60;
+
+      // Needle gently wobbles, but keeps pointing "north".
+      const wobble = Math.sin(performance.now() * 0.0012) * 0.08;
+      needle.rotation.z = wobble;
+
+      // Clock hands.
+      minHand.rotation.z = -mins * (Math.PI * 2) / 60;
+      hourHand.rotation.z = -hrs * (Math.PI * 2) / 12;
+
+      renderer.render(scene, camera);
+    }
+
+    const loop = createRafLoop(() => renderFrame());
+    const ro = new ResizeObserver(() => {
+      W = root.clientWidth;
+      H = root.clientHeight;
+      renderer.setSize(W, H);
+      camera.aspect = Math.max(1e-6, W / Math.max(1, H));
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame();
+    });
+    ro.observe(root);
+
+    renderFrame();
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(root, {
+    auto: true,
+    onChange(active) {
+      if (active) ensureRuntime().then((r) => r.start());
+      else runtime?.stop();
+    },
+  });
+</script>
+
+<style>
+  .section-scene {
+    position: relative;
+    width: 100%;
+    height: 16rem;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(232, 245, 233, 0.55));
+  }
+  .section-scene canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  @media (min-width: 768px) {
+    .section-scene { height: 20rem; }
+  }
+</style>
+

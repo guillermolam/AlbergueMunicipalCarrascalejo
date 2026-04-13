@@ -1,0 +1,195 @@
+---
+// FaqScene.astro — Minimal interactive "stack of cards" (click to expand).
+---
+
+<div id="scene-faq" class="section-scene" data-active="false">
+  <canvas id="scene-faq-canvas" aria-hidden="true"></canvas>
+  <div class="scene-hint" aria-hidden="true">Click / tap a card</div>
+</div>
+
+<script type="module">
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+  import { cssVarColorInt } from '../../../lib/three/cssColor';
+
+  const root = document.getElementById('scene-faq');
+  const canvas = document.getElementById('scene-faq-canvas');
+  if (!root || !canvas) throw new Error('[FaqScene] root/canvas missing');
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  let runtime = null;
+  let runtimePromise = null;
+
+  async function init() {
+    const THREE = await import('three');
+
+    const cWhite = cssVarColorInt('--white', 0xffffff);
+    const cBlack = cssVarColorInt('--black', 0x1a1a1a);
+    const cGold = cssVarColorInt('--gold', 0xeac102);
+    const cBlue = cssVarColorInt('--blue', 0x0071bc);
+    const cGreen = cssVarColorInt('--green', 0x00ab39);
+
+    let W = root.clientWidth;
+    let H = root.clientHeight;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 40);
+    camera.position.set(0, 3.2, 8.8);
+    camera.lookAt(0, 1.2, 0);
+
+    scene.add(new THREE.AmbientLight(cWhite, 0.92));
+    const sun = new THREE.DirectionalLight(cWhite, 0.9);
+    sun.position.set(7, 10, 4);
+    scene.add(sun);
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-9, -9);
+    let selected = 1;
+
+    const mats = [
+      new THREE.MeshStandardMaterial({ color: cGold, roughness: 0.6 }),
+      new THREE.MeshStandardMaterial({ color: cBlue, roughness: 0.6 }),
+      new THREE.MeshStandardMaterial({ color: cGreen, roughness: 0.6 }),
+    ];
+    const ink = new THREE.MeshBasicMaterial({ color: cBlack, transparent: true, opacity: 0.12, wireframe: true });
+
+    const cards = [];
+    for (let i = 0; i < 3; i++) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, 0.12), mats[i]);
+      const outline = new THREE.Mesh(new THREE.BoxGeometry(3.25, 2.05, 0.12), ink);
+      g.add(body, outline);
+      g.userData.index = i;
+      scene.add(g);
+      cards.push(g);
+    }
+
+    function placeCards(t) {
+      for (const g of cards) {
+        const i = g.userData.index;
+        const isSel = i === selected;
+        const stack = i - 1;
+        const lift = isSel ? 0.7 : 0;
+
+        g.position.x = stack * 0.45;
+        g.position.y = 1.3 + stack * 0.08 + lift;
+        g.position.z = stack * -0.35;
+        g.rotation.y = stack * 0.22 + Math.sin(t * 0.5 + i) * 0.03;
+        g.rotation.x = -0.08 + Math.sin(t * 0.7 + i) * 0.02;
+        g.scale.setScalar(isSel ? 1.08 : 0.95);
+      }
+    }
+
+    const onPointer = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+      mouse.y = -(((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1);
+      if (reducedMotion) renderFrame();
+    };
+    canvas.addEventListener('mousemove', onPointer);
+    canvas.addEventListener('mouseleave', () => {
+      mouse.set(-9, -9);
+      canvas.style.cursor = 'default';
+      if (reducedMotion) renderFrame();
+    });
+
+    const onClick = () => {
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(cards, true);
+      if (!hits.length) return;
+      const g = hits[0].object.parent;
+      const idx = g?.userData?.index;
+      if (typeof idx === 'number') selected = idx;
+      if (reducedMotion) renderFrame();
+    };
+    canvas.addEventListener('click', onClick);
+
+    const clock = new THREE.Clock();
+    function renderFrame() {
+      const t = clock.getElapsedTime();
+      placeCards(t);
+
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(cards, true);
+      canvas.style.cursor = hits.length ? 'pointer' : 'grab';
+
+      renderer.render(scene, camera);
+    }
+
+    const loop = createRafLoop(() => renderFrame());
+    const ro = new ResizeObserver(() => {
+      W = root.clientWidth;
+      H = root.clientHeight;
+      renderer.setSize(W, H);
+      camera.aspect = Math.max(1e-6, W / Math.max(1, H));
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame();
+    });
+    ro.observe(root);
+
+    renderFrame();
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        canvas.removeEventListener('mousemove', onPointer);
+        canvas.removeEventListener('click', onClick);
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(root, {
+    auto: true,
+    onChange(active) {
+      if (active) ensureRuntime().then((r) => r.start());
+      else runtime?.stop();
+    },
+  });
+</script>
+
+<style>
+  .section-scene {
+    position: relative;
+    width: 100%;
+    height: 16rem;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(234, 193, 2, 0.10), rgba(0, 113, 188, 0.08));
+  }
+  .section-scene canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .scene-hint {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 0.7rem;
+    color: rgba(26, 26, 26, 0.55);
+    pointer-events: none;
+    font-style: italic;
+  }
+  @media (min-width: 768px) {
+    .section-scene { height: 20rem; }
+  }
+</style>
+

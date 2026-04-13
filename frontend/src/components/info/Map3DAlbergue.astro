@@ -3,7 +3,7 @@
 // Rooms: Reception, Dorm 1 (12 beds), Dorm 2 (12 beds), Kitchen, Bathroom×2, Patio
 ---
 
-<div class="map3d-albergue-wrap">
+<div class="map3d-albergue-wrap" data-active="false">
   <canvas id="map3d-albergue" aria-label="Plano 3D del Albergue Municipal"></canvas>
   <div class="albergue-room-label" id="albergue-room-label" aria-live="polite">
     <strong id="albergue-room-name"></strong>
@@ -14,9 +14,13 @@
 
 <script type="module">
 import * as THREE from 'three';
+import { attachSectionActive } from '../../lib/three/sectionActive';
 
 const canvas = document.getElementById('map3d-albergue');
 if (!canvas) throw new Error('map3d-albergue canvas missing');
+
+const root = canvas.closest('.map3d-albergue-wrap');
+if (!root) throw new Error('map3d-albergue root missing');
 
 const wrap = canvas.parentElement;
 let W = wrap.clientWidth, H = wrap.clientHeight;
@@ -242,12 +246,14 @@ canvas.addEventListener('mousemove', (e) => {
   const rect = canvas.getBoundingClientRect();
   mouse.x = ((e.clientX - rect.left) / W) * 2 - 1;
   mouse.y = -((e.clientY - rect.top) / H) * 2 + 1;
+  if (reducedMotion) renderFrame();
 });
 
 canvas.addEventListener('mouseleave', () => {
   mouse.set(-9, -9);
   if (labelEl) labelEl.classList.remove('visible');
   canvas.style.cursor = 'default';
+  if (reducedMotion) renderFrame();
 });
 
 let autoTheta = Math.PI * 0.18;
@@ -260,6 +266,7 @@ window.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
   autoTheta += (e.clientX - prevX) * 0.008;
   prevX = e.clientX;
+  if (reducedMotion) renderFrame();
 });
 
 canvas.addEventListener('touchstart', (e) => { isDragging = true; prevX = e.touches[0].clientX; }, { passive: true });
@@ -268,13 +275,16 @@ window.addEventListener('touchmove', (e) => {
   if (!isDragging) return;
   autoTheta += (e.touches[0].clientX - prevX) * 0.008;
   prevX = e.touches[0].clientX;
+  if (reducedMotion) renderFrame();
 }, { passive: true });
 
 let highlighted = null;
 
-function animate() {
-  requestAnimationFrame(animate);
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+let running = false;
+let raf = 0;
 
+function renderFrame() {
   if (!isDragging) autoTheta += 0.004;
   camera.position.x = RADIUS * Math.sin(autoTheta);
   camera.position.z = RADIUS * Math.cos(autoTheta);
@@ -303,7 +313,39 @@ function animate() {
 
   renderer.render(scene, camera);
 }
-animate();
+
+function tick() {
+  if (!running) return;
+  raf = requestAnimationFrame(tick);
+  renderFrame();
+}
+
+function start() {
+  if (reducedMotion) {
+    renderFrame();
+    return;
+  }
+  if (running) return;
+  running = true;
+  tick();
+}
+
+function stop() {
+  running = false;
+  if (raf) cancelAnimationFrame(raf);
+  raf = 0;
+}
+
+attachSectionActive(root, {
+  auto: true,
+  onChange(active) {
+    if (active) start();
+    else stop();
+  },
+});
+
+// First paint so it never shows a blank canvas.
+renderFrame();
 
 const ro = new ResizeObserver(() => {
   W = wrap.clientWidth;
@@ -311,6 +353,7 @@ const ro = new ResizeObserver(() => {
   renderer.setSize(W, H);
   camera.aspect = W / H;
   camera.updateProjectionMatrix();
+  if (reducedMotion) renderFrame();
 });
 ro.observe(wrap);
 </script>

@@ -1,0 +1,198 @@
+---
+// HeroScene.astro — Minimal Three.js scene for the "hero" section.
+// Owns its canvas; starts/stops via data-active (auto-toggled by IntersectionObserver).
+---
+
+<div id="scene-hero" class="section-scene" data-active="false">
+  <canvas id="scene-hero-canvas" aria-hidden="true"></canvas>
+</div>
+
+<script type="module">
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+  import { cssVarColorInt } from '../../../lib/three/cssColor';
+
+  const root = document.getElementById('scene-hero');
+  const canvas = document.getElementById('scene-hero-canvas');
+  if (!root || !canvas) throw new Error('[HeroScene] root/canvas missing');
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+  let runtime = null;
+  let runtimePromise = null;
+
+  async function init() {
+    const THREE = await import('three');
+
+    const cGreen = cssVarColorInt('--green', 0x00ab39);
+    const cGold = cssVarColorInt('--gold', 0xeac102);
+    const cBlack = cssVarColorInt('--black', 0x1a1a1a);
+    const cWhite = cssVarColorInt('--white', 0xffffff);
+
+    let W = root.clientWidth;
+    let H = root.clientHeight;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
+    camera.position.set(0, 6.5, 11);
+    camera.lookAt(0, 1.2, 0);
+
+    scene.add(new THREE.AmbientLight(cWhite, 0.85));
+    const sun = new THREE.DirectionalLight(cWhite, 1.1);
+    sun.position.set(6, 10, 4);
+    scene.add(sun);
+
+    // Subtle "dehesa" topography: a waving plane with a thin wireframe feel.
+    const seg = 56;
+    const planeGeo = new THREE.PlaneGeometry(18, 10, seg, seg);
+    planeGeo.rotateX(-Math.PI / 2);
+    const pos = planeGeo.attributes.position;
+    const baseY = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) baseY[i] = pos.getY(i);
+
+    const plane = new THREE.Mesh(
+      planeGeo,
+      new THREE.MeshStandardMaterial({
+        color: cGreen,
+        roughness: 0.95,
+        metalness: 0,
+        transparent: true,
+        opacity: 0.22,
+        wireframe: true,
+      })
+    );
+    plane.position.y = 0;
+    scene.add(plane);
+
+    // "Camino shell" — torus knot as a lightweight emblem.
+    const shell = new THREE.Mesh(
+      new THREE.TorusKnotGeometry(0.7, 0.22, 96, 10),
+      new THREE.MeshStandardMaterial({ color: cGold, roughness: 0.5, metalness: 0.18 })
+    );
+    shell.position.set(0, 2.0, 0.5);
+    scene.add(shell);
+
+    // Small black "route" line.
+    const route = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-5.5, 0.15, 2.2),
+        new THREE.Vector3(-2.0, 0.15, 0.7),
+        new THREE.Vector3(0.0, 0.15, 0.2),
+        new THREE.Vector3(2.1, 0.15, -0.8),
+        new THREE.Vector3(5.6, 0.15, -2.0),
+      ]),
+      new THREE.LineBasicMaterial({ color: cBlack, transparent: true, opacity: 0.22 })
+    );
+    scene.add(route);
+
+    // Pointer parallax (kept very small).
+    const pointer = { x: 0, y: 0 };
+    const onMove = (e) => {
+      const r = root.getBoundingClientRect();
+      pointer.x = ((e.clientX - r.left) / Math.max(1, r.width) - 0.5) * 2;
+      pointer.y = ((e.clientY - r.top) / Math.max(1, r.height) - 0.5) * 2;
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+    root.addEventListener('mousemove', onMove);
+    root.addEventListener('mouseleave', () => {
+      pointer.x = 0;
+      pointer.y = 0;
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+
+    const clock = new THREE.Clock();
+
+    function renderFrame(_dt, t) {
+      const time = clock.getElapsedTime();
+
+      // Wave the plane a touch.
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        pos.setY(i, baseY[i] + Math.sin(x * 0.55 + time * 0.9) * 0.12 + Math.cos(z * 0.55 + time * 0.75) * 0.10);
+      }
+      pos.needsUpdate = true;
+      planeGeo.computeVertexNormals();
+
+      // Shell float + subtle rotation.
+      shell.rotation.y = time * 0.55;
+      shell.rotation.x = Math.sin(time * 0.6) * 0.15;
+      shell.position.y = 2.0 + Math.sin(time * 0.9) * 0.12;
+
+      // Parallax camera.
+      camera.position.x = pointer.x * 0.6;
+      camera.position.y = 6.5 + pointer.y * -0.25;
+      camera.lookAt(0, 1.2, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    const loop = createRafLoop(renderFrame);
+
+    const ro = new ResizeObserver(() => {
+      W = root.clientWidth;
+      H = root.clientHeight;
+      renderer.setSize(W, H);
+      camera.aspect = Math.max(1e-6, W / Math.max(1, H));
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+    ro.observe(root);
+
+    // First paint.
+    renderFrame(0, performance.now());
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        root.removeEventListener('mousemove', onMove);
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(root, {
+    auto: true,
+    onChange(active) {
+      if (active) ensureRuntime().then((r) => r.start());
+      else runtime?.stop();
+    },
+  });
+</script>
+
+<style>
+  .section-scene {
+    position: relative;
+    width: 100%;
+    height: 18rem;
+    border-radius: 12px;
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 20% 10%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+  }
+  .section-scene canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  @media (min-width: 768px) {
+    .section-scene { height: 22rem; }
+  }
+</style>
+

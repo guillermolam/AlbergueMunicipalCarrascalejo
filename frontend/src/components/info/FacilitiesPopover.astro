@@ -1,0 +1,567 @@
+---
+// FacilitiesPopover.astro — Radix-style popover for all facilities
+// Pure Astro 6 + Alpine.js (no React). Full Booking.com facilities list.
+---
+
+<!-- Alpine.js popover component -->
+<div
+  class="fp-root"
+  x-data="facilitiesPopover()"
+  x-init="init()"
+>
+  <!-- Trigger button -->
+  <button
+    class="fp-trigger"
+    @click="toggle()"
+    :aria-expanded="open"
+    aria-haspopup="dialog"
+    aria-controls="fp-panel"
+  >
+    <span class="fp-trigger-icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+      </svg>
+    </span>
+    <span>Ver todas las instalaciones</span>
+    <span class="fp-badge" x-text="totalCount"></span>
+    <span class="fp-chevron" :class="open ? 'fp-chevron--up' : ''" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </span>
+  </button>
+
+  <!-- Popover panel -->
+  <div
+    id="fp-panel"
+    class="fp-panel"
+    role="dialog"
+    aria-label="Lista completa de instalaciones"
+    x-show="open"
+    x-transition:enter="fp-enter"
+    x-transition:enter-start="fp-enter-start"
+    x-transition:enter-end="fp-enter-end"
+    x-transition:leave="fp-leave"
+    x-transition:leave-start="fp-leave-start"
+    x-transition:leave-end="fp-leave-end"
+    @click.outside="close()"
+    @keydown.escape.window="close()"
+    x-cloak
+  >
+    <!-- Panel arrow -->
+    <div class="fp-arrow" aria-hidden="true"></div>
+
+    <!-- Header -->
+    <div class="fp-header">
+      <div>
+        <h3 class="fp-title">Instalaciones y servicios</h3>
+        <p class="fp-subtitle" x-text="filteredCount + ' de ' + totalCount + ' instalaciones'"></p>
+      </div>
+      <button class="fp-close" @click="close()" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="fp-search-wrap">
+      <svg class="fp-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input
+        class="fp-search"
+        type="search"
+        placeholder="Buscar instalación…"
+        x-model.debounce.200="query"
+        aria-label="Buscar instalaciones"
+      />
+    </div>
+
+    <!-- Category pills -->
+    <div class="fp-cats" role="tablist">
+      <template x-for="cat in categories" :key="cat">
+        <button
+          class="fp-cat-pill"
+          :class="activeCat === cat ? 'fp-cat-pill--active' : ''"
+          @click="activeCat = activeCat === cat ? 'all' : cat"
+          role="tab"
+          :aria-selected="activeCat === cat"
+          x-text="cat"
+        ></button>
+      </template>
+    </div>
+
+    <!-- Facilities list -->
+    <div class="fp-list" role="list">
+      <template x-for="(group, idx) in visibleGroups" :key="group.cat">
+        <div class="fp-group" role="group" :aria-label="group.cat">
+          <div class="fp-group-header" x-text="group.cat"></div>
+          <template x-for="item in group.items" :key="item.key">
+            <div class="fp-item" role="listitem">
+              <span class="fp-item-icon" x-text="item.emoji" aria-hidden="true"></span>
+              <span class="fp-item-label" x-text="item.label"></span>
+              <span class="fp-item-badge" x-show="item.free" aria-label="Gratis">Gratis</span>
+              <span class="fp-item-badge fp-item-badge--paid" x-show="item.paid" aria-label="De pago">De pago</span>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <p class="fp-empty" x-show="filteredCount === 0">
+        No se encontraron instalaciones para "<span x-text="query"></span>"
+      </p>
+    </div>
+
+    <!-- Footer score -->
+    <div class="fp-footer">
+      <div class="fp-score">
+        <span class="fp-score-num">9.0</span>
+        <div class="fp-score-text">
+          <strong>Instalaciones</strong>
+          <span>Puntuación Booking.com · 71 opiniones</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Alpine.js component — registered as a global function so Alpine picks it up
+// @ts-ignore — Alpine is a browser global injected by the Layout
+declare const Alpine: any;
+document.addEventListener('alpine:init', () => {
+  Alpine.data('facilitiesPopover', () => ({
+    open: false,
+    query: '',
+    activeCat: 'all',
+
+    // Full Booking.com facilities list (structured)
+    allGroups: [
+      {
+        cat: '⭐ Más populares',
+        items: [
+          { key: 'wifi',        emoji: '📶', label: 'WiFi gratuito en todo el albergue', free: true  },
+          { key: 'parking',     emoji: '🅿️', label: 'Parking gratuito en el lugar',      free: true  },
+          { key: 'breakfast',   emoji: '☕', label: 'Desayuno continental disponible',   paid: true  },
+          { key: 'lockers',     emoji: '🔒', label: 'Taquillas individuales',             free: true  },
+          { key: 'laundry',     emoji: '🫧', label: 'Servicio de lavandería',             paid: true  },
+          { key: 'accessible',  emoji: '♿', label: 'Accesible para silla de ruedas',    free: true  },
+          { key: 'towels',      emoji: '🛏️', label: 'Ropa de cama incluida',              free: true  },
+          { key: 'sheets',      emoji: '📜', label: 'Sábanas y manta incluidas',          free: true  },
+        ],
+      },
+      {
+        cat: '🚿 Baño',
+        items: [
+          { key: 'hotwater',    emoji: '🚿', label: 'Ducha — agua caliente 24h',         free: true  },
+          { key: 'hairdryer',   emoji: '💨', label: 'Secador de pelo disponible',        free: true  },
+          { key: 'sharedwc',    emoji: '🚽', label: 'Aseos compartidos',                 free: true  },
+          { key: 'adaptedwc',   emoji: '♿', label: 'Baño adaptado para discapacitados',  free: true  },
+          { key: 'grabbar',     emoji: '🦯', label: 'Barras de apoyo en el baño',        free: true  },
+          { key: 'toiletries',  emoji: '🧴', label: 'Amenidades básicas disponibles',    free: true  },
+        ],
+      },
+      {
+        cat: '🍳 Cocina',
+        items: [
+          { key: 'kitchenuse',  emoji: '🍳', label: 'Uso de cocina compartida',          free: true  },
+          { key: 'microwave',   emoji: '📻', label: 'Microondas',                        free: true  },
+          { key: 'fridge',      emoji: '🧊', label: 'Nevera compartida',                 free: true  },
+          { key: 'stove',       emoji: '🔥', label: 'Fogones de gas',                    free: true  },
+          { key: 'utensils',    emoji: '🍴', label: 'Utensilios de cocina',               free: true  },
+          { key: 'kettle',      emoji: '🫖', label: 'Hervidor de agua',                  free: true  },
+          { key: 'toaster',     emoji: '🍞', label: 'Tostadora',                         free: true  },
+          { key: 'diningarea',  emoji: '🪑', label: 'Zona de comedor compartida',        free: true  },
+        ],
+      },
+      {
+        cat: '🌿 Exterior',
+        items: [
+          { key: 'garden',      emoji: '🌻', label: 'Jardín y patio exterior',           free: true  },
+          { key: 'terrace',     emoji: '☀️', label: 'Terraza',                            free: true  },
+          { key: 'picnic',      emoji: '🧺', label: 'Mesas de picnic',                   free: true  },
+          { key: 'clothesline', emoji: '👕', label: 'Tendedero exterior',                free: true  },
+          { key: 'bbq',         emoji: '🔥', label: 'Área de barbacoa (temporal)',       free: true  },
+        ],
+      },
+      {
+        cat: '🏃 Actividades',
+        items: [
+          { key: 'camino',      emoji: '🐚', label: 'En el Camino de Santiago (Vía de la Plata)', free: true },
+          { key: 'hiking',      emoji: '🥾', label: 'Rutas de senderismo cercanas',      free: true  },
+          { key: 'cycling',     emoji: '🚴', label: 'Rutas ciclistas disponibles',       free: true  },
+          { key: 'merida',      emoji: '🏛️', label: 'Visita a Mérida (15 km)',           free: false },
+          { key: 'stamps',      emoji: '📮', label: 'Sello de la Credencial del Peregrino', free: true },
+        ],
+      },
+      {
+        cat: '☕ Comidas y bebidas',
+        items: [
+          { key: 'cafe',        emoji: '☕', label: 'Cafetería en el albergue',          paid: true  },
+          { key: 'pilgrim',     emoji: '🍽️', label: 'Menú del peregrino (cena)',         paid: true  },
+          { key: 'bocadillos',  emoji: '🥖', label: 'Bocadillos y snacks',               paid: true  },
+          { key: 'vending',     emoji: '🥤', label: 'Máquina de bebidas',                paid: true  },
+          { key: 'wine',        emoji: '🍷', label: 'Vino local Extremeño disponible',   paid: true  },
+        ],
+      },
+      {
+        cat: '📶 Internet',
+        items: [
+          { key: 'wifiall',     emoji: '📶', label: 'WiFi en todo el albergue',          free: true  },
+          { key: 'wifispeed',   emoji: '⚡', label: 'Conexión de alta velocidad',        free: true  },
+        ],
+      },
+      {
+        cat: '🅿️ Aparcamiento',
+        items: [
+          { key: 'carpk',       emoji: '🚗', label: 'Parking gratuito para coches',      free: true  },
+          { key: 'bikepk',      emoji: '🚲', label: 'Parking cubierto para bicicletas',  free: true  },
+          { key: 'biketools',   emoji: '🔧', label: 'Herramientas básicas para bici',    free: true  },
+        ],
+      },
+      {
+        cat: '🛎️ Servicios',
+        items: [
+          { key: 'reception',   emoji: '🛎️', label: 'Recepción (10:00–21:00)',           free: true  },
+          { key: 'checkin24',   emoji: '📞', label: 'Check-in tardío previo aviso',      free: true  },
+          { key: 'ironing',     emoji: '👔', label: 'Tabla de plancha disponible',       free: true  },
+          { key: 'luggage',     emoji: '🧳', label: 'Consigna de equipaje',              free: true  },
+          { key: 'tourist',     emoji: '🗺️', label: 'Información turística y Camino',    free: true  },
+          { key: 'firstaid',    emoji: '🏥', label: 'Botiquín de primeros auxilios',     free: true  },
+          { key: 'credencial',  emoji: '📋', label: 'Venta de Credencial del Peregrino', paid: true  },
+        ],
+      },
+      {
+        cat: '🔐 Seguridad',
+        items: [
+          { key: 'cctv',        emoji: '📷', label: 'Cámaras de seguridad exteriores',  free: true  },
+          { key: 'extinguisher',emoji: '🧯', label: 'Extintores de incendio',            free: true  },
+          { key: 'smoke',       emoji: '🚬', label: 'Detectores de humo',               free: true  },
+          { key: 'individual',  emoji: '🔒', label: 'Taquillas individuales por cama',   free: true  },
+        ],
+      },
+      {
+        cat: '♿ Accesibilidad',
+        items: [
+          { key: 'wheelchair',  emoji: '♿', label: 'Accesible para silla de ruedas',    free: true  },
+          { key: 'groundfloor', emoji: '🏠', label: 'Planta baja accesible',             free: true  },
+          { key: 'adaptedbath', emoji: '🚿', label: 'Baño adaptado',                     free: true  },
+          { key: 'ramp',        emoji: '🔼', label: 'Rampa de acceso',                   free: true  },
+          { key: 'rails',       emoji: '🦯', label: 'Barras de apoyo',                   free: true  },
+        ],
+      },
+      {
+        cat: '🌍 Idiomas del personal',
+        items: [
+          { key: 'spanish',     emoji: '🇪🇸', label: 'Español',                          free: true  },
+          { key: 'english',     emoji: '🇬🇧', label: 'Inglés',                            free: true  },
+          { key: 'portuguese',  emoji: '🇵🇹', label: 'Portugués (básico)',               free: true  },
+        ],
+      },
+    ],
+
+    get categories() {
+      return ['all', ...this.allGroups.map(g => g.cat)];
+    },
+
+    get totalCount() {
+      return this.allGroups.reduce((acc, g) => acc + g.items.length, 0);
+    },
+
+    get visibleGroups() {
+      const q = this.query.toLowerCase().trim();
+      return this.allGroups
+        .filter(g => this.activeCat === 'all' || g.cat === this.activeCat)
+        .map(g => ({
+          cat: g.cat,
+          items: q
+            ? g.items.filter(i => i.label.toLowerCase().includes(q))
+            : g.items,
+        }))
+        .filter(g => g.items.length > 0);
+    },
+
+    get filteredCount() {
+      return this.visibleGroups.reduce((acc, g) => acc + g.items.length, 0);
+    },
+
+    init() {
+      // Preselect "all"
+      this.activeCat = 'all';
+    },
+
+    toggle(this: any) {
+      this.open = !this.open;
+      if (this.open) {
+        this.$nextTick(() => {
+          const input = this.$el.querySelector('.fp-search');
+          if (input) (input as HTMLElement).focus();
+        });
+      }
+    },
+
+    close() {
+      this.open = false;
+      this.query = '';
+    },
+  }));
+});
+</script>
+
+<style>
+  .fp-root {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* Trigger */
+  .fp-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--green, #3a7a3a);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .fp-trigger:hover { background: var(--green-dark, #2d612d); }
+  .fp-trigger:active { transform: scale(0.97); }
+
+  .fp-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .fp-chevron {
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s;
+  }
+  .fp-chevron--up { transform: rotate(180deg); }
+
+  /* Panel */
+  .fp-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 300;
+    width: min(520px, 96vw);
+    max-height: 72vh;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 3px 8px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Arrow */
+  .fp-arrow {
+    position: absolute;
+    top: -7px;
+    left: 24px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-left: 1px solid rgba(0,0,0,0.1);
+    border-top: 1px solid rgba(0,0,0,0.1);
+    transform: rotate(45deg);
+    border-radius: 2px;
+  }
+
+  /* Header */
+  .fp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+  }
+  .fp-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111;
+  }
+  .fp-subtitle {
+    margin: 2px 0 0;
+    font-size: 0.74rem;
+    color: #777;
+  }
+  .fp-close {
+    padding: 5px;
+    border: none;
+    background: #f5f5f5;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #555;
+    line-height: 0;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .fp-close:hover { background: #eaeaea; }
+
+  /* Search */
+  .fp-search-wrap {
+    position: relative;
+    padding: 10px 14px 8px;
+    flex-shrink: 0;
+  }
+  .fp-search-icon {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    pointer-events: none;
+  }
+  .fp-search {
+    width: 100%;
+    padding: 7px 10px 7px 34px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    outline: none;
+    box-sizing: border-box;
+    background: #fafafa;
+    transition: border-color 0.15s;
+  }
+  .fp-search:focus { border-color: var(--green, #3a7a3a); }
+
+  /* Category pills */
+  .fp-cats {
+    display: flex;
+    gap: 6px;
+    padding: 0 14px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .fp-cats::-webkit-scrollbar { display: none; }
+  .fp-cat-pill {
+    white-space: nowrap;
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid #ddd;
+    background: #f8f8f8;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #555;
+  }
+  .fp-cat-pill:hover { border-color: var(--green, #3a7a3a); color: var(--green, #3a7a3a); }
+  .fp-cat-pill--active {
+    background: var(--green, #3a7a3a);
+    color: #fff;
+    border-color: var(--green, #3a7a3a);
+  }
+
+  /* List */
+  .fp-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 14px 8px;
+    scroll-behavior: smooth;
+  }
+  .fp-list::-webkit-scrollbar { width: 5px; }
+  .fp-list::-webkit-scrollbar-track { background: transparent; }
+  .fp-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+  .fp-group {
+    margin-bottom: 12px;
+  }
+  .fp-group-header {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 8px 0 5px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 4px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+
+  .fp-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 5px 6px;
+    border-radius: 7px;
+    transition: background 0.12s;
+  }
+  .fp-item:hover { background: #f8f8f0; }
+  .fp-item-icon { font-size: 1rem; flex-shrink: 0; width: 22px; text-align: center; }
+  .fp-item-label { flex: 1; font-size: 0.82rem; color: #333; }
+  .fp-item-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    flex-shrink: 0;
+  }
+  .fp-item-badge--paid {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  .fp-empty {
+    padding: 24px 0;
+    text-align: center;
+    color: #aaa;
+    font-size: 0.84rem;
+  }
+
+  /* Footer */
+  .fp-footer {
+    border-top: 1px solid #f0f0f0;
+    padding: 12px 18px;
+    flex-shrink: 0;
+  }
+  .fp-score {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .fp-score-num {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--green, #3a7a3a);
+    line-height: 1;
+  }
+  .fp-score-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    font-size: 0.78rem;
+    color: #666;
+  }
+  .fp-score-text strong { color: #222; font-size: 0.84rem; }
+
+  /* Transitions */
+  .fp-enter { transition: opacity 0.2s, transform 0.2s; }
+  .fp-enter-start { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  .fp-enter-end { opacity: 1; transform: translateY(0) scale(1); }
+  .fp-leave { transition: opacity 0.15s, transform 0.15s; }
+  .fp-leave-start { opacity: 1; transform: translateY(0) scale(1); }
+  .fp-leave-end { opacity: 0; transform: translateY(-6px) scale(0.97); }
+
+  [x-cloak] { display: none !important; }
+</style>

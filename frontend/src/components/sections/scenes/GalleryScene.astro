@@ -1,0 +1,204 @@
+---
+// GalleryScene.astro — Minimal "floating photo cards" Three.js scene for the gallery section.
+---
+
+<div id="scene-gallery" class="section-scene" data-active="false">
+  <canvas id="scene-gallery-canvas" aria-hidden="true"></canvas>
+  <div class="scene-hint" aria-hidden="true">Hover / tap</div>
+</div>
+
+<script type="module">
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+  import { cssVarColorInt } from '../../../lib/three/cssColor';
+
+  const root = document.getElementById('scene-gallery');
+  const canvas = document.getElementById('scene-gallery-canvas');
+  if (!root || !canvas) throw new Error('[GalleryScene] root/canvas missing');
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+  let runtime = null;
+  let runtimePromise = null;
+
+  async function init() {
+    const THREE = await import('three');
+
+    const cWhite = cssVarColorInt('--white', 0xffffff);
+    const cBlack = cssVarColorInt('--black', 0x1a1a1a);
+    const cGreen = cssVarColorInt('--green', 0x00ab39);
+    const cBlue = cssVarColorInt('--blue', 0x0071bc);
+    const cRed = cssVarColorInt('--red', 0xed1c24);
+    const cGold = cssVarColorInt('--gold', 0xeac102);
+
+    let W = root.clientWidth;
+    let H = root.clientHeight;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 60);
+    camera.position.set(0, 2.8, 8.5);
+    camera.lookAt(0, 1.0, 0);
+
+    scene.add(new THREE.AmbientLight(cWhite, 0.9));
+    const sun = new THREE.DirectionalLight(cWhite, 0.9);
+    sun.position.set(6, 8, 3);
+    scene.add(sun);
+
+    const bg = new THREE.Mesh(
+      new THREE.PlaneGeometry(22, 12),
+      new THREE.MeshStandardMaterial({ color: cWhite, transparent: true, opacity: 0.15 })
+    );
+    bg.position.set(0, 1.5, -4);
+    scene.add(bg);
+
+    const frameMat = new THREE.MeshStandardMaterial({ color: cWhite, roughness: 0.65 });
+    const inkMat = new THREE.MeshStandardMaterial({ color: cBlack, roughness: 0.95, transparent: true, opacity: 0.18 });
+    const photoMats = [cGreen, cBlue, cRed, cGold].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55 }));
+
+    const cards = [];
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-9, -9);
+    let hovered = -1;
+
+    function makeCard(i, x, y, z, ry) {
+      const g = new THREE.Group();
+      g.position.set(x, y, z);
+      g.rotation.y = ry;
+
+      const outer = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.8, 0.08), frameMat);
+      outer.castShadow = false;
+      g.add(outer);
+
+      const inner = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.2, 0.06), photoMats[i % photoMats.length]);
+      inner.position.set(0, 0.18, 0.06);
+      g.add(inner);
+
+      const scribble = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.4), inkMat);
+      scribble.position.set(0, -1.05, 0.07);
+      g.add(scribble);
+
+      g.userData.index = i;
+      scene.add(g);
+      cards.push(g);
+    }
+
+    for (let i = 0; i < 5; i++) {
+      const t = i - 2;
+      makeCard(i, t * 1.7, 1.2 + Math.abs(t) * 0.08, -t * 0.4, t * 0.22);
+    }
+
+    const onMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+      mouse.y = -(((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1);
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseleave', () => {
+      mouse.set(-9, -9);
+      hovered = -1;
+      canvas.style.cursor = 'default';
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+
+    const clock = new THREE.Clock();
+
+    function renderFrame(_dt, _t) {
+      const time = clock.getElapsedTime();
+
+      // Hover state.
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(cards, true);
+      hovered = hits.length ? hits[0].object.parent?.userData?.index ?? -1 : -1;
+      canvas.style.cursor = hovered >= 0 ? 'pointer' : 'grab';
+
+      for (const c of cards) {
+        const i = c.userData.index;
+        const base = (i - 2) * 0.22;
+        const pulse = hovered === i ? 1.12 : 1.0;
+        c.scale.setScalar(pulse);
+        c.rotation.z = Math.sin(time * 0.8 + i * 1.2) * 0.04 + (hovered === i ? 0.02 : 0);
+        c.position.y = 1.2 + Math.sin(time * 0.9 + i) * 0.08 + Math.abs(i - 2) * 0.06;
+        c.rotation.y = base + Math.sin(time * 0.35 + i) * 0.04;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    const loop = createRafLoop(renderFrame);
+
+    const ro = new ResizeObserver(() => {
+      W = root.clientWidth;
+      H = root.clientHeight;
+      renderer.setSize(W, H);
+      camera.aspect = Math.max(1e-6, W / Math.max(1, H));
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+    ro.observe(root);
+
+    renderFrame(0, performance.now());
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        canvas.removeEventListener('mousemove', onMove);
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(root, {
+    auto: true,
+    onChange(active) {
+      if (active) ensureRuntime().then((r) => r.start());
+      else runtime?.stop();
+    },
+  });
+</script>
+
+<style>
+  .section-scene {
+    position: relative;
+    width: 100%;
+    height: 18rem;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(0, 113, 188, 0.10), rgba(0, 171, 57, 0.06));
+  }
+  .section-scene canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .scene-hint {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 0.7rem;
+    color: rgba(26, 26, 26, 0.5);
+    pointer-events: none;
+    font-style: italic;
+  }
+  @media (min-width: 768px) {
+    .section-scene { height: 22rem; }
+  }
+</style>
+
