@@ -108,7 +108,7 @@
   bottom: calc(var(--ribbon-folded-offset) * -1);
   left: 0;
 
-  border-right:  var(--ribbon-folded-offset) solid color-mix(in srgb, var(--ribbon-bg) 60%, #000);
+  border-right:  var(--ribbon-folded-offset) solid var(--green-dark, color-mix(in srgb, var(--ribbon-bg) 60%, #000));
   border-top:    var(--ribbon-folded-offset) solid transparent;
   border-bottom: var(--ribbon-folded-offset) solid transparent;
   width: 0;

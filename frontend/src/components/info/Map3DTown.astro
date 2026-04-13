@@ -1,0 +1,369 @@
+---
+// Map3DTown.astro — ThreeJS 3D scene: El Carrascalejo on the Vía de la Plata
+// No props needed; coordinates are baked in (39.0237972, -6.3373782)
+---
+
+<div class="map3d-town-wrap">
+  <canvas id="map3d-town" aria-label="Mapa 3D de El Carrascalejo en la Vía de la Plata"></canvas>
+  <div class="map3d-legend" aria-hidden="true">
+    <span class="legend-dot legend-dot--route"></span><span>Vía de la Plata</span>
+    <span class="legend-dot legend-dot--albergue"></span><span>Albergue</span>
+    <span class="legend-dot legend-dot--town"></span><span>Pueblo</span>
+  </div>
+  <div class="map3d-label" id="map3d-town-label" aria-live="polite"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('map3d-town');
+if (!canvas) throw new Error('map3d-town canvas missing');
+
+const wrap = canvas.parentElement;
+let W = wrap.clientWidth, H = wrap.clientHeight;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xdde8f0);
+scene.fog = new THREE.Fog(0xdde8f0, 60, 140);
+
+const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 200);
+camera.position.set(0, 45, 55);
+camera.lookAt(0, 0, 0);
+
+// Lights
+const ambient = new THREE.AmbientLight(0xfff8e7, 0.7);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff4cc, 1.4);
+sun.position.set(25, 60, 30);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 150;
+sun.shadow.camera.left = -60;
+sun.shadow.camera.right = 60;
+sun.shadow.camera.top = 60;
+sun.shadow.camera.bottom = -60;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xc8e0ff, 0.3);
+fill.position.set(-20, 20, -10);
+scene.add(fill);
+
+// Terrain — gentle Extremaduran plain with slight undulations
+const TERRAIN_W = 120, TERRAIN_D = 120, TERRAIN_SEG = 48;
+const terrainGeo = new THREE.PlaneGeometry(TERRAIN_W, TERRAIN_D, TERRAIN_SEG, TERRAIN_SEG);
+terrainGeo.rotateX(-Math.PI / 2);
+const pos = terrainGeo.attributes.position;
+for (let i = 0; i < pos.count; i++) {
+  const x = pos.getX(i), z = pos.getZ(i);
+  const h = Math.sin(x * 0.08) * 1.2 + Math.cos(z * 0.07) * 0.9
+           + Math.sin(x * 0.03 + z * 0.04) * 2.5;
+  pos.setY(i, h);
+}
+terrainGeo.computeVertexNormals();
+const terrainMat = new THREE.MeshStandardMaterial({
+  color: 0xb8c98a,
+  roughness: 0.95,
+  metalness: 0,
+});
+const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+terrain.receiveShadow = true;
+scene.add(terrain);
+
+// Helper: sample terrain Y at (x, z)
+function terrainY(x, z) {
+  return Math.sin(x * 0.08) * 1.2 + Math.cos(z * 0.07) * 0.9
+       + Math.sin(x * 0.03 + z * 0.04) * 2.5;
+}
+
+// Vía de la Plata route path (S→N, roughly)
+const routePoints = [
+  [-5, 0, 50], [-4, 0, 35], [-3, 0, 20], [-2, 0, 5],
+  [-1, 0, -10], [0, 0, -25], [1, 0, -40], [2, 0, -55],
+].map(([x, , z]) => new THREE.Vector3(x, terrainY(x, z) + 0.4, z));
+
+const routeCurve = new THREE.CatmullRomCurve3(routePoints);
+const routePts = routeCurve.getPoints(120);
+const routeGeo = new THREE.BufferGeometry().setFromPoints(routePts);
+const routeLine = new THREE.Line(
+  routeGeo,
+  new THREE.LineBasicMaterial({ color: 0xf5a623, linewidth: 3 })
+);
+scene.add(routeLine);
+
+// Road (tube for better visibility)
+const routeTube = new THREE.TubeGeometry(routeCurve, 60, 0.18, 4, false);
+const routeTubeMesh = new THREE.Mesh(
+  routeTube,
+  new THREE.MeshStandardMaterial({ color: 0xe8903a, roughness: 0.6 })
+);
+routeTubeMesh.receiveShadow = true;
+scene.add(routeTubeMesh);
+
+// Towns along the route
+const towns = [
+  { name: 'El Carrascalejo', x: -2, z: 5, primary: true, km: 482 },
+  { name: 'Alcuéscar →', x: 3, z: -25, primary: false, km: 503 },
+  { name: '← Alquéscar', x: -4, z: 35, primary: false, km: 468 },
+  { name: 'Mérida ↓', x: -5, z: 50, primary: false, km: 455 },
+];
+
+const townObjects = [];
+
+for (const town of towns) {
+  const y = terrainY(town.x, town.z);
+
+  if (town.primary) {
+    // Main building cluster
+    const buildingGroup = new THREE.Group();
+    buildingGroup.position.set(town.x, y, town.z);
+
+    // Main albergue building
+    const mainGeo = new THREE.BoxGeometry(3.5, 2.2, 2.8);
+    const mainMat = new THREE.MeshStandardMaterial({ color: 0xd4a96a, roughness: 0.8 });
+    const mainMesh = new THREE.Mesh(mainGeo, mainMat);
+    mainMesh.position.y = 1.1;
+    mainMesh.castShadow = true;
+    buildingGroup.add(mainMesh);
+
+    // Roof
+    const roofGeo = new THREE.ConeGeometry(2.8, 1.2, 4);
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.9 });
+    const roofMesh = new THREE.Mesh(roofGeo, roofMat);
+    roofMesh.position.y = 2.8;
+    roofMesh.rotation.y = Math.PI / 4;
+    roofMesh.castShadow = true;
+    buildingGroup.add(roofMesh);
+
+    // Glowing beacon pillar
+    const pillarGeo = new THREE.CylinderGeometry(0.08, 0.08, 5, 8);
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0xf5a623, emissive: 0xf5a623, emissiveIntensity: 0.8 });
+    const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+    pillar.position.y = 4.5;
+    buildingGroup.add(pillar);
+
+    const sphereGeo = new THREE.SphereGeometry(0.25, 10, 10);
+    const sphereMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xffcc00, emissiveIntensity: 1.5 });
+    const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    sphere.position.y = 7.2;
+    buildingGroup.add(sphere);
+
+    // Point light at beacon
+    const beaconLight = new THREE.PointLight(0xf5a623, 1.5, 18);
+    beaconLight.position.y = 7.2;
+    buildingGroup.add(beaconLight);
+
+    scene.add(buildingGroup);
+    townObjects.push({ mesh: buildingGroup, name: town.name, km: town.km });
+  } else {
+    // Secondary town — small box cluster
+    const group = new THREE.Group();
+    group.position.set(town.x, y, town.z);
+
+    for (let i = 0; i < 3; i++) {
+      const bGeo = new THREE.BoxGeometry(0.8 + Math.random() * 0.6, 0.7 + Math.random() * 0.5, 0.8);
+      const bMat = new THREE.MeshStandardMaterial({ color: 0xc4a882, roughness: 0.9 });
+      const b = new THREE.Mesh(bGeo, bMat);
+      b.position.set((i - 1) * 1.1, (0.7 + Math.random() * 0.5) / 2, 0);
+      b.castShadow = true;
+      group.add(b);
+    }
+
+    scene.add(group);
+    townObjects.push({ mesh: group, name: town.name, km: town.km });
+  }
+}
+
+// Trees (scattered pines)
+const treeMat = new THREE.MeshStandardMaterial({ color: 0x3a6b35, roughness: 0.9 });
+const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 1 });
+const treesGroup = new THREE.Group();
+
+for (let i = 0; i < 60; i++) {
+  const x = (Math.random() - 0.5) * 100;
+  const z = (Math.random() - 0.5) * 100;
+  // Skip near route
+  if (Math.abs(x + 2) < 4 && Math.abs(z) < 55) continue;
+  const y = terrainY(x, z);
+
+  const h = 0.8 + Math.random() * 1.4;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, h, 5), trunkMat);
+  trunk.position.set(x, y + h / 2, z);
+  trunk.castShadow = true;
+  treesGroup.add(trunk);
+
+  const crown = new THREE.Mesh(new THREE.ConeGeometry(0.5 + Math.random() * 0.3, h * 1.2, 6), treeMat);
+  crown.position.set(x, y + h + 0.3, z);
+  crown.castShadow = true;
+  treesGroup.add(crown);
+}
+scene.add(treesGroup);
+
+// Km markers along route
+for (let i = 0; i <= 4; i++) {
+  const t = i / 4;
+  const pt = routeCurve.getPoint(t);
+  const markerGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.8, 6);
+  const markerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xdddddd, emissiveIntensity: 0.3 });
+  const marker = new THREE.Mesh(markerGeo, markerMat);
+  marker.position.copy(pt);
+  marker.position.y += 0.4;
+  scene.add(marker);
+}
+
+// Label element
+const labelEl = document.getElementById('map3d-town-label');
+
+// Raycaster for hover
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2(-9, -9);
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / W) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / H) * 2 + 1;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouse.set(-9, -9);
+  if (labelEl) labelEl.textContent = '';
+});
+
+// Auto-rotation state
+let autoTheta = 0;
+let isDragging = false, prevX = 0;
+const RADIUS = 60, BASE_Y = 45;
+
+canvas.addEventListener('mousedown', (e) => { isDragging = true; prevX = e.clientX; });
+window.addEventListener('mouseup', () => { isDragging = false; });
+window.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  autoTheta -= (e.clientX - prevX) * 0.005;
+  prevX = e.clientX;
+});
+
+// Touch support
+canvas.addEventListener('touchstart', (e) => { isDragging = true; prevX = e.touches[0].clientX; }, { passive: true });
+window.addEventListener('touchend', () => { isDragging = false; });
+window.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+  autoTheta -= (e.touches[0].clientX - prevX) * 0.005;
+  prevX = e.touches[0].clientX;
+}, { passive: true });
+
+// Animation
+let frame = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  frame++;
+
+  if (!isDragging) autoTheta += 0.003;
+
+  camera.position.x = RADIUS * Math.sin(autoTheta);
+  camera.position.z = RADIUS * Math.cos(autoTheta);
+  camera.position.y = BASE_Y + Math.sin(autoTheta * 0.3) * 5;
+  camera.lookAt(0, 2, 0);
+
+  // Beacon pulse
+  for (const t of townObjects) {
+    if (t.name.includes('Carrascalejo')) {
+      const beacon = t.mesh.children.find(c => c instanceof THREE.PointLight);
+      if (beacon) beacon.intensity = 1.2 + Math.sin(frame * 0.06) * 0.8;
+    }
+  }
+
+  // Hover detection
+  raycaster.setFromCamera(mouse, camera);
+  const meshes = townObjects.map(t => t.mesh);
+  const hits = raycaster.intersectObjects(meshes, true);
+  if (hits.length > 0) {
+    // Walk up to find group
+    let obj = hits[0].object;
+    while (obj.parent && !townObjects.find(t => t.mesh === obj)) obj = obj.parent;
+    const found = townObjects.find(t => t.mesh === obj);
+    if (found && labelEl) {
+      labelEl.textContent = found.km ? `${found.name}  (km ${found.km})` : found.name;
+    }
+    canvas.style.cursor = 'pointer';
+  } else {
+    if (labelEl) labelEl.textContent = '';
+    canvas.style.cursor = 'grab';
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+const ro = new ResizeObserver(() => {
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  renderer.setSize(W, H);
+  camera.aspect = W / H;
+  camera.updateProjectionMatrix();
+});
+ro.observe(wrap);
+</script>
+
+<style>
+  .map3d-town-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .map3d-town-wrap canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    cursor: grab;
+    border-radius: 12px;
+  }
+  .map3d-legend {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(6px);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.7rem;
+    color: #333;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .legend-dot--route { background: #e8903a; }
+  .legend-dot--albergue { background: #f5a623; }
+  .legend-dot--town { background: #c4a882; }
+  .map3d-label {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.72);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    pointer-events: none;
+    white-space: nowrap;
+    min-height: 24px;
+    transition: opacity 0.2s;
+  }
+</style>
