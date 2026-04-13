@@ -478,6 +478,7 @@ p {
   box-shadow: var(--shadow-md);
 }
 .backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 .overflow-x-hidden {
