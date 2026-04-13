@@ -1,8 +1,7 @@
 // @ts-check
 import { defineConfig } from "wuchale";
 import { adapter } from "@wuchale/astro";
-import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import Anthropic from "@anthropic-ai/sdk";
 
 const LOCALES = [
   "es", "en", "zh", "hi", "ar", "pt", "ru", "ja", "de", "fr",
@@ -49,11 +48,14 @@ export default defineConfig({
       // `messages` is already a JSON string: [{id, context, references}…]
       // `instruction` from Wuchale already specifies the exact output schema
       // and says "Respond ONLY with raw compact JSON." — relay both as-is.
-      const { text } = await generateText({
-        model: anthropic("claude-haiku-4-5-20251001"),
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const response = await client.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 4096,
         system: instruction,
-        prompt: messages,
+        messages: [{ role: "user", content: messages }],
       });
+      const text = response.content[0].type === "text" ? response.content[0].text : "";
       // Strip markdown fences defensively.
       let cleaned = text.trim();
       if (cleaned.startsWith("```")) {
