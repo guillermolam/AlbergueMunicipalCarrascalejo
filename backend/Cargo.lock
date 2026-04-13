@@ -1240,6 +1240,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "language-service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "worker",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2024,10 +2034,6 @@ dependencies = [
  "webpki-roots 0.25.4",
  "winreg",
 ]
-
-[[package]]
-name = "retto-ocr-worker"
-version = "0.1.0"
 
 [[package]]
 name = "reviews-service"

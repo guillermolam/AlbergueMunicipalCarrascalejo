@@ -59,6 +59,8 @@ export interface CalendarIslandOptions {
   todayBtnId: string;
   /** ID of the date-range error message element. */
   dateErrorId: string;
+  /** ID of the "clear dates" button (optional). */
+  clearBtnId?: string;
   /** Called whenever canProceed state changes. */
   onCanProceed?: (can: boolean) => void;
   /** Overrides for booking limits (falls back to store's maxNights/maxAdvanceDays). */
@@ -491,6 +493,15 @@ export function initCalendarIsland(opts: CalendarIslandOptions): void {
     renderCalendar();
     fetchMonthAvailability(calYear, calMonth);
   });
+
+  // ── Clear dates button ──
+  if (opts.clearBtnId) {
+    document.getElementById(opts.clearBtnId)?.addEventListener('click', () => {
+      setDates('', '');
+      bookingDatesStore.setKey('nights', '0');
+      opts.onCanProceed?.(false);
+    });
+  }
 
   // ── Subscribe to store changes that affect the render ──
   // (persons count changes need a calendar + summary repaint; date changes

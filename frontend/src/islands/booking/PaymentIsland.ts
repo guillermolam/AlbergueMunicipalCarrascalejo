@@ -122,10 +122,6 @@ export function populateSummary(): void {
 // ── Submit booking ───────────────────────────────────────────────────────────
 
 export async function submitBooking(): Promise<void> {
-  const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
-  if (btnNext) btnNext.disabled = true;
-  const originalLabel = btnNext?.textContent ?? '';
-  if (btnNext) btnNext.textContent = 'Confirmando…';
 
   const s = bookingDatesStore.get();
   const p0 = pilgrimStores[0].get();
@@ -204,11 +200,6 @@ export async function submitBooking(): Promise<void> {
     const params = buildRedirectParams(confCode, bookingRef);
     params.set('offline', '1');
     globalThis.location.href = `/booking-confirmed?${params}`;
-  } finally {
-    if (btnNext) {
-      btnNext.disabled = false;
-      btnNext.textContent = originalLabel;
-    }
   }
 }
 

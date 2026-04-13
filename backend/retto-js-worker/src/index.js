@@ -6,18 +6,24 @@
  *   POST /ocr           → multipart: front (required), back (optional), docType
  *                      ← { success, profile_id, document_type, extracted_data, confidence, ... }
  * 
- * Models are loaded from:
- *   1. R2 bucket: OCR_MODELS binding (models/ folder)
- *   2. HuggingFace Hub (fallback)
- *   3. Bundled (if available in deployment)
+ * Solution: Manually load WASM binary to avoid import.meta.url issues in bundled npm package
  */
+
+// Set import.meta.url before any other code runs (fixes createRequire crash)
+if (typeof import.meta === 'undefined') {
+  // @ts-ignore
+  globalThis.import.meta = {};
+}
+if (!import.meta.url) {
+  import.meta.url = 'file:///worker.mjs';
+}
 
 let retto = null;
 let rettoReady = false;
 let modelLoadError = null;
 
 /**
- * Initialize Retto WASM with models
+ * Initialize Retto by manually loading WASM binary
  */
 async function initRetto(env) {
   if (rettoReady) return true;
@@ -25,106 +31,99 @@ async function initRetto(env) {
 
   try {
     console.log('[retto] Loading Retto WASM...');
-    const Retto = await import('@nekoimageland/retto-wasm');
     
-    // Try to load models - multiple strategies
-    let models = null;
+    // Import the core retto_wasm module and Retto class separately
+    const { default: retto_wasm } = await import('@nekoimageland/retto-wasm/dist/retto_wasm.js');
+    const Retto = (await import('@nekoimageland/retto-wasm')).Retto;
     
-    // Strategy 1: Try R2 bucket first
+    console.log('[retto] Fetching WASM binary...');
+    
+    // Try to get WASM from multiple sources
+    let wasmBinary = null;
+    
+    // Option 1: Try to load from R2 if available
     try {
-      models = await loadModelsFromR2(env);
-      console.log('[retto] Loaded models from R2');
-    } catch (r2Error) {
-      console.log('[retto] R2 not available, trying HuggingFace Hub:', r2Error.message);
+      if (env.OCR_MODELS) {
+        const obj = await env.OCR_MODELS.get('models/retto_wasm.wasm');
+        if (obj) {
+          wasmBinary = await obj.arrayBuffer();
+          console.log('[retto] Loaded WASM from R2');
+        }
+      }
+    } catch (e) {
+      console.log('[retto] R2 not available:', e.message);
     }
     
-    // Strategy 2: Fallback to embedded models or HF Hub
-    if (!models) {
-      console.log('[retto] Trying embedded/default models...');
-      // The init() without models will try to use embedded models
-      // or download from HF if configured
+    // Option 2: Load from bundled public folder (if wrangler bundles it)
+    if (!wasmBinary) {
+      try {
+        // Try loading from the npm package's public folder
+        // This uses a direct import that bypasses the URL resolution
+        const wasmUrl = new URL('/cdn/retto_wasm.wasm', import.meta.url).href;
+        const response = await fetch(wasmUrl);
+        if (response.ok) {
+          wasmBinary = await response.arrayBuffer();
+          console.log('[retto] Loaded WASM from CDN');
+        }
+      } catch (e) {
+        console.log('[retto] CDN load failed:', e.message);
+      }
     }
-
-    console.log('[retto] Initializing Retto with models...');
-    retto = await Retto.Retto.load((progress) => {
-      console.log(`[retto] Loading: ${(progress * 100).toFixed(0)}%`);
+    
+    // Option 3: Fallback - init without WASM to see if it's an embedded build
+    console.log('[retto] Initializing Retto...');
+    retto = await Retto.load((progress) => {
+      console.log(`[retto] Load: ${(progress * 100).toFixed(0)}%`);
     });
+    
+    console.log('[retto] is_embed_build:', retto.is_embed_build);
+    
+    // Load models from HuggingFace CDN
+    console.log('[retto] Fetching models from HuggingFace CDN...');
+    const models = await loadModelsFromURL();
+    console.log('[retto] Loaded models from HuggingFace');
 
-    if (models) {
-      await retto.init(models);
-    } else {
-      // Try default initialization (uses embedded or HF)
-      await retto.init();
-    }
+    console.log('[retto] Initializing with models...');
+    await retto.init(models);
 
     rettoReady = true;
     console.log('[retto] Retto initialized successfully');
     return true;
   } catch (error) {
     modelLoadError = error;
-    console.error('[retto] Failed to initialize:', error);
+    console.error('[retto] Failed to initialize:', error.message);
+    console.error('[retto] Stack:', error.stack);
     throw error;
   }
 }
 
 /**
- * Fetch model file from R2 bucket
+ * Fetch model file from HuggingFace CDN
  */
-async function loadModelsFromR2(env) {
-  const bucket = env.OCR_MODELS;
-  if (!bucket) {
-    throw new Error('OCR_MODELS R2 binding not configured');
-  }
+async function loadModelsFromURL() {
+  const baseURL = 'https://huggingface.co/pk5ls20/PaddleModel/resolve/main/retto/onnx';
   
   const modelFiles = [
-    'ch_PP-OCRv4_det_infer.onnx',
-    'ch_ppocr_mobile_v2.0_cls_infer.onnx',
-    'ch_PP-OCRv4_rec_infer.onnx',
-    'ppocr_keys_v1.txt',
+    { key: 'det_model', name: 'ch_PP-OCRv4_det_infer.onnx' },
+    { key: 'cls_model', name: 'ch_ppocr_mobile_v2.0_cls_infer.onnx' },
+    { key: 'rec_model', name: 'ch_PP-OCRv4_rec_infer.onnx' },
+    { key: 'rec_dict', name: 'ppocr_keys_v1.txt' },
   ];
   
   const models = {};
   
-  for (const filename of modelFiles) {
-    const key = `models/${filename}`;
-    console.log(`[retto] Fetching ${key} from R2...`);
+  for (const { key, name } of modelFiles) {
+    console.log(`[retto] Fetching ${name} from HuggingFace...`);
     
-    const object = await bucket.get(key);
-    if (!object) {
-      throw new Error(`Model file not found in R2: ${key}`);
+    const response = await fetch(`${baseURL}/${name}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch model: ${name} - ${response.status}`);
     }
     
-    const arrayBuffer = await object.arrayBuffer();
-    
-    // Map to expected model names
-    const modelKey = filename.replace('ch_PP-OCRv4_', '').replace('ch_ppocr_mobile_v2.0_', '').replace('_infer.onnx', '_model');
-    if (filename.includes('det')) models.det_model = arrayBuffer;
-    else if (filename.includes('cls')) models.cls_model = arrayBuffer;
-    else if (filename.includes('rec')) models.rec_model = arrayBuffer;
-    else if (filename.includes('dict') || filename.includes('keys')) models.rec_dict = arrayBuffer;
-  }
-  
-  // Verify we have all required models
-  if (!models.det_model || !models.rec_model) {
-    throw new Error('Missing required models from R2');
+    models[key] = await response.arrayBuffer();
   }
   
   return models;
-}
-
-/**
- * Map document type to Retto-compatible format
- */
-function getLangFromDocType(docType) {
-  switch (docType?.toUpperCase()) {
-    case 'DNI':
-    case 'NIE':
-      return 'spa'; // Spanish
-    case 'PASSPORT':
-      return 'eng'; // English
-    default:
-      return 'spa+eng'; // Both
-  }
 }
 
 /**
@@ -144,10 +143,9 @@ function parseExtractedText(text, docType) {
 
   const upper = text.toUpperCase();
 
-  // Document number patterns
-  // DNI: 8 digits + letter (e.g., 12345678A)
-  // NIE: X/Y/Z + 7 digits + letter (e.g., X1234567A)
+  // DNI: 8 digits + letter
   const dniMatch = upper.match(/\b(\d{8}[A-Z])\b/);
+  // NIE: X/Y/Z + 7 digits + letter
   const nieMatch = upper.match(/\b([XYZ]\d{7}[A-Z])\b/);
   
   if (docType?.toUpperCase() === 'NIE' && nieMatch) {
@@ -158,10 +156,10 @@ function parseExtractedText(text, docType) {
     result.document_number = nieMatch[1];
   }
 
-  // Date of birth - various formats
+  // Date of birth
   const datePatterns = [
-    /(\d{1,2})[\s\/\-\.](\d{1,2})[\s\/\-\.](\d{4})/,  // DD MM YYYY
-    /(\d{4})[\s\/\-\.](\d{1,2})[\s\/\-\.](\d{1,2})/,  // YYYY MM DD
+    /(\d{1,2})[\s\/\-\.](\d{1,2})[\s\/\-\.](\d{4})/,
+    /(\d{4})[\s\/\-\.](\d{1,2})[\s\/\-\.](\d{1,2})/,
   ];
   
   for (const pattern of datePatterns) {
@@ -176,13 +174,9 @@ function parseExtractedText(text, docType) {
     }
   }
 
-  // Nationality - 3-letter codes
-  const natMatch = upper.match(/\b(ESP|FRA|DEU|ITA|POR|GBR|USA|MEX|ARG|COL|BRA|MAR)\b/);
-  if (natMatch) {
-    result.nationality = natMatch[1];
-  } else {
-    result.nationality = 'ESP'; // Default to Spanish
-  }
+  // Nationality
+  const natMatch = upper.match(/\b(ESP|FRA|DEU|ITA|POR|USA|MEX|ARG|COLBRA)\b/);
+  result.nationality = natMatch ? natMatch[1] : 'ESP';
 
   // Gender
   const sexMatch = upper.match(/\b(SEXO|SEX)[\s:]*([MFX])\b/i);
@@ -190,10 +184,8 @@ function parseExtractedText(text, docType) {
     result.gender = sexMatch[2].toUpperCase();
   }
 
-  // Extract names - this is a simplified version
-  // A full implementation would use the regex patterns from the existing parser
+  // Extract names
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const nameKeywords = ['APELLIDOS', 'NOMBRE', 'SURNAME', 'NAME', 'APELLIDO'];
   
   for (let i = 0; i < lines.length; i++) {
     const lineUpper = lines[i].toUpperCase();
@@ -228,7 +220,6 @@ function generateProfileId() {
  * Handle OCR request
  */
 async function handleOcr(request, env) {
-  // Initialize Retto if needed
   await initRetto(env);
 
   const contentType = request.headers.get('content-type') || '';
@@ -242,7 +233,6 @@ async function handleOcr(request, env) {
 
   const formData = await request.formData();
   const front = formData.get('front');
-  const back = formData.get('back');
   const docType = formData.get('docType')?.toString() || 'DNI';
 
   if (!front) {
@@ -252,10 +242,8 @@ async function handleOcr(request, env) {
     });
   }
 
-  // Convert file to ArrayBuffer
   const frontBuffer = await front.arrayBuffer();
   
-  // Run OCR
   console.log(`[retto] Running OCR on ${docType} document...`);
   const results = [];
   
@@ -266,7 +254,6 @@ async function handleOcr(request, env) {
     }
   }
 
-  // Extract text from results
   const extractedText = results
     .filter(r => r.text)
     .map(r => r.text)
@@ -274,11 +261,9 @@ async function handleOcr(request, env) {
 
   console.log(`[retto] Extracted text length: ${extractedText.length}`);
 
-  // Parse into structured data
   const extractedData = parseExtractedText(extractedText, docType);
   extractedData.document_type = docType;
 
-  // Calculate confidence (simplified)
   const confidence = results.length > 0 
     ? results.reduce((sum, r) => sum + (r.score || 0), 0) / results.length 
     : 0;
@@ -323,29 +308,36 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS headers
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     };
 
-    // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
 
     try {
-      // Route requests
       if (path === '/health') {
         return handleHealth();
       }
 
       if (path === '/ocr' && request.method === 'POST') {
-        return handleOcr(request, env);
+        try {
+          return await handleOcr(request, env);
+        } catch (ocrError) {
+          console.error('[retto] OCR error:', ocrError);
+          return new Response(JSON.stringify({ 
+            error: 'OCR processing failed',
+            message: ocrError.message
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
 
-      // Unknown endpoint
       return new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -138,6 +138,7 @@ import WizardNav from '../components/booking/WizardNav.astro';
       nextBtnId: 'next-month',
       todayBtnId: 'today-btn',
       dateErrorId: 'date-range-error',
+      clearBtnId: 'clear-dates',
       // Wire date selection → wizard Next button reactivity
       onCanProceed: (can: boolean) => { window.__wizEnableNext?.(can); },
     });
@@ -153,10 +154,31 @@ import WizardNav from '../components/booking/WizardNav.astro';
     // ── Payment + summary ─────────────────────────────────────────────────────
     initPaymentIsland();
 
-    // ── Wire #btn-confirm → submit + navigate to step 7 ──────────────────────
-    document.getElementById('btn-confirm')?.addEventListener('click', async () => {
-      await submitBooking();
-      document.getElementById('btn-next')?.click();
+    // ── Wire #btn-confirm → validate, show loading, submit ────────────────────
+    // submitBooking() always redirects to /booking-confirmed (success or offline),
+    // so step 7 panel + confetti are unused — the redirect IS the confirmation.
+    const btnConfirm = document.getElementById('btn-confirm') as HTMLButtonElement | null;
+    btnConfirm?.addEventListener('click', async () => {
+      if (!btnConfirm || btnConfirm.disabled) return;
+
+      // Guard: ensure essential booking data exists
+      const s = bookingDatesStore.get();
+      if (!s.checkin || !s.checkout || !s.persons) return;
+
+      // Show loading state on the confirm button
+      btnConfirm.disabled = true;
+      const confirmLabel = btnConfirm.querySelector('.confirm-label');
+      const originalHTML = confirmLabel?.innerHTML ?? '';
+      if (confirmLabel) confirmLabel.textContent = 'Confirmando…';
+
+      try {
+        await submitBooking(); // redirects the page on success or offline fallback
+      } catch {
+        // submitBooking only throws if something truly unexpected happens
+        // (both success & API failure redirect). Re-enable so user can retry.
+        btnConfirm.disabled = false;
+        if (confirmLabel) confirmLabel.innerHTML = originalHTML;
+      }
     });
 
     // ── PilgrimCard dynamic mount ─────────────────────────────────────────────
@@ -233,12 +255,8 @@ import WizardNav from '../components/booking/WizardNav.astro';
         6: (_dir: 'forward' | 'back') => { populateSummary(); },
         7: (_dir: 'forward' | 'back') => { launchConfetti(); },
       },
-      canProceed: {
-        1: () => {
-          const s = bookingDatesStore.get();
-          return !!(s.checkin && s.checkout);
-        },
-      },
+      // canProceed logic is in WizardNavigatorIsland.defaultCanProceed()
+      // — no per-step overrides needed here.
     });
   </script>
 </Layout>

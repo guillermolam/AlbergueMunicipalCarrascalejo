@@ -148,7 +148,7 @@ export default defineConfig({
       external: ['@clerk/backend'],
     },
     optimizeDeps: {
-      exclude: ['@clerk/backend', 'tesseract-wasm'],
+      exclude: ['@clerk/backend'],
     },
     resolve: {
       alias: {

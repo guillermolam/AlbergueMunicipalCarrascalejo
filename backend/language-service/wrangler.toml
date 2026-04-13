@@ -1,0 +1,20 @@
+name = "language-service"
+main = "src/lib.rs"
+compatibility_date = "2024-12-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[kv_namespaces]]
+binding = "LANGUAGES"
+id = "" # Set after `wrangler kv namespace create LANGUAGES`
+
+[[kv_namespaces]]
+binding = "TRANSLATIONS"
+id = "" # Set after `wrangler kv namespace create TRANSLATIONS`
+
+[ai]
+binding = "AI"
+
+[placement]
+mode = "smart"

@@ -80,6 +80,31 @@ export function visibleStep(s: number): number {
   return s - 1;         // 4→3, 5→4, 6→5, 7→6
 }
 
+/** Steps that are auto-skipped (merged into their predecessor). */
+const SKIPPED_STEPS = new Set([3]);
+
+/** Total internal steps (1-based). */
+export const TOTAL_STEPS = WIZARD_STEPS.length;
+
+/** Next navigable step going forward (skips hidden steps). */
+export function nextStep(current: number): number {
+  let s = current + 1;
+  while (s <= TOTAL_STEPS && SKIPPED_STEPS.has(s)) s++;
+  return Math.min(s, TOTAL_STEPS);
+}
+
+/** Previous navigable step going back (skips hidden steps). */
+export function prevStep(current: number): number {
+  let s = current - 1;
+  while (s >= 1 && SKIPPED_STEPS.has(s)) s--;
+  return Math.max(s, 1);
+}
+
+/** Whether a step is the final visible step before confirmation. */
+export function isFinalStep(current: number): boolean {
+  return current === TOTAL_STEPS;
+}
+
 /** Reset wizard to initial state (e.g. after a confirmed booking). */
 export function resetWizard(): void {
   bookingWizardStore.set({ ...initialState, stepStatus: Array(7).fill('idle') as StepStatus[] });

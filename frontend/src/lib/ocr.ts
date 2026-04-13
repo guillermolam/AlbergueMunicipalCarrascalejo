@@ -2,7 +2,7 @@
  * OCR field types and MRZ/label parsers for Spanish DNI, NIE, and Passport.
  *
  * ⚠️ CLIENT-SIDE OCR HAS BEEN MOVED TO THE BACKEND.
- * The tesseract-wasm engine is no longer loaded in the browser.
+ * No browser Tesseract worker or static OCR assets are shipped anymore.
  * All OCR is performed server-side by the native Rust OCR service (port 8788),
  * called via POST /api/pilgrim/process-document.
  *

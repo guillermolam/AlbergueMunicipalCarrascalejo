@@ -14,6 +14,11 @@ import {
   bookingWizardStore,
   setWizardStep,
   setCanProceed,
+  WIZARD_STEPS,
+  TOTAL_STEPS,
+  visibleStep,
+  nextStep as wizNextStep,
+  prevStep as wizPrevStep,
 } from '../../stores/bookingWizardStore';
 import { bookingDatesStore as datesStore } from '../../stores/bookingDatesStore';
 
@@ -28,24 +33,6 @@ export interface WizardNavigatorOptions {
    * Return true/false synchronously; if omitted the island uses built-in logic.
    */
   canProceed?: Partial<Record<number, () => boolean>>;
-}
-
-// ── Step config matches STEPS array in book.astro ──
-const STEPS = [
-  { pct: 17,  label: 'Continue to Peregrinos →',    back: null },
-  { pct: 33,  label: 'Continue to Bed Selection →', back: '← Back to Dates' },
-  { pct: 33,  label: 'Continue to Bed Selection →', back: '← Back to Dates' }, // step 3 — auto-skipped
-  { pct: 50,  label: 'Continue to Payment →',       back: '← Back to Peregrinos' },
-  { pct: 67,  label: 'Continue to Summary →',       back: '← Back to Bed Selection' },
-  { pct: 83,  label: 'Confirm Booking',              back: '← Back to Payment' },
-  { pct: 100, label: '',                             back: null },
-];
-
-/** Map internal step (1-7, step 3 auto-skipped) to visible step (1-6). */
-function visibleStep(s: number): number {
-  if (s <= 2) return s;
-  if (s === 3) return 2; // auto-skipped, same as step 2
-  return s - 1; // 4→3, 5→4, 6→5, 7→6
 }
 
 export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): void {
@@ -134,7 +121,7 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
 
   // ── updateUI ──
   function updateUI(): void {
-    const cfg = STEPS[currentStep - 1];
+    const cfg = WIZARD_STEPS[currentStep - 1];
     if (!cfg) return;
     const vStep = visibleStep(currentStep);
 
@@ -144,13 +131,14 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
     if (progPct)         progPct.textContent  = `${cfg.pct}% Complete`;
     if (mobileStepLabel) mobileStepLabel.textContent = `Step ${vStep} of 6`;
 
-    // Nav bar — hide entirely on step 7 (confirmation screen)
-    if (currentStep === 7) {
+    // Nav bar — hide entirely on the final confirmation step
+    if (currentStep === TOTAL_STEPS) {
       if (wizNav) wizNav.style.display = 'none';
       return;
     }
     if (wizNav) wizNav.style.display = '';
 
+    // Back button — show with label, or hide on step 1
     if (btnBack) {
       if (cfg.back) {
         btnBack.style.display = '';
@@ -161,7 +149,10 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
       }
     }
 
+    // Next button — hide on step 6 (Summary) where btn-confirm is the CTA
     if (btnNext) {
+      const isSummaryStep = currentStep === 6;
+      btnNext.style.display = isSummaryStep ? 'none' : '';
       const lbl = btnNext.querySelector('.nav-btn-label') as HTMLElement | null;
       if (lbl) lbl.textContent = cfg.label;
     }
@@ -176,6 +167,8 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
   }
 
   // ── goToStep ──
+  // Callers are responsible for resolving skip-steps via wizNextStep/wizPrevStep.
+  // goToStep animates the transition to the given step number directly.
   function goToStep(next: number, dir: 'forward' | 'back' = 'forward'): void {
     const currentPanel = document.getElementById(`step-${currentStep}`);
     const nextPanel    = document.getElementById(`step-${next}`);
@@ -191,19 +184,13 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
       currentPanel.style.animation = '';
 
       currentStep = next;
-      setWizardStep(next);
+      setWizardStep(next, dir);
 
       nextPanel.classList.remove('hidden');
       nextPanel.style.animation =
         dir === 'forward'
           ? 'step-enter 380ms cubic-bezier(0.34,1.56,0.64,1) forwards'
           : 'step-enter-back 380ms cubic-bezier(0.34,1.56,0.64,1) forwards';
-
-      // Step 3 auto-skip (merged into step 2)
-      if (next === 3 && dir === 'forward') {
-        setTimeout(() => goToStep(4, 'forward'), 0);
-        return;
-      }
 
       // Per-step callbacks
       opts.onEnter?.[next]?.(dir);
@@ -217,15 +204,11 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
 
   btnNext?.addEventListener('click', () => {
     if (btnNext.disabled) return;
-    if (currentStep < 7) goToStep(currentStep + 1, 'forward');
+    if (currentStep < TOTAL_STEPS) goToStep(wizNextStep(currentStep), 'forward');
   });
 
   btnBack?.addEventListener('click', () => {
-    if (currentStep > 1) {
-      // Skip step 3 going back too (it's merged into step 2)
-      const prevStep = currentStep === 4 ? 2 : currentStep - 1;
-      goToStep(prevStep, 'back');
-    }
+    if (currentStep > 1) goToStep(wizPrevStep(currentStep), 'back');
   });
 
   // ── Wire sidebar step buttons ──
@@ -243,12 +226,19 @@ export function initWizardNavigatorIsland(opts: WizardNavigatorOptions = {}): vo
   // so this assignment is fully type-safe without any cast.
   window.__wizEnableNext = enableNext;
 
-  // ── Subscribe to store (external changes) ──
+  // ── Subscribe to wizard store (step changes from external sources) ──
   bookingWizardStore.subscribe((state) => {
     if (state.currentStep !== currentStep) {
       currentStep = state.currentStep;
       updateUI();
     }
+  });
+
+  // ── Subscribe to dates store — re-evaluate canProceed reactively ──
+  // When on step 1 (dates) or step 4 (beds), store changes should update
+  // the Next button without requiring explicit onCanProceed callbacks.
+  datesStore.subscribe(() => {
+    enableNext(resolveCanProceed());
   });
 
   // ── Initial render ──
