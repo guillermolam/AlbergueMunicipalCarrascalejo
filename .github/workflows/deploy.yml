@@ -38,9 +38,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://albergue-carrascalejo-v99ew1nt.fermyon.app/api' }} pnpm build
+        run: |
+          # Build with production environment (Astro 6 pattern)
+          CLOUDFLARE_ENV=production PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://albergue-carrascalejo-v99ew1nt.fermyon.app/api' }} pnpm build
         env:
           PUBLIC_API_URL: https://albergue-carrascalejo-v99ew1nt.fermyon.app/api
+          CLOUDFLARE_ENV: production
 
       - name: Deploy
         run: pnpm exec wrangler deploy
