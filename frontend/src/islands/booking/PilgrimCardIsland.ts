@@ -7,8 +7,8 @@
  * Fonts:  Cabin Sketch · Patrick Hand · Shadows Into Light (loaded by Layout)
  *
  * Wizard phases (per-card):
- *   email_opt → otp → upload_front → upload_back? → form → done
- *   (logged-in primary user skips email_opt & otp)
+ *   email_input → otp → upload_front → upload_back? → form → done
+ *   (logged-in primary user skips email_input & otp)
  *
  * OTP delivery: uses window.Clerk.client.signIn.create({ strategy:'email_code' })
  *   → real Clerk email delivery, no custom backend required.
@@ -77,13 +77,14 @@ export interface PilgrimCardOptions {
 // ── Wizard phases ─────────────────────────────────────────────────────────────
 
 type Phase =
-  | 'email_opt'   // enter/skip email
-  | 'otp'         // 6-digit code
-  | 'upload'      // upload front (and back for DNI/NIE)
-  | 'form'        // fill pilgrim info
-  | 'done';       // complete
+  | 'email_input'  // enter email (check Clerk)
+  | 'otp'          // 6-digit code
+  | 'doc_select'   // choose DNI/NIE/EU-ID or Passport
+  | 'upload'       // upload front (and back for card-type docs)
+  | 'form'         // fill pilgrim info
+  | 'done';        // complete
 
-type DocType = 'dni' | 'nie' | 'passport';
+type DocType = 'dni' | 'nie' | 'eu_id' | 'passport';
 
 interface ClerkMetaSnapshot {
   imageUrl: string | null;
@@ -111,6 +112,8 @@ interface CardState {
   errorMsg: string | null;
   clerkSignIn: unknown;   // pending Clerk signIn attempt
   clerkMeta: ClerkMetaSnapshot | null; // loaded once from window.Clerk.user
+  emailExistsInClerk: boolean | null;  // result of async Clerk email check
+  emailCheckLoading: boolean;          // true while checking email in Clerk
 }
 
 // ── CSS (injected once per page) ──────────────────────────────────────────────
@@ -925,6 +928,54 @@ const PKD_CSS = `
   transition: transform .12s;
 }
 .pkd-img-modal-close:hover { transform: scale(1.1); }
+
+/* ── Doc select phase ── */
+.pkd-docsel-row { display:flex; gap:.75rem; margin:.5rem 0; }
+.pkd-docsel-card {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:.5rem;
+  padding:.75rem .5rem; border:2px solid #D4A574; border-radius:12px;
+  background:#FFF9F0; cursor:pointer; transition:border-color .2s, transform .15s, box-shadow .2s;
+  font-family:var(--font-s); font-size:.82rem; color:#1b4332;
+}
+.pkd-docsel-card:hover { border-color:#00ab39; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,171,57,.15); }
+.pkd-docsel-card.selected { border-color:#00ab39; background:#d1fae5; }
+.pkd-docsel-card svg { width:60px; height:auto; }
+.pkd-docsel-card .pkd-docsel-title { font-weight:700; font-size:.85rem; text-align:center; }
+.pkd-docsel-sub-pills { display:flex; gap:.35rem; margin-top:.25rem; flex-wrap:wrap; justify-content:center; }
+.pkd-docsel-pill {
+  padding:.2rem .55rem; border-radius:20px; font-size:.68rem; font-family:var(--font-h);
+  border:1px solid #D4A574; background:#FFF9F0; cursor:pointer; transition:all .15s;
+}
+.pkd-docsel-pill:hover { border-color:#00ab39; }
+.pkd-docsel-pill.active { background:#00ab39; color:#fff; border-color:#00ab39; }
+
+/* ── Dual upload layout ── */
+.pkd-dual-upload { display:flex; gap:.5rem; width:100%; }
+.pkd-upload-half {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:.35rem;
+  border:2px dashed #D4A574; border-radius:10px; padding:.5rem; cursor:pointer;
+  transition:border-color .2s, background .2s; background:#FFF9F0; position:relative; min-height:100px;
+}
+.pkd-upload-half:hover { border-color:#00ab39; background:#f0fdf4; }
+.pkd-upload-half.drag-over { border-color:#00ab39; background:#d1fae5; }
+.pkd-upload-half.uploaded { border-style:solid; border-color:#00ab39; background:#d1fae5; }
+.pkd-upload-half svg { width:80px; height:auto; opacity:.6; }
+.pkd-upload-half img { width:100%; height:auto; border-radius:6px; object-fit:cover; max-height:120px; }
+.pkd-upload-half-label {
+  font-family:var(--font-s); font-size:.72rem; color:#2d6a4f; font-weight:700; text-transform:uppercase;
+}
+.pkd-upload-half .pkd-drop-file { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+/* ── Animated SVG pulse ── */
+@keyframes pkd-breathe { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.03); } }
+.pkd-illus-anim { animation: pkd-breathe 3s ease-in-out infinite; }
+
+/* ── Email check spinner ── */
+.pkd-email-spinner {
+  display:inline-block; width:14px; height:14px; border:2px solid #b7e4c7;
+  border-top-color:#00ab39; border-radius:50%; animation:pkd-spin .6s linear infinite;
+}
+@keyframes pkd-spin { to { transform:rotate(360deg); } }
 `;
 
 function ensurePkdStyles(): void {
@@ -1075,6 +1126,54 @@ const I_GENDER_OTHER =
   '<line x1="19" y1="3" x2="15.14" y2="6.86"/>' +
   '<polyline points="15 3 19 3 19 7"/></svg>';
 
+// Animated ID card front illustration (for dual-upload DNI/NIE/EU-ID)
+const I_CARD_FRONT_ILLUS =
+  '<svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="pkd-illus-anim">' +
+  '<rect x="2" y="2" width="116" height="76" rx="6" stroke="#2d6a4f" stroke-width="2" fill="#e8f5e9"/>' +
+  '<rect x="8" y="10" width="30" height="36" rx="3" fill="#b7e4c7" stroke="#2d6a4f" stroke-width="1"/>' +
+  '<circle cx="23" cy="22" r="8" fill="#a3d9b1" stroke="#2d6a4f" stroke-width="1"/>' +
+  '<path d="M15 38 c0-5 4-9 8-9 s8 4 8 9" stroke="#2d6a4f" stroke-width="1" fill="#a3d9b1"/>' +
+  '<rect x="44" y="12" width="66" height="4" rx="2" fill="#b7e4c7"/>' +
+  '<rect x="44" y="20" width="50" height="4" rx="2" fill="#b7e4c7"/>' +
+  '<rect x="44" y="28" width="58" height="4" rx="2" fill="#b7e4c7"/>' +
+  '<rect x="44" y="36" width="40" height="4" rx="2" fill="#b7e4c7"/>' +
+  '<text x="60" y="58" font-family="var(--font-s)" font-size="7" fill="#2d6a4f" text-anchor="middle" opacity="0.7">FRENTE</text>' +
+  '<rect x="8" y="62" width="102" height="8" rx="2" fill="#d8f3dc" stroke="#b7e4c7" stroke-width="0.5"/>' +
+  '</svg>';
+
+// Animated ID card back illustration
+const I_CARD_BACK_ILLUS =
+  '<svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="pkd-illus-anim">' +
+  '<rect x="2" y="2" width="116" height="76" rx="6" stroke="#2d6a4f" stroke-width="2" fill="#e8f5e9"/>' +
+  '<rect x="8" y="8" width="104" height="16" fill="#2d6a4f" rx="2"/>' +
+  '<rect x="8" y="30" width="104" height="6" rx="1" fill="#b7e4c7"/>' +
+  '<rect x="8" y="40" width="104" height="6" rx="1" fill="#b7e4c7"/>' +
+  '<rect x="8" y="50" width="80" height="6" rx="1" fill="#b7e4c7"/>' +
+  '<text x="60" y="70" font-family="monospace" font-size="5" fill="#2d6a4f" text-anchor="middle" opacity="0.5">P&lt;ESP&lt;&lt;NOMBRE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</text>' +
+  '<text x="60" y="40" font-family="var(--font-s)" font-size="7" fill="#2d6a4f" text-anchor="middle" opacity="0.7">DORSO</text>' +
+  '</svg>';
+
+// Animated passport illustration (open spread showing MRZ page)
+const I_PASSPORT_ILLUS =
+  '<svg viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg" class="pkd-illus-anim">' +
+  '<rect x="2" y="2" width="136" height="86" rx="4" stroke="#1b4332" stroke-width="2" fill="#1b4332"/>' +
+  '<rect x="6" y="6" width="62" height="78" rx="2" fill="#2d6a4f"/>' +
+  '<rect x="72" y="6" width="62" height="78" rx="2" fill="#e8f5e9"/>' +
+  '<rect x="80" y="12" width="24" height="30" rx="2" fill="#b7e4c7" stroke="#2d6a4f" stroke-width="1"/>' +
+  '<circle cx="92" cy="22" r="7" fill="#a3d9b1" stroke="#2d6a4f" stroke-width="1"/>' +
+  '<path d="M85 38 c0-4 3-7 7-7 s7 3 7 7" stroke="#2d6a4f" stroke-width="1" fill="#a3d9b1"/>' +
+  '<rect x="108" y="14" width="20" height="3" rx="1" fill="#b7e4c7"/>' +
+  '<rect x="108" y="20" width="18" height="3" rx="1" fill="#b7e4c7"/>' +
+  '<rect x="108" y="26" width="22" height="3" rx="1" fill="#b7e4c7"/>' +
+  '<rect x="80" y="48" width="48" height="4" rx="1" fill="#d8f3dc"/>' +
+  '<rect x="80" y="56" width="48" height="4" rx="1" fill="#d8f3dc"/>' +
+  '<text x="104" y="70" font-family="monospace" font-size="4.5" fill="#2d6a4f" text-anchor="middle" opacity="0.6">MRZ ZONE</text>' +
+  '<rect x="80" y="72" width="48" height="3" rx="1" fill="#d8f3dc"/>' +
+  '<rect x="80" y="78" width="48" height="3" rx="1" fill="#d8f3dc"/>' +
+  '<text x="37" y="35" font-family="var(--font-s)" font-size="8" fill="#e8f5e9" text-anchor="middle" opacity="0.3">ESP</text>' +
+  '<circle cx="37" cy="52" r="12" stroke="#e8f5e9" stroke-width="0.5" fill="none" opacity="0.2"/>' +
+  '</svg>';
+
 // ── Country codes ─────────────────────────────────────────────────────────────
 
 const COUNTRY_CODES: Array<{ code: string; dial: string; flag: string }> = [
@@ -1192,6 +1291,8 @@ export class PilgrimCardIsland {
 
   // Edit modal overlay (fullscreen popup)
   private editModalOverlay: HTMLElement | null = null;
+  // Debounce timer for Clerk email check
+  private emailCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(container: HTMLElement, opts: PilgrimCardOptions) {
     this.container = container;
@@ -1200,7 +1301,7 @@ export class PilgrimCardIsland {
 
     const stored = getPilgrimData(opts.pilgrimIndex);
     this.state = {
-      phase: opts.loggedInUserId ? 'done' : 'email_opt',
+      phase: opts.loggedInUserId ? 'doc_select' : 'email_input',
       email: opts.loggedInEmail ?? stored['f-email'] ?? '',
       userId: opts.loggedInUserId ?? null,
       docType: (stored['f-doc-type'] as DocType) || 'dni',
@@ -1216,6 +1317,8 @@ export class PilgrimCardIsland {
       errorMsg: null,
       clerkSignIn: null,
       clerkMeta: null,
+      emailExistsInClerk: null,
+      emailCheckLoading: false,
     };
     // Load Clerk avatar + metadata (async, non-blocking)
     this.loadClerkMeta();
@@ -1227,9 +1330,11 @@ export class PilgrimCardIsland {
       const user = window.Clerk?.user;
       if (!user) return;
 
-      this.state.clerkMeta = this.createClerkMetaSnapshot(user);
-
+      // Only populate clerkMeta for the logged-in user's own card (pilgrim 0).
+      // Without this guard, every pilgrim card picks up the logged-in user's
+      // avatar and profile data, causing pilgrim n+1 to show the wrong photo.
       if (this.opts.loggedInUserId) {
+        this.state.clerkMeta = this.createClerkMetaSnapshot(user);
         this.applyLoggedInUserPrefill(user);
       }
 
@@ -1354,24 +1459,31 @@ export class PilgrimCardIsland {
     inner.appendChild(this.buildHeader());
 
     switch (this.state.phase) {
-      case 'email_opt':
-        inner.appendChild(this.buildArtFrame('email'));
+      case 'email_input':
+        // No art frame — just email input
         inner.appendChild(this.buildNameRow());
         inner.appendChild(this.buildEmailBody());
         break;
       case 'otp':
-        inner.appendChild(this.buildArtFrame('otp'));
+        // No art frame — just OTP input
         inner.appendChild(this.buildNameRow());
         inner.appendChild(this.buildOtpBody());
         break;
-      case 'upload':
-        inner.appendChild(this.buildArtFrame('upload'));
+      case 'doc_select':
+        // No art frame — doc type selection cards with illustrations are in the body
         inner.appendChild(this.buildNameRow());
-        inner.appendChild(this.buildDocTypeRow());
+        inner.appendChild(this.buildDocSelectBody());
+        break;
+      case 'upload':
+        // No art frame — upload widgets with SVG illustrations are in the body
+        inner.appendChild(this.buildNameRow());
         inner.appendChild(this.buildUploadBody());
         break;
       case 'form':
-        inner.appendChild(this.buildArtFrame('avatar'));
+        // Only show art frame if OCR extracted an avatar
+        if (this.state.avatarDataUrl) {
+          inner.appendChild(this.buildArtFrame('avatar'));
+        }
         inner.appendChild(this.buildNameRow());
         inner.appendChild(this.buildFormBody());
         break;
@@ -1391,27 +1503,24 @@ export class PilgrimCardIsland {
     h.appendChild(badge);
 
     // Only show email in header during mid-wizard phases; done card shows it in Contacto tab
-    if (this.state.email && this.state.phase !== 'email_opt' && this.state.phase !== 'done') {
+    if (this.state.email && this.state.phase !== 'email_input' && this.state.phase !== 'done') {
       const emailEl = el('span', 'pkd-header-email', this.state.email);
       h.appendChild(emailEl);
     } else {
       h.appendChild(el('span', 'pkd-header-spacer'));
     }
 
-    // Step indicator
-    const stepLabels: Record<Phase, string> = {
-      email_opt: '1/4',
-      otp:       '2/4',
-      upload:    (this.state.phase === 'upload' && this.state.uploadStep === 'back') ? '3b/4' : '3/4',
-      form:      '4/4',
-      done:      '✓',
-    };
+    // Step indicator — pilgrim 0 (logged-in) skips email/otp so has fewer steps
+    const isLoggedIn = !!this.opts.loggedInUserId;
+    const stepLabels: Record<Phase, string> = isLoggedIn
+      ? { email_input: '1/3', otp: '1/3', doc_select: '1/3', upload: '2/3', form: '3/3', done: '✓' }
+      : { email_input: '1/5', otp: '2/5', doc_select: '3/5', upload: '4/5', form: '5/5', done: '✓' };
     h.appendChild(el('span', 'pkd-header-step', stepLabels[this.state.phase]));
 
     if ((this.state.phase === 'form' || this.state.phase === 'done') && !this.opts.loggedInUserId) {
       const cb = el('button', 'pkd-change-btn', 'Editar email');
       cb.addEventListener('click', () => {
-        this.state.phase = 'email_opt';
+        this.state.phase = 'email_input';
         this.state.errorMsg = null;
         this.renderPhase();
       });
@@ -1423,7 +1532,7 @@ export class PilgrimCardIsland {
 
   // ── ART FRAME ──────────────────────────────────────────────────────────────
 
-  private buildArtFrame(mode: 'email' | 'otp' | 'upload' | 'avatar' | 'done'): HTMLElement {
+  private buildArtFrame(mode: 'email' | 'otp' | 'doc_select' | 'upload' | 'avatar' | 'done'): HTMLElement {
     const wrap = el('div', 'pkd-art');
     const frame = el('div', 'pkd-art-frame');
 
@@ -1433,6 +1542,9 @@ export class PilgrimCardIsland {
         break;
       case 'otp':
         this.renderOtpArt(frame);
+        break;
+      case 'doc_select':
+        this.renderDocSelectArt(frame);
         break;
       case 'upload':
         this.renderUploadArt(frame);
@@ -1461,30 +1573,92 @@ export class PilgrimCardIsland {
     frame.appendChild(illus);
   }
 
-  private renderUploadArt(frame: HTMLElement): void {
-    const side = this.state.uploadStep;
-    const imageUrl = side === 'front' ? this.state.frontImageUrl : this.state.backImageUrl;
+  private renderDocSelectArt(frame: HTMLElement): void {
+    const illus = el('div', 'pkd-illus');
+    illus.appendChild(parseSvg(I_ID_CARD));
+    frame.appendChild(illus);
+  }
 
+  private renderUploadArt(frame: HTMLElement): void {
+    const isCardType = this.state.docType !== 'passport';
+
+    if (isCardType) {
+      // Dual upload: front + back side-by-side
+      this.renderDualUploadZones(frame);
+    } else {
+      // Passport: single upload zone
+      this.renderSingleUploadZone(frame, 'front');
+    }
+  }
+
+  /** Render side-by-side front/back upload zones for card-type documents. */
+  private renderDualUploadZones(frame: HTMLElement): void {
+    const dualWrap = el('div', 'pkd-dual-upload');
+
+    // Front half
+    const frontHalf = el('div', `pkd-upload-half${this.state.frontImageUrl ? ' uploaded' : ''}`);
+    frontHalf.appendChild(el('div', 'pkd-upload-half-label', 'FRENTE'));
+    if (this.state.uploading && this.state.uploadStep === 'front') {
+      frontHalf.appendChild(parseSvg(I_SPIN));
+    } else if (this.state.frontImageUrl) {
+      const img = el('img');
+      img.src = this.state.frontImageUrl;
+      img.alt = 'Anverso del documento';
+      frontHalf.appendChild(img);
+    } else {
+      frontHalf.appendChild(parseSvg(I_CARD_FRONT_ILLUS));
+      frontHalf.appendChild(el('div', 'pkd-drop-hint', 'Arrastra o haz clic'));
+    }
+    this.attachDropHandlers(frontHalf, 'front');
+    this.appendUploadFileInput(frontHalf, 'front');
+    dualWrap.appendChild(frontHalf);
+
+    // Back half
+    const backHalf = el('div', `pkd-upload-half${this.state.backImageUrl ? ' uploaded' : ''}`);
+    backHalf.appendChild(el('div', 'pkd-upload-half-label', 'DORSO'));
+    if (this.state.uploading && this.state.uploadStep === 'back') {
+      backHalf.appendChild(parseSvg(I_SPIN));
+    } else if (this.state.backImageUrl) {
+      const img = el('img');
+      img.src = this.state.backImageUrl;
+      img.alt = 'Reverso del documento';
+      backHalf.appendChild(img);
+    } else {
+      backHalf.appendChild(parseSvg(I_CARD_BACK_ILLUS));
+      backHalf.appendChild(el('div', 'pkd-drop-hint', 'Arrastra o haz clic'));
+    }
+    this.attachDropHandlers(backHalf, 'back');
+    this.appendUploadFileInput(backHalf, 'back');
+    dualWrap.appendChild(backHalf);
+
+    frame.appendChild(dualWrap);
+  }
+
+  /** Render a single upload zone (passport). */
+  private renderSingleUploadZone(frame: HTMLElement, side: 'front' | 'back'): void {
     if (this.state.uploading) {
       const illus = el('div', 'pkd-illus');
       illus.appendChild(parseSvg(I_SPIN));
       frame.appendChild(illus);
-    } else if (imageUrl) {
+    } else if (this.state.frontImageUrl) {
       const img = el('img', 'pkd-drop-thumb');
-      attr(img, {
-        src: imageUrl,
-        alt: side === 'front' ? 'Anverso del documento' : 'Reverso del documento',
-      });
+      img.src = this.state.frontImageUrl;
+      img.alt = 'Página del pasaporte';
       frame.appendChild(img);
       this.attachDropHandlers(frame, side);
     } else {
-      this.renderUploadZone(frame, side);
+      // Show passport illustration as drop zone
+      const zone = el('div', 'pkd-drop-zone');
+      zone.appendChild(parseSvg(I_PASSPORT_ILLUS));
+      zone.appendChild(el('div', 'pkd-drop-label', 'Página con foto y MRZ'));
+      zone.appendChild(el('div', 'pkd-drop-hint', 'Arrastra o haz clic'));
+      frame.appendChild(zone);
       this.attachDropHandlers(frame, side);
     }
-
     this.appendUploadFileInput(frame, side);
   }
 
+  /** @deprecated Use renderDualUploadZones or renderSingleUploadZone */
   private renderUploadZone(frame: HTMLElement, side: 'front' | 'back'): void {
     const zone = el('div', 'pkd-drop-zone');
     zone.appendChild(parseSvg(I_UPLOAD));
@@ -1590,6 +1764,80 @@ export class PilgrimCardIsland {
     return row;
   }
 
+  // ── DOC SELECT PHASE ────────────────────────────────────────────────────────
+
+  private buildDocSelectBody(): HTMLElement {
+    const body = el('div', 'pkd-body');
+    const isLoggedIn = !!this.opts.loggedInUserId;
+    const totalSteps = isLoggedIn ? 3 : 5;
+    const step = isLoggedIn ? 0 : 2;
+    body.appendChild(this.buildProgressDots(step, totalSteps, 'Tipo de documento'));
+
+    const info = el('p');
+    info.style.cssText = 'margin:0 0 .75rem;font-size:.8rem;color:#555;text-align:center;font-family:var(--font-h)';
+    info.textContent = 'Selecciona el tipo de documento de identidad';
+    body.appendChild(info);
+
+    const row = el('div', 'pkd-docsel-row');
+
+    // ── Card option: DNI / NIE / EU ID ──
+    const isCardType = this.state.docType !== 'passport';
+    const cardOption = el('div', `pkd-docsel-card${isCardType ? ' selected' : ''}`);
+    cardOption.appendChild(parseSvg(I_CARD_FRONT_ILLUS));
+    cardOption.appendChild(el('div', 'pkd-docsel-title', 'DNI / NIE / ID UE'));
+
+    // Sub-pills for card subtypes
+    const pills = el('div', 'pkd-docsel-sub-pills');
+    const cardSubtypes: Array<[DocType, string]> = [['dni', 'DNI'], ['nie', 'NIE'], ['eu_id', 'ID UE']];
+    for (const [val, lbl] of cardSubtypes) {
+      const pill = el('button', `pkd-docsel-pill${this.state.docType === val ? ' active' : ''}`, lbl);
+      pill.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.state.docType = val;
+        setPilgrimData(this.opts.pilgrimIndex, { 'f-doc-type': val });
+        updatePilgrimDocState(this.opts.pilgrimIndex, { docType: val });
+        this.renderPhase();
+      });
+      pills.appendChild(pill);
+    }
+    cardOption.appendChild(pills);
+    cardOption.addEventListener('click', () => {
+      if (this.state.docType === 'passport') {
+        this.state.docType = 'dni';
+        setPilgrimData(this.opts.pilgrimIndex, { 'f-doc-type': 'dni' });
+        updatePilgrimDocState(this.opts.pilgrimIndex, { docType: 'dni' });
+        this.renderPhase();
+      }
+    });
+    row.appendChild(cardOption);
+
+    // ── Passport option ──
+    const passOption = el('div', `pkd-docsel-card${this.state.docType === 'passport' ? ' selected' : ''}`);
+    passOption.appendChild(parseSvg(I_PASSPORT_ILLUS));
+    passOption.appendChild(el('div', 'pkd-docsel-title', 'Pasaporte'));
+    passOption.addEventListener('click', () => {
+      this.state.docType = 'passport';
+      setPilgrimData(this.opts.pilgrimIndex, { 'f-doc-type': 'passport' });
+      updatePilgrimDocState(this.opts.pilgrimIndex, { docType: 'passport' });
+      this.renderPhase();
+    });
+    row.appendChild(passOption);
+    body.appendChild(row);
+
+    // Continue button
+    const nextBtn = el('button', 'pkd-btn', 'Continuar →');
+    nextBtn.addEventListener('click', () => {
+      this.state.phase = 'upload';
+      this.state.uploadStep = 'front';
+      this.state.errorMsg = null;
+      this.renderPhase();
+    });
+    body.appendChild(nextBtn);
+
+    if (this.state.errorMsg) body.appendChild(this.buildError(this.state.errorMsg));
+    return body;
+  }
+
   // ── FOOTER ─────────────────────────────────────────────────────────────────
 
   private buildFooter(): HTMLElement {
@@ -1633,37 +1881,47 @@ export class PilgrimCardIsland {
 
   private buildEmailBody(): HTMLElement {
     const body = el('div', 'pkd-body');
-    body.appendChild(this.buildProgressDots(0, 4, 'Identificación'));
+    body.appendChild(this.buildProgressDots(0, 5, 'Identificación'));
 
     const section = el('div', 'pkd-section');
-
-    const lbl = el('label', 'pkd-label', 'Email de contacto (opcional)');
-    section.appendChild(lbl);
+    section.appendChild(el('label', 'pkd-label', 'EMAIL DE CONTACTO (OPCIONAL)'));
 
     const emailRow = el('div', 'pkd-email-row');
     const input = el('input', 'pkd-input') as HTMLInputElement;
     attr(input, { type: 'email', placeholder: 'peregrino@email.com', autocomplete: 'email' });
     input.value = this.state.email;
-    input.addEventListener('input', () => { this.state.email = input.value.trim(); });
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') void this.sendOtp(); });
+    input.addEventListener('input', () => {
+      this.state.email = input.value.trim();
+      // Debounced Clerk email check
+      if (this.emailCheckTimer) clearTimeout(this.emailCheckTimer);
+      this.state.emailExistsInClerk = null;
+      this.state.emailCheckLoading = false;
+      // Re-render buttons immediately (reset state)
+      this.updateEmailButtons(body);
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.state.email)) {
+        this.emailCheckTimer = setTimeout(() => void this.checkEmailInClerk(body), 600);
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (this.state.emailExistsInClerk === true) void this.sendOtp();
+        else if (this.state.emailExistsInClerk === false || !this.state.email) {
+          this.state.phase = 'doc_select';
+          this.state.errorMsg = null;
+          this.renderPhase();
+        }
+      }
+    });
     this.emailInputRef = input;
     emailRow.appendChild(input);
     section.appendChild(emailRow);
     body.appendChild(section);
 
-    const sendBtn = el('button', 'pkd-btn');
-    sendBtn.appendChild(parseSvg(I_MAIL));
-    sendBtn.appendChild(document.createTextNode(' Enviar código'));
-    sendBtn.addEventListener('click', () => void this.sendOtp());
-    body.appendChild(sendBtn);
-
-    const skipBtn = el('button', 'pkd-btn secondary', 'Continuar sin email →');
-    skipBtn.addEventListener('click', () => {
-      this.state.phase = 'upload';
-      this.state.errorMsg = null;
-      this.renderPhase();
-    });
-    body.appendChild(skipBtn);
+    // Buttons container — updated dynamically by updateEmailButtons
+    const btnContainer = el('div', 'pkd-email-btns');
+    btnContainer.id = `pkd-email-btns-${this.opts.pilgrimIndex}`;
+    body.appendChild(btnContainer);
+    this.updateEmailButtons(body);
 
     if (this.opts.loggedInEmail && this.state.email !== this.opts.loggedInEmail) {
       const hint = el('p');
@@ -1677,6 +1935,9 @@ export class PilgrimCardIsland {
         e.preventDefault();
         this.state.email = this.opts.loggedInEmail!;
         if (this.emailInputRef) this.emailInputRef.value = this.state.email;
+        // Trigger Clerk check for the pre-filled email
+        if (this.emailCheckTimer) clearTimeout(this.emailCheckTimer);
+        this.emailCheckTimer = setTimeout(() => void this.checkEmailInClerk(body), 300);
       });
       hint.appendChild(link);
       body.appendChild(hint);
@@ -1686,11 +1947,84 @@ export class PilgrimCardIsland {
     return body;
   }
 
+  /** Update the email phase buttons based on emailExistsInClerk state. */
+  private updateEmailButtons(body: HTMLElement): void {
+    const container = body.querySelector(`#pkd-email-btns-${this.opts.pilgrimIndex}`) as HTMLElement | null;
+    if (!container) return;
+    clear(container);
+
+    if (this.state.emailCheckLoading) {
+      // Show loading spinner
+      const loadBtn = el('button', 'pkd-btn');
+      loadBtn.disabled = true;
+      const spinner = el('span', 'pkd-email-spinner');
+      loadBtn.appendChild(spinner);
+      loadBtn.appendChild(document.createTextNode(' Verificando email…'));
+      container.appendChild(loadBtn);
+      return;
+    }
+
+    if (this.state.emailExistsInClerk === true) {
+      // Email found in Clerk → show "Enviar código"
+      const sendBtn = el('button', 'pkd-btn');
+      sendBtn.appendChild(parseSvg(I_MAIL));
+      sendBtn.appendChild(document.createTextNode(' Enviar código'));
+      sendBtn.addEventListener('click', () => void this.sendOtp());
+      container.appendChild(sendBtn);
+    }
+
+    // Always show "Validar DNI/Pasaporte" as the alternative/primary action
+    const docBtn = el('button',
+      this.state.emailExistsInClerk === true ? 'pkd-btn secondary' : 'pkd-btn',
+      'Validar DNI/Pasaporte →',
+    );
+    docBtn.addEventListener('click', () => {
+      this.state.phase = 'doc_select';
+      this.state.errorMsg = null;
+      if (this.state.email) {
+        setPilgrimData(this.opts.pilgrimIndex, { 'f-email': this.state.email });
+      }
+      this.renderPhase();
+    });
+    container.appendChild(docBtn);
+  }
+
+  /** Check if the entered email belongs to an existing Clerk user. */
+  private async checkEmailInClerk(body: HTMLElement): Promise<void> {
+    const email = this.state.email.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    this.state.emailCheckLoading = true;
+    this.updateEmailButtons(body);
+
+    try {
+      const res = await fetch('/api/pilgrim/link-by-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json() as { exists?: boolean; userId?: string };
+      // Only update if the email hasn't changed while we were waiting
+      if (this.state.email.trim() === email) {
+        this.state.emailExistsInClerk = data.exists ?? false;
+        if (data.userId) this.state.userId = data.userId;
+      }
+    } catch {
+      // Network error — default to "not found" so user can proceed with doc upload
+      if (this.state.email.trim() === email) {
+        this.state.emailExistsInClerk = false;
+      }
+    }
+
+    this.state.emailCheckLoading = false;
+    this.updateEmailButtons(body);
+  }
+
   // ── OTP PHASE ──────────────────────────────────────────────────────────────
 
   private buildOtpBody(): HTMLElement {
     const body = el('div', 'pkd-body');
-    body.appendChild(this.buildProgressDots(1, 4, 'Verificación'));
+    body.appendChild(this.buildProgressDots(1, 5, 'Verificación'));
 
     const info = el('p');
     info.style.cssText = 'margin:0 0 .5rem;font-size:.78rem;color:#555;text-align:center;font-family:var(--font-h)';
@@ -1733,7 +2067,7 @@ export class PilgrimCardIsland {
     const link = el('a');
     link.href = '#'; link.textContent = 'Reenviar código';
     link.style.cssText = 'color:#00ab39;text-decoration:underline;cursor:pointer';
-    link.addEventListener('click', (e) => { e.preventDefault(); this.state.phase = 'email_opt'; this.renderPhase(); });
+    link.addEventListener('click', (e) => { e.preventDefault(); this.state.phase = 'email_input'; this.renderPhase(); });
     resend.appendChild(document.createTextNode('¿No llegó? '));
     resend.appendChild(link);
     body.appendChild(resend);
@@ -1747,17 +2081,48 @@ export class PilgrimCardIsland {
 
   private buildUploadBody(): HTMLElement {
     const body = el('div', 'pkd-body');
-    const isBack = this.state.uploadStep === 'back';
-    const stepN = isBack ? 3 : 2;
-    const progressLabel = isBack ? 'Reverso del documento' : 'Anverso del documento';
+    const isCardType = this.state.docType !== 'passport';
+    const isLoggedIn = !!this.opts.loggedInUserId;
+    const totalSteps = isLoggedIn ? 3 : 5;
+    const step = isLoggedIn ? 1 : 3;
+    const progressLabel = isCardType ? 'Subir documento (frente y dorso)' : 'Subir pasaporte';
     const stored = getPilgrimData(this.opts.pilgrimIndex);
 
-    body.appendChild(this.buildProgressDots(stepN, 4, progressLabel));
-    body.appendChild(this.buildUploadProgressBar(isBack));
+    body.appendChild(this.buildProgressDots(step, totalSteps, progressLabel));
+
+    // ── Upload widgets with SVG illustrations (inline in body) ──
+    const docTypeLabel = this.state.docType === 'passport' ? 'Pasaporte' :
+      this.state.docType === 'nie' ? 'NIE' :
+      this.state.docType === 'eu_id' ? 'ID UE' : 'DNI';
+    const hint = el('p');
+    hint.style.cssText = 'margin:0 0 .5rem;font-size:.75rem;color:#666;text-align:center;font-family:var(--font-h)';
+    hint.textContent = isCardType
+      ? `${docTypeLabel} — sube frente y dorso (máx. 10MB cada uno)`
+      : `${docTypeLabel} — sube la página con foto y MRZ (máx. 10MB)`;
+    body.appendChild(hint);
+
+    // Inline upload zones (dual for card-type, single for passport)
+    const uploadWrap = el('div');
+    if (isCardType) {
+      this.renderDualUploadZones(uploadWrap);
+    } else {
+      this.renderSingleUploadZone(uploadWrap, 'front');
+    }
+    body.appendChild(uploadWrap);
+
     this.appendUploadSpinnerIfNeeded(body);
     body.appendChild(this.buildUploadStatusChips(stored));
     this.appendUploadMessages(body);
-    this.appendUploadActions(body, isBack);
+
+    // Show "Continue to form" only when required images are uploaded
+    const frontDone = !!this.state.frontImageUrl && !this.state.uploading;
+    const allDone = isCardType
+      ? frontDone && !!this.state.backImageUrl
+      : frontDone;
+
+    if (allDone) {
+      this.appendGoToFormButton(body);
+    }
 
     return body;
   }
@@ -1818,43 +2183,6 @@ export class PilgrimCardIsland {
     }
   }
 
-  private appendUploadActions(body: HTMLElement, isBack: boolean): void {
-    const frontDone = !!this.state.frontImageUrl && !this.state.uploading;
-    const backDone = !!this.state.backImageUrl && !this.state.uploading && isBack;
-    const canManualFill = this.state.uploading || !!this.state.frontImageUrl;
-
-    if (frontDone && !isBack) {
-      this.appendFrontUploadActions(body);
-    }
-    if (backDone) {
-      this.appendGoToFormButton(body);
-    }
-    if (!canManualFill) {
-      this.appendManualFillButton(body);
-    }
-  }
-
-  private appendFrontUploadActions(body: HTMLElement): void {
-    if (this.state.docType === 'passport') {
-      this.appendGoToFormButton(body);
-      return;
-    }
-
-    const nextBtn = el('button', 'pkd-btn', '→ Subir Reverso');
-    nextBtn.addEventListener('click', () => {
-      this.state.uploadStep = 'back';
-      this.renderPhase();
-    });
-    body.appendChild(nextBtn);
-
-    const skipBack = el('button', 'pkd-btn secondary', 'Omitir reverso →');
-    skipBack.addEventListener('click', () => {
-      this.state.phase = 'form';
-      this.renderPhase();
-    });
-    body.appendChild(skipBack);
-  }
-
   private appendGoToFormButton(body: HTMLElement): void {
     const nextBtn = el('button', 'pkd-btn', '→ Rellenar datos');
     nextBtn.addEventListener('click', () => {
@@ -1864,20 +2192,14 @@ export class PilgrimCardIsland {
     body.appendChild(nextBtn);
   }
 
-  private appendManualFillButton(body: HTMLElement): void {
-    const skipAll = el('button', 'pkd-btn secondary', 'Rellenar manualmente →');
-    skipAll.addEventListener('click', () => {
-      this.state.phase = 'form';
-      this.renderPhase();
-    });
-    body.appendChild(skipAll);
-  }
-
   // ── FORM PHASE ─────────────────────────────────────────────────────────────
 
   private buildFormBody(): HTMLElement {
     const body = el('div', 'pkd-body');
-    body.appendChild(this.buildProgressDots(3, 4, 'Datos del peregrino'));
+    const isLoggedIn = !!this.opts.loggedInUserId;
+    const totalSteps = isLoggedIn ? 3 : 5;
+    const step = isLoggedIn ? 2 : 4;
+    body.appendChild(this.buildProgressDots(step, totalSteps, 'Datos del peregrino'));
 
     const idx = this.opts.pilgrimIndex;
     const stored = getPilgrimData(idx);
@@ -2823,7 +3145,7 @@ export class PilgrimCardIsland {
         const result = await signIn.attemptFirstFactor({ strategy: 'email_code', code });
         if (result.status === 'complete') {
           this.state.userId = result.createdUserId ?? null;
-          this.state.phase = 'upload';
+          this.state.phase = 'doc_select';
           this.state.clerkSignIn = null;
           setPilgrimData(this.opts.pilgrimIndex, { 'f-email': this.state.email });
           updateDocumentUploadState(this.opts.pilgrimIndex, { phase: 'doctype', email: this.state.email, userId: this.state.userId ?? '' });
@@ -2851,7 +3173,7 @@ export class PilgrimCardIsland {
       }>(res);
       if (data.success && data.userId) {
         this.state.userId = data.userId;
-        this.state.phase = 'upload';
+        this.state.phase = 'doc_select';
         if (data.pilgrimData) setPilgrimData(this.opts.pilgrimIndex, data.pilgrimData);
         setPilgrimData(this.opts.pilgrimIndex, { 'f-email': this.state.email });
         updateDocumentUploadState(this.opts.pilgrimIndex, { phase: 'doctype', email: this.state.email, userId: data.userId });
@@ -3040,7 +3362,36 @@ export class PilgrimCardIsland {
   private async handleComplete(): Promise<void> {
     const stored = getPilgrimData(this.opts.pilgrimIndex);
 
-    // Persist document to Clerk (fire-and-forget)
+    // ── Form validation — all required fields must be filled ──
+    const requiredFields: Array<[FieldKey, string]> = [
+      ['f-first', 'Nombre'],
+      ['f-last', 'Apellido'],
+      ['f-dob', 'Nacimiento'],
+      ['f-doc-num', 'Nº documento'],
+      ['f-gender', 'Sexo'],
+    ];
+    const missing = requiredFields.filter(([key]) => !stored[key]?.trim());
+    if (missing.length > 0) {
+      this.state.errorMsg = `Campos requeridos: ${missing.map(([, l]) => l).join(', ')}`;
+      this.renderPhase();
+      return;
+    }
+
+    // ── Document validation — upload is mandatory ──
+    if (!this.state.frontImageUrl) {
+      this.state.errorMsg = 'Debes subir el documento de identidad.';
+      this.renderPhase();
+      return;
+    }
+    if (this.state.docType !== 'passport' && !this.state.backImageUrl) {
+      this.state.errorMsg = 'Debes subir el reverso del documento.';
+      this.renderPhase();
+      return;
+    }
+
+    this.state.errorMsg = null;
+
+    // Persist document to Clerk unsecured metadata (fire-and-forget)
     if (this.state.userId) {
       void fetch('/api/pilgrim/documents', {
         method: 'POST',

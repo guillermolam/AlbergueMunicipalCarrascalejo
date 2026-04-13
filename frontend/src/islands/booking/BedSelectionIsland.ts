@@ -326,7 +326,7 @@ export function initBedSelectionIsland(opts: BedSelectionIslandOptions = {}): vo
       const isOccupiedAll = avail.every((a) => !a);
 
       if (hasAnyAvail || isSelected) {
-        zone.style.cursor = 'pointer';
+        zone.setAttribute('style', 'cursor:pointer');
         zone.addEventListener('click', (e) => {
           e.stopPropagation();
           if (isSelected) {
@@ -356,7 +356,7 @@ export function initBedSelectionIsland(opts: BedSelectionIslandOptions = {}): vo
           updateBedState();
         });
       } else if (isOccupiedAll) {
-        zone.style.cursor = 'not-allowed';
+        zone.setAttribute('style', 'cursor:not-allowed');
       }
 
       zone.addEventListener('mouseenter', (e) => showTooltip(bedNum, e as MouseEvent));
