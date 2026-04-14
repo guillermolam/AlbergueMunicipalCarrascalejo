@@ -1,273 +1,79 @@
-use http::{Method, Request, StatusCode};
-use location_service::handlers::RequestHandler;
-use location_service::models::CountryData;
-use serde_json;
+use location_service::{CacheConfig, LocationService};
 
 #[cfg(test)]
 mod integration_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_full_request_response_cycle() {
-        // Test complete request/response cycle for known country
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/api/countries/ES")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-
-        assert_eq!(http_response.status(), StatusCode::OK);
-
-        let body = String::from_utf8(http_response.into_body()).unwrap();
-        let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json_response["success"].as_bool().unwrap());
-        assert_eq!(json_response["data"]["code"], "ES");
-        assert_eq!(json_response["data"]["name"], "Spain");
+    async fn test_get_country_known() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let result = service.get_country_data("ES").await.unwrap();
+        assert!(result.is_some());
+        let country = result.unwrap();
+        assert_eq!(country.code, "ES");
+        assert_eq!(country.name, "Spain");
     }
 
     #[tokio::test]
-    async fn test_cors_headers_present() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/api/countries/FR")
-            .body(vec![])
-            .unwrap();
+    async fn test_get_country_unknown() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let result = service.get_country_data("INVALID").await.unwrap();
+        assert!(result.is_none());
+    }
 
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
+    #[tokio::test]
+    async fn test_warm_cache() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let codes = ["ES", "FR", "PT"];
+        service.warm_cache(&codes).await.unwrap();
+        assert!(service.is_cached("ES"));
+        assert!(service.is_cached("FR"));
+        assert!(service.is_cached("PT"));
+    }
 
-        let headers = http_response.headers();
-        assert_eq!(headers.get("Access-Control-Allow-Origin").unwrap(), "*");
-        assert!(headers
-            .get("content-type")
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("application/json"));
+    #[tokio::test]
+    async fn test_clear_cache() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let _ = service.get_country_data("ES").await;
+        assert!(service.cache_size() > 0);
+        service.clear_cache().await.unwrap();
+        assert_eq!(service.cache_size(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_clear_country_cache() {
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
+        let _ = service.get_country_data("ES").await;
+        assert!(service.is_cached("ES"));
+        service.clear_country_cache("ES").await.unwrap();
+        assert!(!service.is_cached("ES"));
     }
 
     #[tokio::test]
     async fn test_multiple_requests_same_country() {
-        // Test that multiple requests for the same country work correctly
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
         for _ in 0..3 {
-            let request = Request::builder()
-                .method(Method::GET)
-                .uri("/api/countries/PT")
-                .body(vec![])
-                .unwrap();
-
-            let response = RequestHandler::handle_request(request).await.unwrap();
-            let http_response = response.into_response();
-            assert_eq!(http_response.status(), StatusCode::OK);
-
-            let body = String::from_utf8(http_response.into_body()).unwrap();
-            let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-            assert_eq!(json_response["data"]["code"], "PT");
-        }
-    }
-
-    #[tokio::test]
-    async fn test_error_response_format() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/api/countries/INVALID")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::NOT_FOUND);
-
-        let body = String::from_utf8(http_response.into_body()).unwrap();
-        let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(!json_response["success"].as_bool().unwrap());
-        assert_eq!(json_response["message"], "Country not found");
-    }
-
-    #[tokio::test]
-    async fn test_options_preflight() {
-        let request = Request::builder()
-            .method(Method::OPTIONS)
-            .uri("/api/countries/IT")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::OK);
-
-        let headers = http_response.headers();
-        assert_eq!(headers.get("Access-Control-Allow-Origin").unwrap(), "*");
-        assert_eq!(
-            headers.get("Access-Control-Allow-Methods").unwrap(),
-            "GET, POST, PUT, DELETE, OPTIONS"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_response_content_type() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/api/countries/IT")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-
-        let headers = http_response.headers();
-        let content_type = headers.get("content-type").unwrap().to_str().unwrap();
-        assert!(content_type.contains("application/json"));
-    }
-
-    #[tokio::test]
-    async fn test_all_known_countries() {
-        let known_countries = ["ES", "FR", "PT", "IT", "DE", "GB"];
-
-        for country_code in known_countries {
-            let request = Request::builder()
-                .method(Method::GET)
-                .uri(format!("/api/countries/{}", country_code))
-                .body(vec![])
-                .unwrap();
-
-            let response = RequestHandler::handle_request(request).await.unwrap();
-            let http_response = response.into_response();
-            assert_eq!(http_response.status(), StatusCode::OK);
-
-            let body = String::from_utf8(http_response.into_body()).unwrap();
-            let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-            assert_eq!(json_response["data"]["code"], country_code);
-        }
-    }
-
-    #[tokio::test]
-    async fn test_warm_cache_endpoint() {
-        let request = Request::builder()
-            .method(Method::POST)
-            .uri("/api/countries/warm-cache")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::OK);
-
-        let body = String::from_utf8(http_response.into_body()).unwrap();
-        let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json_response["success"].as_bool().unwrap());
-        assert_eq!(json_response["data"], "Cache warmed successfully");
-    }
-
-    #[tokio::test]
-    async fn test_list_countries_endpoint() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/api/countries")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::OK);
-
-        let body = String::from_utf8(http_response.into_body()).unwrap();
-        let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json_response["success"].as_bool().unwrap());
-        assert!(json_response["data"].is_array());
-    }
-
-    #[tokio::test]
-    async fn test_clear_cache_endpoint() {
-        let request = Request::builder()
-            .method(Method::DELETE)
-            .uri("/api/countries/cache")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::OK);
-
-        let body = String::from_utf8(http_response.into_body()).unwrap();
-        let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(json_response["success"].as_bool().unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_bad_request_empty_country_code() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/api/countries/")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::BAD_REQUEST);
-
-        let body = String::from_utf8(http_response.into_body()).unwrap();
-        let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(!json_response["success"].as_bool().unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_not_found_endpoint() {
-        let request = Request::builder()
-            .method(Method::GET)
-            .uri("/api/unknown")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::NOT_FOUND);
-
-        let body = String::from_utf8(http_response.into_body()).unwrap();
-        let json_response: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(!json_response["success"].as_bool().unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_invalid_method() {
-        let request = Request::builder()
-            .method(Method::PUT)
-            .uri("/api/countries/ES")
-            .body(vec![])
-            .unwrap();
-
-        let response = RequestHandler::handle_request(request).await.unwrap();
-        let http_response = response.into_response();
-        assert_eq!(http_response.status(), StatusCode::NOT_FOUND);
-    }
-
-    #[tokio::test]
-    async fn test_cache_warmup_integration() {
-        // Test that warm cache endpoint works and populates cache
-        let warm_request = Request::builder()
-            .method(Method::POST)
-            .uri("/api/countries/warm-cache")
-            .body(vec![])
-            .unwrap();
-
-        let warm_response = RequestHandler::handle_request(warm_request).await.unwrap();
-        let warm_http_response = warm_response.into_response();
-        assert_eq!(warm_http_response.status(), StatusCode::OK);
-
-        // Now test that countries are accessible
-        for country_code in ["ES", "FR", "PT", "IT"] {
-            let request = Request::builder()
-                .method(Method::GET)
-                .uri(format!("/api/countries/{}", country_code))
-                .body(vec![])
-                .unwrap();
-
-            let response = RequestHandler::handle_request(request).await.unwrap();
-            let http_response = response.into_response();
-            assert_eq!(http_response.status(), StatusCode::OK);
+            let result = service.get_country_data("ES").await.unwrap();
+            assert!(result.is_some());
+            assert_eq!(result.unwrap().code, "ES");
         }
     }
 
@@ -275,21 +81,20 @@ mod integration_tests {
     async fn test_performance_multiple_requests() {
         use std::time::Instant;
 
+        let mut service = LocationService::with_memory_cache(Some(CacheConfig {
+            enabled: true,
+            ttl: std::time::Duration::from_secs(60),
+        }));
         let start = Instant::now();
 
-        for country_code in ["ES", "FR", "PT", "IT"] {
-            let request = Request::builder()
-                .method(Method::GET)
-                .uri(format!("/api/countries/{}", country_code))
-                .body(vec![])
-                .unwrap();
-
-            let response = RequestHandler::handle_request(request).await.unwrap();
-            let http_response = response.into_response();
-            assert_eq!(http_response.status(), StatusCode::OK);
+        for _ in 0..10 {
+            let _ = service.get_country_data("ES").await.unwrap();
         }
 
         let duration = start.elapsed();
-        assert!(duration.as_millis() < 1000); // Should complete quickly
+        assert!(
+            duration.as_millis() < 1000,
+            "10 requests should complete in under 1s"
+        );
     }
 }

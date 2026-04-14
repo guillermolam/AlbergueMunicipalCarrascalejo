@@ -1,0 +1,6 @@
+#!/bin/sh
+# Husky pre-commit hook – fast checks only
+# Run prettier on staged files and typescript check
+
+cd frontend
+pnpm exec prettier --check src/ || { echo "Prettier failed — run: pnpm exec prettier --write src/"; exit 1; }

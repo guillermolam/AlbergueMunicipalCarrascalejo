@@ -1615,6 +1615,7 @@ dependencies = [
  "chrono",
  "futures",
  "http 1.4.0",
+ "log",
  "mockall",
  "redis-service",
  "serde",

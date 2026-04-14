@@ -1,0 +1,224 @@
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=2; plural=n == 1 ? 0 : 1;\n"
+"Source-Language: es\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/components/BookingConfirmation.astro
+msgid "Habitación privada"
+msgstr "Habitación privada"
+
+#: src/components/BookingConfirmation.astro
+msgid "Habitación compartida"
+msgstr "Habitación compartida"
+
+#. 0: status === 'confirmed' ? 'confirmada' \\: 'registrada'
+#: src/components/BookingConfirmation.astro
+msgid "Reserva {0}"
+msgstr "Reserva {0}"
+
+#: src/components/BookingConfirmation.astro
+msgid "Referencia: <0/>"
+msgstr "Referencia: <0/>"
+
+#: src/components/BookingConfirmation.astro
+msgid "Nombre"
+msgstr "Nombre"
+
+#: src/components/BookingConfirmation.astro
+msgid "Código"
+msgstr "Código"
+
+#: src/components/BookingConfirmation.astro
+msgid "Llegada"
+msgstr "Llegada"
+
+#: src/components/BookingConfirmation.astro
+msgid "Salida"
+msgstr "Salida"
+
+#: src/components/BookingConfirmation.astro
+msgid "Noches"
+msgstr "Noches"
+
+#: src/components/BookingConfirmation.astro
+msgid "Tipo"
+msgstr "Tipo"
+
+#: src/components/BookingConfirmation.astro
+msgid "Total"
+msgstr "Total"
+
+#. 0: totalAmount
+#: src/components/BookingConfirmation.astro
+msgid "{0} EUR"
+msgstr "{0} EUR"
+
+#: src/components/CaminoDashboard.astro
+msgid "Camino Dashboard"
+msgstr "Camino Dashboard"
+
+#: src/components/CaminoDashboard.astro
+msgid "Doodled shell"
+msgstr "Doodled shell"
+
+#: src/components/CaminoDashboard.astro
+msgid "km recorridos"
+msgstr "km recorridos"
+
+#: src/components/CaminoDashboard.astro
+msgid "días en camino"
+msgstr "días en camino"
+
+#: src/components/CaminoDashboard.astro
+msgid "completado"
+msgstr "completado"
+
+#: src/components/CaminoDashboard.astro
+msgid "📊 Progreso General"
+msgstr "📊 Progreso General"
+
+#: src/components/CaminoDashboard.astro
+msgid "km completados"
+msgstr "km completados"
+
+#: src/components/CaminoDashboard.astro
+msgid "km restantes"
+msgstr "km restantes"
+
+#: src/components/CaminoDashboard.astro
+msgid "km total"
+msgstr "km total"
+
+#: src/components/CaminoDashboard.astro
+msgid "🎯 Etapa Actual"
+msgstr "🎯 Etapa Actual"
+
+#: src/components/CaminoDashboard.astro
+msgid "38.2 km"
+msgstr "38.2 km"
+
+#: src/components/CaminoDashboard.astro
+msgid "Progreso de Etapa"
+msgstr "Progreso de Etapa"
+
+#: src/components/CaminoDashboard.astro
+msgid "Math.round(38.2 * currentStageProgress / 100) + ' km completados'"
+msgstr "Math.round(38.2 * currentStageProgress / 100) + ' km completados'"
+
+#: src/components/CaminoDashboard.astro
+msgid "Math.round(38.2 * (100 - currentStageProgress) / 100) + ' km restantes'"
+msgstr "Math.round(38.2 * (100 - currentStageProgress) / 100) + ' km restantes'"
+
+#: src/components/CaminoDashboard.astro
+msgid "📅 Planificación Diaria"
+msgstr "📅 Planificación Diaria"
+
+#: src/components/CaminoDashboard.astro
+msgid "Objetivo diario"
+msgstr "Objetivo diario"
+
+#: src/components/CaminoDashboard.astro
+msgid "<0/> km"
+msgstr "<0/> km"
+
+#: src/components/CaminoDashboard.astro
+msgid "💡 Recomendaciones"
+msgstr "💡 Recomendaciones"
+
+#: src/components/CaminoDashboard.astro
+msgid "🎉 Datos Curiosos"
+msgstr "🎉 Datos Curiosos"
+
+#: src/components/CaminoDashboard.astro
+msgid "🗺️ Próximas Etapas"
+msgstr "🗺️ Próximas Etapas"
+
+#: src/components/Head.astro
+msgid "Albergue Municipal Carrascalejo"
+msgstr "Albergue Municipal Carrascalejo"
+
+#: src/components/Hero.astro
+msgid "Hero background"
+msgstr "Hero background"
+
+#: src/components/MapLibre.astro
+msgid "Albergue Municipal El Carrascalejo"
+msgstr "Albergue Municipal El Carrascalejo"
+
+#. 0: rt in; 1: ce Pr; 2: { title\\: string;
+#: src/components/Stats.astro
+msgid "Stat {0}: {1}{2}"
+msgstr "Stat {0}: {1}{2}"
+
+#: src/components/UserProfile.astro
+msgid "Pendiente"
+msgstr "Pendiente"
+
+#: src/components/UserProfile.astro
+msgid "Confirmado"
+msgstr "Confirmado"
+
+#: src/components/UserProfile.astro
+msgid "Cancelado"
+msgstr "Cancelado"
+
+#: src/components/UserProfile.astro
+msgid "Estado desconocido"
+msgstr "Estado desconocido"
+
+#. 0: pilgrim.name
+#: src/components/UserProfile.astro
+msgid "Hola, {0}"
+msgstr "Hola, {0}"
+
+#: src/components/UserProfile.astro
+msgid "País:"
+msgstr "País:"
+
+#: src/components/UserProfile.astro
+msgid "Teléfono:"
+msgstr "Teléfono:"
+
+#: src/components/UserProfile.astro
+msgid "Llegada:"
+msgstr "Llegada:"
+
+#: src/components/UserProfile.astro
+msgid "Cerrar sesión"
+msgstr "Cerrar sesión"
+
+#: src/components/UserProfile.astro
+msgid "Bienvenido peregrino"
+msgstr "Bienvenido peregrino"
+
+#: src/components/UserProfile.astro
+msgid "Iniciar sesión"
+msgstr "Iniciar sesión"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service status"
+msgstr "Estado del servicio"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Static snapshot"
+msgstr "Instantánea estática"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service"
+msgstr "Servicio"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Status"
+msgstr "Estado"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Response"
+msgstr "Respuesta"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Message"
+msgstr "Mensaje"

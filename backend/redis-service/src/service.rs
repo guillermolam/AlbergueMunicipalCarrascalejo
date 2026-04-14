@@ -299,3 +299,13 @@ impl RedisService {
         &self.config
     }
 }
+
+impl Default for RedisService {
+    fn default() -> Self {
+        let config = RedisConfig::default();
+        Self {
+            address: config.url.clone(),
+            config,
+        }
+    }
+}

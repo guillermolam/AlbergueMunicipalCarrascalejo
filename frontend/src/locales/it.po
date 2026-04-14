@@ -1,0 +1,224 @@
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=2; plural=n == 1 ? 0 : 1;\n"
+"Source-Language: es\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/components/BookingConfirmation.astro
+msgid "Habitación privada"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Habitación compartida"
+msgstr ""
+
+#. 0: status === 'confirmed' ? 'confirmada' \\: 'registrada'
+#: src/components/BookingConfirmation.astro
+msgid "Reserva {0}"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Referencia: <0/>"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Nombre"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Código"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Llegada"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Salida"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Noches"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Tipo"
+msgstr ""
+
+#: src/components/BookingConfirmation.astro
+msgid "Total"
+msgstr ""
+
+#. 0: totalAmount
+#: src/components/BookingConfirmation.astro
+msgid "{0} EUR"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "Camino Dashboard"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "Doodled shell"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "km recorridos"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "días en camino"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "completado"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "📊 Progreso General"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "km completados"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "km restantes"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "km total"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "🎯 Etapa Actual"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "38.2 km"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "Progreso de Etapa"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "Math.round(38.2 * currentStageProgress / 100) + ' km completados'"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "Math.round(38.2 * (100 - currentStageProgress) / 100) + ' km restantes'"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "📅 Planificación Diaria"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "Objetivo diario"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "<0/> km"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "💡 Recomendaciones"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "🎉 Datos Curiosos"
+msgstr ""
+
+#: src/components/CaminoDashboard.astro
+msgid "🗺️ Próximas Etapas"
+msgstr ""
+
+#: src/components/Head.astro
+msgid "Albergue Municipal Carrascalejo"
+msgstr ""
+
+#: src/components/Hero.astro
+msgid "Hero background"
+msgstr ""
+
+#: src/components/MapLibre.astro
+msgid "Albergue Municipal El Carrascalejo"
+msgstr ""
+
+#. 0: rt in; 1: ce Pr; 2: { title\\: string;
+#: src/components/Stats.astro
+msgid "Stat {0}: {1}{2}"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Pendiente"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Confirmado"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Cancelado"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Estado desconocido"
+msgstr ""
+
+#. 0: pilgrim.name
+#: src/components/UserProfile.astro
+msgid "Hola, {0}"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "País:"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Teléfono:"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Llegada:"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Cerrar sesión"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Bienvenido peregrino"
+msgstr ""
+
+#: src/components/UserProfile.astro
+msgid "Iniciar sesión"
+msgstr ""
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service status"
+msgstr "Stato del servizio"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Static snapshot"
+msgstr "Istantanea statica"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service"
+msgstr "Servizio"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Status"
+msgstr "Stato"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Response"
+msgstr "Risposta"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Message"
+msgstr "Messaggio"
