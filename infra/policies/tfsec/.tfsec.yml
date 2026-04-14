@@ -1,0 +1,10 @@
+# tfsec configuration — see https://aquasecurity.github.io/tfsec/
+minimum_severity: MEDIUM
+
+exclude:
+  # OCI Always Free instances have no KMS keys available without paid tier
+  - OCI006  # oracle-compute-no-customer-managed-key
+  # Block volume KMS is optional (kms_key_id = null is intentional)
+  - OCI007  # oracle-database-no-customer-managed-key
+
+custom_checks: []
