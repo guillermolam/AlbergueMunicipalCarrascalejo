@@ -1,5 +1,8 @@
 ---
-import { i18nStore, type Locale } from '@/stores/i18nStore';
+type Locale = string;
+const i18nStore = {
+  get: () => ({ locale: typeof window !== 'undefined' ? document.documentElement.lang || 'es' : 'es' })
+};
 
 interface LanguageSelectorIslandProps {
   class?: string;
