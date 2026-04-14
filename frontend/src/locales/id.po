@@ -1,0 +1,224 @@
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=2; plural=n == 1 ? 0 : 1;\n"
+"Source-Language: es\n"
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/components/BookingConfirmation.astro
+msgid "Habitación privada"
+msgstr "Kamar pribadi"
+
+#: src/components/BookingConfirmation.astro
+msgid "Habitación compartida"
+msgstr "Kamar bersama"
+
+#. 0: status === 'confirmed' ? 'confirmada' \\: 'registrada'
+#: src/components/BookingConfirmation.astro
+msgid "Reserva {0}"
+msgstr "Reservasi {0}"
+
+#: src/components/BookingConfirmation.astro
+msgid "Referencia: <0/>"
+msgstr "Referensi: <0/>"
+
+#: src/components/BookingConfirmation.astro
+msgid "Nombre"
+msgstr "Nama"
+
+#: src/components/BookingConfirmation.astro
+msgid "Código"
+msgstr "Kode"
+
+#: src/components/BookingConfirmation.astro
+msgid "Llegada"
+msgstr "Kedatangan"
+
+#: src/components/BookingConfirmation.astro
+msgid "Salida"
+msgstr "Keberangkatan"
+
+#: src/components/BookingConfirmation.astro
+msgid "Noches"
+msgstr "Malam"
+
+#: src/components/BookingConfirmation.astro
+msgid "Tipo"
+msgstr "Tipe"
+
+#: src/components/BookingConfirmation.astro
+msgid "Total"
+msgstr "Total"
+
+#. 0: totalAmount
+#: src/components/BookingConfirmation.astro
+msgid "{0} EUR"
+msgstr "{0} EUR"
+
+#: src/components/CaminoDashboard.astro
+msgid "Camino Dashboard"
+msgstr "Camino Dashboard"
+
+#: src/components/CaminoDashboard.astro
+msgid "Doodled shell"
+msgstr "Cangkang coretan"
+
+#: src/components/CaminoDashboard.astro
+msgid "km recorridos"
+msgstr "km ditempuh"
+
+#: src/components/CaminoDashboard.astro
+msgid "días en camino"
+msgstr "hari di perjalanan"
+
+#: src/components/CaminoDashboard.astro
+msgid "completado"
+msgstr "selesai"
+
+#: src/components/CaminoDashboard.astro
+msgid "📊 Progreso General"
+msgstr "📊 Kemajuan Umum"
+
+#: src/components/CaminoDashboard.astro
+msgid "km completados"
+msgstr "km selesai"
+
+#: src/components/CaminoDashboard.astro
+msgid "km restantes"
+msgstr "km tersisa"
+
+#: src/components/CaminoDashboard.astro
+msgid "km total"
+msgstr "km total"
+
+#: src/components/CaminoDashboard.astro
+msgid "🎯 Etapa Actual"
+msgstr "🎯 Tahap Saat Ini"
+
+#: src/components/CaminoDashboard.astro
+msgid "38.2 km"
+msgstr "38,2 km"
+
+#: src/components/CaminoDashboard.astro
+msgid "Progreso de Etapa"
+msgstr "Kemajuan Tahap"
+
+#: src/components/CaminoDashboard.astro
+msgid "Math.round(38.2 * currentStageProgress / 100) + ' km completados'"
+msgstr "Math.round(38.2 * currentStageProgress / 100) + ' km selesai'"
+
+#: src/components/CaminoDashboard.astro
+msgid "Math.round(38.2 * (100 - currentStageProgress) / 100) + ' km restantes'"
+msgstr "Math.round(38.2 * (100 - currentStageProgress) / 100) + ' km tersisa'"
+
+#: src/components/CaminoDashboard.astro
+msgid "📅 Planificación Diaria"
+msgstr "📅 Perencanaan Harian"
+
+#: src/components/CaminoDashboard.astro
+msgid "Objetivo diario"
+msgstr "Target harian"
+
+#: src/components/CaminoDashboard.astro
+msgid "<0/> km"
+msgstr "<0/> km"
+
+#: src/components/CaminoDashboard.astro
+msgid "💡 Recomendaciones"
+msgstr "💡 Rekomendasi"
+
+#: src/components/CaminoDashboard.astro
+msgid "🎉 Datos Curiosos"
+msgstr "🎉 Fakta Menarik"
+
+#: src/components/CaminoDashboard.astro
+msgid "🗺️ Próximas Etapas"
+msgstr "🗺️ Tahap Berikutnya"
+
+#: src/components/Head.astro
+msgid "Albergue Municipal Carrascalejo"
+msgstr "Albergue Municipal Carrascalejo"
+
+#: src/components/Hero.astro
+msgid "Hero background"
+msgstr "Latar belakang hero"
+
+#: src/components/MapLibre.astro
+msgid "Albergue Municipal El Carrascalejo"
+msgstr "Albergue Municipal El Carrascalejo"
+
+#. 0: rt in; 1: ce Pr; 2: { title\\: string;
+#: src/components/Stats.astro
+msgid "Stat {0}: {1}{2}"
+msgstr "Stat {0}: {1}{2}"
+
+#: src/components/UserProfile.astro
+msgid "Pendiente"
+msgstr "Tertunda"
+
+#: src/components/UserProfile.astro
+msgid "Confirmado"
+msgstr "Dikonfirmasi"
+
+#: src/components/UserProfile.astro
+msgid "Cancelado"
+msgstr "Dibatalkan"
+
+#: src/components/UserProfile.astro
+msgid "Estado desconocido"
+msgstr "Status tidak diketahui"
+
+#. 0: pilgrim.name
+#: src/components/UserProfile.astro
+msgid "Hola, {0}"
+msgstr "Halo, {0}"
+
+#: src/components/UserProfile.astro
+msgid "País:"
+msgstr "Negara:"
+
+#: src/components/UserProfile.astro
+msgid "Teléfono:"
+msgstr "Telepon:"
+
+#: src/components/UserProfile.astro
+msgid "Llegada:"
+msgstr "Kedatangan:"
+
+#: src/components/UserProfile.astro
+msgid "Cerrar sesión"
+msgstr "Keluar"
+
+#: src/components/UserProfile.astro
+msgid "Bienvenido peregrino"
+msgstr "Selamat datang peziarah"
+
+#: src/components/UserProfile.astro
+msgid "Iniciar sesión"
+msgstr "Masuk"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service status"
+msgstr "Status layanan"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Static snapshot"
+msgstr "Snapshot statis"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Service"
+msgstr "Layanan"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Status"
+msgstr "Status"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Response"
+msgstr "Respons"
+
+#: src/components/admin/ServiceStatus.astro
+msgid "Message"
+msgstr "Pesan"

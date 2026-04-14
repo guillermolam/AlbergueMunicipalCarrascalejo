@@ -1,6 +1,5 @@
 #!/bin/sh
-# Husky pre-push hook – heavy checks before push
+# Husky pre-push hook – type check only (build runs in CI)
 
 cd frontend
 pnpm run type-check || exit 1
-pnpm run build      || exit 1
