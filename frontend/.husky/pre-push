@@ -1,0 +1,6 @@
+#!/bin/sh
+# Husky pre-push hook – heavy checks before push
+
+cd frontend
+pnpm run type-check || exit 1
+pnpm run build      || exit 1
