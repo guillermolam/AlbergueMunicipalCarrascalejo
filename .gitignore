@@ -186,3 +186,28 @@ runtime-config.toml
 
 # === FIRECRAWL CACHE ===
 **/.firecrawl/
+
+# === CLAUDE & AGENTS ===
+.claude/
+.agents/
+
+# === PLAYWRIGHT ===
+.playwright-mcp/
+
+# === WRANGLER & DEV ===
+**/.wrangler/
+.wrangler/
+frontend/.dev.vars
+backend/**/.dev.vars
+backend/**/.wrangler/
+
+# === AUDIT & TOOLS ===
+frontend/.audit/
+frontend-audit.md
+
+# === STORYBOOK ===
+frontend/.storybook/
+
+# === RETTO JS WORKER ===
+backend/retto-js-worker/
+retto_wasm.wasm
