@@ -1,0 +1,12 @@
+# Build outputs and dependencies
+dist/
+node_modules/
+.astro/
+worker-configuration.d.ts
+
+# Storybook files — contain complex template literals that Prettier can't parse
+src/stories/
+src/lib/three/__stories__/
+
+# Generated files
+src/env.d.ts
