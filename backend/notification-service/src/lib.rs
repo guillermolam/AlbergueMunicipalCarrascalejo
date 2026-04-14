@@ -6,7 +6,7 @@
     clippy::struct_field_names,
     clippy::upper_case_acronyms,
     clippy::unnecessary_wraps,
-    clippy::needless_continue,
+    clippy::needless_continue
 )]
 
 use http::StatusCode;
