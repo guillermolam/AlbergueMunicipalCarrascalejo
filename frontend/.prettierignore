@@ -10,3 +10,8 @@ src/lib/three/__stories__/
 
 # Generated files
 src/env.d.ts
+
+# Wuchale i18n compiled locale files (auto-generated)
+src/locales/.wuchale/
+src/locales/data.js
+src/locales/main.loader.js
