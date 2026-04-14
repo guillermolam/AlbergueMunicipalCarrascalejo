@@ -45,7 +45,7 @@ module "oci_compute" {
   }
 }
 
-output "instance_public_ip"  { value = module.oci_compute.instance_public_ip }
-output "instance_id"         { value = module.oci_compute.instance_id }
-output "block_volume_id"     { value = module.oci_compute.block_volume_id }
-output "vcn_id"              { value = module.oci_compute.vcn_id }
+output "instance_public_ip" { value = module.oci_compute.instance_public_ip }
+output "instance_id" { value = module.oci_compute.instance_id }
+output "block_volume_id" { value = module.oci_compute.block_volume_id }
+output "vcn_id" { value = module.oci_compute.vcn_id }

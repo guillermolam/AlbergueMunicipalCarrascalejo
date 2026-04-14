@@ -46,7 +46,7 @@ variable "region" {
   type        = string
   description = "The OCI region to deploy resources"
   # Spain Central
-  default     = "eu-madrid-1" 
+  default = "eu-madrid-1"
 
   validation {
     condition = contains([

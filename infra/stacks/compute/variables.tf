@@ -1,21 +1,21 @@
 variable "tenancy_ocid" {
-  type      = string
-  nullable  = false
+  type     = string
+  nullable = false
 }
 
 variable "compartment_ocid" {
-  type      = string
-  nullable  = false
+  type     = string
+  nullable = false
 }
 
 variable "user_ocid" {
-  type      = string
-  nullable  = false
+  type     = string
+  nullable = false
 }
 
 variable "oracle_api_key_fingerprint" {
-  type      = string
-  nullable  = false
+  type     = string
+  nullable = false
 }
 
 variable "oracle_api_private_key_path" {

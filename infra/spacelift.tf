@@ -37,10 +37,10 @@ resource "spacelift_context" "shared" {
 
 # GitHub token — used by after_apply hooks to dispatch workflow events
 resource "spacelift_environment_variable" "github_token" {
-  context_id  = spacelift_context.shared.id
-  name        = "GITHUB_TOKEN"
-  value       = var.github_token
-  write_only  = true
+  context_id = spacelift_context.shared.id
+  name       = "GITHUB_TOKEN"
+  value      = var.github_token
+  write_only = true
 }
 
 # ── Stack definitions ──────────────────────────────────────────────────────────
@@ -134,28 +134,28 @@ resource "spacelift_drift_detection" "platform" {
   stack_id  = spacelift_stack.platform.id
   schedule  = ["0 6 * * *"]
   timezone  = "UTC"
-  reconcile = true   # GitHub settings, branch rules — safe to auto-reconcile
+  reconcile = true # GitHub settings, branch rules — safe to auto-reconcile
 }
 
 resource "spacelift_drift_detection" "cloudflare" {
   stack_id  = spacelift_stack.cloudflare.id
   schedule  = ["0 6 * * *"]
   timezone  = "UTC"
-  reconcile = true   # KV namespaces, D1, Pages — safe to auto-reconcile
+  reconcile = true # KV namespaces, D1, Pages — safe to auto-reconcile
 }
 
 resource "spacelift_drift_detection" "databases" {
   stack_id  = spacelift_stack.databases.id
   schedule  = ["0 6 * * *"]
   timezone  = "UTC"
-  reconcile = true   # Turso group/database — safe to auto-reconcile
+  reconcile = true # Turso group/database — safe to auto-reconcile
 }
 
 resource "spacelift_drift_detection" "compute" {
   stack_id  = spacelift_stack.compute.id
   schedule  = ["0 6 * * *"]
   timezone  = "UTC"
-  reconcile = false  # ⚠️ OCI instance — manual review required before re-apply
+  reconcile = false # ⚠️ OCI instance — manual review required before re-apply
 }
 
 # ── Policies ───────────────────────────────────────────────────────────────────
