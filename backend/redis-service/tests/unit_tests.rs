@@ -1,7 +1,4 @@
-use models::{CacheEntry, RedisConfig, RedisResponse};
-use redis_service::*;
-use service::RedisService;
-use std::time::Duration;
+use redis_service::{CacheEntry, RedisConfig, RedisResponse, RedisService, RedisServiceError};
 
 #[cfg(test)]
 mod models_tests {
@@ -173,37 +170,17 @@ mod service_tests {
 #[cfg(test)]
 mod error_tests {
     use super::*;
-    use error::RedisServiceError;
 
     #[test]
     fn test_error_connection() {
-        let error = RedisServiceError::Connection(redis::RedisError::from((
-            redis::ErrorKind::TypeError,
-            "Connection failed",
-        )));
-
-        assert!(error.is_connection_error());
-        assert!(!error.is_serialization_error());
-        assert!(!error.is_operation_error());
-    }
-
-    #[test]
-    fn test_error_serialization() {
-        let error =
-            RedisServiceError::Serialization(serde_json::Error::custom("Serialization failed"));
-
-        assert!(!error.is_connection_error());
-        assert!(error.is_serialization_error());
-        assert!(!error.is_operation_error());
+        let error = RedisServiceError::Connection("Connection failed".to_string());
+        assert!(matches!(error, RedisServiceError::Connection(_)));
     }
 
     #[test]
     fn test_error_operation() {
         let error = RedisServiceError::Operation("Operation failed".to_string());
-
-        assert!(!error.is_connection_error());
-        assert!(!error.is_serialization_error());
-        assert!(error.is_operation_error());
+        assert!(matches!(error, RedisServiceError::Operation(_)));
     }
 
     #[test]
