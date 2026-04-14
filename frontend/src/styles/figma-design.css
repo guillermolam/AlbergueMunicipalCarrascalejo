@@ -624,14 +624,12 @@
 
 .sketchy-btn svg rect.btn-shadow {
   fill: rgba(0, 0, 0, 0.15);
-  rx: 10;
   filter: blur(4px);
   transform: translate(3px, 3px);
 }
 
 .sketchy-btn svg rect.btn-fill {
   fill: #00ab39;
-  rx: 10;
   stroke: #006b24;
   stroke-width: 2;
   filter: url(#sketchy-filter);
@@ -640,9 +638,28 @@
 
 .sketchy-btn svg rect.btn-outline {
   fill: none;
-  rx: 10;
   stroke: #006b24;
   stroke-width: 2.5;
+  /**
+   * Applies a custom SVG filter to elements.
+   *
+   * This filter property references an SVG filter element defined elsewhere
+   * in the document with the id "sketchy-filter". The filter creates a
+   * sketchy/distorted visual effect applied to the element's rendering.
+   *
+   * The SVG filter (#sketchy-filter) must be defined in an <svg> element
+   * within the DOM, typically using <filter> with various primitive elements
+   * like <feTurbulence>, <feDisplacementMap>, or similar to achieve the
+   * desired visual effect.
+   *
+   * Usage: Add this class to any HTML element to apply the sketchy filter effect.
+   *
+   * @example
+   * <div class="sketchy-effect">Content with sketchy filter</div>
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/CSS/filter
+   * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Element/filter
+   */
   filter: url(#sketchy-filter);
 }
 
@@ -781,14 +798,12 @@
 
 .sketchy-card > svg.card-border rect.card-shadow {
   fill: rgba(0, 0, 0, 0.08);
-  rx: 10;
   filter: blur(6px);
   transform: translate(3px, 3px);
 }
 
 .sketchy-card > svg.card-border rect.card-stroke {
   fill: none;
-  rx: 10;
   stroke: #1a1a1a;
   stroke-width: 2;
   filter: url(#sketchy-filter);
@@ -797,7 +812,6 @@
 
 .sketchy-card > svg.card-border rect.card-stroke-inner {
   fill: none;
-  rx: 10;
   stroke: #1a1a1a;
   stroke-width: 1;
   opacity: 0.3;
@@ -867,7 +881,7 @@
 
 .sketchy-pill svg rect {
   fill: none;
-  rx: 20;
+  border-radius: 20px;
   stroke: #00ab39;
   stroke-width: 2;
   filter: url(#sketchy-filter);
@@ -917,7 +931,6 @@
 
 .stat-box > svg.stat-border rect.stat-shadow {
   fill: rgba(0, 171, 57, 0.08);
-  rx: 10;
   stroke: none;
   filter: blur(8px);
   transform: translate(2px, 2px);
@@ -926,7 +939,6 @@
 .stat-box > svg.stat-border rect,
 .stat-box > svg.stat-border rect.stat-stroke {
   fill: #ffffff;
-  rx: 10;
   stroke: #00ab39;
   stroke-width: 2.5;
   stroke-dasharray: 400;
@@ -1066,7 +1078,6 @@
 
 .parallax-frame .carousel-card > svg.carousel-border rect {
   fill: none;
-  rx: 20;
   stroke: #00ab39;
   stroke-width: 2.5;
   filter: url(#sketchy-filter);
@@ -1075,7 +1086,6 @@
 .parallax-frame .carousel-card > svg.carousel-border rect.carousel-shadow {
   fill: rgba(0, 0, 0, 0.1);
   stroke: none;
-  rx: 24;
   filter: blur(8px);
   transform: translate(4px, 4px);
 }

@@ -1,14 +1,23 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "types": ["astro/client"],
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "types": ["astro/client", "solid-js"],
     "paths": {
       "@/*": ["./src/*"]
     },
     "target": "ES2022"
   },
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules", "tests"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "tests",
+    "src/pages/_figma-demo.astro",
+    "src/layouts/FigmaLayout.astro",
+    "playwright.config.ts",
+    "uno.config.ts",
+    "vitest.config.workers.ts"
+  ]
 }

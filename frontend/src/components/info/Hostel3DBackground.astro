@@ -1,0 +1,367 @@
+---
+/**
+ * Hostel3DBackground — fixed fullscreen ThreeJS canvas of the albergue building.
+ *
+ * Mounts behind all /info page content (z-index: 0).
+ * GSAP ScrollTrigger drives the camera through 8 keyframe positions as the user
+ * scrolls down the page, revealing different aspects of the building.
+ *
+ * No OrbitControls — scroll is the only interaction.
+ */
+---
+
+<canvas id="hostel-bg-canvas" aria-hidden="true"></canvas>
+<div id="hostel-bg-loader" aria-hidden="true">
+  <span class="hostel-bg-dot"></span>
+  <span class="hostel-bg-dot"></span>
+  <span class="hostel-bg-dot"></span>
+</div>
+
+<style>
+  #hostel-bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+    display: block;
+  }
+  #hostel-bg-loader {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #1a2a3a;
+    z-index: 2;
+    transition: opacity 0.7s;
+  }
+  #hostel-bg-loader.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .hostel-bg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #91c5e0;
+    animation: bg-pulse 1.2s ease-in-out infinite;
+  }
+  .hostel-bg-dot:nth-child(2) { animation-delay: 0.2s; }
+  .hostel-bg-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bg-pulse {
+    0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+    40%            { transform: scale(1.1); opacity: 1; }
+  }
+</style>
+
+<script>
+import * as THREE from 'three';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
+
+// ── Geo helpers ──────────────────────────────────────────────────────────────
+const C_LON = -6.33643424, C_LAT = 39.0237316;
+const LON_M = 111320 * Math.cos((C_LAT * Math.PI) / 180);
+const LAT_M = 111320;
+function sv(lon: number, lat: number): THREE.Vector2 {
+  return new THREE.Vector2((lon - C_LON) * LON_M, -(lat - C_LAT) * LAT_M);
+}
+
+// ── KML parcel boundary ──────────────────────────────────────────────────────
+const PARCEL = [
+  [-6.33683342224783,39.0239355547523],[-6.33698461893749,39.0239382886597],
+  [-6.33711270189528,39.0239598645919],[-6.33759893378039,39.0241903570446],
+  [-6.33760463600712,39.0241922892074],[-6.33774067263712,39.0241343139493],
+  [-6.337905510814,39.0240997949808],[-6.33808417875299,39.0241706367513],
+  [-6.33818883506123,39.0242223092704],[-6.33825689974765,39.0242305313978],
+  [-6.33825888515365,39.0242299461059],[-6.33821982095171,39.0241906736224],
+  [-6.33818395882724,39.0241614747028],[-6.33814808126133,39.0241266896211],
+  [-6.33810992962716,39.0240846450841],[-6.33807640784608,39.0240454091443],
+  [-6.33804633152809,39.0240097655833],[-6.33786465599791,39.0238718479061],
+  [-6.33754684574956,39.023634126659],[-6.33740691814011,39.023503536999],
+  [-6.33725335044535,39.0233086691552],[-6.33722847533949,39.0233081368273],
+  [-6.33700413298683,39.0232805505239],[-6.33689833655571,39.0232675426925],
+  [-6.33680331239796,39.0232558576139],[-6.33673720182603,39.0232477296872],
+  [-6.33661879964328,39.0232331680135],[-6.3364342868886,39.0232104784132],
+  [-6.33624972729918,39.0231878057614],[-6.33606520860565,39.0231651205301],
+  [-6.33590128683075,39.0231449420303],[-6.33588074268571,39.0231424139811],
+  [-6.33568267553717,39.0231180587695],[-6.33577372015411,39.0229469203798],
+  [-6.33533589540283,39.0231970621766],[-6.33536181615248,39.0232218806287],
+  [-6.33504167964385,39.0234260923926],[-6.33475577374852,39.023606837565],
+  [-6.3346596931458,39.0236697259289],[-6.33464608146261,39.023793838819],
+  [-6.33464057453927,39.0239987662468],[-6.3345942601072,39.0241556377655],
+  [-6.33458359211148,39.0243226935055],[-6.33456403766845,39.0244466661062],
+  [-6.33457750434695,39.0244417483687],[-6.33473541134361,39.0244624741503],
+  [-6.33491902949468,39.024463160448],[-6.33526189358185,39.0243995546706],
+  [-6.33552066829085,39.0243240271547],[-6.33593832877769,39.0242554634487],
+  [-6.336293132451,39.0241939278452],[-6.33643141175623,39.0241163679082],
+  [-6.33654596664503,39.0240737583096],[-6.33672885058153,39.0240537062811],
+  [-6.33683342224783,39.0239355547523],
+];
+const ALMACEN = [
+  [-6.3372527185697,39.0239313823508],[-6.33719902007271,39.0239188936946],
+  [-6.33706411764078,39.0238913058556],[-6.33704897768603,39.0239407817408],
+  [-6.33718042159802,39.0239682004632],[-6.33718571738123,39.0239532758179],
+  [-6.3372388490359,39.0239654812414],
+];
+
+// ── Scene setup ──────────────────────────────────────────────────────────────
+const canvas = document.getElementById('hostel-bg-canvas') as HTMLCanvasElement | null;
+if (!canvas) throw new Error('hostel-bg-canvas missing');
+const loader = document.getElementById('hostel-bg-loader') as HTMLElement | null;
+if (!loader) throw new Error('hostel-bg-loader missing');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x91c5e0);
+scene.fog = new THREE.Fog(0xb0cfe0, 320, 650);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.5, 800);
+camera.position.set(-200, 85, -40);
+camera.lookAt(-95, 5, 20);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+// ── Lights ───────────────────────────────────────────────────────────────────
+scene.add(new THREE.HemisphereLight(0xcce8ff, 0xc0a860, 0.72));
+const sun = new THREE.DirectionalLight(0xfff8e8, 1.65);
+sun.position.set(120, 160, -80);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 5;
+sun.shadow.camera.far = 600;
+sun.shadow.camera.left = -220;
+sun.shadow.camera.right = 220;
+sun.shadow.camera.top = 220;
+sun.shadow.camera.bottom = -220;
+sun.shadow.bias = -0.001;
+scene.add(sun);
+
+// ── Materials ────────────────────────────────────────────────────────────────
+const M: Record<string, THREE.Material> = {
+  gnd:  new THREE.MeshLambertMaterial({ color: 0xa89e78, side: THREE.DoubleSide }),
+  far:  new THREE.MeshLambertMaterial({ color: 0x9a9268 }),
+  road: new THREE.MeshLambertMaterial({ color: 0x786a52 }),
+  pave: new THREE.MeshLambertMaterial({ color: 0xc8c0a0 }),
+  grv:  new THREE.MeshLambertMaterial({ color: 0xbcb090 }),
+  wh:   new THREE.MeshLambertMaterial({ color: 0xf0ead8 }),
+  dado: new THREE.MeshLambertMaterial({ color: 0xd4a820 }),
+  roof: new THREE.MeshLambertMaterial({ color: 0xc96c2a, side: THREE.DoubleSide }),
+  rdk:  new THREE.MeshLambertMaterial({ color: 0x8c4a1e }),
+  bush: new THREE.MeshLambertMaterial({ color: 0x2a6020 }),
+  lawn: new THREE.MeshLambertMaterial({ color: 0x4a8830 }),
+  stne: new THREE.MeshLambertMaterial({ color: 0x8a9070 }),
+  iron: new THREE.MeshLambertMaterial({ color: 0x3c3c3c }),
+  wood: new THREE.MeshLambertMaterial({ color: 0x5c3a18 }),
+  gl:   new THREE.MeshLambertMaterial({ color: 0x88b4c8, transparent: true, opacity: 0.5 }),
+  trk:  new THREE.MeshLambertMaterial({ color: 0x4a3010 }),
+  cyp:  new THREE.MeshLambertMaterial({ color: 0x234a1a }),
+  palm: new THREE.MeshLambertMaterial({ color: 0x3a8830 }),
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function sh<T extends THREE.Mesh>(m: T, c = true, r = true): T {
+  m.castShadow = c; m.receiveShadow = r; return m;
+}
+function bx(w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number, ry = 0): THREE.Mesh {
+  const m = sh(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat));
+  m.position.set(x, y, z); m.rotation.y = ry; scene.add(m); return m;
+}
+function addAt(m: THREE.Mesh, x: number, y: number, z: number): void {
+  sh(m); m.position.set(x, y, z); scene.add(m);
+}
+function extrudeWGS(coords: number[][], h: number, mat: THREE.Material): void {
+  const shape = new THREE.Shape(coords.map(([lo, la]) => sv(lo, la)));
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
+  const mesh = sh(new THREE.Mesh(geo, mat));
+  mesh.rotation.x = -Math.PI / 2;
+  scene.add(mesh);
+}
+
+// ── Ground ───────────────────────────────────────────────────────────────────
+scene.add(sh(new THREE.Mesh(new THREE.PlaneGeometry(800, 800), M.far as THREE.MeshLambertMaterial), false, true));
+(scene.children[scene.children.length - 1] as THREE.Mesh).rotation.x = -Math.PI / 2;
+
+extrudeWGS(PARCEL, 0.05, M.gnd as THREE.Material);
+
+// Ground plane
+const gnd = sh(new THREE.Mesh(new THREE.PlaneGeometry(800, 800), M.far as THREE.MeshLambertMaterial), false, true);
+gnd.rotation.x = -Math.PI / 2;
+gnd.position.y = -0.05;
+scene.add(gnd);
+
+// Roads
+bx(500, 0.12, 10, M.road, -80, 0.02, -10);   // N-630 main road
+bx(12, 0.12, 60, M.road, -113, 0.02, 15);     // access road to albergue
+bx(120, 0.12, 8, M.grv, -78, 0.02, 5);        // internal gravel path
+
+// ── Buildings (simplified from hostel-3d.astro) ───────────────────────────────
+// Wing A (main residential)
+bx(28, 5.0, 22, M.wh, -103, 2.5, 18);
+// Wing B
+bx(28, 5.0, 22, M.wh, -78, 2.5, 18);
+// Nave / gymnasium
+bx(46, 7.5, 22, M.wh, -43, 3.75, 18);
+// Almacén
+extrudeWGS(ALMACEN, 3, M.stne as THREE.Material);
+
+// Roofs — terracotta
+bx(30, 0.5, 24, M.roof, -103, 5.25, 18);
+bx(30, 0.5, 24, M.roof, -78, 5.25, 18);
+bx(48, 0.5, 24, M.roof, -43, 8.0, 18);
+
+// ── Vegetation ───────────────────────────────────────────────────────────────
+function tree(x: number, z: number, h = 7, r = 2.5): void {
+  bx(0.3, h * 0.55, 0.3, M.wood, x, h * 0.275, z);
+  addAt(sh(new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), M.bush as THREE.MeshLambertMaterial)), x, h * 0.55 + r * 0.7, z);
+}
+function cypress(x: number, z: number, h = 6): void {
+  bx(0.22, h * 0.6, 0.22, M.wood, x, h * 0.3, z);
+  addAt(sh(new THREE.Mesh(new THREE.ConeGeometry(0.7, h, 7), M.cyp as THREE.MeshLambertMaterial)), x, h * 0.6 + h * 0.25, z);
+}
+function palm(x: number, z: number, h = 5): void {
+  bx(0.2, h, 0.2, M.wood, x, h / 2, z);
+  for (let a = 0; a < 6; a++) {
+    const angle = (a / 6) * Math.PI * 2;
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(2, 0.06, 0.4), M.palm as THREE.MeshLambertMaterial);
+    leaf.position.set(x + Math.cos(angle) * 1.1, h + 0.2, z + Math.sin(angle) * 1.1);
+    leaf.rotation.z = Math.PI * 0.18;
+    leaf.rotation.y = angle;
+    scene.add(leaf);
+  }
+}
+
+// Trees scattered around property
+for (const [x, z, h, r] of [
+  [-130,5,9,4],[-125,25,8,3.5],[-90,48,10,5],[-60,48,9,4.5],
+  [100,40,10,4.5],[30,-20,7,3],[70,-10,8,3.5],[110,-5,9,4],
+  [-30,60,8,3.5],[-5,55,9,4],
+]) { tree(x as number, z as number, h as number, r as number); }
+
+// Cypresses at entrance
+cypress(-120, 5, 8); cypress(-120, 30, 8);
+cypress(-115, 5, 7); cypress(-115, 30, 7);
+
+// Palms on south face
+palm(-52, 23, 4.8); palm(-44, 23, 5.5); palm(-36, 23, 4.8);
+
+// ── Camino waymarker ──────────────────────────────────────────────────────────
+bx(0.12, 2, 0.12, M.wood, -121, 1, 8);
+bx(0.8, 0.42, 0.07, new THREE.MeshLambertMaterial({ color: 0xf5e040 }), -120.6, 2.12, 8);
+
+// ── Park benches ─────────────────────────────────────────────────────────────
+function bench(x: number, z: number): void {
+  bx(1.8, 0.06, 0.42, M.wood, x, 0.5, z);
+  const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.06, 0.38), M.wood as THREE.MeshLambertMaterial);
+  bk.rotation.x = Math.PI * 0.12;
+  bk.position.set(x, 0.88, z - 0.24);
+  scene.add(bk);
+}
+bench(-120, 30); bench(-120, 37);
+
+// ── GSAP ScrollTrigger camera animation ─────────────────────────────────────
+//
+// Camera keyframes — each covers a major /info section.
+// The camera sweeps around the building as the visitor scrolls down.
+//
+interface CamKeyframe {
+  px: number; py: number; pz: number;  // camera position
+  lx: number; ly: number; lz: number;  // lookAt target
+}
+
+const CAM: CamKeyframe[] = [
+  // 0  Hero       — wide SW aerial approach
+  { px:-200, py: 85, pz: -40,  lx:-95, ly: 5, lz:20 },
+  // 1  Location   — side aerial, looking at building from NW
+  { px:-170, py: 50, pz: -70,  lx:-90, ly:10, lz:20 },
+  // 2  Gallery    — front-on at medium height from road
+  { px: -90, py: 28, pz: -55,  lx:-90, ly: 8, lz:20 },
+  // 3  Facilities — ground level, entrance approach
+  { px:-115, py:  7, pz:  -5,  lx:-95, ly: 4, lz:20 },
+  // 4  3D Maps    — east courtyard side
+  { px: -70, py: 14, pz:  55,  lx:-80, ly: 4, lz:20 },
+  // 5  Practical  — elevated courtyard overview
+  { px:-100, py: 55, pz:  55,  lx:-80, ly: 8, lz:20 },
+  // 6  FAQ/Reviews — soaring retreat view from NE
+  { px: -50, py: 80, pz:  70,  lx:-80, ly: 5, lz:20 },
+  // 7  CTA        — farewell wide aerial
+  { px:-200, py:100, pz:  60,  lx:-85, ly: 5, lz:20 },
+];
+
+// Lerp helper
+const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+// Animated camera state (smoothly interpolated by the render loop)
+const camState = {
+  px: CAM[0].px, py: CAM[0].py, pz: CAM[0].pz,
+  lx: CAM[0].lx, ly: CAM[0].ly, lz: CAM[0].lz,
+};
+// Target state driven by GSAP
+const camTarget = { ...camState };
+
+// Build GSAP timeline driving camTarget values
+const tl = gsap.timeline({
+  scrollTrigger: {
+    trigger: 'body',
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: 1.8,   // lag behind scroll for cinematic feel
+  },
+});
+
+CAM.forEach((kf, i) => {
+  if (i === 0) return; // starting position already set
+  const dur = 1 / (CAM.length - 1);
+  tl.to(camTarget, {
+    px: kf.px, py: kf.py, pz: kf.pz,
+    lx: kf.lx, ly: kf.ly, lz: kf.lz,
+    duration: dur,
+    ease: 'power2.inOut',
+  }, (i - 1) * dur);
+});
+
+// ── Resize ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ── Render loop ───────────────────────────────────────────────────────────────
+const lookAtVec = new THREE.Vector3();
+const SMOOTH = 0.06; // position lerp speed (per frame)
+
+function animate(): void {
+  requestAnimationFrame(animate);
+
+  // Smooth camera position toward GSAP-driven target
+  camState.px = lerp(camState.px, camTarget.px, SMOOTH);
+  camState.py = lerp(camState.py, camTarget.py, SMOOTH);
+  camState.pz = lerp(camState.pz, camTarget.pz, SMOOTH);
+  camState.lx = lerp(camState.lx, camTarget.lx, SMOOTH);
+  camState.ly = lerp(camState.ly, camTarget.ly, SMOOTH);
+  camState.lz = lerp(camState.lz, camTarget.lz, SMOOTH);
+
+  camera.position.set(camState.px, camState.py, camState.pz);
+  lookAtVec.set(camState.lx, camState.ly, camState.lz);
+  camera.lookAt(lookAtVec);
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// Dismiss loader
+loader.classList.add('hidden');
+setTimeout(() => loader.remove(), 800);
+</script>

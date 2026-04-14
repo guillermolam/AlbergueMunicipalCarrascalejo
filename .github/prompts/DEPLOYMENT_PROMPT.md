@@ -1,11 +1,13 @@
 # i18n Implementation & Deployment Prompt for Claude Code
 
 ## Project Context
+
 You are implementing internationalization (i18n) for the Albergue Municipal Carrascalejo pilgrim hospital website. The project is deployed on Cloudflare Workers/Pages with Astro 6, Solid.js islands, and Clerk authentication.
 
 ## Current State
 
 ### Working
+
 - ✅ Astro 6 i18n routing configured with 19 languages
 - ✅ Fallback chain: all → Spanish via rewrite
 - ✅ Middleware with locale detection
@@ -15,12 +17,15 @@ You are implementing internationalization (i18n) for the Albergue Municipal Carr
 ### Broken/Needs
 
 ### 1. language-service Worker (`backend/language-service/`)
+
 **Current issues:**
+
 - Workers SDK API incompatibility - `#[worker::]` macro doesn't work with worker 0.7.5
 - Needs KV bindings created
 - Needs AI binding configured
 
 **FIX:**
+
 ```rust
 // Use event handler instead of macro
 #[event(start)]
@@ -32,10 +37,13 @@ fn handler(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
     // Simple routing
 }
 ```
+
 Then deploy with `wrangler deploy`
 
 ### 2. KV Namespaces
+
 Run these commands:
+
 ```bash
 cd /Users/guillermolam/git/personal/AlbergueMunicipalCarrascalejo/backend/language-service
 wrangler kv namespace create LANGUAGES
@@ -45,6 +53,7 @@ wrangler kv namespace create TRANSLATIONS
 Update `wrangler.toml` with the returned IDs.
 
 ### 3. Wuchale (Optional - Disabled)
+
 Currently disabled due to TypeScript parser compatibility. Keep it disabled for now.
 
 ## Implementation Steps
@@ -58,6 +67,7 @@ Currently disabled due to TypeScript parser compatibility. Keep it disabled for 
 ### Step 2: Verify Worker Works
 
 Test with:
+
 ```bash
 curl https://language-service.your-account.workers.dev/api/languages
 ```
@@ -109,6 +119,7 @@ cd frontend && pnpm build
 ## RefactorTriggers
 
 If deployment fails:
+
 1. Check Wrangler auth: `wrangler whoami`
 2. Check KV bindings exist
 3. Check build logs for errors
@@ -120,10 +131,12 @@ Begin with Step 1.
 ## Execution Checklist
 
 ### Pre-deployment
+
 - [ ] Run `wrangler login`
 - [ ] Run `wrangler whoami` to verify
 
 ### Step 1: language-service
+
 - [ ] Check auth (`wrangler whoami`)
 - [ ] Fix `src/lib.rs` if needed
 - [ ] Create KV: `wrangler kv namespace create LANGUAGES`
@@ -133,10 +146,12 @@ Begin with Step 1.
 - [ ] Test: `curl` the worker API
 
 ### Step 2: Frontend
+
 - [ ] Build: `cd frontend && pnpm build`
 - [ ] Deploy: `cd frontend && pnpm deploy`
 
 ### Step 3: Verify
+
 - [ ] Check language selector works
 - [ ] Check fallback to Spanish
 - [ ] Check for console errors

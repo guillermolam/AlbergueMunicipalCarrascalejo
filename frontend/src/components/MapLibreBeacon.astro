@@ -1,0 +1,175 @@
+---
+export interface Props {
+  mapHostSelector?: string;
+  mapSectionSelector?: string;
+}
+
+const {
+  mapHostSelector = '.directions-map',
+  mapSectionSelector = '.map-section',
+} = Astro.props;
+---
+<div class="maplibre-beacon-island" aria-hidden="true"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import maplibregl from 'maplibre-gl';
+
+function formatMapDiff(value) {
+  return value === 'easy' ? 'Baja' : value === 'medium' ? 'Media' : 'Alta';
+}
+
+function createBeaconLayer(mercatorOrigin, metersPerUnit) {
+  const layer = {
+    id: 'albergue-beacon',
+    type: 'custom',
+    renderingMode: '3d',
+    _renderer: null,
+    _scene: null,
+    _camera: null,
+    _rings: [],
+    _beacon: null,
+    _clock: new THREE.Timer(),
+
+    onAdd(map, gl) {
+      this._renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
+      this._renderer.autoClear = false;
+      this._scene = new THREE.Scene();
+      this._camera = new THREE.Camera();
+
+      const pillarGeo = new THREE.CylinderGeometry(2, 4, 40, 12);
+      const pillarMat = new THREE.MeshBasicMaterial({ color: 0x00ab39, transparent: true, opacity: 0.9 });
+      this._beacon = new THREE.Mesh(pillarGeo, pillarMat);
+      this._beacon.position.y = 20;
+      this._scene.add(this._beacon);
+
+      const tipMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(5, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0x00ff55, transparent: true, opacity: 0.95 })
+      );
+      tipMesh.position.y = 42;
+      this._scene.add(tipMesh);
+
+      for (let i = 0; i < 3; i += 1) {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.1, 4, 32),
+          new THREE.MeshBasicMaterial({ color: 0x00ab39, transparent: true, opacity: 0.6, side: THREE.DoubleSide })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        ring.userData = { phase: i / 3 };
+        this._rings.push(ring);
+        this._scene.add(ring);
+      }
+
+      this._mercatorOrigin = mercatorOrigin;
+      this._metersPerUnit = metersPerUnit;
+    },
+
+    render(_gl, args) {
+      if (!this._renderer || !this._scene || !this._camera) return;
+      this._clock.update();
+      const t = this._clock.getElapsed();
+
+      if (this._beacon) {
+        this._beacon.material.opacity = 0.75 + 0.2 * Math.sin(t * 2);
+      }
+
+      for (const ring of this._rings) {
+        const phase = (t * 0.5 + ring.userData.phase) % 1;
+        ring.scale.setScalar(phase * 80);
+        ring.material.opacity = (1 - phase) * 0.55;
+      }
+
+      const modelMatrix = new THREE.Matrix4()
+        .makeTranslation(this._mercatorOrigin.x, this._mercatorOrigin.y, this._mercatorOrigin.z)
+        .scale(new THREE.Vector3(this._metersPerUnit, -this._metersPerUnit, this._metersPerUnit));
+
+      this._camera.projectionMatrix = new THREE.Matrix4()
+        .fromArray(args.defaultProjectionData.mainMatrix)
+        .multiply(modelMatrix);
+
+      this._renderer.resetState();
+      this._renderer.render(this._scene, this._camera);
+      this._mapRef?.triggerRepaint();
+    },
+
+    onRemove() {
+      this._renderer?.dispose();
+    },
+  };
+
+  return layer;
+}
+
+function attachEnhancements(mapHost) {
+  const uid = mapHost.dataset.uid;
+  const map = (window.__maplibreMaps ?? {})[uid];
+  const addLayer = (mapInstance) => {
+    if (!mapInstance || mapInstance.getLayer('albergue-beacon')) return;
+
+    mapInstance.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
+
+    const lat = parseFloat(mapHost.dataset.lat ?? '0');
+    const lng = parseFloat(mapHost.dataset.lng ?? '0');
+    const elevation = parseFloat(mapHost.dataset.elevation ?? '0');
+    const mercatorOrigin = maplibregl.MercatorCoordinate.fromLngLat([lng, lat], elevation);
+    const metersPerUnit = mercatorOrigin.meterInMercatorCoordinateUnits();
+    const beaconLayer = createBeaconLayer(mercatorOrigin, metersPerUnit);
+
+    try {
+      mapInstance.addLayer(beaconLayer);
+    } catch (err) {
+      // Layer may already exist during HMR or repeated renders.
+    }
+  };
+
+  const handleReady = (event) => {
+    const map = event.detail?.map;
+    if (map) addLayer(map);
+  };
+
+  if (map) {
+    addLayer(map);
+  } else {
+    mapHost.addEventListener('maplibre:ready', handleReady, { once: true });
+  }
+}
+
+function startRevealObserver() {
+  const sections = document.querySelectorAll('.reveal-section');
+  if (sections.length === 0) return;
+
+  const observer = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          obs.unobserve(entry.target);
+          if (entry.target.matches(mapSectionSelector)) {
+            const mapHost = document.querySelector(mapHostSelector);
+            if (mapHost) {
+              mapHost.addEventListener(
+                'maplibre:ready',
+                (ev) => {
+                  const { map } = ev.detail;
+                  setTimeout(() => map.resize(), 650);
+                },
+                { once: true }
+              );
+            }
+          }
+        }
+      });
+    },
+    { threshold: 0.07 }
+  );
+
+  sections.forEach((section) => observer.observe(section));
+}
+
+const mapHost = document.querySelector(mapHostSelector);
+if (mapHost) {
+  attachEnhancements(mapHost);
+}
+startRevealObserver();
+</script>

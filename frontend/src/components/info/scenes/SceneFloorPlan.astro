@@ -1,0 +1,45 @@
+---
+import Map3DAlbergue from '../Map3DAlbergue.astro';
+---
+
+<div class="info-scene">
+  <Map3DAlbergue autoActive={false} enableWalker={true} />
+  <div class="info-hud">
+    <div class="info-hud-pill">Hover para ver habitaciones</div>
+  </div>
+</div>
+
+<style>
+  .info-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0b0f14;
+  }
+  .info-hud {
+    position: absolute;
+    left: 18px;
+    bottom: 18px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .info-hud-pill {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+  }
+
+  :global(.map3d-albergue-wrap) {
+    border-radius: 0 !important;
+  }
+  :global(.map3d-albergue-wrap canvas) {
+    border-radius: 0 !important;
+    pointer-events: none !important;
+  }
+</style>

@@ -9,10 +9,11 @@
  */
 
 import { defineAction, type ActionAPIContext } from 'astro:actions';
-import { z } from 'astro:schema';
+import { z } from 'astro/zod'
 import { eq, sql } from 'drizzle-orm';
 import {
   db,
+  getD1,
   eurToCents,
   centsToEur,
   pricingRules,
@@ -24,10 +25,17 @@ import {
 // ── Auth guard ────────────────────────────────────────────────────────────────
 
 function assertAdmin(context: ActionAPIContext): void {
-  const locals = context.locals as App.Locals;
+  const locals = context.locals;
   if (!locals.sessionToken || locals.role !== 'admin') {
     throw new Error('Unauthorized: admin role required');
   }
+}
+
+async function getDb(context: ActionAPIContext) {
+  assertAdmin(context);
+  const d1 = await getD1();
+  if (!d1) throw new Error('D1 database binding is not available in this runtime.');
+  return db(d1);
 }
 
 const now = () => sql`(datetime('now'))`;
@@ -58,11 +66,11 @@ export const adminSettings = {
       active: z.boolean().default(true),
     }),
     handler: async (input, context) => {
-      assertAdmin(context);
+      const database = await getDb(context);
       const priceCents = eurToCents(input.priceEur);
 
       if (input.id) {
-        const rows = await db()
+        const rows = await database
           .update(pricingRules)
           .set({
             accommodationType: input.accommodationType,
@@ -79,7 +87,7 @@ export const adminSettings = {
         return { ...rows[0], priceEur: centsToEur(rows[0].priceCents) };
       }
 
-      const rows = await db()
+      const rows = await database
         .insert(pricingRules)
         .values({
           accommodationType: input.accommodationType,
@@ -104,7 +112,7 @@ export const adminSettings = {
       description: z.string().max(200).optional().nullable(),
     }),
     handler: async (input, context) => {
-      assertAdmin(context);
+      const database = await getDb(context);
 
       const updates: Partial<typeof hostelServices.$inferInsert> = {
         updatedAt: now() as unknown as string,
@@ -113,7 +121,7 @@ export const adminSettings = {
       if (input.available !== undefined) updates.available = input.available ? 1 : 0;
       if (input.description !== undefined) updates.description = input.description ?? null;
 
-      const rows = await db()
+      const rows = await database
         .update(hostelServices)
         .set(updates)
         .where(eq(hostelServices.id, input.id))
@@ -131,9 +139,9 @@ export const adminSettings = {
       receptionHours: z.string().max(30),
     }),
     handler: async (input, context) => {
-      assertAdmin(context);
+      const database = await getDb(context);
       const set = { ...input, updatedAt: now() as unknown as string };
-      await db()
+      await database
         .insert(hostelConfig)
         .values({ id: 1, name: 'Albergue Municipal de El Carrascalejo', ...set })
         .onConflictDoUpdate({ target: hostelConfig.id, set });
@@ -150,7 +158,7 @@ export const adminSettings = {
       notes: z.string().max(255).optional().nullable(),
     }),
     handler: async (input, context) => {
-      assertAdmin(context);
+      const database = await getDb(context);
 
       const updates: Partial<typeof dormitories.$inferInsert> = {
         updatedAt: now() as unknown as string,
@@ -159,7 +167,7 @@ export const adminSettings = {
       if (input.active !== undefined) updates.active = input.active ? 1 : 0;
       if (input.notes !== undefined) updates.notes = input.notes ?? null;
 
-      const rows = await db()
+      const rows = await database
         .update(dormitories)
         .set(updates)
         .where(eq(dormitories.id, input.id))
@@ -189,13 +197,13 @@ export const adminSettings = {
       insurancePolicy: z.string().max(40).optional().nullable(),
     }),
     handler: async (input, context) => {
-      assertAdmin(context);
+      const database = await getDb(context);
       const set = { ...input, updatedAt: now() as unknown as string };
-      await db()
+      await database
         .insert(hostelConfig)
         .values({ id: 1, name: input.name ?? 'Albergue Municipal de El Carrascalejo', ...set })
         .onConflictDoUpdate({ target: hostelConfig.id, set });
-      return db().select().from(hostelConfig).where(eq(hostelConfig.id, 1)).get();
+      return database.select().from(hostelConfig).where(eq(hostelConfig.id, 1)).get();
     },
   }),
 };

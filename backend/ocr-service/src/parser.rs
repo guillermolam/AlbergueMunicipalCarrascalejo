@@ -14,7 +14,10 @@ use crate::models::{DocumentType, ExtractedData};
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 fn normalise(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ").to_uppercase()
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_uppercase()
 }
 
 fn first_match(re: &Regex, text: &str) -> Option<String> {
@@ -47,24 +50,25 @@ fn normalise_passport_date(raw: &str) -> Option<String> {
     // Try DD MON YYYY where MON is a 3-letter month abbreviation
     let re = Regex::new(
         r"(?i)(\d{1,2})[\s./\-]*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|\
-ENE|ABR|AGO|DIC)\s*(\d{4})"
-    ).unwrap();
+ENE|ABR|AGO|DIC)\s*(\d{4})",
+    )
+    .unwrap();
     let cap = re.captures(raw)?;
     let day: u32 = cap[1].parse().ok()?;
     let month: u32 = match cap[2].to_uppercase().as_str() {
         "JAN" | "ENE" => 1,
-        "FEB"         => 2,
-        "MAR"         => 3,
+        "FEB" => 2,
+        "MAR" => 3,
         "APR" | "ABR" => 4,
-        "MAY"         => 5,
-        "JUN"         => 6,
-        "JUL"         => 7,
+        "MAY" => 5,
+        "JUN" => 6,
+        "JUL" => 7,
         "AUG" | "AGO" => 8,
-        "SEP"         => 9,
-        "OCT"         => 10,
-        "NOV"         => 11,
+        "SEP" => 9,
+        "OCT" => 10,
+        "NOV" => 11,
         "DEC" | "DIC" => 12,
-        _             => return None,
+        _ => return None,
     };
     let year: u32 = cap[3].parse().ok()?;
     if (1..=31).contains(&day) && year >= 1900 {
@@ -87,8 +91,11 @@ pub fn detect_document_type(text: &str) -> Option<DocumentType> {
         return Some(DocumentType::Passport);
     }
     // Passport: visual keywords
-    if up.contains("PASSPORT") || up.contains("PASAPORTE") || up.contains("PUTOVNICA")
-        || up.contains("PASSEPORT") || up.contains("REISEPASS")
+    if up.contains("PASSPORT")
+        || up.contains("PASAPORTE")
+        || up.contains("PUTOVNICA")
+        || up.contains("PASSEPORT")
+        || up.contains("REISEPASS")
     {
         return Some(DocumentType::Passport);
     }
@@ -128,16 +135,15 @@ pub fn detect_document_type(text: &str) -> Option<DocumentType> {
 
 fn parse_dni(text: &str) -> (ExtractedData, f64) {
     let upper = text.to_uppercase();
-    let norm  = normalise(text);
+    let norm = normalise(text);
 
     // ── Document number ───────────────────────────────────────────────────────
     let document_number = {
         // Explicit "DNI XXXXXXXX" prefix (most reliable)
         let prefix_re = Regex::new(r"(?:DNI|D\.N\.I\.?)\s*(\d{7,8}[A-Z])").unwrap();
         // Bare pattern fallback
-        let bare_re   = Regex::new(r"\b(\d{8}[A-Z])\b").unwrap();
-        first_match(&prefix_re, &upper)
-            .or_else(|| first_match(&bare_re, &upper))
+        let bare_re = Regex::new(r"\b(\d{8}[A-Z])\b").unwrap();
+        first_match(&prefix_re, &upper).or_else(|| first_match(&bare_re, &upper))
     };
 
     // ── Date of birth ─────────────────────────────────────────────────────────
@@ -154,8 +160,9 @@ fn parse_dni(text: &str) -> (ExtractedData, f64) {
         ).unwrap();
         // Next-line: keyword, rest-of-line, newline, then date (older layout)
         let next_re = Regex::new(
-            r"(?i)NACIMIENTO[^\r\n]*[\r\n]+\s*(\d{1,2}[\s/\-\.]\d{1,2}[\s/\-\.]\d{4}|\d{8})"
-        ).unwrap();
+            r"(?i)NACIMIENTO[^\r\n]*[\r\n]+\s*(\d{1,2}[\s/\-\.]\d{1,2}[\s/\-\.]\d{4}|\d{8})",
+        )
+        .unwrap();
 
         let anchored = first_match(&same_re, &upper)
             .and_then(|d| normalise_date(&d))
@@ -166,13 +173,13 @@ fn parse_dni(text: &str) -> (ExtractedData, f64) {
         anchored.or_else(|| {
             // Fallback: scan dates in normalized text BEFORE EMISION/VALIDEZ keywords
             // to avoid picking up the issue or expiry date as DOB.
-            let emit_pos  = norm.find("EMISION").unwrap_or(usize::MAX);
+            let emit_pos = norm.find("EMISION").unwrap_or(usize::MAX);
             let valid_pos = norm.find("VALIDEZ").unwrap_or(usize::MAX);
-            let end_pos   = emit_pos.min(valid_pos).min(norm.len());
+            let end_pos = emit_pos.min(valid_pos).min(norm.len());
 
             // Search between NACIMIENTO and the first EMISION/VALIDEZ keyword
-            let nac_pos   = norm.find("NACIMIENTO").unwrap_or(0);
-            let search    = &norm[nac_pos..end_pos];
+            let nac_pos = norm.find("NACIMIENTO").unwrap_or(0);
+            let search = &norm[nac_pos..end_pos];
 
             let any_re = Regex::new(r"\b(\d{1,2}[\s/\-\.]\d{1,2}[\s/\-\.]\d{4})\b").unwrap();
             for cap in any_re.captures_iter(search) {
@@ -221,7 +228,10 @@ fn parse_dni(text: &str) -> (ExtractedData, f64) {
         document_number.is_some(),
         date_of_birth.is_some(),
         last_name.is_some(),
-    ].iter().filter(|&&x| x).count();
+    ]
+    .iter()
+    .filter(|&&x| x)
+    .count();
 
     if label_confidence < 2 {
         if let Some(mrz) = parse_mrz_td1(text) {
@@ -241,8 +251,18 @@ fn parse_dni(text: &str) -> (ExtractedData, f64) {
         }
     }
 
-    build_result(document_number, date_of_birth, expiry_date, first_name,
-                 last_name, second_last_name, nationality, gender, home_address, "DNI")
+    build_result(
+        document_number,
+        date_of_birth,
+        expiry_date,
+        first_name,
+        last_name,
+        second_last_name,
+        nationality,
+        gender,
+        home_address,
+        "DNI",
+    )
 }
 
 // ── NIE / Permiso de Residencia parser ───────────────────────────────────────
@@ -257,13 +277,13 @@ fn parse_dni(text: &str) -> (ExtractedData, f64) {
 
 fn parse_nie(text: &str) -> (ExtractedData, f64) {
     let upper = text.to_uppercase();
-    let norm  = normalise(text);
+    let norm = normalise(text);
 
     // ── NIE personal number from OBSERVACIONES ────────────────────────────────
     let document_number = {
-        let obs_re    = Regex::new(r"(?i)NIE[:\s]+([XYZ]\d{7}[A-Z])").unwrap();
+        let obs_re = Regex::new(r"(?i)NIE[:\s]+([XYZ]\d{7}[A-Z])").unwrap();
         let prefix_re = Regex::new(r"(?:NIE|N\.I\.E\.?)\s*([XYZ]\d{7}[A-Z])").unwrap();
-        let bare_re   = Regex::new(r"\b([XYZ]\d{7}[A-Z])\b").unwrap();
+        let bare_re = Regex::new(r"\b([XYZ]\d{7}[A-Z])\b").unwrap();
         first_match(&obs_re, &upper)
             .or_else(|| first_match(&prefix_re, &upper))
             .or_else(|| first_match(&bare_re, &upper))
@@ -283,7 +303,9 @@ fn parse_nie(text: &str) -> (ExtractedData, f64) {
                     let raw = cap.get(1).map_or("", |m| m.as_str());
                     if let Some(iso) = normalise_date(raw) {
                         let year: u32 = iso[..4].parse().unwrap_or(0);
-                        if year <= 2025 { return Some(iso); }
+                        if year <= 2025 {
+                            return Some(iso);
+                        }
                     }
                 }
                 None
@@ -301,8 +323,18 @@ fn parse_nie(text: &str) -> (ExtractedData, f64) {
     let (last_name, second_last_name, nie_fn) = extract_nie_names(text);
     let first_name = nie_fn.or_else(|| extract_dni_nombre(&upper, &norm));
 
-    build_result(document_number, date_of_birth, expiry_date, first_name,
-                 last_name, second_last_name, nationality, gender, None, "NIE")
+    build_result(
+        document_number,
+        date_of_birth,
+        expiry_date,
+        first_name,
+        last_name,
+        second_last_name,
+        nationality,
+        gender,
+        None,
+        "NIE",
+    )
 }
 
 // ── Passport parser ───────────────────────────────────────────────────────────
@@ -337,26 +369,26 @@ fn parse_nie(text: &str) -> (ExtractedData, f64) {
 // Visual DOB variants: "07 JUN 1984", "10.05.1986", "25.12.1982", etc.
 
 fn parse_passport(text: &str) -> (ExtractedData, f64) {
-    let norm  = normalise(text);
+    let norm = normalise(text);
     let upper = text.to_uppercase();
 
     let (mut first_name, mut last_name, mut second_last_name) = (None, None, None);
-    let mut nationality     = None;
+    let mut nationality = None;
     let mut document_number = None;
-    let mut date_of_birth   = None;
-    let mut gender          = None;
-    let mut expiry_date     = None;
+    let mut date_of_birth = None;
+    let mut gender = None;
+    let mut expiry_date = None;
 
     // ── Primary: structured TD3 MRZ parser (exact position slicing) ──────────
     if let Some(mrz) = parse_mrz_td3(text) {
-        first_name      = mrz.first_name;
-        last_name       = mrz.last_name;
+        first_name = mrz.first_name;
+        last_name = mrz.last_name;
         second_last_name = mrz.second_last_name;
-        nationality     = mrz.nationality;
+        nationality = mrz.nationality;
         document_number = mrz.document_number;
-        date_of_birth   = mrz.date_of_birth;
-        gender          = mrz.gender;
-        expiry_date     = mrz.expiry_date;
+        date_of_birth = mrz.date_of_birth;
+        gender = mrz.gender;
+        expiry_date = mrz.expiry_date;
     } else {
         // ── Regex fallback for partial / fragmented MRZ ───────────────────────
         // Handles cases where OCR gives a single combined line instead of two
@@ -366,9 +398,8 @@ fn parse_passport(text: &str) -> (ExtractedData, f64) {
         let mrz1_re = Regex::new(r"P<([A-Z]{3})([A-Z<]{5,})").unwrap();
         // Line 2: apply corrections then match by field structure
         // Using loose match: doc_num(9) + any-check(1) + nat(3) + DOB(6) + any-check(1) + sex + expiry(6)
-        let mrz2_re = Regex::new(
-            r"([A-Z0-9<]{9})[0-9A-Z]([A-Z]{3})(\d{6})[0-9]([MF<])(\d{6})"
-        ).unwrap();
+        let mrz2_re =
+            Regex::new(r"([A-Z0-9<]{9})[0-9A-Z]([A-Z]{3})(\d{6})[0-9]([MF<])(\d{6})").unwrap();
 
         if let Some(caps) = mrz1_re.captures(&norm) {
             nationality = Some(correct_mrz_alpha(&caps[1]));
@@ -376,10 +407,11 @@ fn parse_passport(text: &str) -> (ExtractedData, f64) {
             let name_raw = &caps[2];
             if let Some(sep) = name_raw.find("<<") {
                 let surnames_raw = &name_raw[..sep];
-                let given_raw    = name_raw[sep + 2..].trim_matches('<');
-                let sur_parts: Vec<&str> = surnames_raw.split('<')
-                    .filter(|s| !s.is_empty()).collect();
-                last_name = sur_parts.first()
+                let given_raw = name_raw[sep + 2..].trim_matches('<');
+                let sur_parts: Vec<&str> =
+                    surnames_raw.split('<').filter(|s| !s.is_empty()).collect();
+                last_name = sur_parts
+                    .first()
                     .map(|s| correct_mrz_alpha(s))
                     .filter(|s| !s.is_empty());
                 second_last_name = if sur_parts.len() > 1 {
@@ -388,11 +420,15 @@ fn parse_passport(text: &str) -> (ExtractedData, f64) {
                     None
                 };
                 let given = given_raw.replace('<', " ").trim().to_string();
-                if !given.is_empty() { first_name = Some(given); }
+                if !given.is_empty() {
+                    first_name = Some(given);
+                }
             } else {
                 // No double separator — everything is surname
                 let all = name_raw.replace('<', " ").trim().to_string();
-                if !all.is_empty() { last_name = Some(all); }
+                if !all.is_empty() {
+                    last_name = Some(all);
+                }
             }
         }
 
@@ -400,11 +436,17 @@ fn parse_passport(text: &str) -> (ExtractedData, f64) {
         let norm_corrected = correct_mrz_numeric(&norm);
         if let Some(caps) = mrz2_re.captures(&norm_corrected) {
             let raw_num = caps[1].replace('<', "");
-            if !raw_num.is_empty() { document_number = Some(raw_num); }
-            if nationality.is_none() { nationality = Some(correct_mrz_alpha(&caps[2])); }
+            if !raw_num.is_empty() {
+                document_number = Some(raw_num);
+            }
+            if nationality.is_none() {
+                nationality = Some(correct_mrz_alpha(&caps[2]));
+            }
             date_of_birth = normalise_mrz_date(&caps[3]);
             let sex = caps[4].trim().to_string();
-            if sex == "M" || sex == "F" { gender = Some(sex); }
+            if sex == "M" || sex == "F" {
+                gender = Some(sex);
+            }
             expiry_date = normalise_mrz_date(&caps[5]);
         }
     }
@@ -419,8 +461,9 @@ fn parse_passport(text: &str) -> (ExtractedData, f64) {
 
     if nationality.is_none() {
         let nat_re = Regex::new(
-            r"(?i)(?:Nationality|Nationalit[eé]|Staatsangeh)[^\n:]*[:\s]+([A-Z][A-Za-z]{1,20})"
-        ).unwrap();
+            r"(?i)(?:Nationality|Nationalit[eé]|Staatsangeh)[^\n:]*[:\s]+([A-Z][A-Za-z]{1,20})",
+        )
+        .unwrap();
         nationality = first_match(&nat_re, &upper).or_else(|| {
             let known = Regex::new(
                 r"\b(ESP|FRA|GBR|DEU|AUS|USA|ITA|PRT|HRV|LVA|LUX|BEL|NLD|CHE|AUT|NOR|DNK|FIN|SWE|POL|GRC|IRL|MAR|ARG|BRA|MEX|CHN|JPN|KOR)\b"
@@ -433,8 +476,7 @@ fn parse_passport(text: &str) -> (ExtractedData, f64) {
         let dob_re = Regex::new(
             r"(?i)(?:Date\s+of\s+birth|Date\s+de\s+naissance|Fecha\s+de\s+nacimiento|Datum\s+ro[dđ]enja|Gebuert)[^\n]*?(\d{1,2}[\s./\-](?:\w+)[\s./\-]\d{4}|\d{1,2}[\s./\-]\d{1,2}[\s./\-]\d{4})"
         ).unwrap();
-        date_of_birth = first_match(&dob_re, &upper)
-            .and_then(|d| normalise_passport_date(&d));
+        date_of_birth = first_match(&dob_re, &upper).and_then(|d| normalise_passport_date(&d));
     }
 
     if gender.is_none() {
@@ -455,8 +497,18 @@ fn parse_passport(text: &str) -> (ExtractedData, f64) {
         first_name = first_match(&gn_re, &upper).map(|s| s.trim().to_string());
     }
 
-    build_result(document_number, date_of_birth, expiry_date, first_name,
-                 last_name, second_last_name, nationality, gender, None, "PASSPORT")
+    build_result(
+        document_number,
+        date_of_birth,
+        expiry_date,
+        first_name,
+        last_name,
+        second_last_name,
+        nationality,
+        gender,
+        None,
+        "PASSPORT",
+    )
 }
 
 // ── TD3 MRZ parser (ICAO passport — 2 × 44 chars) ────────────────────────────
@@ -479,7 +531,8 @@ fn parse_mrz_td3(text: &str) -> Option<ExtractedData> {
         .map(|l| l.trim().replace(' ', ""))
         .filter(|l| {
             l.len() >= 40
-                && l.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '<')
+                && l.chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '<')
         })
         .collect();
 
@@ -509,9 +562,7 @@ fn parse_mrz_td3(text: &str) -> Option<ExtractedData> {
 
     // ── Parse Line 1: issuing state + names ──────────────────────────────────
     // [0]: P, [1]: subtype or <, [2..5]: issuing state, [5..44]: name field
-    let issuing_state = l1.get(2..5)
-        .map(|s| correct_mrz_alpha(s))
-        .unwrap_or_default();
+    let issuing_state = l1.get(2..5).map(correct_mrz_alpha).unwrap_or_default();
 
     let name_field = l1.get(5..44).unwrap_or("");
     let (last_name, second_last_name, first_name) = parse_mrz_names(name_field);
@@ -526,29 +577,37 @@ fn parse_mrz_td3(text: &str) -> Option<ExtractedData> {
 
     // Doc number [0..9] — mixed alphanum (may contain letters like passport number AA123456)
     // Apply selective correction: only pure-digit-expected positions get numeric fix
-    let doc_num_raw  = l2.get(0..9).map(|s| correct_mrz_numeric(s)).unwrap_or_default();
+    let doc_num_raw = l2.get(0..9).map(correct_mrz_numeric).unwrap_or_default();
     let doc_check_ch = l2.chars().nth(9).unwrap_or('0');
-    let doc_check    = doc_check_ch.to_digit(10).unwrap_or(99);
+    let doc_check = doc_check_ch.to_digit(10).unwrap_or(99);
 
     // Nationality [10..13] — 3 alpha chars
-    let nat_raw = l2.get(10..13).map(|s| correct_mrz_alpha(s)).unwrap_or_default();
+    let nat_raw = l2.get(10..13).map(correct_mrz_alpha).unwrap_or_default();
 
     // DOB [13..19] — 6 digits YYMMDD
-    let dob_raw    = l2.get(13..19).map(|s| correct_mrz_numeric(s)).unwrap_or_default();
-    let dob_check  = l2.chars().nth(19).and_then(|c| c.to_digit(10)).unwrap_or(99);
+    let dob_raw = l2.get(13..19).map(correct_mrz_numeric).unwrap_or_default();
+    let dob_check = l2
+        .chars()
+        .nth(19)
+        .and_then(|c| c.to_digit(10))
+        .unwrap_or(99);
 
     // Sex [20] — M / F / <
     let sex_char = l2.chars().nth(20).unwrap_or('<');
 
     // Expiry [21..27] — 6 digits YYMMDD
-    let expiry_raw    = l2.get(21..27).map(|s| correct_mrz_numeric(s)).unwrap_or_default();
-    let expiry_check  = l2.chars().nth(27).and_then(|c| c.to_digit(10)).unwrap_or(99);
+    let expiry_raw = l2.get(21..27).map(correct_mrz_numeric).unwrap_or_default();
+    let expiry_check = l2
+        .chars()
+        .nth(27)
+        .and_then(|c| c.to_digit(10))
+        .unwrap_or(99);
 
     // ── Check digit validation ────────────────────────────────────────────────
     // Validate each field; if check fails use field anyway (OCR may have garbled
     // the check digit itself) but note it in a soft way.
-    let doc_check_ok    = calculate_check_digit(&doc_num_raw) == doc_check;
-    let dob_check_ok    = calculate_check_digit(&dob_raw)    == dob_check;
+    let doc_check_ok = calculate_check_digit(&doc_num_raw) == doc_check;
+    let dob_check_ok = calculate_check_digit(&dob_raw) == dob_check;
     let expiry_check_ok = calculate_check_digit(&expiry_raw) == expiry_check;
 
     // If ALL three checks fail, the line is probably not real MRZ — bail
@@ -559,7 +618,11 @@ fn parse_mrz_td3(text: &str) -> Option<ExtractedData> {
     // ── Build fields ──────────────────────────────────────────────────────────
     let document_number = {
         let clean = doc_num_raw.trim_matches('<').to_string();
-        if clean.is_empty() { None } else { Some(clean) }
+        if clean.is_empty() {
+            None
+        } else {
+            Some(clean)
+        }
     };
 
     let nationality = {
@@ -567,7 +630,7 @@ fn parse_mrz_td3(text: &str) -> Option<ExtractedData> {
         if clean.len() >= 2 {
             Some(clean)
         } else if issuing_state.len() == 3 {
-            Some(issuing_state)
+            Some(issuing_state.clone())
         } else {
             None
         }
@@ -589,11 +652,22 @@ fn parse_mrz_td3(text: &str) -> Option<ExtractedData> {
         'M' => Some("M".to_string()),
         'F' => Some("F".to_string()),
         'X' => Some("X".to_string()),
-        _   => None,
+        _ => None,
     };
 
     let has_data = document_number.is_some() || date_of_birth.is_some() || last_name.is_some();
-    if !has_data { return None; }
+    if !has_data {
+        return None;
+    }
+
+    // Store the ISSUING country from MRZ line 1 (positions 2-4).
+    // This is separate from `nationality` (from line 2) — they differ for dual
+    // nationals or stateless persons.  The issuing country determines which
+    // language/script the visual fields are printed in.
+    let issuing_country = {
+        let s = issuing_state.replace('<', "");
+        if s.len() == 3 { Some(s) } else { None }
+    };
 
     Some(ExtractedData {
         first_name,
@@ -607,7 +681,7 @@ fn parse_mrz_td3(text: &str) -> Option<ExtractedData> {
         expiry_date,
         gender,
         home_address: None,
-        country: None,
+        country: issuing_country,
         has_photo: true,
     })
 }
@@ -629,14 +703,12 @@ fn parse_mrz_names(name_field: &str) -> (Option<String>, Option<String>, Option<
 
     if let Some(sep) = trimmed.find("<<") {
         let surnames_raw = &trimmed[..sep];
-        let given_raw    = trimmed[sep + 2..].trim_matches('<');
+        let given_raw = trimmed[sep + 2..].trim_matches('<');
 
         // Surnames: split on single < (Spanish two-surname passports)
-        let sur_parts: Vec<&str> = surnames_raw
-            .split('<')
-            .filter(|s| !s.is_empty())
-            .collect();
-        let last_name = sur_parts.first()
+        let sur_parts: Vec<&str> = surnames_raw.split('<').filter(|s| !s.is_empty()).collect();
+        let last_name = sur_parts
+            .first()
             .map(|s| correct_mrz_alpha(s))
             .filter(|s| !s.is_empty());
         let second_last_name = if sur_parts.len() > 1 {
@@ -653,18 +725,26 @@ fn parse_mrz_names(name_field: &str) -> (Option<String>, Option<String>, Option<
     } else {
         // No double separator — treat whole field as surname
         let sur = trimmed.replace('<', " ").trim().to_string();
-        let surname = if sur.is_empty() { None } else { Some(correct_mrz_alpha(&sur)) };
+        let surname = if sur.is_empty() {
+            None
+        } else {
+            Some(correct_mrz_alpha(&sur))
+        };
         (surname, None, None)
     }
 }
 
 /// Convert MRZ YYMMDD → YYYY-MM-DD with century heuristic (00-30 → 20xx, else 19xx).
 fn normalise_mrz_date(yymmdd: &str) -> Option<String> {
-    if yymmdd.len() != 6 { return None; }
+    if yymmdd.len() != 6 {
+        return None;
+    }
     let yy: u32 = yymmdd[0..2].parse().ok()?;
     let mm: u32 = yymmdd[2..4].parse().ok()?;
     let dd: u32 = yymmdd[4..6].parse().ok()?;
-    if !(1..=12).contains(&mm) || !(1..=31).contains(&dd) { return None; }
+    if !(1..=12).contains(&mm) || !(1..=31).contains(&dd) {
+        return None;
+    }
     let year = if yy <= 30 { 2000 + yy } else { 1900 + yy };
     Some(format!("{year:04}-{mm:02}-{dd:02}"))
 }
@@ -682,8 +762,8 @@ pub fn calculate_check_digit(input: &str) -> u32 {
         let val: u32 = match ch {
             '0'..='9' => ch as u32 - '0' as u32,
             'A'..='Z' => ch as u32 - 'A' as u32 + 10,
-            '<'       => 0,
-            _         => 0,
+            '<' => 0,
+            _ => 0,
         };
         sum += val * weights[i % 3];
     }
@@ -694,18 +774,27 @@ pub fn calculate_check_digit(input: &str) -> u32 {
 /// In numeric-only MRZ fields: O→0, I→1, S→5, B→8, G→6, Z→2, Q→0.
 /// In alpha-only fields: 0→O, 1→I.
 fn correct_mrz_numeric(s: &str) -> String {
-    s.chars().map(|c| match c {
-        'O' => '0', 'I' => '1', 'S' => '5',
-        'B' => '8', 'G' => '6', 'Q' => '0',
-        other => other,
-    }).collect()
+    s.chars()
+        .map(|c| match c {
+            'O' => '0',
+            'I' => '1',
+            'S' => '5',
+            'B' => '8',
+            'G' => '6',
+            'Q' => '0',
+            other => other,
+        })
+        .collect()
 }
 
 fn correct_mrz_alpha(s: &str) -> String {
-    s.chars().map(|c| match c {
-        '0' => 'O', '1' => 'I',
-        other => other,
-    }).collect()
+    s.chars()
+        .map(|c| match c {
+            '0' => 'O',
+            '1' => 'I',
+            other => other,
+        })
+        .collect()
 }
 
 // ── TD1 MRZ parser (ICAO 3-line × 30 chars — Spanish DNI back) ───────────────
@@ -728,10 +817,16 @@ fn parse_mrz_td1(text: &str) -> Option<ExtractedData> {
             let stripped = l.trim().replace(' ', "");
             stripped
         })
-        .filter(|l| l.len() >= 20 && l.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '<'))
+        .filter(|l| {
+            l.len() >= 20
+                && l.chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '<')
+        })
         .collect();
 
-    if candidates.len() < 3 { return None; }
+    if candidates.len() < 3 {
+        return None;
+    }
 
     // Find the TD1 triplet: look for line1 starting with I/A/C (ID card type codes)
     // Tutorial: type char is P(passport), I/A/C (ID cards/travel docs)
@@ -768,22 +863,27 @@ fn parse_mrz_td1(text: &str) -> Option<ExtractedData> {
     let l2 = format!("{:<30}", l2);
     let l3 = format!("{:<30}", l3);
 
-    let issuer     = l1.get(2..5).map(|s| correct_mrz_alpha(s)).unwrap_or_default();
-    let doc_num_raw = l1.get(5..14).map(|s| correct_mrz_numeric(s)).unwrap_or_default();
-    let doc_check  = l1.chars().nth(14).and_then(|c| c.to_digit(10)).unwrap_or(99);
+    let issuer = l1.get(2..5).map(correct_mrz_alpha).unwrap_or_default();
+    let doc_num_raw = l1.get(5..14).map(correct_mrz_numeric).unwrap_or_default();
+    let doc_check = l1
+        .chars()
+        .nth(14)
+        .and_then(|c| c.to_digit(10))
+        .unwrap_or(99);
 
     // Validate doc number check digit
     let doc_num_valid = calculate_check_digit(&doc_num_raw) == doc_check;
     let document_number = if !doc_num_raw.trim_matches('<').is_empty() {
         // Spanish DNI: the actual DNI/NIE number may be in the optional field (pos 15-29)
-        let optional = l1.get(15..30).map(|s| correct_mrz_numeric(s)).unwrap_or_default();
+        let optional = l1.get(15..30).map(correct_mrz_numeric).unwrap_or_default();
         let optional_clean = optional.trim_matches('<');
 
         // Try to extract DNI (8 digits + letter) or NIE (X/Y/Z + 7 digits + letter) from optional
         let dni_in_optional = {
             let re_nie = Regex::new(r"([XYZ]\d{7}[A-Z])").unwrap();
             let re_dni = Regex::new(r"(\d{8}[A-Z])").unwrap();
-            re_nie.captures(optional_clean)
+            re_nie
+                .captures(optional_clean)
                 .and_then(|c| c.get(1))
                 .or_else(|| re_dni.captures(optional_clean).and_then(|c| c.get(1)))
                 .map(|m| m.as_str().to_string())
@@ -794,7 +894,11 @@ fn parse_mrz_td1(text: &str) -> Option<ExtractedData> {
             if doc_num_valid {
                 doc_num_raw.trim_matches('<').to_string()
             } else {
-                doc_num_raw.replace('O', "0").replace('I', "1").trim_matches('<').to_string()
+                doc_num_raw
+                    .replace('O', "0")
+                    .replace('I', "1")
+                    .trim_matches('<')
+                    .to_string()
             }
         })
     } else {
@@ -802,13 +906,13 @@ fn parse_mrz_td1(text: &str) -> Option<ExtractedData> {
     };
 
     // ── Line 2: DOB, sex, expiry, nationality ─────────────────────────────────
-    let dob_raw    = l2.get(0..6).map(|s| correct_mrz_numeric(s)).unwrap_or_default();
-    let dob_check  = l2.chars().nth(6).and_then(|c| c.to_digit(10)).unwrap_or(99);
-    let sex_char   = l2.chars().nth(7).unwrap_or('<');
-    let expiry_raw = l2.get(8..14).map(|s| correct_mrz_numeric(s)).unwrap_or_default();
-    let nat_raw    = l2.get(15..18).map(|s| correct_mrz_alpha(s)).unwrap_or_default();
+    let dob_raw = l2.get(0..6).map(correct_mrz_numeric).unwrap_or_default();
+    let dob_check = l2.chars().nth(6).and_then(|c| c.to_digit(10)).unwrap_or(99);
+    let sex_char = l2.chars().nth(7).unwrap_or('<');
+    let expiry_raw = l2.get(8..14).map(correct_mrz_numeric).unwrap_or_default();
+    let nat_raw = l2.get(15..18).map(correct_mrz_alpha).unwrap_or_default();
 
-    let dob_valid  = calculate_check_digit(&dob_raw) == dob_check;
+    let dob_valid = calculate_check_digit(&dob_raw) == dob_check;
     let date_of_birth = if dob_valid || dob_raw.chars().all(|c| c.is_ascii_digit()) {
         normalise_mrz_date(&dob_raw)
     } else {
@@ -822,7 +926,7 @@ fn parse_mrz_td1(text: &str) -> Option<ExtractedData> {
         'M' => Some("M".to_string()),
         'F' => Some("F".to_string()),
         'X' => Some("X".to_string()),
-        _   => None,
+        _ => None,
     };
 
     let nationality = if nat_raw.trim_matches('<').len() == 3 {
@@ -839,14 +943,20 @@ fn parse_mrz_td1(text: &str) -> Option<ExtractedData> {
 
     // Build result — only return Some if we extracted meaningful data
     let has_data = !document_number.is_empty() || date_of_birth.is_some() || last_name.is_some();
-    if !has_data { return None; }
+    if !has_data {
+        return None;
+    }
 
     Some(ExtractedData {
         first_name,
         last_name,
         second_last_name,
         middle_name: None,
-        document_number: if document_number.is_empty() { None } else { Some(document_number) },
+        document_number: if document_number.is_empty() {
+            None
+        } else {
+            Some(document_number)
+        },
         document_type: Some("DNI".to_string()),
         nationality,
         date_of_birth,
@@ -871,8 +981,9 @@ fn dni_nie_nationality(upper: &str, norm: &str) -> Option<String> {
     let known_re = Regex::new(
         r"\b(ESP|FRA|GBR|DEU|ITA|PRT|USA|BEL|NLD|CHE|AUT|SWE|NOR|DNK|FIN|POL|\
 CZE|HUN|ROU|BGR|HRV|SVK|SVN|EST|LVA|LTU|CYP|MLT|GRC|IRL|LUX|MAR|ARG|BRA|\
-MEX|COL|VEN|PER|ECU|CHL|URY|CHN|JPN|KOR|IND|PAK|BGD|NGA|ETH)\b"
-    ).unwrap();
+MEX|COL|VEN|PER|ECU|CHL|URY|CHN|JPN|KOR|IND|PAK|BGD|NGA|ETH)\b",
+    )
+    .unwrap();
     first_match(&same_re, upper)
         .or_else(|| first_match(&next_re, upper))
         .or_else(|| first_match(&known_re, norm))
@@ -884,8 +995,7 @@ fn dni_nie_gender(upper: &str) -> Option<String> {
     let same_re = Regex::new(r"(?i)SEXO(?:[ \t]*/[ \t]*\w+)?[ \t]+([MF])\b").unwrap();
     // Next-line: SEXO label row + M/F value on next row (older DNI layout)
     let next_re = Regex::new(r"(?i)SEXO[^\r\n]*[\r\n]+\s*([MF])\b").unwrap();
-    first_match(&same_re, upper)
-        .or_else(|| first_match(&next_re, upper))
+    first_match(&same_re, upper).or_else(|| first_match(&next_re, upper))
 }
 
 /// Extract (gender, nationality) from Spanish ID cards.
@@ -934,18 +1044,16 @@ fn extract_validez(upper: &str) -> Option<String> {
     }
 
     // Pattern 2: VALIDEZ on header row, date on next row (DNI older / NIE)
-    let validez_next = Regex::new(
-        r"(?i)VALIDEZ[^\r\n]*[\r\n]+[ \t]*(\d{2})[ \t]+(\d{2})[ \t]+(\d{4})"
-    ).unwrap();
+    let validez_next =
+        Regex::new(r"(?i)VALIDEZ[^\r\n]*[\r\n]+[ \t]*(\d{2})[ \t]+(\d{2})[ \t]+(\d{4})").unwrap();
     if let Some(caps) = validez_next.captures(upper) {
         return Some(format!("{}-{}-{}", &caps[3], &caps[2], &caps[1]));
     }
 
     // Pattern 3: VALIDEZ with date on the same row (older inline format)
     // Guard: must have VALIDEZ then whitespace then date (not just VALIDEZ at end of line)
-    let validez_same = Regex::new(
-        r"(?i)VALIDEZ[^\r\n/]*?[ \t]+(\d{2})[ \t]+(\d{2})[ \t]+(\d{4})"
-    ).unwrap();
+    let validez_same =
+        Regex::new(r"(?i)VALIDEZ[^\r\n/]*?[ \t]+(\d{2})[ \t]+(\d{2})[ \t]+(\d{4})").unwrap();
     if let Some(caps) = validez_same.captures(upper) {
         let year: u32 = caps[3].parse().unwrap_or(0);
         if year >= 2000 {
@@ -992,27 +1100,33 @@ fn extract_dni_surnames(upper: &str) -> (Option<String>, Option<String>) {
     // Two consecutive lines after label
     let two_re = Regex::new(&format!(
         r"{ap_label}[ \t]*[\r\n]+[ \t]*({wc})[ \t]*[\r\n]+[ \t]*({wc})"
-    )).unwrap();
+    ))
+    .unwrap();
 
     // Single line after label (Catalan: "RODA MARTINEZ")
-    let one_re = Regex::new(&format!(
-        r"{ap_label}[ \t]*[\r\n]+[ \t]*({wc})"
-    )).unwrap();
+    let one_re = Regex::new(&format!(r"{ap_label}[ \t]*[\r\n]+[ \t]*({wc})")).unwrap();
 
     if let Some(caps) = two_re.captures(upper) {
         let ap1 = caps.get(1).map(|m| m.as_str().trim().to_string());
-        let ap2 = caps.get(2)
+        let ap2 = caps
+            .get(2)
             .map(|m| m.as_str().trim().to_string())
-            .filter(|s| !s.starts_with("NOMBRE") && !s.starts_with("SEXO")
-                        && !s.starts_with("FECHA") && !s.starts_with("NUM")
-                        && !s.starts_with("NACIMIENTO") && !s.starts_with("EMISION")
-                        && !s.starts_with("NATIONAL") && !s.starts_with("VALIDEZ")
-                        && !s.starts_with("TIPO"));
+            .filter(|s| {
+                !s.starts_with("NOMBRE")
+                    && !s.starts_with("SEXO")
+                    && !s.starts_with("FECHA")
+                    && !s.starts_with("NUM")
+                    && !s.starts_with("NACIMIENTO")
+                    && !s.starts_with("EMISION")
+                    && !s.starts_with("NATIONAL")
+                    && !s.starts_with("VALIDEZ")
+                    && !s.starts_with("TIPO")
+            });
         // If ap2 was filtered and ap1 has a space, ap1 holds both surnames
         if ap2.is_none() {
             if let Some(ref a1) = ap1 {
                 if let Some(pos) = a1.find(' ') {
-                    return (Some(a1[..pos].to_string()), Some(a1[pos+1..].to_string()));
+                    return (Some(a1[..pos].to_string()), Some(a1[pos + 1..].to_string()));
                 }
             }
         }
@@ -1041,17 +1155,26 @@ fn extract_dni_surnames(upper: &str) -> (Option<String>, Option<String>) {
 fn extract_nie_names(text: &str) -> (Option<String>, Option<String>, Option<String>) {
     // The NIE label always starts with "APELLIDOS" followed by "Nombres" or "Nombre"
     // then possibly " / SURNAMES Forenames"
-    let label_re = Regex::new(
-        r"(?i)APELLIDOS\s+(?:Nombres?|Names?)[^\r\n]*"
-    ).unwrap();
+    let label_re = Regex::new(r"(?i)APELLIDOS\s+(?:Nombres?|Names?)[^\r\n]*").unwrap();
 
     // Find label position in original text (not uppercase) for mixed-case extraction
     let label_end = label_re.find(text).map(|m| m.end()).unwrap_or(0);
     let after_label = &text[label_end.min(text.len())..];
 
     // Collect non-empty lines until we hit a known section header
-    let stop_words = ["SEXO", "TIPO", "OBSERV", "NIE", "RESID", "PERSONAL",
-                      "AUTORIZA", "PRORROGA", "TARJETA", "TRABAJAD", "EXTRANJER"];
+    let stop_words = [
+        "SEXO",
+        "TIPO",
+        "OBSERV",
+        "NIE",
+        "RESID",
+        "PERSONAL",
+        "AUTORIZA",
+        "PRORROGA",
+        "TARJETA",
+        "TRABAJAD",
+        "EXTRANJER",
+    ];
     let name_lines: Vec<&str> = after_label
         .lines()
         .map(|l| l.trim())
@@ -1068,7 +1191,7 @@ fn extract_nie_names(text: &str) -> (Option<String>, Option<String>, Option<Stri
             // Fallback to uppercase-only extraction
             let (ap1, ap2) = extract_dni_surnames(&text.to_uppercase());
             (ap1, ap2, None)
-        },
+        }
         1 => {
             // Combined line: all UPPERCASE = just surname; mixed = surname(s) + given
             let line = name_lines[0];
@@ -1078,18 +1201,23 @@ fn extract_nie_names(text: &str) -> (Option<String>, Option<String>, Option<Stri
             } else {
                 // Mixed case: split on first lowercase-starting word
                 let parts: Vec<&str> = line.split_whitespace().collect();
-                let split_at = parts.iter().position(|p| {
-                    p.chars().next().map_or(false, |c| c.is_lowercase())
-                }).unwrap_or(1);
+                let split_at = parts
+                    .iter()
+                    .position(|p| p.chars().next().is_some_and(|c| c.is_lowercase()))
+                    .unwrap_or(1);
                 let surname = parts[..split_at].join(" ").to_uppercase();
                 let given = parts[split_at..].join(" ");
                 (
-                    if surname.is_empty() { None } else { Some(surname) },
+                    if surname.is_empty() {
+                        None
+                    } else {
+                        Some(surname)
+                    },
                     None,
                     if given.is_empty() { None } else { Some(given) },
                 )
             }
-        },
+        }
         2 => {
             let l0_all_upper = name_lines[0] == name_lines[0].to_uppercase();
             let l1_all_upper = name_lines[1] == name_lines[1].to_uppercase();
@@ -1098,14 +1226,22 @@ fn extract_nie_names(text: &str) -> (Option<String>, Option<String>, Option<Stri
                 let sur_parts: Vec<&str> = name_lines[0].split_whitespace().collect();
                 (
                     Some(sur_parts[0].to_string()),
-                    if sur_parts.len() > 1 { Some(sur_parts[1..].join(" ")) } else { None },
+                    if sur_parts.len() > 1 {
+                        Some(sur_parts[1..].join(" "))
+                    } else {
+                        None
+                    },
                     Some(name_lines[1].to_string()),
                 )
             } else {
                 // Both uppercase: ap1 + ap2
-                (Some(name_lines[0].to_uppercase()), Some(name_lines[1].to_uppercase()), None)
+                (
+                    Some(name_lines[0].to_uppercase()),
+                    Some(name_lines[1].to_uppercase()),
+                    None,
+                )
             }
-        },
+        }
         _ => {
             // 3+ lines: ap1, ap2, first_name (preserve mixed case for first name)
             (
@@ -1126,9 +1262,14 @@ fn extract_dni_nombre(upper: &str, norm: &str) -> Option<String> {
     // Same-line: "NOMBRE  MANUEL ALFONSO"  or  "NOMBRE / IZENA  JOEL"
     let same_re = Regex::new(&format!(r"{nom_label}[ \t]+({wc})[ \t]*[\r\n]")).unwrap();
     // Next-line: "NOMBRE\nMANUEL ALFONSO"
-    let next_re = Regex::new(&format!(r"{nom_label}[ \t]*[\r\n]+[ \t]*({wc})[ \t]*[\r\n]")).unwrap();
+    let next_re = Regex::new(&format!(
+        r"{nom_label}[ \t]*[\r\n]+[ \t]*({wc})[ \t]*[\r\n]"
+    ))
+    .unwrap();
     // Norm fallback (collapsed whitespace)
-    let norm_re = Regex::new(&format!(r"(?i)NOMBRE(?:/\w+)?\s+([A-Z\u00C0-\u024F]+(?:\s+[A-Z\u00C0-\u024F]+){{0,3}})")).unwrap();
+    let norm_re =
+        Regex::new(r"(?i)NOMBRE(?:/\w+)?\s+([A-Z\u00C0-\u024F]+(?:\s+[A-Z\u00C0-\u024F]+){0,3})")
+            .unwrap();
 
     first_match(&same_re, upper)
         .or_else(|| first_match(&next_re, upper))
@@ -1161,10 +1302,22 @@ fn extract_home_address(text: &str) -> Option<String> {
 
     // Stop collecting lines at any of these section keywords
     let stop_words = [
-        "MUNICIPIO", "MUNICIPI", "PROVINCIA", "PAIS", "PAÍS",
-        "NUM SOPORTE", "NUM. SOPORTE", "SOPORTE", "OBSERV",
-        "FIRMA", "MACHINE", "IDESPE", "IDESP",   // MRZ-like lines
-        "NACIMIENTO", "NOMBRE", "APELLIDO",
+        "MUNICIPIO",
+        "MUNICIPI",
+        "PROVINCIA",
+        "PAIS",
+        "PAÍS",
+        "NUM SOPORTE",
+        "NUM. SOPORTE",
+        "SOPORTE",
+        "OBSERV",
+        "FIRMA",
+        "MACHINE",
+        "IDESPE",
+        "IDESP", // MRZ-like lines
+        "NACIMIENTO",
+        "NOMBRE",
+        "APELLIDO",
     ];
 
     let address_lines: Vec<&str> = after
@@ -1174,9 +1327,14 @@ fn extract_home_address(text: &str) -> Option<String> {
         .take_while(|l| {
             let u = l.to_uppercase();
             // Stop at known section headers
-            if stop_words.iter().any(|sw| u.starts_with(sw)) { return false; }
+            if stop_words.iter().any(|sw| u.starts_with(sw)) {
+                return false;
+            }
             // Stop at MRZ lines (all uppercase alphanumeric + '<', ≥ 20 chars)
-            if l.len() >= 20 && l.chars().all(|c| c.is_ascii_uppercase() || c == '<' || c.is_ascii_digit()) {
+            if l.len() >= 20
+                && l.chars()
+                    .all(|c| c.is_ascii_uppercase() || c == '<' || c.is_ascii_digit())
+            {
                 return false;
             }
             true
@@ -1192,21 +1350,22 @@ fn extract_home_address(text: &str) -> Option<String> {
 
 // ── Result builder ────────────────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 fn build_result(
-    document_number:  Option<String>,
-    date_of_birth:    Option<String>,
-    expiry_date:      Option<String>,
-    first_name:       Option<String>,
-    last_name:        Option<String>,
+    document_number: Option<String>,
+    date_of_birth: Option<String>,
+    expiry_date: Option<String>,
+    first_name: Option<String>,
+    last_name: Option<String>,
     second_last_name: Option<String>,
-    nationality:      Option<String>,
-    gender:           Option<String>,
-    home_address:     Option<String>,
-    doc_type_str:     &str,
+    nationality: Option<String>,
+    gender: Option<String>,
+    home_address: Option<String>,
+    doc_type_str: &str,
 ) -> (ExtractedData, f64) {
     let total = match doc_type_str {
-        "PASSPORT" => 5,   // no gender in confidence for passport (often missing)
-        _          => 6,
+        "PASSPORT" => 5, // no gender in confidence for passport (often missing)
+        _ => 6,
     };
     let filled = [
         document_number.is_some(),
@@ -1248,9 +1407,119 @@ fn build_result(
 /// Returns `(ExtractedData, confidence 0.0–1.0)`.
 pub fn parse(text: &str, doc_type: &DocumentType) -> (ExtractedData, f64) {
     match doc_type {
-        DocumentType::Dni      => parse_dni(text),
-        DocumentType::Nie      => parse_nie(text),
+        DocumentType::Dni => parse_dni(text),
+        DocumentType::Nie => parse_nie(text),
         DocumentType::Passport => parse_passport(text),
+    }
+}
+
+// ── Script-family classification ──────────────────────────────────────────────
+//
+// For foreign passports, the ISSUING country (from MRZ line 1 positions 2-4)
+// determines which writing system the visual fields use.  MRZ itself is ALWAYS
+// Latin/ASCII (ICAO Doc 9303, Part 3, §4.1) regardless of national language —
+// so the MRZ data path works for every passport.  Visual field extraction via
+// regex / label detection only works for the Latin-script group.
+//
+// Strategy by script family:
+//   Latin       → current label regex + MRZ (full coverage)
+//   Cyrillic    → MRZ only + optionally Tesseract rus/ukr/bul data files
+//   Arabic      → MRZ only + optionally Tesseract ara/fas data files
+//   CJK         → MRZ only + optionally PP-OCR CJK model (rusto-rs / retto)
+//   Devanagari  → MRZ only + optionally Tesseract hin/nep data files
+//   Other       → MRZ only (sufficient for hostel check-in)
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ScriptFamily {
+    /// Latin alphabet — fully supported by current label regex parser
+    Latin,
+    /// Cyrillic script (Russia, Ukraine, Bulgaria, Serbia, Mongolia…)
+    Cyrillic,
+    /// Arabic script (Arab states, Iran/Farsi, Pakistan/Urdu…)
+    Arabic,
+    /// CJK (Chinese Simplified, Traditional, Japanese, Korean)
+    Cjk,
+    /// Devanagari (India/Hindi, Nepal, …)
+    Devanagari,
+    /// Other / Unknown — MRZ-only fallback
+    Other,
+}
+
+impl ScriptFamily {
+    /// Returns `true` when the current OCR pipeline can extract visual fields
+    /// in addition to MRZ data.  For non-Latin scripts, MRZ data alone is
+    /// returned and a warning is emitted.
+    pub fn visually_parseable(&self) -> bool {
+        matches!(self, ScriptFamily::Latin)
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ScriptFamily::Latin => "latin",
+            ScriptFamily::Cyrillic => "cyrillic",
+            ScriptFamily::Arabic => "arabic",
+            ScriptFamily::Cjk => "cjk",
+            ScriptFamily::Devanagari => "devanagari",
+            ScriptFamily::Other => "other",
+        }
+    }
+
+    /// Suggest which Tesseract language data file (`.traineddata`) would improve
+    /// visual-field accuracy for this script family.
+    pub fn suggested_tesseract_lang(&self) -> Option<&'static str> {
+        match self {
+            ScriptFamily::Latin => None, // already handled
+            ScriptFamily::Cyrillic => Some("rus+ukr+bul"),
+            ScriptFamily::Arabic => Some("ara+fas"),
+            ScriptFamily::Cjk => Some("chi_sim+chi_tra+jpn+kor"),
+            ScriptFamily::Devanagari => Some("hin+nep+san"),
+            ScriptFamily::Other => None,
+        }
+    }
+}
+
+/// Map an ISO 3166-1 alpha-3 country code (from the MRZ issuing-state field)
+/// to a writing system family.
+///
+/// Latin-script coverage is intentionally broad — when in doubt, Latin is used
+/// because the MRZ parser will still give complete data and the label parser
+/// at worst returns empty visual fields (no panic, no garbage).
+pub fn script_family_for_country(iso3: &str) -> ScriptFamily {
+    match iso3 {
+        // ── Cyrillic ──────────────────────────────────────────────────────────
+        // Note: BGR (Bulgaria) passports transliterate to Latin per ICAO,
+        // so it's in the Latin block below even though domestic script is Cyrillic.
+        "RUS" | "UKR" | "BLR" | "SRB" | "MKD" | "MNE" | "KAZ" | "KGZ" | "TJK"
+        | "TKM" | "UZB" | "MNG" => ScriptFamily::Cyrillic,
+
+        // ── Arabic ────────────────────────────────────────────────────────────
+        "SAU" | "ARE" | "QAT" | "KWT" | "BHR" | "OMN" | "YEM" | "IRQ" | "SYR" | "LBN"
+        | "JOR" | "PSE" | "EGY" | "LBY" | "TUN" | "DZA" | "MAR" | "MRT" | "SDN" | "SOM"
+        | "IRN" | "AFG" | "PAK" => ScriptFamily::Arabic,
+
+        // ── CJK ───────────────────────────────────────────────────────────────
+        "CHN" | "TWN" | "HKG" | "MAC" | "JPN" | "KOR" | "PRK" => ScriptFamily::Cjk,
+
+        // ── Devanagari ────────────────────────────────────────────────────────
+        "IND" | "NPL" | "BTN" => ScriptFamily::Devanagari,
+
+        // ── Latin (explicit whitelist — EU/EEA + common travel countries) ─────
+        // Spain, Portugal, France, Germany, Italy, Netherlands, Belgium,
+        // Austria, Switzerland, UK, Ireland, Nordics, Baltics, Balkans,
+        // Americas, Oceania, Sub-Saharan Africa (mostly Latin-script),
+        // Southeast Asia (Indonesia, Philippines, Vietnam, Thailand uses Latin
+        // for passport names per ICAO), etc.
+        "ESP" | "PRT" | "FRA" | "DEU" | "ITA" | "NLD" | "BEL" | "AUT" | "CHE" | "GBR"
+        | "IRL" | "SWE" | "NOR" | "DNK" | "FIN" | "ISL" | "LUX" | "MCO" | "AND" | "MLT"
+        | "CYP" | "GRC" | "POL" | "CZE" | "SVK" | "HUN" | "ROU" | "BGR" | "HRV" | "SVN"
+        | "EST" | "LVA" | "LTU" | "ALB" | "BIH" | "XKX" | "USA" | "CAN" | "MEX" | "BRA"
+        | "ARG" | "CHL" | "COL" | "PER" | "VEN" | "URY" | "PRY" | "BOL" | "ECU" | "CRI"
+        | "PAN" | "CUB" | "DOM" | "AUS" | "NZL" | "ZAF" | "NGA" | "KEN" | "ETH" | "GHA"
+        | "TZA" | "UGA" | "ZMB" | "ZWE" | "MOZ" | "AGO" | "CMR" | "IDN" | "PHL" | "VNM"
+        | "THA" | "MYS" | "SGP" | "ISR" | "TUR" | "AZE" | "GEO" | "ARM" => ScriptFamily::Latin,
+
+        // ── Fallback: unknown/rare country → assume Other, use MRZ only ───────
+        _ => ScriptFamily::Other,
     }
 }
 
@@ -1302,8 +1571,11 @@ DNI 06232223M                       747904\n";
     #[test]
     fn test_date_of_birth_not_validity_date() {
         let (d, _) = parse(SAMPLE_DNI_OCR, &DocumentType::Dni);
-        assert_eq!(d.date_of_birth.as_deref(), Some("1968-03-05"),
-            "DOB should be 1968-03-05 not 2031-01-25");
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1968-03-05"),
+            "DOB should be 1968-03-05 not 2031-01-25"
+        );
     }
 
     #[test]
@@ -1336,7 +1608,7 @@ DNI 06232223M                       747904\n";
         assert_eq!(normalise_date("05 03 1968"), Some("1968-03-05".to_string()));
         assert_eq!(normalise_date("05/03/1968"), Some("1968-03-05".to_string()));
         assert_eq!(normalise_date("05-03-1968"), Some("1968-03-05".to_string()));
-        assert_eq!(normalise_date("05031968"),   Some("1968-03-05".to_string()));
+        assert_eq!(normalise_date("05031968"), Some("1968-03-05".to_string()));
     }
 
     #[test]
@@ -1371,8 +1643,16 @@ DNI 79174145A\n";
     #[test]
     fn test_bilingual_basque_surnames() {
         let (d, _) = parse(SAMPLE_DNI_BILINGUAL, &DocumentType::Dni);
-        assert_eq!(d.last_name.as_deref(), Some("PASCUAL"), "ap1 should be PASCUAL");
-        assert_eq!(d.second_last_name.as_deref(), Some("VICENTE"), "ap2 should be VICENTE");
+        assert_eq!(
+            d.last_name.as_deref(),
+            Some("PASCUAL"),
+            "ap1 should be PASCUAL"
+        );
+        assert_eq!(
+            d.second_last_name.as_deref(),
+            Some("VICENTE"),
+            "ap2 should be VICENTE"
+        );
     }
 
     #[test]
@@ -1392,8 +1672,12 @@ DNI 79174145A\n";
     #[test]
     fn test_bilingual_basque_dob_same_line() {
         let (d, _) = parse(SAMPLE_DNI_BILINGUAL, &DocumentType::Dni);
-        assert_eq!(d.date_of_birth.as_deref(), Some("1995-04-15"),
-            "DOB should be 1995-04-15, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1995-04-15"),
+            "DOB should be 1995-04-15, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
@@ -1415,7 +1699,11 @@ DNI 48594702A\n";
     fn test_catalan_surnames_single_line() {
         let (d, _) = parse(SAMPLE_DNI_CATALAN, &DocumentType::Dni);
         assert_eq!(d.last_name.as_deref(), Some("RODA"), "ap1 should be RODA");
-        assert_eq!(d.second_last_name.as_deref(), Some("MARTINEZ"), "ap2 should be MARTINEZ");
+        assert_eq!(
+            d.second_last_name.as_deref(),
+            Some("MARTINEZ"),
+            "ap2 should be MARTINEZ"
+        );
     }
 
     #[test]
@@ -1434,8 +1722,12 @@ DNI 48594702A\n";
     #[test]
     fn test_catalan_dob() {
         let (d, _) = parse(SAMPLE_DNI_CATALAN, &DocumentType::Dni);
-        assert_eq!(d.date_of_birth.as_deref(), Some("1988-11-22"),
-            "DOB should be 1988-11-22, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1988-11-22"),
+            "DOB should be 1988-11-22, got {:?}",
+            d.date_of_birth
+        );
     }
 
     // ── NIE / Permiso de Residencia ───────────────────────────────────────────
@@ -1470,8 +1762,12 @@ NIE: X1234567P\n";
     #[test]
     fn test_nie_dob_same_line() {
         let (d, _) = parse(SAMPLE_NIE_OCR, &DocumentType::Nie);
-        assert_eq!(d.date_of_birth.as_deref(), Some("1980-01-01"),
-            "DOB should be 1980-01-01, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1980-01-01"),
+            "DOB should be 1980-01-01, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
@@ -1506,15 +1802,23 @@ DNI 53497500Y\n";
     #[test]
     fn test_dni_newer_validez_extracted() {
         let (d, _) = parse(SAMPLE_DNI_NEWER, &DocumentType::Dni);
-        assert_eq!(d.expiry_date.as_deref(), Some("2029-09-03"),
-            "Expiry should be 2029-09-03, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2029-09-03"),
+            "Expiry should be 2029-09-03, got {:?}",
+            d.expiry_date
+        );
     }
 
     #[test]
     fn test_dni_newer_dob_not_validez() {
         let (d, _) = parse(SAMPLE_DNI_NEWER, &DocumentType::Dni);
-        assert_eq!(d.date_of_birth.as_deref(), Some("1985-11-07"),
-            "DOB should be 1985-11-07, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1985-11-07"),
+            "DOB should be 1985-11-07, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
@@ -1542,8 +1846,12 @@ DNI 53497500Y\n";
     #[test]
     fn test_dni_emision_validez_second_date_is_expiry() {
         let (d, _) = parse(SAMPLE_DNI_EMISION_VALIDEZ, &DocumentType::Dni);
-        assert_eq!(d.expiry_date.as_deref(), Some("2027-03-25"),
-            "Expiry should be 2027-03-25 (second date), got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2027-03-25"),
+            "Expiry should be 2027-03-25 (second date), got {:?}",
+            d.expiry_date
+        );
     }
 
     // ── DNI 2021+ format: Sergio Llamas Diaz (real card layout) ─────────────
@@ -1584,38 +1892,62 @@ NATIONAL IDENTITY CARD / DOCUMENTO NACIONAL IDENTIDAD\n";
     #[test]
     fn test_sergio_dni_number() {
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_eq!(d.document_number.as_deref(), Some("77669435E"),
-            "DNI number should be 77669435E, got {:?}", d.document_number);
+        assert_eq!(
+            d.document_number.as_deref(),
+            Some("77669435E"),
+            "DNI number should be 77669435E, got {:?}",
+            d.document_number
+        );
     }
 
     #[test]
     fn test_sergio_first_surname() {
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_eq!(d.last_name.as_deref(), Some("LLAMAS"),
-            "Primer apellido should be LLAMAS, got {:?}", d.last_name);
+        assert_eq!(
+            d.last_name.as_deref(),
+            Some("LLAMAS"),
+            "Primer apellido should be LLAMAS, got {:?}",
+            d.last_name
+        );
     }
 
     #[test]
     fn test_sergio_second_surname() {
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_eq!(d.second_last_name.as_deref(), Some("DIAZ"),
-            "Segundo apellido should be DIAZ, got {:?}", d.second_last_name);
+        assert_eq!(
+            d.second_last_name.as_deref(),
+            Some("DIAZ"),
+            "Segundo apellido should be DIAZ, got {:?}",
+            d.second_last_name
+        );
     }
 
     #[test]
     fn test_sergio_first_name() {
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_eq!(d.first_name.as_deref(), Some("SERGIO"),
-            "Nombre should be SERGIO, got {:?}", d.first_name);
+        assert_eq!(
+            d.first_name.as_deref(),
+            Some("SERGIO"),
+            "Nombre should be SERGIO, got {:?}",
+            d.first_name
+        );
     }
 
     #[test]
     fn test_sergio_gender_and_nationality() {
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_eq!(d.gender.as_deref(), Some("M"),
-            "Gender should be M, got {:?}", d.gender);
-        assert_eq!(d.nationality.as_deref(), Some("ESP"),
-            "Nationality should be ESP, got {:?}", d.nationality);
+        assert_eq!(
+            d.gender.as_deref(),
+            Some("M"),
+            "Gender should be M, got {:?}",
+            d.gender
+        );
+        assert_eq!(
+            d.nationality.as_deref(),
+            Some("ESP"),
+            "Nationality should be ESP, got {:?}",
+            d.nationality
+        );
     }
 
     #[test]
@@ -1625,40 +1957,57 @@ NATIONAL IDENTITY CARD / DOCUMENTO NACIONAL IDENTIDAD\n";
         // the actual date appears on the NEXT line after M and ESP.
         // The normalised-text fallback should find it via "NACIMIENTO M ESP 14 02 2006".
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_eq!(d.date_of_birth.as_deref(), Some("2006-02-14"),
-            "DOB should be 2006-02-14, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("2006-02-14"),
+            "DOB should be 2006-02-14, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
     fn test_sergio_dob_not_emision() {
         // Must NOT pick 2022-03-25 (EMISION date) as DOB
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_ne!(d.date_of_birth.as_deref(), Some("2022-03-25"),
-            "DOB must not be the EMISION date 2022-03-25");
+        assert_ne!(
+            d.date_of_birth.as_deref(),
+            Some("2022-03-25"),
+            "DOB must not be the EMISION date 2022-03-25"
+        );
     }
 
     #[test]
     fn test_sergio_expiry_date() {
         // EMISION + VALIDEZ header → second date (25 03 2027) is expiry
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_eq!(d.expiry_date.as_deref(), Some("2027-03-25"),
-            "Expiry should be 2027-03-25, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2027-03-25"),
+            "Expiry should be 2027-03-25, got {:?}",
+            d.expiry_date
+        );
     }
 
     #[test]
     fn test_sergio_soporte_not_dni() {
         // CBY160259 (soporte number) must NOT appear as document_number
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_ne!(d.document_number.as_deref(), Some("CBY160259"),
-            "Document number must be the DNI (77669435E), not the soporte number");
+        assert_ne!(
+            d.document_number.as_deref(),
+            Some("CBY160259"),
+            "Document number must be the DNI (77669435E), not the soporte number"
+        );
     }
 
     #[test]
     fn test_sergio_security_code_not_dni() {
         // 290880 at bottom-right (security code, 6 digits) must NOT be document_number
         let (d, _) = parse(SAMPLE_DNI_SERGIO, &DocumentType::Dni);
-        assert_ne!(d.document_number.as_deref(), Some("290880"),
-            "Document number must not be the 6-digit security code");
+        assert_ne!(
+            d.document_number.as_deref(),
+            Some("290880"),
+            "Document number must not be the 6-digit security code"
+        );
     }
 
     // ── NIE with VALIDEZ TARJETA ──────────────────────────────────────────────
@@ -1674,8 +2023,12 @@ NIE: Y63872519B\n";
     #[test]
     fn test_nie_validez_tarjeta_extracted() {
         let (d, _) = parse(SAMPLE_NIE_VALIDEZ, &DocumentType::Nie);
-        assert_eq!(d.expiry_date.as_deref(), Some("2021-07-30"),
-            "NIE expiry should be 2021-07-30, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2021-07-30"),
+            "NIE expiry should be 2021-07-30, got {:?}",
+            d.expiry_date
+        );
     }
 
     // ── NIE with mixed-case names ─────────────────────────────────────────────
@@ -1693,15 +2046,22 @@ NIE: Y63872519B\n";
     fn test_nie_mixed_case_first_name() {
         let (d, _) = parse(SAMPLE_NIE_MIXED_CASE, &DocumentType::Nie);
         let name = d.first_name.as_deref().unwrap_or("");
-        assert!(name.contains("Maria") || name.contains("MARIA"),
-            "Expected Maria Inmaculada (or uppercased), got: {name}");
+        assert!(
+            name.contains("Maria") || name.contains("MARIA"),
+            "Expected Maria Inmaculada (or uppercased), got: {name}"
+        );
     }
 
     #[test]
     fn test_nie_mixed_case_surnames() {
         let (d, _) = parse(SAMPLE_NIE_MIXED_CASE, &DocumentType::Nie);
-        assert!(d.last_name.as_deref().map_or(false, |s| s.contains("FERNANDEZ") || s.contains("FERNÁNDEZ")),
-            "ap1 should be FERNANDEZ-MENDOZA, got {:?}", d.last_name);
+        assert!(
+            d.last_name
+                .as_deref()
+                .is_some_and(|s| s.contains("FERNANDEZ") || s.contains("FERNÁNDEZ")),
+            "ap1 should be FERNANDEZ-MENDOZA, got {:?}",
+            d.last_name
+        );
     }
 
     // ── DNI back side (TD1 MRZ) ───────────────────────────────────────────────
@@ -1713,8 +2073,12 @@ CINTAS<CARRILLO<<CRISTIAN<<<<<\n";
     #[test]
     fn test_mrz_td1_surname() {
         let (d, _) = parse(SAMPLE_DNI_MRZ_TD1, &DocumentType::Dni);
-        assert_eq!(d.last_name.as_deref(), Some("CINTAS"),
-            "MRZ surname should be CINTAS, got {:?}", d.last_name);
+        assert_eq!(
+            d.last_name.as_deref(),
+            Some("CINTAS"),
+            "MRZ surname should be CINTAS, got {:?}",
+            d.last_name
+        );
     }
 
     #[test]
@@ -1728,16 +2092,24 @@ CINTAS<CARRILLO<<CRISTIAN<<<<<\n";
     fn test_mrz_td1_dob() {
         let (d, _) = parse(SAMPLE_DNI_MRZ_TD1, &DocumentType::Dni);
         // MRZ DOB: 030503 → 2003-05-03
-        assert_eq!(d.date_of_birth.as_deref(), Some("2003-05-03"),
-            "MRZ DOB should be 2003-05-03, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("2003-05-03"),
+            "MRZ DOB should be 2003-05-03, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
     fn test_mrz_td1_expiry_date() {
         let (d, _) = parse(SAMPLE_DNI_MRZ_TD1, &DocumentType::Dni);
         // MRZ expiry: 260906 → 2026-09-06
-        assert_eq!(d.expiry_date.as_deref(), Some("2026-09-06"),
-            "MRZ expiry should be 2026-09-06, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2026-09-06"),
+            "MRZ expiry should be 2026-09-06, got {:?}",
+            d.expiry_date
+        );
     }
 
     // ── Passport: ICAO MRZ (Australian specimen) ──────────────────────────────
@@ -1761,15 +2133,23 @@ PA09404097AUS8406077F1903212<17331334P<<<<08\n";
     fn test_passport_mrz_doc_number() {
         let (d, _) = parse(SAMPLE_PASSPORT_AUS, &DocumentType::Passport);
         // PA0940409 (9-char doc field; the following '7' is the check digit)
-        assert_eq!(d.document_number.as_deref(), Some("PA0940409"),
-            "doc number from MRZ line 2, got {:?}", d.document_number);
+        assert_eq!(
+            d.document_number.as_deref(),
+            Some("PA0940409"),
+            "doc number from MRZ line 2, got {:?}",
+            d.document_number
+        );
     }
 
     #[test]
     fn test_passport_mrz_surname() {
         let (d, _) = parse(SAMPLE_PASSPORT_AUS, &DocumentType::Passport);
-        assert_eq!(d.last_name.as_deref(), Some("CITIZEN"),
-            "surname should be CITIZEN, got {:?}", d.last_name);
+        assert_eq!(
+            d.last_name.as_deref(),
+            Some("CITIZEN"),
+            "surname should be CITIZEN, got {:?}",
+            d.last_name
+        );
     }
 
     #[test]
@@ -1789,8 +2169,12 @@ PA09404097AUS8406077F1903212<17331334P<<<<08\n";
     fn test_passport_mrz_dob() {
         let (d, _) = parse(SAMPLE_PASSPORT_AUS, &DocumentType::Passport);
         // MRZ DOB: 840607 → 1984-06-07
-        assert_eq!(d.date_of_birth.as_deref(), Some("1984-06-07"),
-            "DOB should be 1984-06-07, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1984-06-07"),
+            "DOB should be 1984-06-07, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
@@ -1803,8 +2187,12 @@ PA09404097AUS8406077F1903212<17331334P<<<<08\n";
     fn test_passport_mrz_expiry_date() {
         let (d, _) = parse(SAMPLE_PASSPORT_AUS, &DocumentType::Passport);
         // MRZ expiry: 190321 → 2019-03-21
-        assert_eq!(d.expiry_date.as_deref(), Some("2019-03-21"),
-            "Passport expiry should be 2019-03-21, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2019-03-21"),
+            "Passport expiry should be 2019-03-21, got {:?}",
+            d.expiry_date
+        );
     }
 
     // ── Passport: Croatia specimen ────────────────────────────────────────────
@@ -1826,8 +2214,12 @@ P<HRVSPECIMEN<<SPECIMEN<<<<<<<<<<<<<<<<<<<<\n\
     fn test_passport_hrv_dob() {
         let (d, _) = parse(SAMPLE_PASSPORT_HRV, &DocumentType::Passport);
         // MRZ DOB: 821225 → 1982-12-25
-        assert_eq!(d.date_of_birth.as_deref(), Some("1982-12-25"),
-            "DOB should be 1982-12-25, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1982-12-25"),
+            "DOB should be 1982-12-25, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
@@ -1868,8 +2260,12 @@ S998527<<4LUX7806201F1108084030600210410<<<96\n";
     fn test_passport_lux_dob() {
         let (d, _) = parse(SAMPLE_PASSPORT_LUX, &DocumentType::Passport);
         // MRZ DOB: 780620 → 1978-06-20
-        assert_eq!(d.date_of_birth.as_deref(), Some("1978-06-20"),
-            "DOB should be 1978-06-20, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1978-06-20"),
+            "DOB should be 1978-06-20, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
@@ -1902,16 +2298,24 @@ S998527<<4LUX7806201F1108084030600210410<<<96\n";
     fn test_extract_validez_next_line() {
         let text = "NUM SOPORTE           VALIDEZ\nBKK114836             03  09  2029\n";
         let result = extract_validez(&text.to_uppercase());
-        assert_eq!(result.as_deref(), Some("2029-09-03"),
-            "VALIDEZ next-line should be 2029-09-03, got {:?}", result);
+        assert_eq!(
+            result.as_deref(),
+            Some("2029-09-03"),
+            "VALIDEZ next-line should be 2029-09-03, got {:?}",
+            result
+        );
     }
 
     #[test]
     fn test_extract_validez_emision_second_date() {
         let text = "EMISION       VALIDEZ\n25 03 2022    25 03 2027\n";
         let result = extract_validez(&text.to_uppercase());
-        assert_eq!(result.as_deref(), Some("2027-03-25"),
-            "EMISION+VALIDEZ expiry should be second date 2027-03-25, got {:?}", result);
+        assert_eq!(
+            result.as_deref(),
+            Some("2027-03-25"),
+            "EMISION+VALIDEZ expiry should be second date 2027-03-25, got {:?}",
+            result
+        );
     }
 
     // ── parse_mrz_names unit tests ────────────────────────────────────────────
@@ -1920,8 +2324,8 @@ S998527<<4LUX7806201F1108084030600210410<<<96\n";
     fn test_mrz_names_single_surname_given() {
         // Standard: CITIZEN<<JANE = surname CITIZEN, given JANE
         let (ln, ln2, fn_) = parse_mrz_names("CITIZEN<<JANE<<<<<<<<<<<<<<<<<<<<<<<<");
-        assert_eq!(ln.as_deref(),  Some("CITIZEN"));
-        assert_eq!(ln2,            None);
+        assert_eq!(ln.as_deref(), Some("CITIZEN"));
+        assert_eq!(ln2, None);
         assert_eq!(fn_.as_deref(), Some("JANE"));
     }
 
@@ -1929,7 +2333,7 @@ S998527<<4LUX7806201F1108084030600210410<<<96\n";
     fn test_mrz_names_two_spanish_surnames() {
         // Spanish passport: GARCIA<LOPEZ<<MARIA<CARMEN
         let (ln, ln2, fn_) = parse_mrz_names("GARCIA<LOPEZ<<MARIA<CARMEN<<<<<<<<<<<");
-        assert_eq!(ln.as_deref(),  Some("GARCIA"));
+        assert_eq!(ln.as_deref(), Some("GARCIA"));
         assert_eq!(ln2.as_deref(), Some("LOPEZ"));
         assert_eq!(fn_.as_deref(), Some("MARIA CARMEN"));
     }
@@ -1997,32 +2401,50 @@ AB12345671ESP8409034M2909037<<<<<<<<<<<<<<06\n";
     #[test]
     fn test_passport_esp_surnames_from_mrz() {
         let (d, _) = parse(SAMPLE_PASSPORT_ESP, &DocumentType::Passport);
-        assert_eq!(d.last_name.as_deref(), Some("GOMEZ"),
-            "First surname from MRZ should be GOMEZ, got {:?}", d.last_name);
-        assert_eq!(d.second_last_name.as_deref(), Some("MARTIN"),
-            "Second surname from MRZ should be MARTIN, got {:?}", d.second_last_name);
+        assert_eq!(
+            d.last_name.as_deref(),
+            Some("GOMEZ"),
+            "First surname from MRZ should be GOMEZ, got {:?}",
+            d.last_name
+        );
+        assert_eq!(
+            d.second_last_name.as_deref(),
+            Some("MARTIN"),
+            "Second surname from MRZ should be MARTIN, got {:?}",
+            d.second_last_name
+        );
     }
 
     #[test]
     fn test_passport_esp_given_name_from_mrz() {
         let (d, _) = parse(SAMPLE_PASSPORT_ESP, &DocumentType::Passport);
         let name = d.first_name.as_deref().unwrap_or("");
-        assert!(name.contains("GUILLERMO"),
-            "Given name should contain GUILLERMO, got: {name}");
+        assert!(
+            name.contains("GUILLERMO"),
+            "Given name should contain GUILLERMO, got: {name}"
+        );
     }
 
     #[test]
     fn test_passport_esp_dob_from_mrz() {
         let (d, _) = parse(SAMPLE_PASSPORT_ESP, &DocumentType::Passport);
-        assert_eq!(d.date_of_birth.as_deref(), Some("1984-09-03"),
-            "DOB should be 1984-09-03, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("1984-09-03"),
+            "DOB should be 1984-09-03, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
     fn test_passport_esp_expiry_from_mrz() {
         let (d, _) = parse(SAMPLE_PASSPORT_ESP, &DocumentType::Passport);
-        assert_eq!(d.expiry_date.as_deref(), Some("2029-09-03"),
-            "Expiry should be 2029-09-03, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2029-09-03"),
+            "Expiry should be 2029-09-03, got {:?}",
+            d.expiry_date
+        );
     }
 
     #[test]
@@ -2083,50 +2505,78 @@ NATIONAL IDENTITY CARD / DOCUMENT NACIONAL D'IDENTITAT\n";
     #[test]
     fn test_sara_dni_number() {
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.document_number.as_deref(), Some("77023455C"),
-            "DNI number should be 77023455C, got {:?}", d.document_number);
+        assert_eq!(
+            d.document_number.as_deref(),
+            Some("77023455C"),
+            "DNI number should be 77023455C, got {:?}",
+            d.document_number
+        );
     }
 
     #[test]
     fn test_sara_first_surname() {
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.last_name.as_deref(), Some("GUEVARA"),
-            "Primer apellido should be GUEVARA, got {:?}", d.last_name);
+        assert_eq!(
+            d.last_name.as_deref(),
+            Some("GUEVARA"),
+            "Primer apellido should be GUEVARA, got {:?}",
+            d.last_name
+        );
     }
 
     #[test]
     fn test_sara_second_surname() {
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.second_last_name.as_deref(), Some("ORTI"),
-            "Segundo apellido should be ORTI, got {:?}", d.second_last_name);
+        assert_eq!(
+            d.second_last_name.as_deref(),
+            Some("ORTI"),
+            "Segundo apellido should be ORTI, got {:?}",
+            d.second_last_name
+        );
     }
 
     #[test]
     fn test_sara_first_name() {
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.first_name.as_deref(), Some("SARA"),
-            "Nombre should be SARA, got {:?}", d.first_name);
+        assert_eq!(
+            d.first_name.as_deref(),
+            Some("SARA"),
+            "Nombre should be SARA, got {:?}",
+            d.first_name
+        );
     }
 
     #[test]
     fn test_sara_gender_female() {
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.gender.as_deref(), Some("F"),
-            "Gender should be F, got {:?}", d.gender);
+        assert_eq!(
+            d.gender.as_deref(),
+            Some("F"),
+            "Gender should be F, got {:?}",
+            d.gender
+        );
     }
 
     #[test]
     fn test_sara_nationality_esp() {
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.nationality.as_deref(), Some("ESP"),
-            "Nationality should be ESP, got {:?}", d.nationality);
+        assert_eq!(
+            d.nationality.as_deref(),
+            Some("ESP"),
+            "Nationality should be ESP, got {:?}",
+            d.nationality
+        );
     }
 
     #[test]
     fn test_sara_dob() {
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.date_of_birth.as_deref(), Some("2007-01-30"),
-            "DOB should be 2007-01-30, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("2007-01-30"),
+            "DOB should be 2007-01-30, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
@@ -2135,16 +2585,23 @@ NATIONAL IDENTITY CARD / DOCUMENT NACIONAL D'IDENTITAT\n";
         // Expiry is the SECOND date (14 07 2027 → 2027-07-14).
         // The Ó in EMISIÓN (U+00D3) must be handled by extract_validez.
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_eq!(d.expiry_date.as_deref(), Some("2027-07-14"),
-            "Expiry should be 2027-07-14, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2027-07-14"),
+            "Expiry should be 2027-07-14, got {:?}",
+            d.expiry_date
+        );
     }
 
     #[test]
     fn test_sara_dob_not_emision() {
         // Must NOT pick up 2022-07-14 (issue date) as DOB
         let (d, _) = parse(SAMPLE_DNI_SARA_FRONT, &DocumentType::Dni);
-        assert_ne!(d.date_of_birth.as_deref(), Some("2022-07-14"),
-            "DOB must not be the EMISIÓN date 2022-07-14");
+        assert_ne!(
+            d.date_of_birth.as_deref(),
+            Some("2022-07-14"),
+            "DOB must not be the EMISIÓN date 2022-07-14"
+        );
     }
 
     // ── extract_validez unit test: EMISIÓN accent ─────────────────────────────
@@ -2156,8 +2613,12 @@ NATIONAL IDENTITY CARD / DOCUMENT NACIONAL D'IDENTITAT\n";
         let text = "EMISI\u{00D3}N / EMISSI\u{00D3}    VALIDESA\n14 07 2022   14 07 2027\n";
         let upper = text.to_uppercase();
         let result = extract_validez(&upper);
-        assert_eq!(result.as_deref(), Some("2027-07-14"),
-            "Catalan EMISIÓN+VALIDESA: expiry should be 2027-07-14, got {:?}", result);
+        assert_eq!(
+            result.as_deref(),
+            Some("2027-07-14"),
+            "Catalan EMISIÓN+VALIDESA: expiry should be 2027-07-14, got {:?}",
+            result
+        );
     }
 
     // ── DNI back side: Sara Guevara Orti (TD1 MRZ + DOMICILIO address) ────────
@@ -2192,46 +2653,72 @@ GUEVARA<ORTI<<SARA<<<<<<<<<<<<\n";
     #[test]
     fn test_sara_back_mrz_dob() {
         let (d, _) = parse(SAMPLE_DNI_SARA_BACK, &DocumentType::Dni);
-        assert_eq!(d.date_of_birth.as_deref(), Some("2007-01-30"),
-            "MRZ DOB should be 2007-01-30, got {:?}", d.date_of_birth);
+        assert_eq!(
+            d.date_of_birth.as_deref(),
+            Some("2007-01-30"),
+            "MRZ DOB should be 2007-01-30, got {:?}",
+            d.date_of_birth
+        );
     }
 
     #[test]
     fn test_sara_back_mrz_expiry() {
         let (d, _) = parse(SAMPLE_DNI_SARA_BACK, &DocumentType::Dni);
-        assert_eq!(d.expiry_date.as_deref(), Some("2027-07-14"),
-            "MRZ expiry should be 2027-07-14, got {:?}", d.expiry_date);
+        assert_eq!(
+            d.expiry_date.as_deref(),
+            Some("2027-07-14"),
+            "MRZ expiry should be 2027-07-14, got {:?}",
+            d.expiry_date
+        );
     }
 
     #[test]
     fn test_sara_back_mrz_surnames() {
         let (d, _) = parse(SAMPLE_DNI_SARA_BACK, &DocumentType::Dni);
-        assert_eq!(d.last_name.as_deref(), Some("GUEVARA"),
-            "MRZ ap1 should be GUEVARA, got {:?}", d.last_name);
-        assert_eq!(d.second_last_name.as_deref(), Some("ORTI"),
-            "MRZ ap2 should be ORTI, got {:?}", d.second_last_name);
+        assert_eq!(
+            d.last_name.as_deref(),
+            Some("GUEVARA"),
+            "MRZ ap1 should be GUEVARA, got {:?}",
+            d.last_name
+        );
+        assert_eq!(
+            d.second_last_name.as_deref(),
+            Some("ORTI"),
+            "MRZ ap2 should be ORTI, got {:?}",
+            d.second_last_name
+        );
     }
 
     #[test]
     fn test_sara_back_mrz_given_name() {
         let (d, _) = parse(SAMPLE_DNI_SARA_BACK, &DocumentType::Dni);
         let name = d.first_name.as_deref().unwrap_or("");
-        assert!(name.contains("SARA"), "MRZ given name should contain SARA, got: {name}");
+        assert!(
+            name.contains("SARA"),
+            "MRZ given name should contain SARA, got: {name}"
+        );
     }
 
     #[test]
     fn test_sara_back_mrz_nationality() {
         let (d, _) = parse(SAMPLE_DNI_SARA_BACK, &DocumentType::Dni);
-        assert_eq!(d.nationality.as_deref(), Some("ESP"),
-            "MRZ nationality should be ESP, got {:?}", d.nationality);
+        assert_eq!(
+            d.nationality.as_deref(),
+            Some("ESP"),
+            "MRZ nationality should be ESP, got {:?}",
+            d.nationality
+        );
     }
 
     #[test]
     fn test_sara_back_home_address_extracted() {
         let (d, _) = parse(SAMPLE_DNI_SARA_BACK, &DocumentType::Dni);
         let addr = d.home_address.as_deref().unwrap_or("");
-        assert!(addr.contains("PAU CASALS") || addr.contains("08031"),
-            "Home address should contain street or postal code, got: {:?}", d.home_address);
+        assert!(
+            addr.contains("PAU CASALS") || addr.contains("08031"),
+            "Home address should contain street or postal code, got: {:?}",
+            d.home_address
+        );
     }
 
     // ── extract_home_address unit tests ───────────────────────────────────────
@@ -2241,8 +2728,11 @@ GUEVARA<ORTI<<SARA<<<<<<<<<<<<\n";
         let text = "DOMICILIO\nCL MAYOR 1 2D\n28001 MADRID\nMUNICIPIO\nMADRID\n";
         let addr = extract_home_address(text);
         let addr_str = addr.as_deref().unwrap_or("");
-        assert!(addr_str.contains("MAYOR") || addr_str.contains("28001"),
-            "Address should contain street or postal code, got: {:?}", addr);
+        assert!(
+            addr_str.contains("MAYOR") || addr_str.contains("28001"),
+            "Address should contain street or postal code, got: {:?}",
+            addr
+        );
     }
 
     #[test]
@@ -2250,8 +2740,11 @@ GUEVARA<ORTI<<SARA<<<<<<<<<<<<\n";
         let text = "DOMICILIO / DOMICILI\nCL PAU CASALS 12 2 1\n08031 BARCELONA\nMUNICIPIO\n";
         let addr = extract_home_address(text);
         let addr_str = addr.as_deref().unwrap_or("");
-        assert!(addr_str.contains("PAU CASALS"),
-            "Catalan bilingual address should contain street, got: {:?}", addr);
+        assert!(
+            addr_str.contains("PAU CASALS"),
+            "Catalan bilingual address should contain street, got: {:?}",
+            addr
+        );
     }
 
     #[test]
@@ -2260,7 +2753,10 @@ GUEVARA<ORTI<<SARA<<<<<<<<<<<<\n";
         let text = "DOMICILIO\nCL GRAN VIA 5\nIDESPABC123456789ABC1234567890\n";
         let addr = extract_home_address(text);
         let addr_str = addr.as_deref().unwrap_or("");
-        assert!(!addr_str.contains("IDESPAB"),
-            "Address should not include MRZ lines, got: {:?}", addr);
+        assert!(
+            !addr_str.contains("IDESPAB"),
+            "Address should not include MRZ lines, got: {:?}",
+            addr
+        );
     }
 }

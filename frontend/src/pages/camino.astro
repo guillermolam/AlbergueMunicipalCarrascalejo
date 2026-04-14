@@ -1300,8 +1300,9 @@ const difficultyLabel: Record<string, string> = {
 
     // Accordion
     document.querySelectorAll('#tips-accordion .acc-trigger').forEach((trigger) => {
-      trigger.addEventListener('click', function () {
-        const item = this.closest('.acc-item') as HTMLElement;
+      trigger.addEventListener('click', (ev) => {
+        const triggerEl = ev.currentTarget as HTMLElement;
+        const item = triggerEl.closest('.acc-item') as HTMLElement;
         const isOpen = item.classList.contains('open');
         document.querySelectorAll('#tips-accordion .acc-item').forEach((i) => {
           i.classList.remove('open');
@@ -1312,26 +1313,26 @@ const difficultyLabel: Record<string, string> = {
         });
         if (!isOpen) {
           item.classList.add('open');
-          (this as HTMLButtonElement).setAttribute('aria-expanded', 'true');
+          (triggerEl as HTMLButtonElement).setAttribute('aria-expanded', 'true');
         }
       });
     });
 
     // Stage card click (show info)
     document.querySelectorAll('.stage-card').forEach((card) => {
-      card.addEventListener('click', function () {
+      card.addEventListener('click', () => {
         document.querySelectorAll('.stage-card').forEach((c) => c.classList.remove('stage-active'));
-        (this as HTMLElement).classList.add('stage-active');
+        (card as HTMLElement).classList.add('stage-active');
       });
     });
 
     // Hover lift effect ripple on stage cards
     document.querySelectorAll('.stage-card').forEach((card) => {
-      card.addEventListener('mouseenter', function () {
-        (this as HTMLElement).style.zIndex = '3';
+      card.addEventListener('mouseenter', () => {
+        (card as HTMLElement).style.zIndex = '3';
       });
-      card.addEventListener('mouseleave', function () {
-        (this as HTMLElement).style.zIndex = '';
+      card.addEventListener('mouseleave', () => {
+        (card as HTMLElement).style.zIndex = '';
       });
     });
   </script>

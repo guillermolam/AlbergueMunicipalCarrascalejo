@@ -36,8 +36,8 @@ use worker::{console_log, event, Context, Env, Method, Request, Response, Result
 // ---------------------------------------------------------------------------
 
 pub const SUPPORTED_LOCALES: &[&str] = &[
-    "es", "en", "zh", "hi", "ar", "pt", "ru", "ja", "de", "fr", "it", "ko",
-    "id", "tr", "vi", "ca", "eu", "gl", "ast",
+    "es", "en", "zh", "hi", "ar", "pt", "ru", "ja", "de", "fr", "it", "ko", "id", "tr", "vi", "ca",
+    "eu", "gl", "ast",
 ];
 
 #[must_use]
@@ -129,7 +129,10 @@ async fn handle_create_language(req: &mut Request, env: &Env) -> Result<Response
     // entries and keeps the catalog consistent with the frontend enum.
     if !is_supported_locale(&lang.code) {
         return Response::error(
-            format!("Unsupported locale '{}': must be one of {:?}", lang.code, SUPPORTED_LOCALES),
+            format!(
+                "Unsupported locale '{}': must be one of {:?}",
+                lang.code, SUPPORTED_LOCALES
+            ),
             400,
         );
     }
@@ -229,25 +232,31 @@ pub fn get_initial_languages() -> Vec<Language> {
     }
 
     vec![
-        lang!("es", "Spanish",    "Español",          "\u{1F1EA}\u{1F1F8}", 1),
-        lang!("en", "English",    "English",          "\u{1F1EC}\u{1F1E7}", 2),
-        lang!("zh", "Chinese",    "\u{4E2D}\u{6587}", "\u{1F1E8}\u{1F1F3}", 3),
-        lang!("hi", "Hindi",      "हिन्दी",            "\u{1F1EE}\u{1F1F3}", 4),
-        lang!("ar", "Arabic",     "العربية",          "\u{1F1F8}\u{1F1E6}", 5),
-        lang!("pt", "Portuguese", "Português",        "\u{1F1F5}\u{1F1F9}", 6),
-        lang!("ru", "Russian",    "Русский",          "\u{1F1F7}\u{1F1FA}", 7),
-        lang!("ja", "Japanese",   "日本語",           "\u{1F1EF}\u{1F1F5}", 8),
-        lang!("de", "German",     "Deutsch",          "\u{1F1E9}\u{1F1EA}", 9),
-        lang!("fr", "French",     "Français",         "\u{1F1EB}\u{1F1F7}", 10),
-        lang!("it", "Italian",    "Italiano",         "\u{1F1EE}\u{1F1F9}", 11),
-        lang!("ko", "Korean",     "한국어",           "\u{1F1F0}\u{1F1F7}", 12),
-        lang!("id", "Indonesian", "Bahasa Indonesia", "\u{1F1EE}\u{1F1E9}", 13),
-        lang!("tr", "Turkish",    "Türkçe",           "\u{1F1F9}\u{1F1F7}", 14),
-        lang!("vi", "Vietnamese", "Tiếng Việt",       "\u{1F1FB}\u{1F1F3}", 15),
-        lang!("ca", "Catalan",    "Català",           "\u{1F3F4}",          16),
-        lang!("eu", "Basque",     "Euskara",          "\u{1F3F4}",          17),
-        lang!("gl", "Galician",   "Galego",           "\u{1F3F4}",          18),
-        lang!("ast", "Asturian",  "Asturianu",        "\u{1F3F4}",          19),
+        lang!("es", "Spanish", "Español", "\u{1F1EA}\u{1F1F8}", 1),
+        lang!("en", "English", "English", "\u{1F1EC}\u{1F1E7}", 2),
+        lang!("zh", "Chinese", "\u{4E2D}\u{6587}", "\u{1F1E8}\u{1F1F3}", 3),
+        lang!("hi", "Hindi", "हिन्दी", "\u{1F1EE}\u{1F1F3}", 4),
+        lang!("ar", "Arabic", "العربية", "\u{1F1F8}\u{1F1E6}", 5),
+        lang!("pt", "Portuguese", "Português", "\u{1F1F5}\u{1F1F9}", 6),
+        lang!("ru", "Russian", "Русский", "\u{1F1F7}\u{1F1FA}", 7),
+        lang!("ja", "Japanese", "日本語", "\u{1F1EF}\u{1F1F5}", 8),
+        lang!("de", "German", "Deutsch", "\u{1F1E9}\u{1F1EA}", 9),
+        lang!("fr", "French", "Français", "\u{1F1EB}\u{1F1F7}", 10),
+        lang!("it", "Italian", "Italiano", "\u{1F1EE}\u{1F1F9}", 11),
+        lang!("ko", "Korean", "한국어", "\u{1F1F0}\u{1F1F7}", 12),
+        lang!(
+            "id",
+            "Indonesian",
+            "Bahasa Indonesia",
+            "\u{1F1EE}\u{1F1E9}",
+            13
+        ),
+        lang!("tr", "Turkish", "Türkçe", "\u{1F1F9}\u{1F1F7}", 14),
+        lang!("vi", "Vietnamese", "Tiếng Việt", "\u{1F1FB}\u{1F1F3}", 15),
+        lang!("ca", "Catalan", "Català", "\u{1F3F4}", 16),
+        lang!("eu", "Basque", "Euskara", "\u{1F3F4}", 17),
+        lang!("gl", "Galician", "Galego", "\u{1F3F4}", 18),
+        lang!("ast", "Asturian", "Asturianu", "\u{1F3F4}", 19),
     ]
 }
 
@@ -262,8 +271,10 @@ mod tests {
 
     #[test]
     fn allowlist_matches_initial_catalog() {
-        let catalog_codes: std::collections::HashSet<_> =
-            get_initial_languages().into_iter().map(|l| l.code).collect();
+        let catalog_codes: std::collections::HashSet<_> = get_initial_languages()
+            .into_iter()
+            .map(|l| l.code)
+            .collect();
         let allow_codes: std::collections::HashSet<_> =
             SUPPORTED_LOCALES.iter().map(|s| (*s).to_string()).collect();
         assert_eq!(catalog_codes, allow_codes);

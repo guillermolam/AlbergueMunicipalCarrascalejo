@@ -103,10 +103,11 @@
       if (reducedMotion) renderFrame(0, performance.now());
     });
 
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
 
     function renderFrame(_dt, t) {
-      const time = clock.getElapsedTime();
+      clock.update();
+      const time = clock.getElapsed();
 
       // Wave the plane a touch.
       for (let i = 0; i < pos.count; i++) {

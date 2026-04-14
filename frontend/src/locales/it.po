@@ -201,24 +201,24 @@ msgstr ""
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Service status"
-msgstr ""
+msgstr "Stato del servizio"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Static snapshot"
-msgstr ""
+msgstr "Istantanea statica"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Service"
-msgstr ""
+msgstr "Servizio"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Status"
-msgstr ""
+msgstr "Stato"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Response"
-msgstr ""
+msgstr "Risposta"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Message"
-msgstr ""
+msgstr "Messaggio"

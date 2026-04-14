@@ -1533,16 +1533,20 @@ const footerOsmUrl         = `https://www.openstreetmap.org/?mlat=${footerLat}&m
       document.querySelectorAll('.mobile-nav-link').forEach(link => {
         const href = link.getAttribute('href');
         if (href && (currentPath === href || (href !== '/' && currentPath.startsWith(href)))) {
-          (link as HTMLElement).style.color = '#00AB39';
-          (link as HTMLElement).style.background = 'rgba(0,171,57,0.08)';
+          if (link instanceof HTMLElement) {
+            link.style.color = '#00AB39';
+            link.style.background = 'rgba(0,171,57,0.08)';
+          }
         }
       });
 
       // Ripple click effect on pill buttons
       document.querySelectorAll('.pill-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          if (!('offsetX' in e) || !('offsetY' in e)) return;
+          const ox = Number(e.offsetX);
+          const oy = Number(e.offsetY);
           const ripple = document.createElement('span');
-          const mouseEvent = e as MouseEvent;
           ripple.style.cssText = `
             position: absolute;
             border-radius: 50%;
@@ -1551,10 +1555,10 @@ const footerOsmUrl         = `https://www.openstreetmap.org/?mlat=${footerLat}&m
             animation: ripple 0.6s ease-out forwards;
             pointer-events: none;
             width: 100px; height: 100px;
-            left: ${mouseEvent.offsetX - 50}px;
-            top: ${mouseEvent.offsetY - 50}px;
+            left: ${ox - 50}px;
+            top: ${oy - 50}px;
           `;
-          (btn as HTMLElement).style.overflow = 'hidden';
+          if (btn instanceof HTMLElement) btn.style.overflow = 'hidden';
           btn.appendChild(ripple);
           setTimeout(() => ripple.remove(), 600);
         });
@@ -1580,7 +1584,7 @@ const footerOsmUrl         = `https://www.openstreetmap.org/?mlat=${footerLat}&m
       // Language pill dropdown
       const langPillBtn = document.getElementById('langPillBtn');
       const langDropdown = document.getElementById('langDropdown');
-      const langSearchInput = document.getElementById('langSearchInput') as HTMLInputElement | null;
+      const langSearchInput = document.getElementById('langSearchInput');
       const langNoResults = document.getElementById('langNoResults');
       if (langPillBtn && langDropdown) {
         langPillBtn.addEventListener('click', (e) => {
@@ -1599,9 +1603,13 @@ const footerOsmUrl         = `https://www.openstreetmap.org/?mlat=${footerLat}&m
         langDropdown.addEventListener('click', (e) => e.stopPropagation());
 
         // Client-side search / autocomplete
-        const items = Array.from(langDropdown.querySelectorAll<HTMLAnchorElement>('a.lang-item'));
-        const sectionTitles = Array.from(langDropdown.querySelectorAll<HTMLDivElement>('.lang-section-title'));
-        langSearchInput?.addEventListener('input', () => {
+        const items = Array.from(langDropdown.querySelectorAll('a.lang-item')).filter(
+          (el) => el instanceof HTMLAnchorElement
+        );
+        const sectionTitles = Array.from(langDropdown.querySelectorAll('.lang-section-title')).filter(
+          (el) => el instanceof HTMLDivElement
+        );
+        if (langSearchInput instanceof HTMLInputElement) langSearchInput.addEventListener('input', () => {
           const q = langSearchInput.value.trim().toLowerCase();
           let visible = 0;
           items.forEach(a => {
@@ -1619,7 +1627,7 @@ const footerOsmUrl         = `https://www.openstreetmap.org/?mlat=${footerLat}&m
 
         // Esc to close
         langDropdown.addEventListener('keydown', (e) => {
-          if ((e as KeyboardEvent).key === 'Escape') {
+          if (e.key === 'Escape') {
             langDropdown.classList.remove('open');
             langPillBtn.setAttribute('aria-expanded', 'false');
             langPillBtn.focus();
@@ -1630,8 +1638,8 @@ const footerOsmUrl         = `https://www.openstreetmap.org/?mlat=${footerLat}&m
       // Sign-out buttons (header dropdown + mobile)
       async function handleSignOut() {
         try {
-          if (typeof window !== 'undefined' && (window as unknown as {Clerk?: {signOut: (opts: object) => Promise<void>}}).Clerk?.signOut) {
-            await (window as unknown as {Clerk: {signOut: (opts: object) => Promise<void>}}).Clerk.signOut({ redirectUrl: '/' });
+          if (typeof window !== 'undefined' && window.Clerk && typeof window.Clerk.signOut === 'function') {
+            await window.Clerk.signOut({ redirectUrl: '/' });
           } else {
             window.location.href = '/';
           }

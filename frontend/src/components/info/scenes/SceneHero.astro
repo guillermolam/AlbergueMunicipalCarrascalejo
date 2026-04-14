@@ -1,0 +1,385 @@
+---
+export interface Props {
+  title: string;
+  subtitle?: string;
+  stats?: Array<{ label: string; value: string }>;
+}
+
+const { title, subtitle, stats = [] } = Astro.props;
+---
+
+<div class="info-scene info-scene-hero">
+  <canvas id="info-scene-hero-canvas" class="info-canvas" aria-hidden="true"></canvas>
+  <div class="info-overlay">
+    <img
+      class="info-logo"
+      src="/logos/logoalbergue-removebg-preview.png"
+      width="184"
+      height="68"
+      alt="Albergue Municipal"
+      loading="eager"
+      decoding="async"
+    />
+    <h1 class="info-title">{title}</h1>
+    {subtitle ? <p class="info-subtitle">{subtitle}</p> : null}
+    {stats.length ? (
+      <div class="info-stats">
+        {stats.map((s) => (
+          <div class="info-stat">
+            <div class="info-stat-value">{s.value}</div>
+            <div class="info-stat-label">{s.label}</div>
+          </div>
+        ))}
+      </div>
+    ) : null}
+  </div>
+</div>
+
+<script>
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+
+  const canvas = document.getElementById('info-scene-hero-canvas') as HTMLCanvasElement | null;
+  if (!canvas) throw new Error('[SceneHero] canvas missing');
+  const section = canvas.closest('.ip-section') as HTMLElement | null;
+  if (!section) throw new Error('[SceneHero] section missing');
+  const canvasEl = canvas as HTMLCanvasElement;
+  const sectionEl = section as HTMLElement;
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+  let runtime: any = null;
+  let runtimePromise: Promise<any> | null = null;
+
+  async function init() {
+    const THREE = await import('three');
+
+    const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: false, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x91c5e0);
+    scene.fog = new THREE.Fog(0xb0cfe0, 80, 260);
+
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.25, 600);
+
+    scene.add(new THREE.HemisphereLight(0xcce8ff, 0xc0a860, 0.72));
+    const sun = new THREE.DirectionalLight(0xfff8e8, 1.65);
+    sun.position.set(120, 160, -80);
+    scene.add(sun);
+
+    const site = new THREE.Group();
+    scene.add(site);
+
+    const centerX = -80;
+    const centerZ = 18;
+    const toLocal = (x: number, z: number) => new THREE.Vector3(x - centerX, 0, z - centerZ);
+
+    const matFar = new THREE.MeshLambertMaterial({ color: 0x9a9268 });
+    const matGnd = new THREE.MeshLambertMaterial({ color: 0xa89e78, side: THREE.DoubleSide });
+    const matRoad = new THREE.MeshLambertMaterial({ color: 0x786a52 });
+    const matGrv = new THREE.MeshLambertMaterial({ color: 0xbcb090 });
+    const matWh = new THREE.MeshLambertMaterial({ color: 0xf0ead8 });
+    const matRoof = new THREE.MeshLambertMaterial({ color: 0xc96c2a, side: THREE.DoubleSide });
+    const matIron = new THREE.MeshLambertMaterial({ color: 0x3c3c3c });
+    const matWood = new THREE.MeshLambertMaterial({ color: 0x5c3a18 });
+    const matLawn = new THREE.MeshLambertMaterial({ color: 0x4a8830 });
+
+    const far = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), matFar);
+    far.rotation.x = -Math.PI / 2;
+    far.position.y = -0.06;
+    site.add(far);
+
+    const yard = new THREE.Mesh(new THREE.PlaneGeometry(260, 180), matGnd);
+    yard.rotation.x = -Math.PI / 2;
+    yard.position.y = -0.04;
+    site.add(yard);
+
+    const lawn = new THREE.Mesh(new THREE.PlaneGeometry(120, 58), matLawn);
+    lawn.rotation.x = -Math.PI / 2;
+    lawn.position.copy(toLocal(-82, 28));
+    lawn.position.y = -0.035;
+    site.add(lawn);
+
+    const mkBox = (w: number, h: number, d: number, mat: any, x: number, y: number, z: number, ry = 0) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      const p = toLocal(x, z);
+      m.position.set(p.x, y, p.z);
+      m.rotation.y = ry;
+      site.add(m);
+      return m;
+    };
+
+    mkBox(520, 0.12, 10, matRoad, -80, 0.02, -10);
+    mkBox(12, 0.12, 60, matRoad, -113, 0.02, 15);
+    mkBox(140, 0.12, 8, matGrv, -78, 0.02, 5);
+
+    const wingA = mkBox(28, 5.0, 22, matWh, -103, 2.5, 18);
+    const wingB = mkBox(28, 5.0, 22, matWh, -78, 2.5, 18);
+    const nave = mkBox(46, 7.5, 22, matWh, -43, 3.75, 18);
+    mkBox(30, 0.5, 24, matRoof, -103, 5.25, 18);
+    mkBox(30, 0.5, 24, matRoof, -78, 5.25, 18);
+    mkBox(48, 0.6, 24, matRoof, -43, 7.9, 18);
+
+    const winGeo = new THREE.PlaneGeometry(1.0, 1.2);
+    const winMat = new THREE.MeshLambertMaterial({ color: 0x88b4c8, transparent: true, opacity: 0.55 });
+    const addWindows = (base: any, count: number, side: number) => {
+      for (let i = 0; i < count; i++) {
+        const w = new THREE.Mesh(winGeo, winMat);
+        const x = (i - (count - 1) / 2) * 2.15;
+        w.position.set(x, 0.5, side * 11.02);
+        w.rotation.y = side > 0 ? Math.PI : 0;
+        base.add(w);
+      }
+    };
+    addWindows(wingA, 10, 1);
+    addWindows(wingA, 10, -1);
+    addWindows(wingB, 10, 1);
+    addWindows(wingB, 10, -1);
+    addWindows(nave, 14, 1);
+
+    const fenceGroup = new THREE.Group();
+    site.add(fenceGroup);
+    const postGeo = new THREE.BoxGeometry(0.16, 1.0, 0.16);
+    const railGeo = new THREE.BoxGeometry(2.4, 0.12, 0.12);
+    const mkFenceSide = (x0: number, z0: number, x1: number, z1: number) => {
+      const dx = x1 - x0;
+      const dz = z1 - z0;
+      const len = Math.hypot(dx, dz);
+      const seg = Math.max(2, Math.floor(len / 2.4));
+      for (let i = 0; i <= seg; i++) {
+        const t = i / seg;
+        const x = x0 + dx * t;
+        const z = z0 + dz * t;
+        const p = toLocal(x, z);
+        const post = new THREE.Mesh(postGeo, matIron);
+        post.position.set(p.x, 0.5, p.z);
+        fenceGroup.add(post);
+        if (i < seg) {
+          const nx = x0 + dx * (t + 0.5 / seg);
+          const nz = z0 + dz * (t + 0.5 / seg);
+          const pp = toLocal(nx, nz);
+          const rail = new THREE.Mesh(railGeo, matWood);
+          rail.position.set(pp.x, 0.75, pp.z);
+          rail.rotation.y = Math.atan2(dz, dx);
+          fenceGroup.add(rail);
+        }
+      }
+    };
+    mkFenceSide(-128, 6, -128, 44);
+    mkFenceSide(-128, 44, -28, 44);
+    mkFenceSide(-28, 44, -28, 6);
+    mkFenceSide(-28, 6, -128, 6);
+
+    const trees: any[] = [];
+    const trunkGeo = new THREE.CylinderGeometry(0.25, 0.32, 2.4, 8);
+    const crownGeo = new THREE.ConeGeometry(1.35, 3.2, 10);
+    const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3010 });
+    const crownMat = new THREE.MeshLambertMaterial({ color: 0x2a6020 });
+    const plantTree = (x: number, z: number, s: number) => {
+      const g = new THREE.Group();
+      const p = toLocal(x, z);
+      g.position.set(p.x, 0, p.z);
+      g.scale.setScalar(s);
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      trunk.position.y = 1.2;
+      const crown = new THREE.Mesh(crownGeo, crownMat);
+      crown.position.y = 3.2;
+      g.add(trunk, crown);
+      site.add(g);
+      trees.push(g);
+    };
+    for (let i = 0; i < 16; i++) {
+      const x = -140 + Math.random() * 160;
+      const z = -50 + Math.random() * 140;
+      const s = 0.85 + Math.random() * 0.6;
+      if (x > -125 && x < -30 && z > 6 && z < 44) continue;
+      plantTree(x, z, s);
+    }
+
+    const pilgrim = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.55, 6, 10), new THREE.MeshLambertMaterial({ color: 0x3c3c3c }));
+    body.position.y = 0.65;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), new THREE.MeshLambertMaterial({ color: 0xf0d2b0 }));
+    head.position.y = 1.22;
+    pilgrim.add(body, head);
+    site.add(pilgrim);
+
+    const route = new THREE.CatmullRomCurve3(
+      [
+        toLocal(-112, 6),
+        toLocal(-112, 18),
+        toLocal(-96, 18),
+        toLocal(-86, 18),
+        toLocal(-70, 18),
+        toLocal(-58, 18),
+        toLocal(-40, 18),
+        toLocal(-32, 26),
+      ],
+      false,
+      'catmullrom',
+      0.22
+    );
+    let pilgrimT = 0.15;
+
+    let W = 1;
+    let H = 1;
+    const ro = new ResizeObserver(() => {
+      const r = sectionEl.getBoundingClientRect();
+      W = Math.max(1, r.width);
+      H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+    ro.observe(sectionEl);
+
+    const loop = createRafLoop(renderFrame);
+
+    function renderFrame(dt: number, t: number) {
+      const tt = t * 0.001;
+
+      const r = 78;
+      const y = 22 + Math.sin(tt * 0.22) * 1.2;
+      camera.position.set(Math.cos(tt * 0.08) * r, y, Math.sin(tt * 0.08) * r);
+      camera.lookAt(0, 8, 0);
+
+      for (let i = 0; i < trees.length; i++) {
+        trees[i].rotation.y = Math.sin(tt * 0.35 + i) * 0.03;
+      }
+
+      pilgrimT = (pilgrimT + dt * 0.02) % 1;
+      const p = route.getPointAt(pilgrimT);
+      const p2 = route.getPointAt((pilgrimT + 0.01) % 1);
+      pilgrim.position.copy(p);
+      pilgrim.lookAt(p2.x, p2.y + 0.6, p2.z);
+
+      renderer.render(scene, camera);
+    }
+
+    renderFrame(0, performance.now());
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        winGeo.dispose();
+        winMat.dispose();
+        postGeo.dispose();
+        railGeo.dispose();
+        trunkGeo.dispose();
+        crownGeo.dispose();
+        trunkMat.dispose();
+        crownMat.dispose();
+        matFar.dispose();
+        matGnd.dispose();
+        matRoad.dispose();
+        matGrv.dispose();
+        matWh.dispose();
+        matRoof.dispose();
+        matIron.dispose();
+        matWood.dispose();
+        matLawn.dispose();
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(sectionEl, {
+    auto: false,
+    onChange(active) {
+      if (active) ensureRuntime().then((r) => r.start());
+      else if (runtime) {
+        runtime.destroy();
+        runtime = null;
+        runtimePromise = null;
+      }
+    },
+  });
+</script>
+
+<style>
+  .info-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(120% 80% at 30% 20%, rgba(0, 171, 57, 0.16), rgba(0, 0, 0, 0));
+  }
+  .info-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: none;
+  }
+  .info-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(20px, 6vw, 64px);
+    z-index: 5;
+    color: rgba(255, 255, 255, 0.92);
+    pointer-events: none;
+  }
+  .info-logo {
+    width: min(220px, 62vw);
+    height: auto;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 10px 32px rgba(0, 0, 0, 0.45));
+    opacity: 0.98;
+  }
+  .info-title {
+    font-size: clamp(44px, 7vw, 92px);
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+  }
+  .info-subtitle {
+    margin-top: 14px;
+    font-size: clamp(14px, 1.7vw, 20px);
+    opacity: 0.9;
+    max-width: 64ch;
+    text-shadow: 0 1px 18px rgba(0, 0, 0, 0.45);
+  }
+  .info-stats {
+    margin-top: 26px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    max-width: 760px;
+  }
+  .info-stat {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(10px);
+  }
+  .info-stat-value {
+    font-weight: 800;
+    font-size: 22px;
+  }
+  .info-stat-label {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+</style>

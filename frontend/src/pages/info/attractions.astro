@@ -13,7 +13,7 @@ const attractions = allEntries
     name: e.data.name,
     type: e.data.category ?? '',
     distance: e.data.distance ?? '',
-    desc: e.body.trim(),
+    desc: e.body?.trim() ?? '',
     mustSee: e.data.mustSee ?? false,
   }));
 

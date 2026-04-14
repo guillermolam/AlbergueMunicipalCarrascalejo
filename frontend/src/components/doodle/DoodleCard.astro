@@ -5,15 +5,20 @@
  * Uses Tailwind v4 + Doodle CSS
  */
 
-const {
-  variant = 'default',
-  padding = 'md',
-  hoverable = false,
-  clickable = false,
-  href,
-  class: className = '',
-  ...props
-} = Astro.props;
+export type Variant = 'default' | 'elevated' | 'outlined' | 'flat' | 'paper';
+export type Padding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+
+export interface Props {
+  variant?: Variant;
+  padding?: Padding;
+  hoverable?: boolean;
+  clickable?: boolean;
+  href?: string;
+  class?: string;
+}
+
+const { variant = 'default', padding = 'md', hoverable = false, clickable = false, href, class: className = '', ...props } =
+  Astro.props as Props & Record<string, unknown>;
 
 // Variant styles
 const variantClasses = {

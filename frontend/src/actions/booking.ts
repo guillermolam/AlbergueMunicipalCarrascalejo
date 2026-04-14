@@ -74,7 +74,14 @@ function createBedsFromRoom(
   available: boolean;
   pricePerNight: number;
 }> {
-  const beds = [];
+  const beds: Array<{
+    bedId: string;
+    bedNumber: number;
+    roomType: string;
+    bedType: string;
+    available: boolean;
+    pricePerNight: number;
+  }> = [];
   const roomData = room as Record<string, unknown>;
 
   if (!isValidRoomData(roomData)) {

@@ -141,8 +141,6 @@
   --ribbon-bg:    var(--green);
   --ribbon-color: #fff;
 }
-.ribbon.ribbon-folded::before { border-right-color: var(--green-dark); }
-.ribbon.ribbon-folded.ribbon-right::before { border-left-color: var(--green-dark); }
 
 /* secondary — dark green */
 .ribbon.ribbon-secondary {

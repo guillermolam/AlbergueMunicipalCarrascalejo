@@ -201,24 +201,24 @@ msgstr "Iniciar sesión"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Service status"
-msgstr "Service status"
+msgstr "Estado del servicio"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Static snapshot"
-msgstr "Static snapshot"
+msgstr "Instantánea estática"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Service"
-msgstr "Service"
+msgstr "Servicio"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Status"
-msgstr "Status"
+msgstr "Estado"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Response"
-msgstr "Response"
+msgstr "Respuesta"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Message"
-msgstr "Message"
+msgstr "Mensaje"

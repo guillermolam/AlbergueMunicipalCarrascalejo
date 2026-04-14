@@ -8,6 +8,9 @@ command = "PATH=$HOME/.cargo/bin:$PATH worker-build --release"
 
 [vars]
 ENVIRONMENT = "development"
+# URL of the native Tesseract OCR service (axum binary, deployed to Fly.io or VPS).
+# Override in production via `wrangler secret put OCR_SERVICE_URL`.
+OCR_SERVICE_URL = "http://localhost:8788"
 
 # D1 and KV bindings are only needed when the service stores processed results.
 # The image validation endpoint is stateless — no D1/KV required for local dev.

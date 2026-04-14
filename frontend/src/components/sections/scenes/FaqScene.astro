@@ -107,9 +107,10 @@
     };
     canvas.addEventListener('click', onClick);
 
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
     function renderFrame() {
-      const t = clock.getElapsedTime();
+      clock.update();
+      const t = clock.getElapsed();
       placeCards(t);
 
       raycaster.setFromCamera(mouse, camera);

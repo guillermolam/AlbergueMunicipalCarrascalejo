@@ -6,28 +6,20 @@
  */
 import { persistentMap } from '@nanostores/persistent';
 
-export interface DatesState {
-  /** ISO date string 'YYYY-MM-DD' or empty string. */
-  checkin: string;
-  /** ISO date string 'YYYY-MM-DD' or empty string. */
-  checkout: string;
-  /** Derived from checkin/checkout — set by CalendarIsland after selection. */
-  nights: string; // stored as string for persistentMap compatibility
-  /** Number of pilgrims in this booking (1–MAX_PERSONS). */
-  persons: string;
-  /** Price per night in EUR as returned by /api/pricing, or '0'. */
-  pricePerNight: string;
-  /** Total price in EUR (persons × nights × pricePerNight), or '0'. */
-  totalPrice: string;
-  /** Selected document type for upload step, e.g. 'dni' | 'passport'. */
-  docType: string;
-  /** Selected bed identifier, e.g. '12' or '5-upper'. */
-  bed: string;
-  /** Enforced booking limits (from /api/info/hostel). */
-  maxNights: string;
-  maxAdvanceDays: string;
-  maxPersons: string;
-}
+export type DatesKey =
+  | 'checkin'
+  | 'checkout'
+  | 'nights'
+  | 'persons'
+  | 'pricePerNight'
+  | 'totalPrice'
+  | 'docType'
+  | 'bed'
+  | 'maxNights'
+  | 'maxAdvanceDays'
+  | 'maxPersons';
+
+export type DatesState = Record<DatesKey, string>;
 
 const INITIAL: DatesState = {
   checkin: '',

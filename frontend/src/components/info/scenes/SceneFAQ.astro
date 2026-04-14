@@ -1,0 +1,309 @@
+<div class="info-scene">
+  <canvas id="info-scene-faq-canvas" class="info-canvas" aria-label="FAQ 3D"></canvas>
+  <div class="info-hud">
+    <div class="info-hud-pill">Click para abrir una pregunta</div>
+  </div>
+</div>
+
+<script>
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+
+  const canvas = document.getElementById('info-scene-faq-canvas') as HTMLCanvasElement | null;
+  if (!canvas) throw new Error('[SceneFAQ] canvas missing');
+  const section = canvas.closest('.ip-section') as HTMLElement | null;
+  if (!section) throw new Error('[SceneFAQ] section missing');
+  const canvasEl = canvas as HTMLCanvasElement;
+  const sectionEl = section as HTMLElement;
+
+  function readInfoData() {
+    const el = document.getElementById('info-scene-data');
+    const raw = el?.textContent?.trim();
+    if (!raw) return null;
+    return JSON.parse(raw);
+  }
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+  let runtime: any = null;
+  let runtimePromise: Promise<any> | null = null;
+
+  function makeFaceTex(THREE: any, title: string, body: string) {
+    const c = document.createElement('canvas');
+    c.width = 768;
+    c.height = 512;
+    const ctx = c.getContext('2d');
+    if (!ctx) throw new Error('2d ctx missing');
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = 'rgba(0,0,0,0.62)';
+    roundRect(ctx, 30, 30, c.width - 60, c.height - 60, 36);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 3;
+    roundRect(ctx, 30, 30, c.width - 60, c.height - 60, 36);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.94)';
+    ctx.font = '800 40px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    wrapText(ctx, title, 70, 120, c.width - 140, 48, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = '600 28px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    wrapText(ctx, body, 70, 240, c.width - 140, 38, 6);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 2;
+    return tex;
+  }
+
+  function roundRect(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number
+  ) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function wrapText(
+    ctx: CanvasRenderingContext2D,
+    text: unknown,
+    x: number,
+    y: number,
+    maxW: number,
+    lineH: number,
+    maxLines: number
+  ) {
+    const words = String(text).split(/\s+/);
+    let line = '';
+    let yy = y;
+    let lines = 0;
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, x, yy);
+        line = w;
+        yy += lineH;
+        lines++;
+        if (lines >= maxLines) return;
+      } else {
+        line = test;
+      }
+    }
+    if (line && lines < maxLines) ctx.fillText(line, x, yy);
+  }
+
+  async function init() {
+    const THREE = await import('three');
+    const data = readInfoData();
+    const faq = Array.isArray(data?.faq) ? data.faq : [];
+    const items = faq.slice(0, 6).map((x: any) => ({
+      q: String(x?.q ?? 'Pregunta'),
+      a: String(x?.a ?? 'Respuesta'),
+    }));
+    if (!items.length) {
+      items.push(
+        { q: '¿A qué hora abre?', a: 'De 10:00 a 21:00.' },
+        { q: '¿Cuántas noches máximo?', a: 'Normalmente 2 noches.' }
+      );
+    }
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasEl,
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070b);
+
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+    camera.position.set(0, 2.4, 13);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const key = new THREE.DirectionalLight(0xffffff, 1.2);
+    key.position.set(8, 10, 6);
+    scene.add(key);
+
+    const slabGeo = new THREE.BoxGeometry(5.6, 0.4, 3.4);
+    const textures: any[] = [];
+    const meshes: any[] = [];
+
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x101824, roughness: 0.95, metalness: 0.0 });
+
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const frontTex = makeFaceTex(THREE, it.q, 'Click para abrir');
+      const backTex = makeFaceTex(THREE, it.q, it.a);
+      textures.push(frontTex, backTex);
+      const frontMat = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.8, metalness: 0.05 });
+      const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.8, metalness: 0.05 });
+
+      const mats = [baseMat, baseMat, baseMat, baseMat, frontMat, backMat];
+      const slab = new THREE.Mesh(slabGeo, mats);
+      slab.position.set((i - (items.length - 1) / 2) * 2.1, 1.8 + Math.sin(i) * 0.2, (i % 2 ? 1 : -1) * 1.2);
+      slab.rotation.y = (i - (items.length - 1) / 2) * 0.12;
+      slab.userData.open = false;
+      slab.userData.rot = slab.rotation.y;
+      slab.userData.target = slab.rotation.y;
+      scene.add(slab);
+      meshes.push(slab);
+    }
+
+    let W = 1;
+    let H = 1;
+    const ro = new ResizeObserver(() => {
+      const r = sectionEl.getBoundingClientRect();
+      W = Math.max(1, r.width);
+      H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+    ro.observe(sectionEl);
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-9, -9);
+    let hover: any = null;
+
+    const onMove = (e: PointerEvent) => {
+      const r = canvasEl.getBoundingClientRect();
+      mouse.x = ((e.clientX - r.left) / Math.max(1, r.width)) * 2 - 1;
+      mouse.y = -((e.clientY - r.top) / Math.max(1, r.height)) * 2 + 1;
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+    const onLeave = () => {
+      mouse.set(-9, -9);
+      hover = null;
+      canvasEl.style.cursor = 'default';
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+
+    const onClick = () => {
+      if (!hover) return;
+      for (const m of meshes) {
+        m.userData.open = false;
+        m.userData.target = m.userData.rot;
+        m.position.z = m.userData.baseZ ?? m.position.z;
+      }
+      hover.userData.open = !hover.userData.open;
+      hover.userData.target = hover.userData.rot + (hover.userData.open ? Math.PI : 0);
+      hover.userData.baseZ ??= hover.position.z;
+      hover.position.z = (hover.userData.baseZ ?? hover.position.z) + (hover.userData.open ? 2.0 : 0);
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+
+    canvasEl.addEventListener('pointermove', onMove);
+    canvasEl.addEventListener('pointerleave', onLeave);
+    canvasEl.addEventListener('click', onClick);
+
+    const loop = createRafLoop(renderFrame);
+
+    function renderFrame(dt: number, t: number) {
+      const tt = t * 0.001;
+      for (const m of meshes) {
+        const target = m.userData.target ?? m.rotation.y;
+        const cur = m.rotation.y;
+        const k = reducedMotion ? 1 : 1 - Math.pow(0.001, dt);
+        m.rotation.y = cur + (target - cur) * k;
+        m.rotation.x = Math.sin(tt * 0.6 + m.position.x) * 0.02;
+      }
+
+      raycaster.setFromCamera(mouse, camera);
+      const hit = raycaster.intersectObjects(meshes, false)[0];
+      hover = hit?.object ?? null;
+      canvasEl.style.cursor = hover ? 'pointer' : 'grab';
+
+      renderer.render(scene, camera);
+    }
+
+    renderFrame(0, performance.now());
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        canvasEl.removeEventListener('pointermove', onMove);
+        canvasEl.removeEventListener('pointerleave', onLeave);
+        canvasEl.removeEventListener('click', onClick);
+        slabGeo.dispose();
+        baseMat.dispose();
+        for (const m of meshes) {
+          for (const mat of m.material) mat.dispose?.();
+        }
+        for (const tx of textures) tx.dispose();
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(sectionEl, {
+    auto: false,
+    onChange(active) {
+      if (active) ensureRuntime().then((r: any) => r.start());
+      else if (runtime) {
+        runtime.destroy();
+        runtime = null;
+        runtimePromise = null;
+      }
+    },
+  });
+</script>
+
+<style>
+  .info-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #05070b;
+  }
+  .info-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  .info-hud {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .info-hud-pill {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+  }
+</style>

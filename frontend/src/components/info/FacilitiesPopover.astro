@@ -6,8 +6,8 @@
 <!-- Alpine.js popover component -->
 <div
   class="fp-root"
-  x-data="facilitiesPopover()"
-  x-init="init()"
+  x-data="facilitiesPopover"
+  x-ignore
 >
   <!-- Trigger button -->
   <button
@@ -121,11 +121,10 @@
 </div>
 
 <script>
-// Alpine.js component — registered as a global function so Alpine picks it up
-// @ts-ignore — Alpine is a browser global injected by the Layout
-declare const Alpine: any;
-document.addEventListener('alpine:init', () => {
-  Alpine.data('facilitiesPopover', () => ({
+const ensureInit = () => {
+  const A = window.Alpine;
+  if (!A || !A.data) return false;
+  A.data('facilitiesPopover', () => ({
     open: false,
     query: '',
     activeCat: 'all',
@@ -285,12 +284,12 @@ document.addEventListener('alpine:init', () => {
       this.activeCat = 'all';
     },
 
-    toggle(this: any) {
+    toggle() {
       this.open = !this.open;
       if (this.open) {
         this.$nextTick(() => {
           const input = this.$el.querySelector('.fp-search');
-          if (input) (input as HTMLElement).focus();
+          if (input instanceof HTMLElement) input.focus();
         });
       }
     },
@@ -300,7 +299,22 @@ document.addEventListener('alpine:init', () => {
       this.query = '';
     },
   }));
-});
+  queueMicrotask(() => {
+    const nodes = document.querySelectorAll('.fp-root');
+    nodes.forEach((el) => {
+      if (!(el instanceof HTMLElement)) return;
+      if (el.dataset.fpAlpineInit === '1') return;
+      el.dataset.fpAlpineInit = '1';
+      el.removeAttribute('x-ignore');
+      A.initTree?.(el);
+    });
+  });
+  return true;
+};
+if (!ensureInit()) {
+  document.addEventListener('app:ready', ensureInit, { once: true });
+  document.addEventListener('alpine:init', ensureInit, { once: true });
+}
 </script>
 
 <style>

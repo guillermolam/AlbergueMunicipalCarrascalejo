@@ -81,8 +81,7 @@ export const PUT: APIRoute = async (context) => {
     const file = new File([blob], 'avatar.jpg', { type: blob.type });
     const updated = await clerk.users.updateUserProfileImage(userId, { file });
 
-    const avatarUrl =
-      updated.imageUrl ?? (updated.profileImageUrl as string | undefined) ?? '';
+    const avatarUrl = updated.imageUrl ?? '';
 
     return jsonResponse({ success: true, avatarUrl });
   } catch (err) {

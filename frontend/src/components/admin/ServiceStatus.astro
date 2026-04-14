@@ -1,5 +1,12 @@
 ---
-const { initialServices = [] } = Astro.props;
+interface Service {
+  name: string;
+  status: string;
+  responseTime?: string | number;
+  message?: string;
+}
+
+const { initialServices = [] } = Astro.props as { initialServices?: Service[] };
 ---
 
 <div class="bg-base-200 rounded-box p-6">

@@ -78,7 +78,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
     try {
       const response = await fetch('/api/health');
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as any;
         if (data.services) {
           setServices(
             data.services.map((service: any) => ({

@@ -11,10 +11,15 @@
   },
   "include": [
     ".astro/types.d.ts",
+    "worker-configuration.d.ts",
+    "src/env.d.ts",
     "src/components/core/statsUtils.ts",
     "src/stores/i18nStore.ts",
     "src/stores/user.ts",
-    "src/lib/healthchecks.ts"
+    "src/lib/healthchecks.ts",
+    "src/actions/**/*.ts",
+    "src/db/**/*.ts",
+    "src/middleware.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

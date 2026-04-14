@@ -16,7 +16,7 @@ const restaurants = allEntries
     price: e.data.priceRange ?? '€',
     stars: e.data.stars ?? 3,
     pilgrimMenu: e.data.pilgrimMenu ?? false,
-    notes: e.body.trim(),
+    notes: String(e.body ?? '').trim(),
     tags: e.data.tags ?? [],
   }));
 ---

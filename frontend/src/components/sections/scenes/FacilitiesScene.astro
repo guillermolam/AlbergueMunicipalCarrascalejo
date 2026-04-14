@@ -112,10 +112,11 @@
       if (reducedMotion) renderFrame(0, performance.now());
     });
 
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
 
     function renderFrame(_dt, _t) {
-      const time = clock.getElapsedTime();
+      clock.update();
+      const time = clock.getElapsed();
       positionItems(time);
 
       raycaster.setFromCamera(mouse, camera);

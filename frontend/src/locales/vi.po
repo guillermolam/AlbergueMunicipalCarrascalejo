@@ -201,24 +201,24 @@ msgstr ""
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Service status"
-msgstr ""
+msgstr "Trạng thái dịch vụ"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Static snapshot"
-msgstr ""
+msgstr "Bản chụp tĩnh"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Service"
-msgstr ""
+msgstr "Dịch vụ"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Status"
-msgstr ""
+msgstr "Trạng thái"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Response"
-msgstr ""
+msgstr "Phản hồi"
 
 #: src/components/admin/ServiceStatus.astro
 msgid "Message"
-msgstr ""
+msgstr "Tin nhắn"

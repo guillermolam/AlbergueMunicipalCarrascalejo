@@ -5,15 +5,20 @@
  * Uses Tailwind v4 + Doodle CSS
  */
 
-const {
-  text,
-  href,
-  size = 'md',
-  emphasis = false,
-  variant = 'primary',
-  class: className = '',
-  ...props
-} = Astro.props;
+export type Size = 'sm' | 'md' | 'lg';
+export type Variant = 'primary' | 'secondary' | 'outline';
+
+export interface Props {
+  text?: string;
+  href?: string;
+  size?: Size;
+  emphasis?: boolean;
+  variant?: Variant;
+  class?: string;
+}
+
+const { text, href, size = 'md', emphasis = false, variant = 'primary', class: className = '', ...props } =
+  Astro.props as Props & Record<string, unknown>;
 
 const sizeClasses = {
   sm: 'px-4 py-2 text-sm',
@@ -27,69 +32,138 @@ const variantClasses = {
   outline: 'bg-white text-[#00AB39] border-[#00AB39]',
 };
 
-const Component = href ? 'a' : 'button';
-const additionalProps = href ? { href } : { type: 'button' };
 ---
 
-<Component
-  {...additionalProps}
-  {...props}
-  class:list={[
-    'relative cursor-pointer overflow-visible',
-    'doodle-border border-[2.5px] font-bold',
-    'transition-all duration-200',
-    'hover:scale-105 hover:rotate-[-2deg] hover:translate-y-[-4px]',
-    'active:scale-95',
-    emphasis && 'wobble',
-    sizeClasses[size],
-    variantClasses[variant],
-    className,
-  ]}
-  style={{
-    fontFamily: 'Cabin Sketch, cursive',
-    textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
-  }}
->
-  <!-- Shadow layer -->
-  <svg
-    class="absolute inset-0 w-full h-full pointer-events-none -z-10"
-    style="filter: blur(3px); opacity: 0.15;"
-  >
-    <rect x="3" y="3" width="calc(100% - 6px)" height="calc(100% - 6px)" fill="black" rx="10"
-    ></rect>
-  </svg>
+{
+  href ? (
+    <a
+      href={href}
+      {...props}
+      class:list={[
+        'relative cursor-pointer overflow-visible',
+        'doodle-border border-[2.5px] font-bold',
+        'transition-all duration-200',
+        'hover:scale-105 hover:rotate-[-2deg] hover:translate-y-[-4px]',
+        'active:scale-95',
+        emphasis && 'wobble',
+        sizeClasses[size],
+        variantClasses[variant],
+        className,
+      ]}
+      style={{
+        fontFamily: 'Cabin Sketch, cursive',
+        textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+      }}
+    >
+      <svg
+        class="absolute inset-0 w-full h-full pointer-events-none -z-10"
+        style="filter: blur(3px); opacity: 0.15;"
+      >
+        <rect
+          x="3"
+          y="3"
+          width="calc(100% - 6px)"
+          height="calc(100% - 6px)"
+          fill="black"
+          rx="10"
+        ></rect>
+      </svg>
 
-  <!-- Button background with sketchy effect -->
-  <svg class="absolute inset-0 w-full h-full pointer-events-none -z-5">
-    <rect
-      x="2"
-      y="2"
-      width="calc(100% - 4px)"
-      height="calc(100% - 4px)"
-      fill="currentColor"
-      stroke="currentColor"
-      stroke-width="2.5"
-      rx="10"
-      style="opacity: 0.1;"></rect>
-  </svg>
+      <svg class="absolute inset-0 w-full h-full pointer-events-none -z-5">
+        <rect
+          x="2"
+          y="2"
+          width="calc(100% - 4px)"
+          height="calc(100% - 4px)"
+          fill="currentColor"
+          stroke="currentColor"
+          stroke-width="2.5"
+          rx="10"
+          style="opacity: 0.1;"
+        ></rect>
+      </svg>
 
-  <!-- Button text -->
-  <span class="relative z-10">
-    <slot>{text}</slot>
-  </span>
-
-  <!-- Sparkles effect (pure CSS) -->
-  {
-    emphasis && (
-      <span class="sparkles">
-        <span class="sparkle" />
-        <span class="sparkle" />
-        <span class="sparkle" />
-        <span class="sparkle" />
+      <span class="relative z-10">
+        <slot>{text}</slot>
       </span>
-    )
-  }
-</Component>
+
+      {
+        emphasis && (
+          <span class="sparkles">
+            <span class="sparkle" />
+            <span class="sparkle" />
+            <span class="sparkle" />
+            <span class="sparkle" />
+          </span>
+        )
+      }
+    </a>
+  ) : (
+    <button
+      type="button"
+      {...props}
+      class:list={[
+        'relative cursor-pointer overflow-visible',
+        'doodle-border border-[2.5px] font-bold',
+        'transition-all duration-200',
+        'hover:scale-105 hover:rotate-[-2deg] hover:translate-y-[-4px]',
+        'active:scale-95',
+        emphasis && 'wobble',
+        sizeClasses[size],
+        variantClasses[variant],
+        className,
+      ]}
+      style={{
+        fontFamily: 'Cabin Sketch, cursive',
+        textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+      }}
+    >
+      <svg
+        class="absolute inset-0 w-full h-full pointer-events-none -z-10"
+        style="filter: blur(3px); opacity: 0.15;"
+      >
+        <rect
+          x="3"
+          y="3"
+          width="calc(100% - 6px)"
+          height="calc(100% - 6px)"
+          fill="black"
+          rx="10"
+        ></rect>
+      </svg>
+
+      <svg class="absolute inset-0 w-full h-full pointer-events-none -z-5">
+        <rect
+          x="2"
+          y="2"
+          width="calc(100% - 4px)"
+          height="calc(100% - 4px)"
+          fill="currentColor"
+          stroke="currentColor"
+          stroke-width="2.5"
+          rx="10"
+          style="opacity: 0.1;"
+        ></rect>
+      </svg>
+
+      <span class="relative z-10">
+        <slot>{text}</slot>
+      </span>
+
+      {
+        emphasis && (
+          <span class="sparkles">
+            <span class="sparkle" />
+            <span class="sparkle" />
+            <span class="sparkle" />
+            <span class="sparkle" />
+          </span>
+        )
+      }
+    </button>
+  )
+}
+ 
 
 <style>
   /* Enhanced hover shadow */

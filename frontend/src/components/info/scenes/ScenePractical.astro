@@ -1,0 +1,265 @@
+<div class="info-scene">
+  <canvas id="info-scene-practical-canvas" class="info-canvas" aria-hidden="true"></canvas>
+  <div class="info-overlay">
+    <div class="info-title">Información práctica</div>
+    <div class="info-subtitle">Horarios, precio y reglas esenciales flotando en la sala.</div>
+  </div>
+</div>
+
+<script>
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+
+  const canvas = document.getElementById('info-scene-practical-canvas') as HTMLCanvasElement | null;
+  if (!canvas) throw new Error('[ScenePractical] canvas missing');
+  const section = canvas.closest('.ip-section') as HTMLElement | null;
+  if (!section) throw new Error('[ScenePractical] section missing');
+  const canvasEl = canvas as HTMLCanvasElement;
+  const sectionEl = section as HTMLElement;
+
+  function readInfoData() {
+    const el = document.getElementById('info-scene-data');
+    const raw = el?.textContent?.trim();
+    if (!raw) return null;
+    return JSON.parse(raw);
+  }
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+  let runtime: any = null;
+  let runtimePromise: Promise<any> | null = null;
+
+  function makeCardTexture(THREE: any, title: string, value: string) {
+    const c = document.createElement('canvas');
+    c.width = 640;
+    c.height = 360;
+    const ctx = c.getContext('2d');
+    if (!ctx) throw new Error('2d ctx missing');
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = 'rgba(0,0,0,0.62)';
+    roundRect(ctx, 24, 24, c.width - 48, c.height - 48, 32);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 3;
+    roundRect(ctx, 24, 24, c.width - 48, c.height - 48, 32);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.font = '700 44px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    ctx.fillText(title, 64, 120);
+    ctx.fillStyle = '#00ab39';
+    ctx.font = '800 68px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    wrapText(ctx, value, 64, 214, c.width - 128, 76);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 2;
+    return tex;
+  }
+
+  function roundRect(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number
+  ) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function wrapText(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxW: number,
+    lineH: number
+  ) {
+    const words = String(text).split(/\s+/);
+    let line = '';
+    let yy = y;
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, x, yy);
+        line = w;
+        yy += lineH;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, x, yy);
+  }
+
+  async function init() {
+    const THREE = await import('three');
+    const data = readInfoData();
+    const cfg = data?.hostelData ?? {};
+    const review = data?.reviewData ?? {};
+    const rules = Array.isArray(data?.rules) ? data.rules : [];
+
+    const cardsData = [
+      { t: 'Check-in', v: `${cfg.checkInOpen ?? '10:00'}–${cfg.checkInClose ?? '21:00'}` },
+      { t: 'Check-out', v: `${cfg.checkOutOpen ?? '09:00'}–${cfg.checkOutClose ?? '11:00'}` },
+      { t: 'Máx. noches', v: `${cfg.maxNights ?? 2}` },
+      { t: 'Puntuación', v: `${review.overall ?? 9.1} · ${review.label ?? 'Sobresaliente'}` },
+    ];
+    if (rules[0]) cardsData.push({ t: 'Regla', v: rules[0] });
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasEl,
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x06080c);
+    scene.fog = new THREE.Fog(0x06080c, 10, 30);
+
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 120);
+    camera.position.set(0, 1.8, 12);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const key = new THREE.DirectionalLight(0xffffff, 1.25);
+    key.position.set(8, 10, 6);
+    scene.add(key);
+
+    const room = new THREE.Mesh(
+      new THREE.BoxGeometry(18, 8, 18),
+      new THREE.MeshStandardMaterial({ color: 0x0c1219, roughness: 1, metalness: 0, side: THREE.BackSide })
+    );
+    room.position.y = 3.8;
+    scene.add(room);
+
+    const cardGeo = new THREE.PlaneGeometry(4.8, 2.7);
+    const planes: any[] = [];
+    const textures: any[] = [];
+    for (let i = 0; i < Math.min(5, cardsData.length); i++) {
+      const cd = cardsData[i];
+      const tex = makeCardTexture(THREE, cd.t, cd.v);
+      textures.push(tex);
+      const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.6, metalness: 0.05 });
+      const p = new THREE.Mesh(cardGeo, mat);
+      const a = (i / Math.min(5, cardsData.length)) * Math.PI * 2;
+      p.position.set(Math.cos(a) * 3.6, 1.8 + Math.sin(i) * 0.3, Math.sin(a) * 2.8);
+      p.rotation.y = -a + Math.PI;
+      scene.add(p);
+      planes.push(p);
+    }
+
+    let W = 1;
+    let H = 1;
+    const ro = new ResizeObserver(() => {
+      const r = sectionEl.getBoundingClientRect();
+      W = Math.max(1, r.width);
+      H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+    ro.observe(sectionEl);
+
+    const loop = createRafLoop(renderFrame);
+
+    function renderFrame(_dt: number, t: number) {
+      const tt = t * 0.001;
+      for (let i = 0; i < planes.length; i++) {
+        const p = planes[i];
+        p.position.y = 1.6 + Math.sin(tt * 0.9 + i) * 0.35;
+        p.rotation.z = Math.sin(tt * 0.7 + i) * 0.05;
+      }
+      camera.position.x = Math.sin(tt * 0.12) * 0.4;
+      camera.lookAt(0, 2.0, 0);
+      renderer.render(scene, camera);
+    }
+
+    renderFrame(0, performance.now());
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        cardGeo.dispose();
+        for (const p of planes) {
+          p.material.dispose();
+        }
+        for (const t of textures) t.dispose();
+        room.geometry.dispose();
+        room.material.dispose();
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(sectionEl, {
+    auto: false,
+    onChange(active) {
+      if (active) ensureRuntime().then((r) => r.start());
+      else if (runtime) {
+        runtime.destroy();
+        runtime = null;
+        runtimePromise = null;
+      }
+    },
+  });
+</script>
+
+<style>
+  .info-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #06080c;
+  }
+  .info-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: none;
+  }
+  .info-overlay {
+    position: absolute;
+    left: 22px;
+    top: 22px;
+    z-index: 10;
+    pointer-events: none;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 18px rgba(0, 0, 0, 0.45);
+  }
+  .info-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .info-subtitle {
+    margin-top: 6px;
+    font-size: 13px;
+    opacity: 0.85;
+    max-width: 56ch;
+  }
+</style>

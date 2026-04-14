@@ -9,7 +9,7 @@ interface LanguageSelectorIslandProps {
 }
 
 interface Language {
-  code: Locale;
+  code: string;
   name: string;
   native_name: string;
   flag: string;
@@ -31,8 +31,10 @@ const languages: Language[] = await (async () => {
 
     if (!res.ok) throw new Error(`Language service error: ${res.status}`);
 
-    const data = await res.json();
-    return data.filter((lang: Language) => lang.is_active).sort((a: Language, b: Language) => a.display_order - b.display_order);
+    const data = (await res.json()) as Language[];
+    return data
+      .filter((lang) => lang.is_active)
+      .sort((a, b) => a.display_order - b.display_order);
   } catch (error) {
     console.warn('Failed to fetch languages from service:', error);
     // Fallback: Top 15 + Spanish regional

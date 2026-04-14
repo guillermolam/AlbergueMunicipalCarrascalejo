@@ -1,0 +1,298 @@
+<div class="info-scene">
+  <canvas id="info-scene-cta-canvas" class="info-canvas" aria-label="Reserva 3D"></canvas>
+  <div class="info-overlay">
+    <div class="info-title">Reserva tu cama</div>
+    <div class="info-subtitle">Click en el botón 3D para empezar.</div>
+  </div>
+</div>
+
+<script>
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+
+  const canvas = document.getElementById('info-scene-cta-canvas') as HTMLCanvasElement | null;
+  if (!canvas) throw new Error('[SceneCTA] canvas missing');
+  const section = canvas.closest('.ip-section') as HTMLElement | null;
+  if (!section) throw new Error('[SceneCTA] section missing');
+  const canvasEl = canvas as HTMLCanvasElement;
+  const sectionEl = section as HTMLElement;
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+  let runtime: any = null;
+  let runtimePromise: Promise<any> | null = null;
+
+  function makeButtonTex(THREE: any, label: string) {
+    const c = document.createElement('canvas');
+    c.width = 512;
+    c.height = 256;
+    const ctx = c.getContext('2d');
+    if (!ctx) throw new Error('2d ctx missing');
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = '#00ab39';
+    roundRect(ctx, 20, 34, c.width - 40, c.height - 68, 56);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = '900 74px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, c.width / 2, c.height / 2 + 2);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 2;
+    return tex;
+  }
+
+  function roundRect(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number
+  ) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  async function init() {
+    const THREE = await import('three');
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasEl,
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x02040a);
+    scene.fog = new THREE.Fog(0x02040a, 18, 70);
+
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 250);
+    camera.position.set(0, 6, 22);
+    camera.lookAt(0, 3.2, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const moon = new THREE.DirectionalLight(0xbcd6ff, 1.1);
+    moon.position.set(-10, 18, 6);
+    scene.add(moon);
+    const warm = new THREE.PointLight(0xffd7a8, 1.2, 30);
+    warm.position.set(0, 4, -3);
+    scene.add(warm);
+
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(140, 140, 50, 50),
+      new THREE.MeshStandardMaterial({ color: 0x071014, roughness: 1, metalness: 0 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    const starsGeo = new THREE.BufferGeometry();
+    const starCount = 1400;
+    const pos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const r = 120 * Math.pow(Math.random(), 0.45);
+      const a = Math.random() * Math.PI * 2;
+      const y = 30 + Math.random() * 70;
+      pos[i * 3 + 0] = Math.cos(a) * r;
+      pos[i * 3 + 1] = y;
+      pos[i * 3 + 2] = Math.sin(a) * r;
+    }
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0.85 });
+    const stars = new THREE.Points(starsGeo, starsMat);
+    scene.add(stars);
+
+    const albergue = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(6.2, 2.6, 3.6),
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85, metalness: 0.05 })
+    );
+    body.position.set(0, 1.3, -4.2);
+    albergue.add(body);
+    const roof = new THREE.Mesh(
+      new THREE.ConeGeometry(3.8, 1.6, 4),
+      new THREE.MeshStandardMaterial({ color: 0x2a1510, roughness: 0.95, metalness: 0.02 })
+    );
+    roof.position.set(0, 3.0, -4.2);
+    roof.rotation.y = Math.PI / 4;
+    albergue.add(roof);
+    const windows = new THREE.Mesh(
+      new THREE.BoxGeometry(5.2, 1.1, 0.1),
+      new THREE.MeshStandardMaterial({ color: 0x00ab39, emissive: 0x00ab39, emissiveIntensity: 1.2 })
+    );
+    windows.position.set(0, 1.4, -2.35);
+    albergue.add(windows);
+    scene.add(albergue);
+
+    const buttonTex = makeButtonTex(THREE, 'Reservar');
+    const button = new THREE.Mesh(
+      new THREE.BoxGeometry(7.2, 2.2, 0.7),
+      new THREE.MeshStandardMaterial({ map: buttonTex, roughness: 0.35, metalness: 0.12, emissive: 0x0a3a1c, emissiveIntensity: 0.6 })
+    );
+    button.position.set(0, 3.5, 2.2);
+    scene.add(button);
+
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(5.2, 0.06, 10, 90),
+      new THREE.MeshBasicMaterial({ color: 0x00ab39, transparent: true, opacity: 0.35 })
+    );
+    ring.position.set(0, 3.5, 2.2);
+    ring.rotation.x = Math.PI / 2;
+    scene.add(ring);
+
+    let W = 1;
+    let H = 1;
+    const ro = new ResizeObserver(() => {
+      const r = sectionEl.getBoundingClientRect();
+      W = Math.max(1, r.width);
+      H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+    ro.observe(sectionEl);
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-9, -9);
+    let hover = false;
+
+    const onMove = (e: PointerEvent) => {
+      const r = canvasEl.getBoundingClientRect();
+      mouse.x = ((e.clientX - r.left) / Math.max(1, r.width)) * 2 - 1;
+      mouse.y = -((e.clientY - r.top) / Math.max(1, r.height)) * 2 + 1;
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+    const onLeave = () => {
+      mouse.set(-9, -9);
+      hover = false;
+      canvasEl.style.cursor = 'default';
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+    const onClick = () => {
+      if (!hover) return;
+      window.location.href = '/booking';
+    };
+
+    canvasEl.addEventListener('pointermove', onMove);
+    canvasEl.addEventListener('pointerleave', onLeave);
+    canvasEl.addEventListener('click', onClick);
+
+    const loop = createRafLoop(renderFrame);
+
+    function renderFrame(_dt: number, t: number) {
+      const tt = t * 0.001;
+      stars.rotation.y = tt * 0.04;
+      button.rotation.y = Math.sin(tt * 0.8) * 0.08;
+      ring.rotation.z = tt * 0.35;
+      ring.material.opacity = 0.18 + Math.sin(tt * 2.0) * 0.06;
+      warm.intensity = 1.1 + Math.sin(tt * 1.6) * 0.25;
+
+      raycaster.setFromCamera(mouse, camera);
+      const hit = raycaster.intersectObject(button, false)[0];
+      hover = Boolean(hit);
+      canvasEl.style.cursor = hover ? 'pointer' : 'grab';
+
+      renderer.render(scene, camera);
+    }
+
+    renderFrame(0, performance.now());
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        canvasEl.removeEventListener('pointermove', onMove);
+        canvasEl.removeEventListener('pointerleave', onLeave);
+        canvasEl.removeEventListener('click', onClick);
+        starsGeo.dispose();
+        starsMat.dispose();
+        ground.geometry.dispose();
+        ground.material.dispose();
+        button.geometry.dispose();
+        button.material.dispose();
+        buttonTex.dispose();
+        ring.geometry.dispose();
+        ring.material.dispose();
+        body.geometry.dispose();
+        body.material.dispose();
+        roof.geometry.dispose();
+        roof.material.dispose();
+        windows.geometry.dispose();
+        windows.material.dispose();
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(sectionEl, {
+    auto: false,
+    onChange(active) {
+      if (active) ensureRuntime().then((r: any) => r.start());
+      else if (runtime) {
+        runtime.destroy();
+        runtime = null;
+        runtimePromise = null;
+      }
+    },
+  });
+</script>
+
+<style>
+  .info-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #02040a;
+  }
+  .info-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  .info-overlay {
+    position: absolute;
+    left: 22px;
+    top: 22px;
+    z-index: 10;
+    pointer-events: none;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 18px rgba(0, 0, 0, 0.45);
+  }
+  .info-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .info-subtitle {
+    margin-top: 6px;
+    font-size: 13px;
+    opacity: 0.85;
+  }
+</style>

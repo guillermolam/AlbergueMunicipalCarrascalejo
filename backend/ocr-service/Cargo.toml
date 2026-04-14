@@ -13,6 +13,10 @@ publish = false
 name = "ocr-service"
 path = "src/main.rs"
 
+[lib]
+name = "ocr_service"
+path = "src/lib.rs"
+
 [dependencies]
 # HTTP server
 axum         = { version = "0.7", features = ["multipart"] }
@@ -28,6 +32,9 @@ tesseract    = "0.15"
 
 # Temp files — Tesseract needs a file path, not raw bytes
 tempfile     = "3"
+
+# Base64 for the JSON endpoint (CF Worker adapter sends base64-encoded images)
+base64       = "0.22"
 
 # Document field parsing
 regex        = "1"

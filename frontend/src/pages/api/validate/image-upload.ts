@@ -76,8 +76,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
   //
   //    Astro/Vite exposes server-side env vars via import.meta.env in SSR.
   //    In Cloudflare Workers production, they also live in locals.runtime.env.
-  const workerUrl: string | undefined =
-    (locals as Record<string, unknown>).runtime?.env?.DOC_VALIDATION_URL ??
+  let workerUrl: string | undefined;
+  try {
+    const workers = await import('cloudflare:workers');
+    workerUrl = (workers.env as any).DOC_VALIDATION_URL as string | undefined;
+  } catch {
+    workerUrl = undefined;
+  }
+  workerUrl =
+    workerUrl ??
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (import.meta as any).env?.DOC_VALIDATION_URL ??
     (typeof process !== 'undefined' ? process.env.DOC_VALIDATION_URL : undefined);
@@ -109,7 +116,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   if (isRaster && format_valid && size_valid && typeof createImageBitmap !== 'undefined') {
     try {
-      const blob = new Blob([imageBytes], { type: mime });
+      const buf = new ArrayBuffer(imageBytes.byteLength);
+      new Uint8Array(buf).set(imageBytes);
+      const blob = new Blob([buf], { type: mime });
       const bmp = await createImageBitmap(blob);
       width = bmp.width;
       height = bmp.height;

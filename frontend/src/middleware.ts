@@ -1,5 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/astro/server';
-import { i18nRouting } from 'astro:i18n';
 
 // Routes that require an authenticated user
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/profile(.*)']);

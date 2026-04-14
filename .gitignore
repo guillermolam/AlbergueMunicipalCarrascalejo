@@ -190,3 +190,13 @@ runtime-config.toml
 # === FIRECRAWL CACHE ===
 **/.firecrawl/
 backend/retto-js-worker/retto
+
+# === AUDIT & DEBUG FILES ===
+frontend-audit-tickets.csv
+frontend-modularity-matrix.csv
+frontend-audit.md
+frontend/.audit/
+.playwright-mcp/
+docs/maps/*.svg
+docs/maps/*.png
+docs/maps/albuergue_2d_map_handdrawn

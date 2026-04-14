@@ -16,7 +16,7 @@ const activities = allEntries
     difficulty: e.data.difficulty ?? 'Baja',
     duration: e.data.duration ?? '',
     distance: e.data.distance ?? '',
-    desc: e.body.trim(),
+    desc: String(e.body ?? '').trim(),
     color: e.data.color ?? '#059669',
   }));
 

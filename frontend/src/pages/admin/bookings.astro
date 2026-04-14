@@ -8,10 +8,7 @@ if (!_uid || Astro.locals.role !== 'admin') {
   return Astro.redirect(`/auth?from=${Astro.url.pathname}&reason=unauthorized`, 302);
 }
 
-const adminToken =
-  ((Astro.locals as Record<string, unknown>).token as string | undefined) ??
-  import.meta.env.API_SERVICE_TOKEN ??
-  '';
+const adminToken = import.meta.env.API_SERVICE_TOKEN ?? '';
 
 const stats = await getDashboardStats(adminToken).catch(() => null);
 

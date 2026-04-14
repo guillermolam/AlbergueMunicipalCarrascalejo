@@ -36,6 +36,10 @@ interface Env {
   OCR_SERVICE?: CloudflareServiceBinding;
 }
 
+declare module 'cloudflare:workers' {
+  export const env: Env;
+}
+
 // ── Window extensions used in book.astro <script> blocks ─────────────────────
 // Repeated here (also in types/global.d.ts) so the Astro embedded-TS service
 // picks them up — it honours env.d.ts but may miss supplementary .d.ts files.
@@ -45,6 +49,10 @@ interface Window {
    * can enable/disable the "Next" button without direct DOM coupling.
    */
   __wizEnableNext?: (enabled: boolean) => void;
+  __maplibreMaps?: Record<string, unknown>;
+  showToast?: (icon: string, title: string, message?: string, duration?: number) => void;
+  __sectionManager?: any;
+  __ipSectionManagers?: any[];
 }
 
 // In @astrojs/cloudflare v13+, Runtime only exposes cfContext.
@@ -57,6 +65,7 @@ declare namespace App {
     user: { id: string; email: string; name: string } | null;
     /** Coarse-grained role: 'admin' set via Clerk publicMetadata.role. */
     role: 'admin' | 'pilgrim' | 'guest';
+    locale: string;
     /** Always null — session is managed by Clerk cookies. */
     sessionToken: string | null;
   }

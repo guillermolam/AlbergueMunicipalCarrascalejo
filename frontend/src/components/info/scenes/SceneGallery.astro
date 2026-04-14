@@ -1,0 +1,277 @@
+<div class="info-scene">
+  <canvas id="info-scene-gallery-canvas" class="info-canvas" aria-label="Galería 3D"></canvas>
+  <div class="info-hud">
+    <div class="info-hud-pill">Arrastra para girar</div>
+  </div>
+</div>
+
+<script>
+  import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
+
+  const canvas = document.getElementById('info-scene-gallery-canvas') as HTMLCanvasElement | null;
+  if (!canvas) throw new Error('[SceneGallery] canvas missing');
+  const section = canvas.closest('.ip-section') as HTMLElement | null;
+  if (!section) throw new Error('[SceneGallery] section missing');
+  const canvasEl = canvas as HTMLCanvasElement;
+  const sectionEl = section as HTMLElement;
+
+  function readInfoData() {
+    const el = document.getElementById('info-scene-data');
+    const raw = el?.textContent?.trim();
+    if (!raw) return null;
+    return JSON.parse(raw);
+  }
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+  let runtime: any = null;
+  let runtimePromise: Promise<any> | null = null;
+
+  async function init() {
+    const THREE = await import('three');
+    const data = readInfoData();
+    const photos = Array.isArray(data?.photos) ? data.photos : [];
+    const urls = photos.map((p: any) => p?.url).filter(Boolean).slice(0, 16) as string[];
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasEl,
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070b);
+
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+    camera.position.set(0, 0.8, 10.5);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const key = new THREE.DirectionalLight(0xffffff, 1.25);
+    key.position.set(8, 10, 6);
+    scene.add(key);
+
+    const drum = new THREE.Group();
+    scene.add(drum);
+
+    const radius = 5.2;
+    const cardW = 3.6;
+    const cardH = 2.5;
+    const geo = new THREE.BoxGeometry(cardW, cardH, 0.18, 1, 1, 1);
+    const edgeGeo = new THREE.EdgesGeometry(geo, 28);
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18 });
+
+    const loader = new THREE.TextureLoader();
+    const mats: any[] = [];
+    const textures: any[] = [];
+    const cards: any[] = [];
+    const cardPhases: number[] = [];
+    const sideMat = new THREE.MeshStandardMaterial({ color: 0x0a0f14, roughness: 0.85, metalness: 0.02 });
+
+    const count = Math.max(8, urls.length || 0);
+    for (let i = 0; i < count; i++) {
+      const u = urls[i % Math.max(1, urls.length)];
+      const frontMat = new THREE.MeshStandardMaterial({
+        color: 0x1a1a1a,
+        roughness: 0.65,
+        metalness: 0.05,
+      });
+      mats.push(frontMat);
+      const mesh = new THREE.Mesh(geo, [sideMat, sideMat, sideMat, sideMat, frontMat, sideMat]);
+      const a = (i / count) * Math.PI * 2;
+      mesh.position.set(Math.cos(a) * radius, 0.5, Math.sin(a) * radius);
+      mesh.lookAt(0, 0.6, 0);
+      mesh.rotateY(Math.PI);
+      drum.add(mesh);
+      const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+      edges.position.z = 0.1;
+      mesh.add(edges);
+      cards.push(mesh);
+      cardPhases.push(Math.random() * Math.PI * 2);
+      if (u) {
+        try {
+          const tex: any = await new Promise<any>((resolve) =>
+            loader.load(
+              u,
+              (t) => resolve(t as any),
+              undefined,
+              () => resolve(null)
+            )
+          );
+          if (tex) {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.anisotropy = 4;
+            textures.push(tex);
+            frontMat.map = tex;
+            frontMat.needsUpdate = true;
+          }
+        } catch {}
+      }
+    }
+
+    let W = 1;
+    let H = 1;
+    const ro = new ResizeObserver(() => {
+      const r = sectionEl.getBoundingClientRect();
+      W = Math.max(1, r.width);
+      H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderFrame(0, performance.now());
+    });
+    ro.observe(sectionEl);
+
+    let isDown = false;
+    let lastX = 0;
+    let vel = 0;
+    let rot = 0;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-9, -9);
+    let hovered = -1;
+
+    const onDown = (e: PointerEvent) => {
+      isDown = true;
+      lastX = e.clientX;
+      vel = 0;
+      canvasEl.setPointerCapture?.(e.pointerId);
+    };
+    const onMove = (e: PointerEvent) => {
+      const r = canvasEl.getBoundingClientRect();
+      mouse.x = ((e.clientX - r.left) / Math.max(1, r.width)) * 2 - 1;
+      mouse.y = -((e.clientY - r.top) / Math.max(1, r.height)) * 2 + 1;
+      if (!isDown) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      vel = dx * 0.0032;
+      rot += vel;
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+    const onUp = () => {
+      isDown = false;
+    };
+    const onLeave = () => {
+      mouse.set(-9, -9);
+      hovered = -1;
+      canvasEl.style.cursor = 'default';
+      if (reducedMotion) renderFrame(0, performance.now());
+    };
+
+    canvasEl.addEventListener('pointerdown', onDown);
+    canvasEl.addEventListener('pointermove', onMove);
+    canvasEl.addEventListener('pointerleave', onLeave);
+    window.addEventListener('pointerup', onUp);
+
+    const loop = createRafLoop(renderFrame);
+
+    function renderFrame(dt: number, t: number) {
+      const tt = t * 0.001;
+      if (!isDown) {
+        rot += vel;
+        vel *= Math.pow(0.001, dt);
+        rot += dt * 0.18;
+      }
+      drum.rotation.y = rot;
+
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(cards, true);
+      hovered = hits.length ? cards.indexOf(hits[0].object) : -1;
+      canvasEl.style.cursor = hovered >= 0 ? 'pointer' : 'grab';
+
+      for (let i = 0; i < cards.length; i++) {
+        const m = cards[i];
+        const s0 = 1 + Math.sin(tt * 1.25 + cardPhases[i]) * 0.012;
+        const sh = i === hovered ? 1.08 : 1.0;
+        const target = s0 * sh;
+        const cur = m.scale.x;
+        const next = cur + (target - cur) * (reducedMotion ? 1 : Math.min(1, dt * 10));
+        m.scale.setScalar(next);
+        m.rotation.z = Math.sin(tt * 0.9 + cardPhases[i]) * 0.03;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    renderFrame(0, performance.now());
+
+    return {
+      start() {
+        if (reducedMotion) return;
+        loop.start();
+      },
+      stop() {
+        loop.stop();
+      },
+      destroy() {
+        loop.stop();
+        ro.disconnect();
+        canvasEl.removeEventListener('pointerdown', onDown);
+        canvasEl.removeEventListener('pointermove', onMove);
+        canvasEl.removeEventListener('pointerleave', onLeave);
+        window.removeEventListener('pointerup', onUp);
+        edgeGeo.dispose();
+        edgeMat.dispose();
+        sideMat.dispose();
+        geo.dispose();
+        for (const m of mats) m.dispose();
+        for (const t of textures) t.dispose();
+        renderer.dispose();
+      },
+    };
+  }
+
+  async function ensureRuntime() {
+    if (runtime) return runtime;
+    runtimePromise ??= init();
+    runtime = await runtimePromise;
+    return runtime;
+  }
+
+  attachSectionActive(sectionEl, {
+    auto: false,
+    onChange(active) {
+      if (active) ensureRuntime().then((r) => r.start());
+      else if (runtime) {
+        runtime.destroy();
+        runtime = null;
+        runtimePromise = null;
+      }
+    },
+  });
+</script>
+
+<style>
+  .info-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #05070b;
+  }
+  .info-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  .info-hud {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .info-hud-pill {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+  }
+</style>

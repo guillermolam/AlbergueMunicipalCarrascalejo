@@ -127,9 +127,10 @@
       if (reducedMotion) renderFrame(0);
     });
 
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
     function renderFrame(dt) {
-      const t = clock.getElapsedTime();
+      clock.update();
+      const t = clock.getElapsed();
 
       // Very light bob to feel alive.
       for (let i = 0; i < signs.length; i++) {

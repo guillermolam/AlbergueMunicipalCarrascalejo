@@ -4817,8 +4817,7 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
   if (fillEl) fillObserver.observe(fillEl);
 
   // ─── Hostel map modal ───
-  type ZoneEntry = { emoji: string; name: string; desc: string; items: string[] };
-  const ZONE_DATA: Record<string, ZoneEntry> = {
+  const ZONE_DATA = new Map(Object.entries({
     dormitorios: {
       emoji: '🛏️',
       name: 'Dormitorios',
@@ -4894,29 +4893,29 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
         'Entrada por el patio',
       ],
     },
-  };
+  }));
 
-  const mapModal = document.getElementById('albergueMapModal') as HTMLElement;
-  const openMapBtn = document.getElementById('openMapBtn') as HTMLButtonElement;
-  const closeMapBtn = document.getElementById('closeMapBtn') as HTMLButtonElement;
-  const mapTooltip = document.getElementById('mapTooltip') as HTMLElement;
-  const mapWrap = document.getElementById('mapInteractiveWrap') as HTMLElement;
+  const mapModal = document.getElementById('albergueMapModal');
+  const openMapBtn = document.getElementById('openMapBtn');
+  const closeMapBtn = document.getElementById('closeMapBtn');
+  const mapTooltip = document.getElementById('mapTooltip');
+  const mapWrap = document.getElementById('mapInteractiveWrap');
 
   function openMap() {
-    if (!mapModal) return;
+    if (!(mapModal instanceof HTMLElement)) return;
     mapModal.classList.add('map-open');
     document.body.style.overflow = 'hidden';
-    if (closeMapBtn) closeMapBtn.focus();
+    if (closeMapBtn instanceof HTMLElement) closeMapBtn.focus();
   }
   function closeMap() {
-    if (!mapModal) return;
+    if (!(mapModal instanceof HTMLElement)) return;
     mapModal.classList.remove('map-open');
     document.body.style.overflow = '';
-    if (openMapBtn) openMapBtn.focus();
+    if (openMapBtn instanceof HTMLElement) openMapBtn.focus();
   }
 
-  if (openMapBtn) openMapBtn.addEventListener('click', openMap);
-  if (closeMapBtn) closeMapBtn.addEventListener('click', closeMap);
+  if (openMapBtn instanceof HTMLElement) openMapBtn.addEventListener('click', openMap);
+  if (closeMapBtn instanceof HTMLElement) closeMapBtn.addEventListener('click', closeMap);
   if (mapModal) {
     mapModal.addEventListener('click', (e) => {
       if (e.target === mapModal) closeMap();
@@ -4927,9 +4926,9 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
   });
 
   // Build tooltip using safe DOM methods (no innerHTML)
-  function populateTooltip(zoneId: string) {
-    const d = ZONE_DATA[zoneId];
-    if (!d || !mapTooltip) return;
+  function populateTooltip(zoneId = '') {
+    const d = ZONE_DATA.get(zoneId);
+    if (!d || !(mapTooltip instanceof HTMLElement)) return;
     while (mapTooltip.firstChild) mapTooltip.removeChild(mapTooltip.firstChild);
 
     const header = document.createElement('div');
@@ -4961,11 +4960,15 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
     mapTooltip.classList.add('tt-visible');
   }
 
-  document.querySelectorAll<SVGGElement>('.map-zone').forEach((zone) => {
+  document.querySelectorAll('.map-zone').forEach((zone) => {
+    if (!(zone instanceof SVGGElement)) return;
     zone.addEventListener('mouseenter', () => populateTooltip(zone.dataset.zone || ''));
-    zone.addEventListener('mouseleave', () => mapTooltip?.classList.remove('tt-visible'));
-    zone.addEventListener('mousemove', (e: MouseEvent) => {
-      if (!mapWrap || !mapTooltip) return;
+    zone.addEventListener('mouseleave', () => {
+      if (mapTooltip instanceof HTMLElement) mapTooltip.classList.remove('tt-visible');
+    });
+    zone.addEventListener('mousemove', (e) => {
+      if (!(e instanceof MouseEvent)) return;
+      if (!(mapWrap instanceof HTMLElement) || !(mapTooltip instanceof HTMLElement)) return;
       const rect = mapWrap.getBoundingClientRect();
       let x = e.clientX - rect.left + 18;
       let y = e.clientY - rect.top + 18;
@@ -4977,7 +4980,7 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
       mapTooltip.style.top = y + 'px';
     });
     zone.addEventListener('click', () => {
-      if (mapTooltip) {
+      if (mapTooltip instanceof HTMLElement) {
         populateTooltip(zone.dataset.zone || '');
         mapTooltip.style.left = '12px';
         mapTooltip.style.top = '12px';
@@ -4986,18 +4989,21 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
     });
   });
 
-  document.querySelectorAll<HTMLButtonElement>('.legend-item').forEach((btn) => {
+  document.querySelectorAll('.legend-item').forEach((btn) => {
+    if (!(btn instanceof HTMLButtonElement)) return;
     const zoneId = btn.dataset.legendZone || '';
-    const zoneEl = document.querySelector<SVGGElement>(`.map-zone[data-zone="${zoneId}"]`);
-    const bgEl = zoneEl ? zoneEl.querySelector<SVGRectElement>('.zone-bg') : null;
+    const zoneEl = document.querySelector(`.map-zone[data-zone="${zoneId}"]`);
+    const zoneGroup = zoneEl instanceof SVGGElement ? zoneEl : null;
+    const bgEl = zoneGroup ? zoneGroup.querySelector('.zone-bg') : null;
+    const bgRect = bgEl instanceof SVGRectElement ? bgEl : null;
     btn.addEventListener('mouseenter', () => {
-      if (bgEl) bgEl.style.filter = 'brightness(0.87) saturate(1.3)';
+      if (bgRect) bgRect.style.filter = 'brightness(0.87) saturate(1.3)';
     });
     btn.addEventListener('mouseleave', () => {
-      if (bgEl) bgEl.style.filter = '';
+      if (bgRect) bgRect.style.filter = '';
     });
     btn.addEventListener('click', () => {
-      if (!mapTooltip) return;
+      if (!(mapTooltip instanceof HTMLElement)) return;
       populateTooltip(zoneId);
       mapTooltip.style.left = '12px';
       mapTooltip.style.top = '12px';
@@ -5007,19 +5013,21 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
 
   // ─── WiFi widget ───
   // Password show/hide toggle
-  const togglePassBtn = document.getElementById('togglePass') as HTMLButtonElement | null;
-  const passDots = document.querySelector('.pass-dots') as HTMLElement | null;
-  const passText = document.querySelector('.pass-text') as HTMLElement | null;
-  const eyeOpen = togglePassBtn?.querySelector('.eye-open') as HTMLElement | null;
-  const eyeClosed = togglePassBtn?.querySelector('.eye-closed') as HTMLElement | null;
+  const togglePassBtn = document.getElementById('togglePass');
+  const passDots = document.querySelector('.pass-dots');
+  const passText = document.querySelector('.pass-text');
+  const eyeOpen =
+    togglePassBtn instanceof HTMLElement ? togglePassBtn.querySelector('.eye-open') : null;
+  const eyeClosed =
+    togglePassBtn instanceof HTMLElement ? togglePassBtn.querySelector('.eye-closed') : null;
 
-  if (togglePassBtn) {
+  if (togglePassBtn instanceof HTMLElement) {
     togglePassBtn.addEventListener('click', () => {
-      const hidden = passDots?.style.display !== 'none';
-      if (passDots) passDots.style.display = hidden ? 'none' : '';
-      if (passText) passText.style.display = hidden ? '' : 'none';
-      if (eyeOpen) eyeOpen.style.display = hidden ? 'none' : '';
-      if (eyeClosed) eyeClosed.style.display = hidden ? '' : 'none';
+      const hidden = passDots instanceof HTMLElement ? passDots.style.display !== 'none' : true;
+      if (passDots instanceof HTMLElement) passDots.style.display = hidden ? 'none' : '';
+      if (passText instanceof HTMLElement) passText.style.display = hidden ? '' : 'none';
+      if (eyeOpen instanceof HTMLElement) eyeOpen.style.display = hidden ? 'none' : '';
+      if (eyeClosed instanceof HTMLElement) eyeClosed.style.display = hidden ? '' : 'none';
       togglePassBtn.setAttribute(
         'aria-label',
         hidden ? 'Ocultar contraseña' : 'Mostrar contraseña'
@@ -5030,18 +5038,21 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
   // Copy buttons
   // WiFi modal
   document.getElementById('openWifiModal')?.addEventListener('click', () => {
-    const m = document.getElementById('wifiModal') as HTMLElement;
-    if (m) m.hidden = false;
+    const m = document.getElementById('wifiModal');
+    if (m instanceof HTMLElement) m.hidden = false;
   });
   document.getElementById('wifiModalClose')?.addEventListener('click', () => {
-    const m = document.getElementById('wifiModal') as HTMLElement;
-    if (m) m.hidden = true;
+    const m = document.getElementById('wifiModal');
+    if (m instanceof HTMLElement) m.hidden = true;
   });
   document.getElementById('wifiModal')?.addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).hidden = true;
+    if (e.target === e.currentTarget && e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.hidden = true;
+    }
   });
 
-  document.querySelectorAll<HTMLButtonElement>('.wifi-copy-btn').forEach((btn) => {
+  document.querySelectorAll('.wifi-copy-btn').forEach((btn) => {
+    if (!(btn instanceof HTMLButtonElement)) return;
     btn.addEventListener('click', async () => {
       const text = btn.dataset.copy ?? '';
       try {
@@ -5063,19 +5074,20 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
 
   // Stat box wobble on hover
   document.querySelectorAll('.dash-stat-box').forEach((box) => {
-    box.addEventListener('mouseenter', function () {
-      (this as HTMLElement).style.animation = 'wobble-anim 0.6s ease';
+    box.addEventListener('mouseenter', () => {
+      if (box instanceof HTMLElement) box.style.animation = 'wobble-anim 0.6s ease';
     });
-    box.addEventListener('animationend', function () {
-      (this as HTMLElement).style.animation = '';
+    box.addEventListener('animationend', () => {
+      if (box instanceof HTMLElement) box.style.animation = '';
     });
   });
 
   // Quick action ripple
   document.querySelectorAll('.quick-action-btn').forEach((btn) => {
     btn.addEventListener('click', function (e) {
-      const me = e as MouseEvent;
-      const el = this as HTMLElement;
+      if (!(e instanceof MouseEvent)) return;
+      const el = e.currentTarget;
+      if (!(el instanceof HTMLElement)) return;
       const rect = el.getBoundingClientRect();
       const r = document.createElement('span');
       r.style.cssText =
@@ -5083,8 +5095,8 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
       const size = Math.max(rect.width, rect.height);
       r.style.width = size + 'px';
       r.style.height = size + 'px';
-      r.style.left = me.clientX - rect.left - size / 2 + 'px';
-      r.style.top = me.clientY - rect.top - size / 2 + 'px';
+      r.style.left = e.clientX - rect.left - size / 2 + 'px';
+      r.style.top = e.clientY - rect.top - size / 2 + 'px';
       el.style.position = 'relative';
       el.style.overflow = 'hidden';
       el.appendChild(r);
@@ -5093,18 +5105,6 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
   });
 
   // ─── Profile summary modal ───
-  interface PilgrimProfile {
-    name?: string;
-    email?: string;
-    phone?: string;
-    country?: string;
-    bio?: string;
-    avatar?: string | null;
-    emergency?: { name?: string; relation?: string; phone?: string; email?: string };
-    camino?: { route?: string; stages?: string[] };
-    manualBadges?: string[];
-  }
-
   const BADGE_DEFS = [
     { id: 'first_step', emoji: '👣', label: 'Primer Paso' },
     { id: 'five_stages', emoji: '🥇', label: '5 Etapas' },
@@ -5114,53 +5114,52 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
     { id: 'via_plata', emoji: '🏛️', label: 'Via de la Plata' },
   ];
 
-  const ROUTE_NAMES: Record<string, string> = {
-    vdlp: 'Via de la Plata',
-    camino_frances: 'Camino Francés',
-    camino_norte: 'Camino del Norte',
-    via_de_la_plata: 'Via de la Plata',
-  };
+  const ROUTE_NAMES = new Map([
+    ['vdlp', 'Via de la Plata'],
+    ['camino_frances', 'Camino Francés'],
+    ['camino_norte', 'Camino del Norte'],
+    ['via_de_la_plata', 'Via de la Plata'],
+  ]);
 
-  const COUNTRY_NAMES: Record<string, string> = {
-    ES: '🇪🇸 España',
-    DE: '🇩🇪 Alemania',
-    FR: '🇫🇷 Francia',
-    IT: '🇮🇹 Italia',
-    PT: '🇵🇹 Portugal',
-    GB: '🇬🇧 Reino Unido',
-    US: '🇺🇸 Estados Unidos',
-    NL: '🇳🇱 Países Bajos',
-  };
+  const COUNTRY_NAMES = new Map([
+    ['ES', '🇪🇸 España'],
+    ['DE', '🇩🇪 Alemania'],
+    ['FR', '🇫🇷 Francia'],
+    ['IT', '🇮🇹 Italia'],
+    ['PT', '🇵🇹 Portugal'],
+    ['GB', '🇬🇧 Reino Unido'],
+    ['US', '🇺🇸 Estados Unidos'],
+    ['NL', '🇳🇱 Países Bajos'],
+  ]);
 
-  const pmodalOverlay = document.getElementById('profileModal') as HTMLElement | null;
-  const openPModalBtn = document.getElementById('openProfileModalBtn') as HTMLButtonElement | null;
-  const closePModalBtn = document.getElementById(
-    'closeProfileModalBtn'
-  ) as HTMLButtonElement | null;
+  const pmodalOverlay = document.getElementById('profileModal');
+  const openPModalBtn = document.getElementById('openProfileModalBtn');
+  const closePModalBtn = document.getElementById('closeProfileModalBtn');
 
   function openProfileModal() {
-    if (!pmodalOverlay) return;
+    if (!(pmodalOverlay instanceof HTMLElement)) return;
     loadProfileIntoModal();
     pmodalOverlay.classList.add('pmodal-open');
     document.body.style.overflow = 'hidden';
-    if (closePModalBtn) closePModalBtn.focus();
+    if (closePModalBtn instanceof HTMLElement) closePModalBtn.focus();
   }
 
   function closeProfileModal() {
-    if (!pmodalOverlay) return;
+    if (!(pmodalOverlay instanceof HTMLElement)) return;
     pmodalOverlay.classList.remove('pmodal-open');
     document.body.style.overflow = '';
-    if (openPModalBtn) openPModalBtn.focus();
+    if (openPModalBtn instanceof HTMLElement) openPModalBtn.focus();
   }
 
   function loadProfileIntoModal() {
-    let profile: PilgrimProfile = {};
+    let profile;
     try {
       const raw = localStorage.getItem('pilgrim_profile');
-      if (raw) profile = JSON.parse(raw) as PilgrimProfile;
+      if (raw) profile = JSON.parse(raw);
     } catch {
       /* ignore */
     }
+    if (!profile || typeof profile !== 'object') profile = {};
 
     // ── Avatar ──
     const pmodalAvatarEl = document.getElementById('pmodalAvatar');
@@ -5172,7 +5171,7 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
         img.alt = 'Foto de perfil';
         pmodalAvatarEl.appendChild(img);
       } else {
-        const initials = (profile.name || 'P')
+        const initials = String(profile.name || 'P')
           .trim()
           .split(' ')
           .map((w) => w[0])
@@ -5220,8 +5219,10 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
     // ── Country ──
     const countryEl = document.getElementById('pmodalCountry');
     if (countryEl) {
-      if (profile.country && COUNTRY_NAMES[profile.country]) {
-        countryEl.textContent = COUNTRY_NAMES[profile.country];
+      const countryKey = String(profile.country || '');
+      const label = COUNTRY_NAMES.get(countryKey);
+      if (label) {
+        countryEl.textContent = label;
         countryEl.style.display = '';
       } else {
         countryEl.style.display = 'none';
@@ -5238,7 +5239,7 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
         img.alt = '';
         dashAvEl.appendChild(img);
       } else {
-        const initials = (profile.name || 'P')
+        const initials = String(profile.name || 'P')
           .trim()
           .split(' ')
           .map((w) => w[0])
@@ -5257,7 +5258,7 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
     const chipsEl = document.getElementById('pmodalChips');
     if (chipsEl) {
       while (chipsEl.firstChild) chipsEl.removeChild(chipsEl.firstChild);
-      const chips: { icon: string; label: string }[] = [];
+      const chips = [];
       if (profile.phone) chips.push({ icon: '📞', label: profile.phone });
       if (chips.length > 0) {
         for (const c of chips) {
@@ -5278,8 +5279,8 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
     }
 
     // ── Bio ──
-    const bioEl = document.getElementById('pmodalBio') as HTMLParagraphElement | null;
-    if (bioEl) {
+    const bioEl = document.getElementById('pmodalBio');
+    if (bioEl instanceof HTMLParagraphElement) {
       if (profile.bio && profile.bio.trim()) {
         bioEl.textContent = profile.bio.trim();
         bioEl.style.display = '';
@@ -5290,14 +5291,14 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
 
     // ── Camino progress ──
     const stages = profile.camino?.stages ?? [];
-    const routeKey = profile.camino?.route || 'vdlp';
+    const routeKey = String(profile.camino?.route || 'vdlp');
     const TOTAL_STAGES = 39; // Via de la Plata stages
     const pct = Math.min(100, Math.round((stages.length / TOTAL_STAGES) * 100));
     const statsEl = document.getElementById('pmodalCaminoStats');
     if (statsEl)
       statsEl.textContent = stages.length + ' etapas · ' + stages.length * 22 + ' km aprox.';
     const routeEl = document.getElementById('pmodalCaminoRoute');
-    if (routeEl) routeEl.textContent = ROUTE_NAMES[routeKey] || routeKey;
+    if (routeEl) routeEl.textContent = ROUTE_NAMES.get(routeKey) || routeKey;
     const fillEl2 = document.getElementById('pmodalProgressFill');
     if (fillEl2)
       setTimeout(() => {
@@ -5305,7 +5306,7 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
       }, 120);
 
     // ── Badges ──
-    const earnedBadgeIds = new Set<string>([...(profile.manualBadges ?? [])]);
+    const earnedBadgeIds = new Set([...(profile.manualBadges ?? [])]);
     if (stages.length >= 1) earnedBadgeIds.add('first_step');
     if (stages.length >= 5) earnedBadgeIds.add('five_stages');
     if (stages.length >= 10) earnedBadgeIds.add('ten_stages');
@@ -5374,13 +5375,14 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
 
   // Load profile data into dashboard card on page load
   (function initDashboardProfile() {
-    let profile: PilgrimProfile = {};
+    let profile;
     try {
       const raw = localStorage.getItem('pilgrim_profile');
-      if (raw) profile = JSON.parse(raw) as PilgrimProfile;
+      if (raw) profile = JSON.parse(raw);
     } catch {
       /* ignore */
     }
+    if (!profile || typeof profile !== 'object') profile = {};
     if (!profile.name && !profile.email && !profile.avatar) return;
 
     const nameEl = document.getElementById('dashProfileName');
@@ -5400,10 +5402,10 @@ const totalSpent = bookings.reduce((s, b) => s + b.total, 0);
         avEl.appendChild(img);
       } else if (profile.name) {
         while (avEl.firstChild) avEl.removeChild(avEl.firstChild);
-        const initials = profile.name
+        const initials = String(profile.name)
           .trim()
           .split(' ')
-          .map((w: string) => w[0])
+          .map((w) => w[0])
           .slice(0, 2)
           .join('')
           .toUpperCase();

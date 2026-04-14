@@ -7,6 +7,17 @@ import MapLibre from '../components/MapLibre.astro';
 import Map3DTown from '../components/info/Map3DTown.astro';
 import Map3DAlbergue from '../components/info/Map3DAlbergue.astro';
 import FacilitiesPopover from '../components/info/FacilitiesPopover.astro';
+import Hostel3DBackground from '../components/info/Hostel3DBackground.astro';
+import ScrollHijack from '../components/info/ScrollHijack.astro';
+import SceneHero from '../components/info/scenes/SceneHero.astro';
+import SceneTownMap from '../components/info/scenes/SceneTownMap.astro';
+import SceneGallery from '../components/info/scenes/SceneGallery.astro';
+import SceneFacilities from '../components/info/scenes/SceneFacilities.astro';
+import SceneFloorPlan from '../components/info/scenes/SceneFloorPlan.astro';
+import ScenePractical from '../components/info/scenes/ScenePractical.astro';
+import SceneFAQ from '../components/info/scenes/SceneFAQ.astro';
+import SceneReviews from '../components/info/scenes/SceneReviews.astro';
+import SceneCTA from '../components/info/scenes/SceneCTA.astro';
 import {
   getD1,
   db,
@@ -358,10 +369,95 @@ const accordion = [
     a: 'Saco de dormir ligero, documentacion (DNI/Pasaporte), credencial de peregrino, ropa de recambio, zapatillas de estar por casa, candado para taquilla, botiquin basico (ampollas, tiritas), esterilla de yoga opcional.',
   },
 ];
+
+const INFO_SECTIONS = [
+  { title: 'El Albergue' },
+  { title: 'El Pueblo' },
+  { title: 'Galería' },
+  { title: 'Instalaciones' },
+  { title: 'Plano' },
+  { title: 'Práctico' },
+  { title: 'FAQ' },
+  { title: 'Reseñas' },
+  { title: 'Reserva' },
+];
+
+const photoUrls = PHOTOS.map((p) => ({
+  ...p,
+  url: `https://cf.bstatic.com/xdata/images/hotel/max1024x768/${p.id}/${p.hash}.jpg?k=${p.hash}&o=`,
+}));
+
+const heroStats = [
+  { label: 'camas', value: String(hostelData.totalBeds ?? DEFAULT_CONFIG.totalBeds) },
+  { label: 'Booking ★', value: String(reviewData.overall ?? DEFAULT_REVIEW_SCORES.overall) },
+  { label: 'máx noches', value: String(hostelData.maxNights ?? DEFAULT_CONFIG.maxNights) },
+  { label: 'desde', value: '15€' },
+];
+
+const scenePayload = {
+  hostelData,
+  rules,
+  attractions,
+  reviewData,
+  servicePriceCents,
+  photos: photoUrls,
+  faq: accordion,
+  facilities,
+};
+
+const sceneJson = JSON.stringify(scenePayload, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)).replace(
+  /</g,
+  '\\u003c'
+);
 ---
 
+<Layout
+  title="Información — Albergue Municipal de El Carrascalejo"
+  description="Experiencia 3D por secciones: ubicación, galería, instalaciones, plano, FAQ, reseñas y reserva."
+  showHeader={false}
+  showFooter={false}
+>
+  <ScrollHijack sections={INFO_SECTIONS} initial={1}>
+    <div class="ip-section" data-section="1">
+      <SceneHero title="El Albergue" subtitle={hostelData.tagline} stats={heroStats} />
+    </div>
+    <div class="ip-section" data-section="2">
+      <SceneTownMap />
+    </div>
+    <div class="ip-section" data-section="3">
+      <SceneGallery />
+    </div>
+    <div class="ip-section" data-section="4">
+      <SceneFacilities />
+    </div>
+    <div class="ip-section" data-section="5">
+      <SceneFloorPlan />
+    </div>
+    <div class="ip-section" data-section="6">
+      <ScenePractical />
+    </div>
+    <div class="ip-section" data-section="7">
+      <SceneFAQ />
+    </div>
+    <div class="ip-section" data-section="8">
+      <SceneReviews />
+    </div>
+    <div class="ip-section" data-section="9">
+      <SceneCTA />
+    </div>
+  </ScrollHijack>
 
+  <script type="application/json" id="info-scene-data" set:html={sceneJson}></script>
+</Layout>
+
+{false && (
 <Layout title="Informacion — Albergue Municipal de El Carrascalejo">
+
+  <!-- ══════════════════════════════════════════════════════════
+       HOSTEL 3D BACKGROUND — fixed parallax canvas (z=0)
+       Scroll drives camera through 8 cinematic keyframes.
+       ══════════════════════════════════════════════════════════ -->
+  <Hostel3DBackground />
 
   <!-- Shared SVG filter (sketchy style) -->
   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
@@ -374,10 +470,9 @@ const accordion = [
   </svg>
 
   <!-- ══════════════════════════════════════════════════════════
-       HERO — parallax 3D background canvas + title overlay
+       HERO — glass overlay on top of 3D background
        ══════════════════════════════════════════════════════════ -->
   <section class="ip-hero ps-section" data-ps="hero">
-    <canvas id="hero-particles" class="ip-hero-canvas" aria-hidden="true"></canvas>
     <div class="ip-hero-content ps-reveal">
       <div class="ip-hero-badge">🐚 Vía de la Plata · Km 482</div>
       <h1 class="ip-hero-title">El Albergue</h1>
@@ -719,6 +814,16 @@ const accordion = [
     </div>
   </section>
 
+  <style is:global>
+    /*
+     * /info page global overrides — make body transparent so the fixed
+     * Hostel3DBackground canvas (z=0) is visible behind all sections.
+     */
+    body:has(#hostel-bg-canvas) {
+      background: transparent !important;
+    }
+  </style>
+
   <style>
     /* ── Variables ── */
     :root {
@@ -749,26 +854,28 @@ const accordion = [
       transform: translateY(0);
     }
 
-    /* ── HERO ── */
+    /* ── HERO — glass card over 3D background ── */
     .ip-hero {
       position: relative;
-      min-height: 70vh;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background: linear-gradient(160deg, #0f2010 0%, #1a3a1a 50%, #0d1f0d 100%);
-    }
-    .ip-hero-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
+      /* No background — the fixed Hostel3DBackground canvas is visible */
+      background: transparent;
+      z-index: 1;
     }
     .ip-hero-content {
       position: relative;
       z-index: 2;
+      /* Glass overlay so text is readable above the 3D canvas */
+      background: rgba(5, 20, 10, 0.55);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 2.5rem 3rem;
       text-align: center;
       color: #fff;
       padding: 2rem 1.5rem;
@@ -819,18 +926,30 @@ const accordion = [
     .ip-hero-stat span { font-size: 1.4rem; font-weight: 700; color: #fff; }
     .ip-hero-stat small { font-size: 0.7rem; color: rgba(255,255,255,0.65); }
 
-    /* ── Sections ── */
+    /* ── Sections — glass panels over the fixed 3D background ── */
     .ip-section {
-      padding: 4rem 1.5rem;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
+      position: relative;
+      z-index: 1;
+      padding: 5rem 1.5rem;
+      /* Frosted glass — 3D scene visible through blur */
+      background: rgba(245, 248, 244, 0.72);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      border-top: 1px solid rgba(255,255,255,0.1);
     }
     .ip-section--dark {
-      background: #0f2010;
+      background: rgba(6, 16, 6, 0.68);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       color: #fff;
-      border-bottom-color: rgba(255,255,255,0.06);
+      border-bottom-color: rgba(255,255,255,0.07);
+      border-top-color: rgba(255,255,255,0.05);
     }
     .ip-section--tinted {
-      background: var(--ip-green-light);
+      background: rgba(218, 240, 216, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
     .ip-section-inner {
       max-width: 1080px;
@@ -1447,3 +1566,4 @@ const accordion = [
     })();
   </script>
 </Layout>
+)}

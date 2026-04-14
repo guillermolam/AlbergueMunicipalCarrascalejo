@@ -1,9 +1,18 @@
 ---
-// Map3DAlbergue.astro — ThreeJS 3D bird's-eye floor plan of the albergue
-// Rooms: Reception, Dorm 1 (12 beds), Dorm 2 (12 beds), Kitchen, Bathroom×2, Patio
+export interface Props {
+  autoActive?: boolean;
+  enableWalker?: boolean;
+}
+
+const { autoActive = true, enableWalker = false } = Astro.props;
 ---
 
-<div class="map3d-albergue-wrap" data-active="false">
+<div
+  class="map3d-albergue-wrap"
+  data-active="false"
+  data-auto-active={autoActive ? 'true' : 'false'}
+  data-enable-walker={enableWalker ? 'true' : 'false'}
+>
   <canvas id="map3d-albergue" aria-label="Plano 3D del Albergue Municipal"></canvas>
   <div class="albergue-room-label" id="albergue-room-label" aria-live="polite">
     <strong id="albergue-room-name"></strong>
@@ -12,20 +21,25 @@
   <div class="albergue-hint" aria-hidden="true">↕ Pasa el ratón sobre las habitaciones</div>
 </div>
 
-<script type="module">
+<script>
 import * as THREE from 'three';
 import { attachSectionActive } from '../../lib/three/sectionActive';
 
 const canvas = document.getElementById('map3d-albergue');
-if (!canvas) throw new Error('map3d-albergue canvas missing');
+if (!(canvas instanceof HTMLCanvasElement)) throw new Error('map3d-albergue canvas missing');
+const canvasEl: HTMLCanvasElement = canvas;
 
-const root = canvas.closest('.map3d-albergue-wrap');
-if (!root) throw new Error('map3d-albergue root missing');
+const root = canvasEl.closest('.map3d-albergue-wrap');
+if (!(root instanceof HTMLElement)) throw new Error('map3d-albergue root missing');
 
-const wrap = canvas.parentElement;
+const wrap = canvasEl.parentElement;
+if (!(wrap instanceof HTMLElement)) throw new Error('map3d-albergue wrapper missing');
 let W = wrap.clientWidth, H = wrap.clientHeight;
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+const autoActive = root.getAttribute('data-auto-active') !== 'false';
+const enableWalker = root.getAttribute('data-enable-walker') === 'true';
+
+const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(W, H);
 renderer.shadowMap.enabled = true;
@@ -130,7 +144,7 @@ const ROOMS = [
 ];
 
 const wallThick = 0.12;
-const roomMeshes = [];
+const roomMeshes: THREE.Object3D[] = [];
 
 for (const room of ROOMS) {
   const group = new THREE.Group();
@@ -174,7 +188,7 @@ for (const room of ROOMS) {
     const wallColor = new THREE.Color(room.color).lerp(new THREE.Color(0xffffff), 0.55);
     const wMat = new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.7 });
 
-    const makeWall = (wx, wh, wd, px, py, pz) => {
+    const makeWall = (wx: number, wh: number, wd: number, px: number, py: number, pz: number) => {
       const g = new THREE.BoxGeometry(wx, wh, wd);
       const m = new THREE.Mesh(g, wMat);
       m.position.set(px, py, pz);
@@ -236,6 +250,36 @@ for (const room of ROOMS) {
   roomMeshes.push(hitMesh);
 }
 
+let walker: THREE.Group | null = null;
+let walkerCurve: THREE.CatmullRomCurve3 | null = null;
+if (enableWalker) {
+  const pts = [
+    { x: -6, z: -4.5 },
+    { x: -1.5, z: -5 },
+    { x: 4.5, z: -4.5 },
+    { x: -1.5, z: 4.5 },
+    { x: 4.5, z: -1 },
+    { x: -6, z: -0.5 },
+    { x: -6, z: -4.5 },
+  ].map((p) => new THREE.Vector3(p.x, 0.2, p.z));
+  walkerCurve = new THREE.CatmullRomCurve3(pts);
+  walker = new THREE.Group();
+  const hasCapsule = typeof THREE.CapsuleGeometry === 'function';
+  const body = new THREE.Mesh(
+    hasCapsule ? new THREE.CapsuleGeometry(0.14, 0.28, 6, 10) : new THREE.CylinderGeometry(0.14, 0.14, 0.46, 10),
+    new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 })
+  );
+  body.position.y = 0.35;
+  walker.add(body);
+  const pack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.22, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0x00ab39, roughness: 0.7 })
+  );
+  pack.position.set(0, 0.48, -0.18);
+  walker.add(pack);
+  scene.add(walker);
+}
+
 const labelEl = document.getElementById('albergue-room-label');
 const nameEl = document.getElementById('albergue-room-name');
 const descEl = document.getElementById('albergue-room-desc');
@@ -278,18 +322,29 @@ window.addEventListener('touchmove', (e) => {
   if (reducedMotion) renderFrame();
 }, { passive: true });
 
-let highlighted = null;
+let highlighted: THREE.Object3D | null = null;
+let frame = 0;
 
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 let running = false;
 let raf = 0;
 
 function renderFrame() {
+  frame++;
   if (!isDragging) autoTheta += 0.004;
   camera.position.x = RADIUS * Math.sin(autoTheta);
   camera.position.z = RADIUS * Math.cos(autoTheta);
   camera.position.y = 22;
   camera.lookAt(0, 0, 0);
+
+  if (walker && walkerCurve) {
+    const t = ((frame * 0.0012) % 1 + 1) % 1;
+    const pt = walkerCurve.getPointAt(t);
+    const next = walkerCurve.getPointAt((t + 0.02) % 1);
+    walker.position.copy(pt);
+    walker.lookAt(next.x, pt.y + 0.2, next.z);
+    walker.rotateY(Math.PI);
+  }
 
   raycaster.setFromCamera(mouse, camera);
   const hits = raycaster.intersectObjects(roomMeshes, false);
@@ -302,13 +357,13 @@ function renderFrame() {
       if (descEl) descEl.textContent = hit.userData.desc;
       if (labelEl) labelEl.classList.add('visible');
     }
-    canvas.style.cursor = 'pointer';
+    canvasEl.style.cursor = 'pointer';
   } else {
     if (highlighted) {
       highlighted = null;
       if (labelEl) labelEl.classList.remove('visible');
     }
-    canvas.style.cursor = 'grab';
+    canvasEl.style.cursor = 'grab';
   }
 
   renderer.render(scene, camera);
@@ -334,10 +389,12 @@ function stop() {
   running = false;
   if (raf) cancelAnimationFrame(raf);
   raf = 0;
+  renderer.dispose();
 }
 
-attachSectionActive(root, {
-  auto: true,
+const activeRoot = (root.closest('.ip-section') as HTMLElement | null) ?? root;
+attachSectionActive(activeRoot, {
+  auto: autoActive,
   onChange(active) {
     if (active) start();
     else stop();

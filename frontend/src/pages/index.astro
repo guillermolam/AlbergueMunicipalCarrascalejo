@@ -804,19 +804,19 @@ const features = [
       // Feature list — spec: item hover x:3, icon hover scale:1.15 rotate:360
       // =========================================================================
       document.querySelectorAll('.hero-section li').forEach(item => {
-        const icon = item.querySelector('svg');
+        const icon = item.querySelector('svg') as SVGSVGElement | null;
         item.addEventListener('mouseenter', () => {
           (item as HTMLElement).style.transform = 'translateX(3px)';
           (item as HTMLElement).style.transition = 'transform 200ms ease';
           if (icon) {
-            (icon as HTMLElement).style.transform = 'scale(1.15) rotate(360deg)';
-            (icon as HTMLElement).style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            icon.style.transform = 'scale(1.15) rotate(360deg)';
+            icon.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
           }
         });
         item.addEventListener('mouseleave', () => {
           (item as HTMLElement).style.transform = '';
           if (icon) {
-            (icon as HTMLElement).style.transform = '';
+            icon.style.transform = '';
           }
         });
       });

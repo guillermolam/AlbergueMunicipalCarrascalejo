@@ -54,8 +54,8 @@ body {
 }
 
 html {
-  -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   font-size: 16px;
 }
@@ -536,7 +536,12 @@ p {
    ========================================================================== */
 .scrollbar-hide {
   -ms-overflow-style: none;
-  scrollbar-width: none;
+}
+
+@supports (scrollbar-width: none) {
+  .scrollbar-hide {
+    scrollbar-width: none;
+  }
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

@@ -187,7 +187,7 @@ export const microfrontendChunkStrategy = {
 
 // Performance monitoring utilities
 export class BundlePerformanceMonitor {
-  private metrics: Map<string, number> = new Map();
+  private readonly metrics: Map<string, number> = new Map();
 
   recordChunkSize(name: string, size: number) {
     this.metrics.set(`chunk-${name}`, size);
