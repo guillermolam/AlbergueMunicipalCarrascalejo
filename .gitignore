@@ -200,3 +200,10 @@ frontend/.audit/
 docs/maps/*.svg
 docs/maps/*.png
 docs/maps/albuergue_2d_map_handdrawn
+
+# === INFRA MODULES (WIP) ===
+infra/modules/cloudflare-pages/
+infra/modules/github-repo/
+infra/modules/oci-compute/outputs.tf
+infra/modules/oci-compute/storage.tf
+infra/modules/turso-database/
