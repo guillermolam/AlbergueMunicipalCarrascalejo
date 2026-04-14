@@ -32,6 +32,10 @@ terraform {
       source  = "celest-dev/turso"
       version = "~> 0.2.3"
     }
+    spacelift = {
+      source  = "spacelift-io/spacelift"
+      version = "~> 1.0"
+    }
     # rediscloud - requires paid plan for API access
     # rediscloud = {
     #   source  = "RedisLabs/rediscloud"

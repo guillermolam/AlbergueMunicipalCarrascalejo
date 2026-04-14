@@ -18,15 +18,6 @@
 #   3. Apply once — Spacelift manages itself from then on.
 # =============================================================================
 
-terraform {
-  required_providers {
-    spacelift = {
-      source  = "spacelift-io/spacelift"
-      version = "~> 1.0"
-    }
-  }
-}
-
 # ── Shared context (env vars available to all stacks) ─────────────────────────
 
 resource "spacelift_context" "shared" {
@@ -272,12 +263,6 @@ resource "spacelift_context_attachment" "compute_ci" {
 # Expiry  : 1 year from creation (April 2027 — set in Spacelift)
 
 # ── Input variables ────────────────────────────────────────────────────────────
-
-variable "github_token" {
-  type        = string
-  sensitive   = true
-  description = "GitHub token — injected into all stacks for after_apply dispatch hooks"
-}
 
 variable "ci_deploy_public_key" {
   type        = string

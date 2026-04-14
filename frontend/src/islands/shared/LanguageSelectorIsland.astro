@@ -1,7 +1,9 @@
 ---
 type Locale = string;
 const i18nStore = {
-  get: () => ({ locale: typeof window !== 'undefined' ? document.documentElement.lang || 'es' : 'es' })
+  get: () => ({
+    locale: typeof window !== 'undefined' ? document.documentElement.lang || 'es' : 'es',
+  }),
 };
 
 interface LanguageSelectorIslandProps {
