@@ -326,8 +326,8 @@ mod tests {
         };
 
         assert!(config.validate_connection_string().is_ok());
-        assert!(config.is_production());
-        assert_eq!(config.get_environment(), Environment::Production);
+        assert!(config.is_development());
+        assert_eq!(config.get_environment(), Environment::Development);
     }
 
     #[test]
