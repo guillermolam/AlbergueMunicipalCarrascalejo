@@ -1,4 +1,4 @@
-name: Terraform
+name: Terraform (Spacelift)
 
 on:
   push:
@@ -29,13 +29,12 @@ permissions:
   security-events: write
 
 env:
-  TF_CLOUD_ORGANIZATION: albergue-elcarrascalejo
-  TF_WORKSPACE: AlbergueMunicipalCarrascalejo
+  SPACELIFT_API_ENDPOINT: https://albergue-elcarrascalejo.app.spacelift.io
   TF_IN_AUTOMATION: true
 
 jobs:
   # ===========================================================================
-  # Job 1: Format & Lint
+  # Job 1: Format & Lint (no Spacelift auth needed)
   # ===========================================================================
   lint:
     name: Format & Lint
@@ -46,18 +45,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+        uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Format Check
         id: fmt
         run: terraform fmt -check -recursive -diff
 
-      - name: Terraform Init
+      - name: Terraform Init (no backend)
         run: terraform init -backend=false
 
       - name: Terraform Validate
@@ -74,7 +71,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Checkov Scan
         uses: bridgecrewio/checkov-action@v12
@@ -111,102 +108,81 @@ jobs:
           category: kics
 
   # ===========================================================================
-  # Job 3: Terraform Plan
+  # Job 3: Spacelift PR Preview (plan via Spacelift)
   # ===========================================================================
-  plan:
-    name: Plan
+  spacelift-preview:
+    name: Spacelift Plan (PR)
     runs-on: ubuntu-latest
     needs: lint
     if: github.event_name == 'pull_request'
-    defaults:
-      run:
-        working-directory: infra
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-      - name: Terraform Init
-        id: init
-        run: terraform init
-
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -no-color -input=false -out=tfplan
-        continue-on-error: true
-
-      - name: Comment PR with Plan
-        uses: actions/github-script@v7
+      - name: Authenticate to Spacelift
+        id: auth
+        run: |
+          JWT=$(python3 -c "
+          import urllib.request, json, os
+          endpoint = os.environ['SPACELIFT_API_ENDPOINT']
+          key_id   = os.environ['SPACELIFT_API_KEY_ID']
+          key_sec  = os.environ['SPACELIFT_API_KEY_SECRET']
+          query = '''
+          mutation Login(\$id: ID!, \$secret: String!) {
+            apiKeyUser(id: \$id, secret: \$secret) { jwt }
+          }'''
+          body = json.dumps({'query': query, 'variables': {'id': key_id, 'secret': key_sec}}).encode()
+          req  = urllib.request.Request(f'{endpoint}/graphql', data=body, headers={'Content-Type':'application/json'})
+          resp = json.loads(urllib.request.urlopen(req).read())
+          print(resp['data']['apiKeyUser']['jwt'], end='')
+          ")
+          echo "::add-mask::$JWT"
+          echo "jwt=$JWT" >> "$GITHUB_OUTPUT"
         env:
-          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
-          PLAN_OUTCOME: ${{ steps.plan.outcome }}
-          INIT_OUTCOME: ${{ steps.init.outcome }}
+          SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
+          SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
+
+      - name: Trigger Spacelift proposed run
+        id: trigger
+        run: |
+          RUN_ID=$(python3 -c "
+          import urllib.request, json, os
+          jwt      = os.environ['SPACELIFT_JWT']
+          endpoint = os.environ['SPACELIFT_API_ENDPOINT']
+          stack_id = 'compute'
+          query = '''
+          mutation Trigger(\$stack: ID!) {
+            runTrigger(stack: \$stack) { id state }
+          }'''
+          body = json.dumps({'query': query, 'variables': {'stack': stack_id}}).encode()
+          req  = urllib.request.Request(f'{endpoint}/graphql', data=body,
+                   headers={'Content-Type':'application/json', 'Authorization': f'Bearer {jwt}'})
+          resp = json.loads(urllib.request.urlopen(req).read())
+          print(resp['data']['runTrigger']['id'], end='')
+          ")
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+        env:
+          SPACELIFT_JWT: ${{ steps.auth.outputs.jwt }}
+
+      - name: Comment PR with Spacelift run link
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const output = `### Terraform Plan Results
-
-            | Step | Status |
-            |------|--------|
-            | Init | \`${process.env.INIT_OUTCOME}\` |
-            | Plan | \`${process.env.PLAN_OUTCOME}\` |
-
-            <details><summary>Show Plan Output</summary>
-
-            \`\`\`terraform
-            ${process.env.PLAN_OUTPUT}
-            \`\`\`
-
-            </details>`;
-
+            const runId   = '${{ steps.trigger.outputs.run_id }}';
+            const endpoint = '${{ env.SPACELIFT_API_ENDPOINT }}';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: output
-            })
-
-      - name: Fail on Plan Error
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
+              body: `### Spacelift Plan Triggered\n\n` +
+                    `Run \`${runId}\` started.\n` +
+                    `[View plan on Spacelift](${endpoint}/stack/compute/run/${runId})`
+            });
 
   # ===========================================================================
-  # Job 4: Terraform Apply (main branch only)
-  # ===========================================================================
-  apply:
-    name: Apply
-    runs-on: ubuntu-latest
-    needs: [lint]
-    if: >-
-      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
-    environment: Production
-    defaults:
-      run:
-        working-directory: infra
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false
-
-  # ===========================================================================
-  # Job 5: Drift Detection (scheduled + manual)
+  # Job 4: Drift Detection status (scheduled + manual)
   # ===========================================================================
   drift-detect:
     name: Drift Detection
@@ -214,81 +190,88 @@ jobs:
     if: >-
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'drift-detect')
-    defaults:
-      run:
-        working-directory: infra
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - name: Authenticate to Spacelift
+        id: auth
+        run: |
+          JWT=$(python3 -c "
+          import urllib.request, json, os
+          endpoint = os.environ['SPACELIFT_API_ENDPOINT']
+          key_id   = os.environ['SPACELIFT_API_KEY_ID']
+          key_sec  = os.environ['SPACELIFT_API_KEY_SECRET']
+          query = '''
+          mutation Login(\$id: ID!, \$secret: String!) {
+            apiKeyUser(id: \$id, secret: \$secret) { jwt }
+          }'''
+          body = json.dumps({'query': query, 'variables': {'id': key_id, 'secret': key_sec}}).encode()
+          req  = urllib.request.Request(f'{endpoint}/graphql', data=body, headers={'Content-Type':'application/json'})
+          resp = json.loads(urllib.request.urlopen(req).read())
+          print(resp['data']['apiKeyUser']['jwt'], end='')
+          ")
+          echo "::add-mask::$JWT"
+          echo "jwt=$JWT" >> "$GITHUB_OUTPUT"
+        env:
+          SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
+          SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
 
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Detect Drift
+      - name: Query drift status from Spacelift
         id: drift
         run: |
-          terraform plan -no-color -input=false -detailed-exitcode -out=drift.tfplan 2>&1 | tee plan_output.txt
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 2 ]; then
-            echo "drift_detected=true" >> "$GITHUB_OUTPUT"
-            echo "Drift detected!"
-          elif [ $EXIT_CODE -eq 0 ]; then
-            echo "drift_detected=false" >> "$GITHUB_OUTPUT"
-            echo "No drift detected."
-          else
-            echo "drift_detected=error" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-        continue-on-error: true
+          python3 -c "
+          import urllib.request, json, os, sys
+          jwt      = os.environ['SPACELIFT_JWT']
+          endpoint = os.environ['SPACELIFT_API_ENDPOINT']
+          query = '''
+          query DriftStatus {
+            stack(id: \"compute\") {
+              driftDetection { reconciliationNeeded lastRun { state finishedAt } }
+            }
+          }'''
+          body = json.dumps({'query': query}).encode()
+          req  = urllib.request.Request(f'{endpoint}/graphql', data=body,
+                   headers={'Content-Type':'application/json', 'Authorization': f'Bearer {jwt}'})
+          resp = json.loads(urllib.request.urlopen(req).read())
+          dd   = resp['data']['stack']['driftDetection']
+          needed = dd.get('reconciliationNeeded', False) if dd else False
+          print(f'drift_detected={str(needed).lower()}')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'drift_detected={str(needed).lower()}\n')
+          "
+        env:
+          SPACELIFT_JWT: ${{ steps.auth.outputs.jwt }}
 
-      - name: Create Drift Issue
+      - name: Create or update drift issue
         if: steps.drift.outputs.drift_detected == 'true'
         uses: actions/github-script@v7
-        env:
-          DRIFT_OUTPUT: ${{ steps.drift.outputs.stdout }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const existingIssues = await github.rest.issues.listForRepo({
+            const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
               labels: 'infrastructure-drift'
             });
-
-            const driftIssue = existingIssues.data.find(i => i.title.includes('Infrastructure Drift Detected'));
-
-            const body = `Terraform detected configuration drift at ${new Date().toISOString()}.
-
-            <details><summary>Drift Details</summary>
-
-            \`\`\`
-            ${process.env.DRIFT_OUTPUT || 'See workflow run for details'}
-            \`\`\`
-
-            </details>
-
-            **Action required**: Review and run \`terraform apply\` or update configuration.`;
-
+            const driftIssue = existing.data.find(i => i.title.includes('Infrastructure Drift Detected'));
+            const body = `Spacelift drift detection reports reconciliation needed at ${new Date().toISOString()}.\n\n` +
+                         `**Action required**: Review the [Spacelift compute stack](${{ env.SPACELIFT_API_ENDPOINT }}/stack/compute) and apply or update configuration.`;
             if (driftIssue) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: driftIssue.number,
-                body: body
+                body
               });
             } else {
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: 'Infrastructure Drift Detected',
-                body: body,
+                body,
                 labels: ['infrastructure-drift', 'automated']
               });
             }

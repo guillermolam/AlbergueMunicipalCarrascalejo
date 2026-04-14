@@ -52,7 +52,7 @@ jobs:
           name: frontend-build
           path: frontend/dist/
 
-  # Gateway CI
+  # Gateway CI (Spin WASM proxy)
   gateway:
     name: Gateway Checks
     runs-on: ubuntu-latest
@@ -78,19 +78,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('gateway/**/Cargo.toml') }}
 
       - name: Cache cargo index
         uses: actions/cache@v4
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('gateway/**/Cargo.toml') }}
 
       - name: Cache cargo build
         uses: actions/cache@v4
         with:
           path: gateway/target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('gateway/**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-build-gateway-${{ hashFiles('gateway/**/Cargo.toml') }}
 
       - name: Format check
         run: just fmt-check
@@ -103,6 +103,55 @@ jobs:
 
       - name: Build (wasm)
         run: cargo build --workspace --release --target wasm32-wasip1
+
+  # Backend CI (CF Workers services)
+  backend:
+    name: Backend Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip1
+
+      - name: Install just
+        run: |
+          cargo install just --locked || cargo install just
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('backend/**/Cargo.toml') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('backend/**/Cargo.toml') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: backend/target
+          key: ${{ runner.os }}-cargo-build-backend-${{ hashFiles('backend/**/Cargo.toml') }}
+
+      - name: Format check
+        run: just fmt
+
+      - name: Clippy (deny warnings)
+        run: just clippy
+
+      - name: Test
+        run: just test
 
   # Database CI
   database:
@@ -259,7 +308,7 @@ jobs:
   deploy-check:
     name: Deployment Readiness
     runs-on: ubuntu-latest
-    needs: [frontend, gateway, database, integration, security, sonarcloud]
+    needs: [frontend, gateway, backend, database, integration, security, sonarcloud]
     if: github.ref == 'refs/heads/main'
 
     steps:
