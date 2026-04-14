@@ -10,9 +10,9 @@ module "cf_pages" {
   api_service_token = var.api_service_token
 }
 
-output "pages_url"            { value = module.cf_pages.pages_url }
-output "d1_database_id"       { value = module.cf_pages.d1_database_id }
-output "kv_cache_id"          { value = module.cf_pages.kv_cache_id }
-output "kv_session_id"        { value = module.cf_pages.kv_session_id }
-output "kv_cache_preview_id"  { value = module.cf_pages.kv_cache_preview_id }
+output "pages_url" { value = module.cf_pages.pages_url }
+output "d1_database_id" { value = module.cf_pages.d1_database_id }
+output "kv_cache_id" { value = module.cf_pages.kv_cache_id }
+output "kv_session_id" { value = module.cf_pages.kv_session_id }
+output "kv_cache_preview_id" { value = module.cf_pages.kv_cache_preview_id }
 output "kv_session_preview_id" { value = module.cf_pages.kv_session_preview_id }

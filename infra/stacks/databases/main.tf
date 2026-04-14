@@ -12,5 +12,5 @@ output "neon_project_id" {
   value       = "rapid-poetry-82725286"
 }
 
-output "turso_database_id"  { value = module.turso.database_id }
+output "turso_database_id" { value = module.turso.database_id }
 output "turso_database_url" { value = module.turso.database_url }
