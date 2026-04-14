@@ -14,7 +14,7 @@ pub enum LocationServiceError {
     NotFound(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct CountryData {
     pub code: String,
     pub name: String,
