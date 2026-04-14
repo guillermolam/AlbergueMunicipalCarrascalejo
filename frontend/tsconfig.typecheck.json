@@ -12,6 +12,7 @@
   },
   "include": [
     ".astro/types.d.ts",
+    "src/env.d.ts",
     "src/components/core/statsUtils.ts",
     "src/stores/i18nStore.ts",
     "src/stores/user.ts",
