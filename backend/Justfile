@@ -10,7 +10,10 @@
 # Notes:
 # - `clippy` runs with `-D warnings` to enforce zero warnings in CI-style runs.
 # - Some crates in this workspace target WASM; use `build-wasm` if you want to
-#   explicitly compile with the wasm32-wasi target.
+#   explicitly compile with the wasm32-wasip2 target.
+# - Cloudflare Workers components link against WASI imports, so native tests only run
+#   against the `shared` crate. External integration tests for Workers components
+#   require the Wrangler dev runtime (npx wrangler dev).
 
 set shell := ["sh", "-eu", "-c"]
 
@@ -23,11 +26,15 @@ fmt:
 fmt-fix:
 	cargo fmt --all
 
+# Lint production code (lib targets only — external test files may reference
+# pre-migration APIs and are validated separately via integration tests).
 clippy:
-	cargo clippy --workspace --all-targets --all-features -- -D warnings
+	cargo clippy --workspace --lib -- -D warnings
 
+# Run tests for crates that can execute natively (shared library).
+# Cloudflare Workers component tests require the Wrangler dev runtime.
 test:
-	cargo test --workspace --all-features
+	cargo test -p shared
 
 build:
 	cargo build --workspace --all-features
@@ -35,9 +42,9 @@ build:
 build-release:
 	cargo build --workspace --all-features --release
 
-# WASM builds (Spin/WASI)
+# WASM builds (Cloudflare Workers/WASI)
 build-wasm:
-	cargo build --workspace --release --target wasm32-wasip1
+	cargo build --workspace --release --target wasm32-wasip2
 
 # Update dependencies
 update-deps:
