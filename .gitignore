@@ -118,6 +118,9 @@ runtime-config.toml
 # === TESTING & COVERAGE ===
 **/coverage/
 **/*.lcov
+
+# === FIRECRAWL CACHE ===
+**/.firecrawl/
 **/*.snap
 **/.nyc_output/
 **/__pycache__/
@@ -189,7 +192,8 @@ runtime-config.toml
 
 # === FIRECRAWL CACHE ===
 **/.firecrawl/
-backend/retto-js-worker/retto
+backend/retto-js-worker/retto/**
+backend/retto-js-worker/retto/.cargo/
 
 # === AUDIT & DEBUG FILES ===
 frontend-audit-tickets.csv
@@ -207,3 +211,7 @@ infra/modules/github-repo/
 infra/modules/oci-compute/outputs.tf
 infra/modules/oci-compute/storage.tf
 infra/modules/turso-database/
+infra/environments/
+infra/globals/
+infra/stacks/
+infra/**/*.csv

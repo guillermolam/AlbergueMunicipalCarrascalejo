@@ -1,5 +1,7 @@
 ---
 export const prerender = false;
+
+const embed = Astro.url.searchParams.get('embed') === '1';
 ---
 
 <!doctype html>
@@ -23,6 +25,12 @@ export const prerender = false;
         overflow: hidden;
         background: #2a3a50;
         font-family: system-ui, sans-serif;
+      }
+      body[data-embed='1'] {
+        background: transparent;
+      }
+      body[data-embed='1'] #ld {
+        background: transparent;
       }
       #c {
         width: 100vw;
@@ -107,17 +115,17 @@ export const prerender = false;
       }
     </style>
   </head>
-  <body>
+  <body data-embed={embed ? '1' : '0'}>
     <div id="ld">Cargando modelo 3D…</div>
     <div id="c"></div>
-    <div id="info">
+    <div id="info" style={embed ? 'display:none' : undefined}>
       <h2>Albergue Municipal</h2>
       <p>El Carrascalejo, Cáceres<br />Extremadura · Vía de la Plata</p>
       <p style="margin-top:.3rem;opacity:.5;font-size:.68rem">
         Ref. 0830102QD3203S<br />24 plazas · €15/noche · ★ 4.6
       </p>
     </div>
-    <div id="legend">
+    <div id="legend" style={embed ? 'display:none' : undefined}>
       <div class="r"><span class="s" style="background:#f0ead8"></span>Albergue (Alas A y B)</div>
       <div class="r">
         <span class="s" style="background:#c96c2a"></span>Cubierta árabe terracota
@@ -128,11 +136,15 @@ export const prerender = false;
       </div>
       <div class="r"><span class="s" style="background:#a89e78"></span>Parcela (27.290 m²)</div>
     </div>
-    <div id="hint">Arrastrar: rotar · Rueda: zoom · Clic derecho: desplazar</div>
+    <div id="hint" style={embed ? 'display:none' : undefined}>
+      Arrastrar: rotar · Rueda: zoom · Clic derecho: desplazar
+    </div>
 
     <script>
       import * as THREE from 'three';
       import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+      const EMBED = document.body.dataset.embed === '1';
 
       // ── Geo helpers (parcel KML reference point) ─────────────────────────────────
       const C_LON = -6.33643424,
@@ -225,13 +237,14 @@ export const prerender = false;
       camera.position.set(-200, 85, -40);
       camera.lookAt(-95, 5, 20);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: EMBED });
       renderer.setSize(W, H);
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.0;
+      if (EMBED) renderer.setClearColor(0x000000, 0);
       const container = document.getElementById('c');
       if (!container) throw new Error('hostel-3d container missing');
       container.appendChild(renderer.domElement);
@@ -244,6 +257,26 @@ export const prerender = false;
       controls.maxDistance = 550;
       controls.target.set(-95, 3, 20);
       controls.update();
+      if (EMBED) {
+        controls.enabled = false;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.18;
+      }
+      if (!EMBED) {
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.45;
+        let autoResumeAt = 0;
+        const pauseAuto = () => {
+          controls.autoRotate = false;
+          autoResumeAt = performance.now() + 1400;
+        };
+        const resumeAuto = () => {
+          if (performance.now() > autoResumeAt) controls.autoRotate = true;
+        };
+        window.addEventListener('pointerdown', pauseAuto, { passive: true });
+        window.addEventListener('wheel', pauseAuto, { passive: true });
+        controls.addEventListener('change', resumeAuto);
+      }
 
       // ── Lights ───────────────────────────────────────────────────────────────────
       scene.add(new THREE.HemisphereLight(0xcce8ff, 0xc0a860, 0.72));
@@ -443,7 +476,8 @@ export const prerender = false;
             Math.sin(gy * 0.0068 + 0.9) * 1.8 +
             Math.cos((gx - gy) * 0.0042) * 1.2 +
             Math.sin(gx * 0.022) * 0.5 +
-            Math.cos(gy * 0.028) * 0.4;
+            Math.cos(gy * 0.028) * 0.4 +
+            gy * 0.007;
           pos.setZ(i, Math.max(h, -0.5));
         }
         pos.needsUpdate = true;
@@ -464,11 +498,11 @@ export const prerender = false;
       const rdGrp = new THREE.Group();
       rdGrp.rotation.y = roadAngle;
       // asphalt
-      rdGrp.add(sh(new THREE.Mesh(new THREE.BoxGeometry(7, 0.07, 300), M.road), false, true));
+      rdGrp.add(sh(new THREE.Mesh(new THREE.BoxGeometry(7, 0.07, 520), M.road), false, true));
       // centre dashes (thin)
       rdGrp.add(
         new THREE.Mesh(
-          new THREE.BoxGeometry(0.18, 0.08, 300),
+          new THREE.BoxGeometry(0.18, 0.08, 520),
           new THREE.MeshLambertMaterial({ color: 0xe8e0c0 })
         )
       );
@@ -491,6 +525,85 @@ export const prerender = false;
       rdGrp.add(kerb);
       rdGrp.position.set(-128, 0, 8);
       scene.add(rdGrp);
+
+      const cars = [];
+      const carBodyMat = new THREE.MeshLambertMaterial({ color: 0x1c2430 });
+      const carTopMat = new THREE.MeshLambertMaterial({ color: 0x344256 });
+      const carGlassMat = new THREE.MeshLambertMaterial({ color: 0x2aa7c9, transparent: true, opacity: 0.35 });
+
+      const makeCar = (z, dir, seed) => {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 3.6), carBodyMat);
+        body.position.y = 0.35;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        g.add(body);
+
+        const top = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 1.7), carTopMat);
+        top.position.set(0, 0.78, -0.2);
+        top.castShadow = true;
+        g.add(top);
+
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.4, 1.05), carGlassMat);
+        glass.position.set(0, 0.82, -0.2);
+        g.add(glass);
+
+        g.position.set(-0.9 + (seed % 3) * 0.25, 0.04, z);
+        g.rotation.y = dir > 0 ? 0 : Math.PI;
+        g.userData.dir = dir;
+        g.userData.speed = 22 + (seed % 5) * 6;
+        rdGrp.add(g);
+        cars.push(g);
+      };
+      for (let i = 0; i < 7; i++) {
+        makeCar(-240 + i * 80, 1, i);
+      }
+      for (let i = 0; i < 6; i++) {
+        makeCar(220 - i * 88, -1, 100 + i);
+      }
+
+      const trailPts = [
+        new THREE.Vector3(-128, 0.06, 6),
+        new THREE.Vector3(-128, 0.06, 44),
+        new THREE.Vector3(-28, 0.06, 44),
+        new THREE.Vector3(-28, 0.06, 6),
+      ];
+      const trailCurve = new THREE.CatmullRomCurve3(trailPts, true, 'catmullrom', 0.15);
+      const trailGeo = new THREE.TubeGeometry(trailCurve, 220, 0.65, 10, true);
+      const trailMat = new THREE.MeshLambertMaterial({ color: 0xb8a980 });
+      const trail = sh(new THREE.Mesh(trailGeo, trailMat), false, true);
+      scene.add(trail);
+
+      const storks = [];
+      const makeStork = (seed) => {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.9, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+        body.rotation.z = Math.PI / 2;
+        g.add(body);
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.6, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+        neck.position.set(0.45, 0.12, 0);
+        neck.rotation.z = -0.5;
+        g.add(neck);
+        const beak = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.5, 10), new THREE.MeshLambertMaterial({ color: 0xd96a2a }));
+        beak.position.set(0.78, 0.08, 0);
+        beak.rotation.z = -Math.PI / 2;
+        g.add(beak);
+        const wingMat = new THREE.MeshLambertMaterial({ color: 0x10131a });
+        const wingGeo = new THREE.BoxGeometry(1.25, 0.04, 0.55);
+        const w1 = new THREE.Mesh(wingGeo, wingMat);
+        const w2 = new THREE.Mesh(wingGeo, wingMat);
+        w1.position.set(0, 0, 0.45);
+        w2.position.set(0, 0, -0.45);
+        g.add(w1, w2);
+        g.userData.w1 = w1;
+        g.userData.w2 = w2;
+        g.userData.phase = seed * 1.7;
+        g.userData.t = seed * 0.23;
+        g.position.set(-80, 34, 18);
+        scene.add(g);
+        storks.push(g);
+      };
+      for (let i = 0; i < 4; i++) makeStork(i);
 
       // ── Packed-earth access area between road and hostel ─────────────────────────
       scene.add(sh(bx(30, 0.06, 22, M.grv, -111, 0.03, 20), false, true));
@@ -677,6 +790,32 @@ export const prerender = false;
       }
       gatePanel(15, +1); // north panel swung north
       gatePanel(21, -1); // south panel swung south
+
+      const bunting = [];
+      {
+        const colors = [0x00ab39, 0xf5e040, 0xffffff, 0xd96a2a];
+        const flagGeo = new THREE.PlaneGeometry(0.55, 0.35, 1, 1);
+        const p0 = new THREE.Vector3(-116.2, 3.1, 14.6);
+        const p1 = new THREE.Vector3(-104.5, 3.35, 20.2);
+        const n = 18;
+        for (let i = 0; i < n; i++) {
+          const t = i / (n - 1);
+          const pos = new THREE.Vector3().lerpVectors(p0, p1, t);
+          pos.y += Math.sin(t * Math.PI) * 0.22;
+          const mat = new THREE.MeshLambertMaterial({
+            color: colors[i % colors.length],
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.95,
+          });
+          const f = new THREE.Mesh(flagGeo, mat);
+          f.position.copy(pos);
+          f.rotation.y = -0.4;
+          f.userData.phase = Math.random() * Math.PI * 2;
+          scene.add(f);
+          bunting.push(f);
+        }
+      }
 
       // ── BUSHES along interior of fence (both sides of gate, planted at ~2m intervals)
       for (let fz = -3; fz <= 42; fz += 2.2) {
@@ -1239,10 +1378,18 @@ export const prerender = false;
 
       // ── Render loop ───────────────────────────────────────────────────────────
       const clock = new THREE.Clock();
+      let paused = false;
+      window.addEventListener('message', (e) => {
+        const d = e?.data;
+        if (d?.type !== 'hostel3d:pause') return;
+        paused = !!d.paused;
+      });
       (function loop() {
         requestAnimationFrame(loop);
         const dt = Math.min(0.05, clock.getDelta());
         const t = clock.getElapsedTime();
+
+        if (paused) return;
 
         for (const g of windy) {
           const w = g.userData.wind;
@@ -1257,6 +1404,28 @@ export const prerender = false;
           const p2 = pilgrimCurve.getPointAt((g.userData.t + 0.006) % 1);
           g.position.copy(p);
           g.lookAt(p2.x, p2.y + 0.6, p2.z);
+        }
+
+        for (const c of cars) {
+          c.position.z += c.userData.dir * c.userData.speed * dt;
+          if (c.position.z > 260) c.position.z = -260;
+          if (c.position.z < -260) c.position.z = 260;
+        }
+
+        for (const b of storks) {
+          b.userData.t = (b.userData.t + dt * 0.02) % 1;
+          const a = b.userData.t * Math.PI * 2;
+          b.position.set(-85 + Math.cos(a) * 120, 52 + Math.sin(a * 0.7) * 6, 18 + Math.sin(a) * 110);
+          b.rotation.y = -a + Math.PI / 2;
+          const flap = Math.sin(t * 4.8 + b.userData.phase) * 0.55;
+          b.userData.w1.rotation.x = flap;
+          b.userData.w2.rotation.x = -flap;
+        }
+
+        for (const f of bunting) {
+          const ph = f.userData.phase;
+          f.rotation.z = Math.sin(t * 2.6 + ph) * 0.24;
+          f.rotation.x = Math.cos(t * 2.1 + ph * 0.8) * 0.18;
         }
 
         controls.update();

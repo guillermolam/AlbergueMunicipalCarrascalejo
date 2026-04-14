@@ -6,10 +6,26 @@ export interface Props {
 }
 
 const { title, subtitle, stats = [] } = Astro.props;
+
+const iconFor = (label: string) => {
+  const l = label.toLowerCase();
+  if (l.includes('cama')) return 'beds';
+  if (l.includes('booking') || l.includes('rese')) return 'reviews';
+  if (l.includes('máx') || l.includes('max') || l.includes('noche')) return 'nights';
+  if (l.includes('desde') || l.includes('€') || l.includes('precio')) return 'price';
+  return 'info';
+};
 ---
 
 <div class="info-scene info-scene-hero">
-  <canvas id="info-scene-hero-canvas" class="info-canvas" aria-hidden="true"></canvas>
+  <iframe
+    id="info-scene-hero-iframe"
+    class="info-hero-iframe"
+    src="/hostel-3d?embed=1"
+    title="Albergue 3D"
+    loading="eager"
+    referrerpolicy="no-referrer"
+  />
   <div class="info-overlay">
     <img
       class="info-logo"
@@ -26,6 +42,84 @@ const { title, subtitle, stats = [] } = Astro.props;
       <div class="info-stats">
         {stats.map((s) => (
           <div class="info-stat">
+            <div class="info-stat-icon" aria-hidden="true" data-icon={iconFor(s.label)}>
+              {iconFor(s.label) === 'beds' ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 7h6a4 4 0 0 1 4 4v0" />
+                  <path d="M3 11h18v6H3z" />
+                  <path d="M3 17v3" />
+                  <path d="M21 17v3" />
+                  <path d="M13 10h8" />
+                </svg>
+              ) : iconFor(s.label) === 'reviews' ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 2l2.9 6 6.6.6-5 4.2 1.6 6.5L12 16.9 5.9 19.3 7.5 12.8 2.5 8.6 9.1 8z" />
+                </svg>
+              ) : iconFor(s.label) === 'nights' ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 13.2A7.8 7.8 0 0 1 10.8 3 6.6 6.6 0 1 0 21 13.2z" />
+                  <path d="M6 20l2-2 2 2 2-2 2 2" />
+                </svg>
+              ) : iconFor(s.label) === 'price' ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M7 7h10l-1 9H8L7 7z" />
+                  <path d="M9 7a3 3 0 0 1 6 0" />
+                  <path d="M12 10v4" />
+                  <path d="M10.8 12h2.4" />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 18h.01" />
+                  <path d="M10 10a2 2 0 1 1 3.5 1.3c-.8.8-1.5 1.2-1.5 2.7" />
+                  <path d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10z" />
+                </svg>
+              )}
+            </div>
             <div class="info-stat-value">{s.value}</div>
             <div class="info-stat-label">{s.label}</div>
           </div>
@@ -38,275 +132,56 @@ const { title, subtitle, stats = [] } = Astro.props;
 <script>
   import { attachSectionActive, createRafLoop } from '../../../lib/three/sectionActive';
 
-  const canvas = document.getElementById('info-scene-hero-canvas') as HTMLCanvasElement | null;
-  if (!canvas) throw new Error('[SceneHero] canvas missing');
-  const section = canvas.closest('.ip-section') as HTMLElement | null;
-  if (!section) throw new Error('[SceneHero] section missing');
-  const canvasEl = canvas as HTMLCanvasElement;
-  const sectionEl = section as HTMLElement;
+  const iframe = document.getElementById('info-scene-hero-iframe');
+  if (!(iframe instanceof HTMLIFrameElement)) throw new Error('[SceneHero] iframe missing');
+  const section = iframe.closest('.ip-section');
+  if (!(section instanceof HTMLElement)) throw new Error('[SceneHero] section missing');
+  const iframeEl = iframe;
+  const sectionEl = section;
 
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  let active = false;
 
-  let runtime: any = null;
-  let runtimePromise: Promise<any> | null = null;
+  const target = { x: 0, y: 0 };
+  const current = { x: 0, y: 0 };
 
-  async function init() {
-    const THREE = await import('three');
+  const onMove = (e: PointerEvent) => {
+    if (!active) return;
+    if (reducedMotion) return;
+    const r = sectionEl.getBoundingClientRect();
+    const nx = (e.clientX - r.left) / Math.max(1, r.width) - 0.5;
+    const ny = (e.clientY - r.top) / Math.max(1, r.height) - 0.5;
+    target.x = nx;
+    target.y = ny;
+  };
 
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: false, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  window.addEventListener('pointermove', onMove, { passive: true });
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x91c5e0);
-    scene.fog = new THREE.Fog(0xb0cfe0, 80, 260);
+  const loop = createRafLoop(() => {
+    if (!active) return;
+    current.x += (target.x - current.x) * 0.08;
+    current.y += (target.y - current.y) * 0.08;
+    const tx = current.x * 22;
+    const ty = current.y * 14;
+    iframeEl.style.transform = `scale(1.06) translate3d(${tx}px, ${ty}px, 0)`;
+  });
 
-    const camera = new THREE.PerspectiveCamera(50, 1, 0.25, 600);
-
-    scene.add(new THREE.HemisphereLight(0xcce8ff, 0xc0a860, 0.72));
-    const sun = new THREE.DirectionalLight(0xfff8e8, 1.65);
-    sun.position.set(120, 160, -80);
-    scene.add(sun);
-
-    const site = new THREE.Group();
-    scene.add(site);
-
-    const centerX = -80;
-    const centerZ = 18;
-    const toLocal = (x: number, z: number) => new THREE.Vector3(x - centerX, 0, z - centerZ);
-
-    const matFar = new THREE.MeshLambertMaterial({ color: 0x9a9268 });
-    const matGnd = new THREE.MeshLambertMaterial({ color: 0xa89e78, side: THREE.DoubleSide });
-    const matRoad = new THREE.MeshLambertMaterial({ color: 0x786a52 });
-    const matGrv = new THREE.MeshLambertMaterial({ color: 0xbcb090 });
-    const matWh = new THREE.MeshLambertMaterial({ color: 0xf0ead8 });
-    const matRoof = new THREE.MeshLambertMaterial({ color: 0xc96c2a, side: THREE.DoubleSide });
-    const matIron = new THREE.MeshLambertMaterial({ color: 0x3c3c3c });
-    const matWood = new THREE.MeshLambertMaterial({ color: 0x5c3a18 });
-    const matLawn = new THREE.MeshLambertMaterial({ color: 0x4a8830 });
-
-    const far = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), matFar);
-    far.rotation.x = -Math.PI / 2;
-    far.position.y = -0.06;
-    site.add(far);
-
-    const yard = new THREE.Mesh(new THREE.PlaneGeometry(260, 180), matGnd);
-    yard.rotation.x = -Math.PI / 2;
-    yard.position.y = -0.04;
-    site.add(yard);
-
-    const lawn = new THREE.Mesh(new THREE.PlaneGeometry(120, 58), matLawn);
-    lawn.rotation.x = -Math.PI / 2;
-    lawn.position.copy(toLocal(-82, 28));
-    lawn.position.y = -0.035;
-    site.add(lawn);
-
-    const mkBox = (w: number, h: number, d: number, mat: any, x: number, y: number, z: number, ry = 0) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      const p = toLocal(x, z);
-      m.position.set(p.x, y, p.z);
-      m.rotation.y = ry;
-      site.add(m);
-      return m;
-    };
-
-    mkBox(520, 0.12, 10, matRoad, -80, 0.02, -10);
-    mkBox(12, 0.12, 60, matRoad, -113, 0.02, 15);
-    mkBox(140, 0.12, 8, matGrv, -78, 0.02, 5);
-
-    const wingA = mkBox(28, 5.0, 22, matWh, -103, 2.5, 18);
-    const wingB = mkBox(28, 5.0, 22, matWh, -78, 2.5, 18);
-    const nave = mkBox(46, 7.5, 22, matWh, -43, 3.75, 18);
-    mkBox(30, 0.5, 24, matRoof, -103, 5.25, 18);
-    mkBox(30, 0.5, 24, matRoof, -78, 5.25, 18);
-    mkBox(48, 0.6, 24, matRoof, -43, 7.9, 18);
-
-    const winGeo = new THREE.PlaneGeometry(1.0, 1.2);
-    const winMat = new THREE.MeshLambertMaterial({ color: 0x88b4c8, transparent: true, opacity: 0.55 });
-    const addWindows = (base: any, count: number, side: number) => {
-      for (let i = 0; i < count; i++) {
-        const w = new THREE.Mesh(winGeo, winMat);
-        const x = (i - (count - 1) / 2) * 2.15;
-        w.position.set(x, 0.5, side * 11.02);
-        w.rotation.y = side > 0 ? Math.PI : 0;
-        base.add(w);
-      }
-    };
-    addWindows(wingA, 10, 1);
-    addWindows(wingA, 10, -1);
-    addWindows(wingB, 10, 1);
-    addWindows(wingB, 10, -1);
-    addWindows(nave, 14, 1);
-
-    const fenceGroup = new THREE.Group();
-    site.add(fenceGroup);
-    const postGeo = new THREE.BoxGeometry(0.16, 1.0, 0.16);
-    const railGeo = new THREE.BoxGeometry(2.4, 0.12, 0.12);
-    const mkFenceSide = (x0: number, z0: number, x1: number, z1: number) => {
-      const dx = x1 - x0;
-      const dz = z1 - z0;
-      const len = Math.hypot(dx, dz);
-      const seg = Math.max(2, Math.floor(len / 2.4));
-      for (let i = 0; i <= seg; i++) {
-        const t = i / seg;
-        const x = x0 + dx * t;
-        const z = z0 + dz * t;
-        const p = toLocal(x, z);
-        const post = new THREE.Mesh(postGeo, matIron);
-        post.position.set(p.x, 0.5, p.z);
-        fenceGroup.add(post);
-        if (i < seg) {
-          const nx = x0 + dx * (t + 0.5 / seg);
-          const nz = z0 + dz * (t + 0.5 / seg);
-          const pp = toLocal(nx, nz);
-          const rail = new THREE.Mesh(railGeo, matWood);
-          rail.position.set(pp.x, 0.75, pp.z);
-          rail.rotation.y = Math.atan2(dz, dx);
-          fenceGroup.add(rail);
-        }
-      }
-    };
-    mkFenceSide(-128, 6, -128, 44);
-    mkFenceSide(-128, 44, -28, 44);
-    mkFenceSide(-28, 44, -28, 6);
-    mkFenceSide(-28, 6, -128, 6);
-
-    const trees: any[] = [];
-    const trunkGeo = new THREE.CylinderGeometry(0.25, 0.32, 2.4, 8);
-    const crownGeo = new THREE.ConeGeometry(1.35, 3.2, 10);
-    const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3010 });
-    const crownMat = new THREE.MeshLambertMaterial({ color: 0x2a6020 });
-    const plantTree = (x: number, z: number, s: number) => {
-      const g = new THREE.Group();
-      const p = toLocal(x, z);
-      g.position.set(p.x, 0, p.z);
-      g.scale.setScalar(s);
-      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-      trunk.position.y = 1.2;
-      const crown = new THREE.Mesh(crownGeo, crownMat);
-      crown.position.y = 3.2;
-      g.add(trunk, crown);
-      site.add(g);
-      trees.push(g);
-    };
-    for (let i = 0; i < 16; i++) {
-      const x = -140 + Math.random() * 160;
-      const z = -50 + Math.random() * 140;
-      const s = 0.85 + Math.random() * 0.6;
-      if (x > -125 && x < -30 && z > 6 && z < 44) continue;
-      plantTree(x, z, s);
-    }
-
-    const pilgrim = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.55, 6, 10), new THREE.MeshLambertMaterial({ color: 0x3c3c3c }));
-    body.position.y = 0.65;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), new THREE.MeshLambertMaterial({ color: 0xf0d2b0 }));
-    head.position.y = 1.22;
-    pilgrim.add(body, head);
-    site.add(pilgrim);
-
-    const route = new THREE.CatmullRomCurve3(
-      [
-        toLocal(-112, 6),
-        toLocal(-112, 18),
-        toLocal(-96, 18),
-        toLocal(-86, 18),
-        toLocal(-70, 18),
-        toLocal(-58, 18),
-        toLocal(-40, 18),
-        toLocal(-32, 26),
-      ],
-      false,
-      'catmullrom',
-      0.22
-    );
-    let pilgrimT = 0.15;
-
-    let W = 1;
-    let H = 1;
-    const ro = new ResizeObserver(() => {
-      const r = sectionEl.getBoundingClientRect();
-      W = Math.max(1, r.width);
-      H = Math.max(1, r.height);
-      renderer.setSize(W, H, false);
-      camera.aspect = W / H;
-      camera.updateProjectionMatrix();
-      if (reducedMotion) renderFrame(0, performance.now());
-    });
-    ro.observe(sectionEl);
-
-    const loop = createRafLoop(renderFrame);
-
-    function renderFrame(dt: number, t: number) {
-      const tt = t * 0.001;
-
-      const r = 78;
-      const y = 22 + Math.sin(tt * 0.22) * 1.2;
-      camera.position.set(Math.cos(tt * 0.08) * r, y, Math.sin(tt * 0.08) * r);
-      camera.lookAt(0, 8, 0);
-
-      for (let i = 0; i < trees.length; i++) {
-        trees[i].rotation.y = Math.sin(tt * 0.35 + i) * 0.03;
-      }
-
-      pilgrimT = (pilgrimT + dt * 0.02) % 1;
-      const p = route.getPointAt(pilgrimT);
-      const p2 = route.getPointAt((pilgrimT + 0.01) % 1);
-      pilgrim.position.copy(p);
-      pilgrim.lookAt(p2.x, p2.y + 0.6, p2.z);
-
-      renderer.render(scene, camera);
-    }
-
-    renderFrame(0, performance.now());
-
-    return {
-      start() {
-        if (reducedMotion) return;
-        loop.start();
-      },
-      stop() {
-        loop.stop();
-      },
-      destroy() {
-        loop.stop();
-        ro.disconnect();
-        winGeo.dispose();
-        winMat.dispose();
-        postGeo.dispose();
-        railGeo.dispose();
-        trunkGeo.dispose();
-        crownGeo.dispose();
-        trunkMat.dispose();
-        crownMat.dispose();
-        matFar.dispose();
-        matGnd.dispose();
-        matRoad.dispose();
-        matGrv.dispose();
-        matWh.dispose();
-        matRoof.dispose();
-        matIron.dispose();
-        matWood.dispose();
-        matLawn.dispose();
-        renderer.dispose();
-      },
-    };
-  }
-
-  async function ensureRuntime() {
-    if (runtime) return runtime;
-    runtimePromise ??= init();
-    runtime = await runtimePromise;
-    return runtime;
-  }
+  const postPause = (paused: boolean) => {
+    try {
+      iframeEl.contentWindow?.postMessage({ type: 'hostel3d:pause', paused }, '*');
+    } catch {}
+  };
 
   attachSectionActive(sectionEl, {
     auto: false,
-    onChange(active) {
-      if (active) ensureRuntime().then((r) => r.start());
-      else if (runtime) {
-        runtime.destroy();
-        runtime = null;
-        runtimePromise = null;
+    onChange(isActive) {
+      active = isActive;
+      if (active) {
+        postPause(false);
+        if (!reducedMotion) loop.start();
+      } else {
+        postPause(true);
+        loop.stop();
       }
     },
   });
@@ -345,6 +220,17 @@ const { title, subtitle, stats = [] } = Astro.props;
     filter: drop-shadow(0 10px 32px rgba(0, 0, 0, 0.45));
     opacity: 0.98;
   }
+  .info-hero-iframe {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: 0;
+    pointer-events: none;
+    transform: scale(1.06) translate3d(0, 0, 0);
+    transform-origin: center;
+    filter: saturate(1.05) contrast(1.02);
+  }
   .info-title {
     font-size: clamp(44px, 7vw, 92px);
     line-height: 0.95;
@@ -367,11 +253,76 @@ const { title, subtitle, stats = [] } = Astro.props;
     max-width: 760px;
   }
   .info-stat {
+    position: relative;
     padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(0, 0, 0, 0.35);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(20, 24, 32, 0.72), rgba(6, 8, 12, 0.62));
     border: 1px solid rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(10px);
+    box-shadow:
+      0 22px 70px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -16px 30px rgba(0, 0, 0, 0.42);
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+  .info-stat::before {
+    content: '';
+    position: absolute;
+    inset: 10px;
+    border-radius: 14px;
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 255, 255, 0.06),
+      inset 0 18px 30px rgba(255, 255, 255, 0.03),
+      inset 0 -18px 30px rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+  }
+  .info-stat::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 20px;
+    background: radial-gradient(800px 240px at 30% 15%, rgba(0, 171, 57, 0.22), transparent 55%);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .info-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.92);
+    background: linear-gradient(180deg, rgba(0, 171, 57, 0.58), rgba(0, 171, 57, 0.26));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 18px 40px rgba(0, 171, 57, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    margin-bottom: 10px;
+    transform-origin: center;
+  }
+  .info-stat:nth-child(1) .info-stat-icon { animation: ipIconPulse 2.2s ease-in-out infinite; }
+  .info-stat:nth-child(2) .info-stat-icon { animation: ipIconTilt 2.8s ease-in-out infinite; }
+  .info-stat:nth-child(3) .info-stat-icon { animation: ipIconFloat 2.4s ease-in-out infinite; }
+  .info-stat:nth-child(4) .info-stat-icon { animation: ipIconWink 3.1s ease-in-out infinite; }
+
+  @keyframes ipIconPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0,171,57,0)); }
+    45% { transform: scale(1.06); filter: drop-shadow(0 10px 18px rgba(0,171,57,0.22)); }
+  }
+  @keyframes ipIconTilt {
+    0%, 100% { transform: rotate(-2deg) translateY(0); }
+    50% { transform: rotate(5deg) translateY(-1px); }
+  }
+  @keyframes ipIconFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  @keyframes ipIconWink {
+    0%, 100% { transform: scale(1); }
+    42% { transform: scale(1.04); }
+    46% { transform: scale(0.96); }
+    50% { transform: scale(1.04); }
   }
   .info-stat-value {
     font-weight: 800;
