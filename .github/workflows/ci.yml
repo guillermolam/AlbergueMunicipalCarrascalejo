@@ -367,36 +367,26 @@ jobs:
   # ===========================================================================
   # SonarCloud Code Analysis
   # ===========================================================================
+  # NOTE: SonarCloud Automatic Analysis is enabled on this project (project
+  # settings → Analysis Method → Automatic Analysis).  Running a CI scan
+  # simultaneously causes SonarCloud to reject the CI scan with:
+  #   "You are running CI analysis while Automatic Analysis is enabled."
+  # and then post a FAILED quality-gate status, overriding the passing
+  # automatic-analysis result.
+  #
+  # Resolution: rely solely on Automatic Analysis.  The "SonarCloud" GitHub
+  # check (from automatic analysis) already passes.  The CI scan job is kept
+  # below as a no-op stub so that downstream jobs that reference it via
+  # `needs:` continue to work without modification.
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: [frontend, gateway, backend]
-    # SonarCloud Automatic Analysis is enabled on this project; the CI scanner
-    # will be rejected if both run simultaneously.  continue-on-error so the
-    # automatic-analysis quality-gate check (which IS passing) is not shadowed
-    # by a failed manual-scan job.
-    continue-on-error: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        # Use the official action — avoids manual PATH wiring and is maintained by SonarSource.
-        # SHA-pinning omitted: the 40-char commit SHA triggers semgrep rule
-        # generic.secrets.security.detected-sonarqube-docs-api-key (false positive).
-        # SonarSource is the publisher of this action; @v3 is the current stable tag.
-        uses: SonarSource/sonarcloud-github-action@v3 # NOSONAR — S7637: SHA-pin blocked by semgrep CWE-798 false positive (40-char git SHA matches sonar-key pattern); published by SonarSource, @v3 is audited stable tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=guillermolam_AlbergueMunicipalCarrascalejo
-            -Dsonar.organization=guillermolam
-            -Dsonar.sources=frontend/src,backend,gateway,infra
-            -Dsonar.exclusions=**/dist/**,**/target/**,**/node_modules/**,GIS/**,frontend/public/**,tests/infrastructure/docker/**
-            -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.qualitygate.wait=true
+      - name: Automatic Analysis active — CI scan skipped
+        # SonarCloud Automatic Analysis is enabled; CI scan would conflict.
+        # Quality gate is enforced by the automatic analysis ("SonarCloud" check).
+        run: |
+          echo "SonarCloud Automatic Analysis is enabled for this project."
+          echo "CI scan disabled to avoid conflict. Quality gate is set by automatic analysis."
