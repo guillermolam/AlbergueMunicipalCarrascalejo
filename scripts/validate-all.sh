@@ -62,7 +62,7 @@ echo "=== Phase 4: Idempotency Tests ==="
 echo "Testing script idempotency (running twice)..."
 
 # Test update-deps script is idempotent
-if [ -x "scripts/update-deps.sh" ]; then
+if [[ -x "scripts/update-deps.sh" ]]; then
 	echo -n "  update-deps.sh (1st run)... "
 	if timeout 5 bash scripts/update-deps.sh --help >/dev/null 2>&1 || true; then
 		echo -e "${GREEN}OK${NC}"
@@ -84,7 +84,7 @@ echo "======================================"
 echo "Validation Summary"
 echo "======================================"
 
-if [ $FAILURES -eq 0 ]; then
+if [[ $FAILURES -eq 0 ]]; then
 	echo -e "${GREEN}All tests passed!${NC}"
 	echo ""
 	echo "Next steps:"

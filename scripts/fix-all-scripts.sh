@@ -8,7 +8,7 @@ echo "Fixing all shell scripts..."
 # Function to strip emojis and ensure set -e
 fix_script() {
 	local file="$1"
-	if [ ! -f "$file" ]; then
+	if [[ ! -f $file ]]; then
 		return
 	fi
 
@@ -46,7 +46,7 @@ done
 
 # Fix scripts in subdirectories
 for script in domain_model/scripts/*.sh frontend/scripts/*.sh; do
-	if [ -f "$script" ]; then
+	if [[ -f $script ]]; then
 		fix_script "$script"
 	fi
 done

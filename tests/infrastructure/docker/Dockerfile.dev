@@ -1,27 +1,32 @@
 
 FROM node:18-alpine
 
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies, Rust, and wasm-pack in a single RUN statement
 RUN apk add --no-cache \
     curl \
     git \
-    postgresql-client
-
-# Install Rust for WASM compilation
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-RUN . ~/.cargo/env && rustup target add wasm32-unknown-unknown
-
-# Install wasm-pack
-RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+    postgresql-client && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . ~/.cargo/env && rustup target add wasm32-unknown-unknown && \
+    curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
 # Copy package files
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy specific directories instead of everything
+COPY --chown=nextjs:nodejs src/ ./src/
+COPY --chown=nextjs:nodejs public/ ./public/
+COPY --chown=nextjs:nodejs build-bff.sh ./
+
+# Switch to non-root user
+USER nextjs
 
 # Build WASM modules
 RUN . ~/.cargo/env && ./build-bff.sh

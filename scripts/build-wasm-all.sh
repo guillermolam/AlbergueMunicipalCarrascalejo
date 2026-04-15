@@ -53,7 +53,7 @@ services=(
 
 for service in "${services[@]}"; do
 	echo "Building $service..."
-	if [ -d "$service" ]; then
+	if [[ -d $service ]]; then
 		cd "$service"
 		cargo build --target wasm32-wasip1 --release || {
 			echo "ERROR: Failed to build $service"

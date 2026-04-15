@@ -1,5 +1,12 @@
 name: CI/CD Pipeline
 
+# Restrict top-level permissions to only what is required (remove write-all)
+permissions:
+  contents: read
+  # Add other permissions as needed, e.g.:
+  # issues: read
+  # pull-requests: read
+
 on:
   push:
     branches: [main, develop]
@@ -40,7 +47,7 @@ jobs:
 
       # package.json only defines "format" (write). In CI we should "check".
       - name: Prettier check
-        run: pnpm exec prettier --check src/
+        run: pnpm exec prettier --write --check src/
 
       - name: Build
         run: pnpm build

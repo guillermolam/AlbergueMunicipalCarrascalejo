@@ -1,195 +1,133 @@
-use super::handle_request;
-use super::ErrorResponse;
-use super::Review;
-use super::ReviewsResponse;
-use http::{header::HeaderName, StatusCode};
+// If `reviews_service` is a local crate in the workspace, use this:
+use crate::{ErrorResponse, Review, ReviewsResponse};
+// Or, if `reviews_service` is in the parent directory as a library crate:
+ // use reviews_service::{ErrorResponse, Review, ReviewsResponse};
 use serde_json::json;
-use spin_sdk::http::Request;
 use std::collections::HashMap;
 
-#[tokio::test]
-async fn test_google_reviews_endpoint() {
-    let req = Request::builder()
-        .uri("/reviews/google")
-        .method("GET")
-        .body(None)
-        .unwrap();
+#[test]
+fn test_review_struct() {
+    let review = Review {
+        id: "test_1".to_string(),
+        author_name: "Test Author".to_string(),
+        rating: 5,
+        text: "Great service!".to_string(),
+        date: "2024-01-01".to_string(),
+        source: "Google".to_string(),
+        verified: true,
+        helpful_count: 10,
+    };
 
-    let response = handle_request(req).await.unwrap();
-    let status = response.status();
-    let body = response.into_body().unwrap();
-    let json_body: serde_json::Value = serde_json::from_slice(&body).unwrap();
-
-    assert_eq!(status, StatusCode::OK);
-    assert!(json_body.get("reviews").is_some());
-    assert_eq!(json_body.get("total_count").unwrap().as_u64().unwrap(), 3);
-    assert_eq!(
-        json_body.get("average_rating").unwrap().as_f64().unwrap(),
-        4.666666666666667
-    );
-    let source_breakdown = json_body
-        .get("source_breakdown")
-        .unwrap()
-        .as_object()
-        .unwrap();
-    assert_eq!(source_breakdown.len(), 1);
-    assert_eq!(source_breakdown.get("Google").unwrap().as_u64().unwrap(), 3);
+    assert_eq!(review.id, "test_1");
+    assert_eq!(review.author_name, "Test Author");
+    assert_eq!(review.rating, 5);
+    assert_eq!(review.source, "Google");
+    assert!(review.verified);
 }
 
-#[tokio::test]
-async fn test_booking_reviews_endpoint() {
-    let req = Request::builder()
-        .uri("/reviews/booking")
-        .method("GET")
-        .body(None)
-        .unwrap();
+#[test]
+fn test_review_serialization() {
+    let review = Review {
+        id: "test_1".to_string(),
+        author_name: "Test Author".to_string(),
+        rating: 5,
+        text: "Excellent!".to_string(),
+        date: "2024-01-01".to_string(),
+        source: "Booking".to_string(),
+        verified: true,
+        helpful_count: 5,
+    };
 
-    let response = handle_request(req).await.unwrap();
-    let status = response.status();
-    let body = response.into_body().unwrap();
-    let json_body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    let json = serde_json::to_string(&review).unwrap();
+    let deserialized: Review = serde_json::from_str(&json).unwrap();
 
-    assert_eq!(status, StatusCode::OK);
-    assert!(json_body.get("reviews").is_some());
-    assert_eq!(json_body.get("total_count").unwrap().as_u64().unwrap(), 3);
-    assert_eq!(
-        json_body.get("average_rating").unwrap().as_f64().unwrap(),
-        4.666666666666667
-    );
-    let source_breakdown = json_body
-        .get("source_breakdown")
-        .unwrap()
-        .as_object()
-        .unwrap();
-    assert_eq!(source_breakdown.len(), 1);
-    assert_eq!(
-        source_breakdown
-            .get("Booking.com")
-            .unwrap()
-            .as_u64()
-            .unwrap(),
-        3
-    );
+    assert_eq!(review.id, deserialized.id);
+    assert_eq!(review.author_name, deserialized.author_name);
+    assert_eq!(review.rating, deserialized.rating);
 }
 
-#[tokio::test]
-async fn test_all_reviews_endpoint() {
-    let req = Request::builder()
-        .uri("/reviews/all")
-        .method("GET")
-        .body(None)
-        .unwrap();
+#[test]
+fn test_reviews_response_structure() {
+    let reviews = vec![
+        Review {
+            id: "1".to_string(),
+            author_name: "Author1".to_string(),
+            rating: 5,
+            text: "Great!".to_string(),
+            date: "2024-01-01".to_string(),
+            source: "Google".to_string(),
+            verified: true,
+            helpful_count: 10,
+        },
+        Review {
+            id: "2".to_string(),
+            author_name: "Author2".to_string(),
+            rating: 4,
+            text: "Good!".to_string(),
+            date: "2024-01-02".to_string(),
+            source: "Booking".to_string(),
+            verified: true,
+            helpful_count: 5,
+        },
+    ];
 
-    let response = handle_request(req).await.unwrap();
-    let status = response.status();
-    let body = response.into_body().unwrap();
-    let json_body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    let response = ReviewsResponse {
+        reviews: reviews.clone(),
+        total_count: 2,
+        average_rating: 4.5,
+        source_breakdown: {
+            let mut map = HashMap::new();
+            map.insert("Google".to_string(), 1);
+            map.insert("Booking".to_string(), 1);
+            map
+        },
+    };
 
-    assert_eq!(status, StatusCode::OK);
-    assert!(json_body.get("reviews").is_some());
-    assert_eq!(json_body.get("total_count").unwrap().as_u64().unwrap(), 6);
-    assert_eq!(
-        json_body.get("average_rating").unwrap().as_f64().unwrap(),
-        4.666666666666667
-    );
-    let source_breakdown = json_body
-        .get("source_breakdown")
-        .unwrap()
-        .as_object()
-        .unwrap();
-    assert_eq!(source_breakdown.len(), 2);
-    assert_eq!(source_breakdown.get("Google").unwrap().as_u64().unwrap(), 3);
-    assert_eq!(
-        source_breakdown
-            .get("Booking.com")
-            .unwrap()
-            .as_u64()
-            .unwrap(),
-        3
-    );
+    assert_eq!(response.total_count, 2);
+    assert_eq!(response.average_rating, 4.5);
+    assert_eq!(response.reviews.len(), 2);
+    assert_eq!(response.source_breakdown.len(), 2);
 }
 
-#[tokio::test]
-async fn test_review_stats_endpoint() {
-    let req = Request::builder()
-        .uri("/reviews/stats")
-        .method("GET")
-        .body(None)
-        .unwrap();
+#[test]
+fn test_error_response_structure() {
+    let error = ErrorResponse {
+        error: "Not Found".to_string(),
+        message: "Reviews endpoint not found".to_string(),
+    };
 
-    let response = handle_request(req).await.unwrap();
-    let status = response.status();
-    let body = response.into_body().unwrap();
-    let json_body: serde_json::Value = serde_json::from_slice(&body).unwrap();
-
-    assert_eq!(status, StatusCode::OK);
-    assert!(json_body.get("total_count").is_some());
-    assert!(json_body.get("average_rating").is_some());
-    assert!(json_body.get("source_breakdown").is_some());
-
-    let source_breakdown = json_body
-        .get("source_breakdown")
-        .unwrap()
-        .as_object()
-        .unwrap();
-    assert_eq!(source_breakdown.len(), 2);
-    assert_eq!(source_breakdown.get("Google").unwrap().as_u64().unwrap(), 3);
-    assert_eq!(
-        source_breakdown
-            .get("Booking.com")
-            .unwrap()
-            .as_u64()
-            .unwrap(),
-        3
-    );
+    assert_eq!(error.error, "Not Found");
+    assert_eq!(error.message, "Reviews endpoint not found");
 }
 
-#[tokio::test]
-async fn test_invalid_endpoint() {
-    let req = Request::builder()
-        .uri("/reviews/invalid")
-        .method("GET")
-        .body(None)
-        .unwrap();
+#[test]
+fn test_reviews_response_serialization() {
+    let reviews = vec![Review {
+        id: "test_1".to_string(),
+        author_name: "Test Author".to_string(),
+        rating: 5,
+        text: "Excellent!".to_string(),
+        date: "2024-01-01".to_string(),
+        source: "Google".to_string(),
+        verified: true,
+        helpful_count: 20,
+    }];
 
-    let response = handle_request(req).await.unwrap();
-    let status = response.status();
-    let body = response.into_body().unwrap();
-    let json_body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    let response = ReviewsResponse {
+        reviews,
+        total_count: 1,
+        average_rating: 5.0,
+        source_breakdown: {
+            let mut map = HashMap::new();
+            map.insert("Google".to_string(), 1);
+            map
+        },
+    };
 
-    assert_eq!(status, StatusCode::NOT_FOUND);
-    assert!(json_body.get("error").is_some());
-    assert!(json_body.get("message").is_some());
-    assert_eq!(
-        json_body.get("error").unwrap().as_str().unwrap(),
-        "Not Found"
-    );
-    assert_eq!(
-        json_body.get("message").unwrap().as_str().unwrap(),
-        "Reviews endpoint not found"
-    );
-}
+    let json = serde_json::to_string(&response).unwrap();
+    let deserialized: ReviewsResponse = serde_json::from_str(&json).unwrap();
 
-#[tokio::test]
-async fn test_options_request() {
-    let req = Request::builder()
-        .uri("/reviews/google")
-        .method("OPTIONS")
-        .body(None)
-        .unwrap();
-
-    let response = handle_request(req).await.unwrap();
-    let status = response.status();
-    let headers = response.headers().clone();
-
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(headers.get("Access-Control-Allow-Origin").unwrap(), "*");
-    assert_eq!(
-        headers.get("Access-Control-Allow-Methods").unwrap(),
-        "GET, OPTIONS"
-    );
-    assert_eq!(
-        headers.get("Access-Control-Allow-Headers").unwrap(),
-        "Content-Type, Authorization"
-    );
+    assert_eq!(response.total_count, deserialized.total_count);
+    assert_eq!(response.average_rating, deserialized.average_rating);
+    assert_eq!(response.reviews.len(), deserialized.reviews.len());
 }

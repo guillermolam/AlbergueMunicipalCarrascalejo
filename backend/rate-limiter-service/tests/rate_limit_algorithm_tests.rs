@@ -1,157 +1,133 @@
-use rate_limiter_service::*;
-use std::collections::HashMap;
+use rate_limiter_service::{
+    calculate_rate_limit, extract_client_id, get_current_timestamp, RateLimitEntry,
+};
+use spin_sdk::http::{Method, Request};
 
-#[cfg(test)]
-mod rate_limit_algorithm_tests {
-    use super::*;
-
-    #[test]
-    fn test_get_current_timestamp() {
-        let timestamp = get_current_timestamp();
-        assert!(timestamp > 0, "Timestamp should be positive");
-
-        // Test that timestamps are increasing
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        let timestamp2 = get_current_timestamp();
-        assert!(
-            timestamp2 >= timestamp,
-            "Timestamps should be non-decreasing"
-        );
+fn req_with_headers(headers: &[(&str, &str)]) -> Request {
+    let mut b = Request::builder();
+    b.method(Method::Get).uri("http://example.com/test");
+    for (k, v) in headers {
+        b.header(*k, *v);
     }
+    b.build()
+}
 
-    #[test]
-    fn test_calculate_rate_limit_new_entry() {
-        let current_time = 1000;
-        let result = calculate_rate_limit(None, current_time, 60, 10);
+// ── Timestamp ─────────────────────────────────────────────────────────────────
 
-        let (allowed, entry, remaining) = result;
-        assert!(allowed, "New entry should be allowed");
-        assert_eq!(entry.requests, 1);
-        assert_eq!(entry.window_start, current_time);
-        assert_eq!(entry.last_request, current_time);
-        assert_eq!(remaining, 9);
-    }
+#[test]
+fn test_get_current_timestamp_is_positive() {
+    assert!(get_current_timestamp() > 0);
+}
 
-    #[test]
-    fn test_calculate_rate_limit_within_window() {
-        let current_time = 1000;
-        let existing = RateLimitEntry {
-            requests: 5,
-            window_start: 1000,
-            last_request: 1000,
-        };
+#[test]
+fn test_timestamps_are_non_decreasing() {
+    let t1 = get_current_timestamp();
+    std::thread::sleep(std::time::Duration::from_millis(10));
+    let t2 = get_current_timestamp();
+    assert!(t2 >= t1);
+}
 
-        let result = calculate_rate_limit(Some(existing.clone()), current_time + 30, 60, 10);
-        let (allowed, entry, remaining) = result;
+// ── Algorithm correctness ─────────────────────────────────────────────────────
 
-        assert!(allowed, "Request within limit should be allowed");
-        assert_eq!(entry.requests, 6);
-        assert_eq!(entry.window_start, 1000);
-        assert_eq!(entry.last_request, current_time + 30);
-        assert_eq!(remaining, 4);
-    }
+#[test]
+fn test_new_entry() {
+    let (allowed, entry, remaining) = calculate_rate_limit(None, 1000, 60, 10);
+    assert!(allowed);
+    assert_eq!(entry.requests, 1);
+    assert_eq!(entry.window_start, 1000);
+    assert_eq!(entry.last_request, 1000);
+    assert_eq!(remaining, 9);
+}
 
-    #[test]
-    fn test_calculate_rate_limit_window_expired() {
-        let current_time = 1000;
-        let existing = RateLimitEntry {
-            requests: 10,
-            window_start: 1000,
-            last_request: 1000,
-        };
+#[test]
+fn test_within_window() {
+    let existing = RateLimitEntry {
+        requests: 5,
+        window_start: 1000,
+        last_request: 1000,
+    };
+    let (allowed, entry, remaining) = calculate_rate_limit(Some(existing), 1030, 60, 10);
+    assert!(allowed);
+    assert_eq!(entry.requests, 6);
+    assert_eq!(entry.window_start, 1000);
+    assert_eq!(entry.last_request, 1030);
+    assert_eq!(remaining, 4);
+}
 
-        let result = calculate_rate_limit(Some(existing.clone()), current_time + 61, 60, 10);
-        let (allowed, entry, remaining) = result;
+#[test]
+fn test_window_expired() {
+    let existing = RateLimitEntry {
+        requests: 10,
+        window_start: 1000,
+        last_request: 1000,
+    };
+    let (allowed, entry, remaining) = calculate_rate_limit(Some(existing), 1061, 60, 10);
+    assert!(allowed, "expired window resets and allows");
+    assert_eq!(entry.requests, 1);
+    assert_eq!(entry.window_start, 1061);
+    assert_eq!(entry.last_request, 1061);
+    assert_eq!(remaining, 9);
+}
 
-        assert!(allowed, "Expired window should reset and allow");
-        assert_eq!(entry.requests, 1);
-        assert_eq!(entry.window_start, current_time + 61);
-        assert_eq!(entry.last_request, current_time + 61);
-        assert_eq!(remaining, 9);
-    }
+#[test]
+fn test_limit_exceeded() {
+    let existing = RateLimitEntry {
+        requests: 10,
+        window_start: 1000,
+        last_request: 1000,
+    };
+    let (allowed, entry, remaining) = calculate_rate_limit(Some(existing), 1030, 60, 10);
+    assert!(!allowed);
+    assert_eq!(entry.requests, 10);
+    assert_eq!(entry.window_start, 1000);
+    assert_eq!(remaining, 0);
+}
 
-    #[test]
-    fn test_calculate_rate_limit_limit_exceeded() {
-        let current_time = 1000;
-        let existing = RateLimitEntry {
-            requests: 10,
-            window_start: 1000,
-            last_request: 1000,
-        };
+#[test]
+fn test_zero_window_resets() {
+    let existing = RateLimitEntry {
+        requests: 5,
+        window_start: 1000,
+        last_request: 1000,
+    };
+    let (allowed, entry, _remaining) = calculate_rate_limit(Some(existing), 1000, 0, 10);
+    assert!(allowed, "zero window always resets");
+    assert_eq!(entry.requests, 1);
+}
 
-        let result = calculate_rate_limit(Some(existing.clone()), current_time + 30, 60, 10);
-        let (allowed, entry, remaining) = result;
+#[test]
+fn test_zero_max_requests_denied() {
+    let (allowed, entry, remaining) = calculate_rate_limit(None, 1000, 60, 0);
+    assert!(!allowed, "zero max_requests must deny");
+    assert_eq!(entry.requests, 1);
+    assert_eq!(remaining, 0);
+}
 
-        assert!(!allowed, "Request over limit should be denied");
-        assert_eq!(entry.requests, 10);
-        assert_eq!(entry.window_start, 1000);
-        assert_eq!(entry.last_request, 1000);
-        assert_eq!(remaining, 0);
-    }
+// ── Client-ID extraction ──────────────────────────────────────────────────────
 
-    #[test]
-    fn test_calculate_rate_limit_edge_cases() {
-        // Test with zero window (should always reset)
-        let current_time = 1000;
-        let existing = RateLimitEntry {
-            requests: 5,
-            window_start: 1000,
-            last_request: 1000,
-        };
+#[test]
+fn test_extract_x_forwarded_for() {
+    let req = req_with_headers(&[("x-forwarded-for", "192.168.1.1")]);
+    assert_eq!(extract_client_id(&req), "192.168.1.1");
+}
 
-        let result = calculate_rate_limit(Some(existing.clone()), current_time, 0, 10);
-        let (allowed, entry, remaining) = result;
+#[test]
+fn test_extract_x_real_ip() {
+    let req = req_with_headers(&[("x-real-ip", "10.0.0.1")]);
+    assert_eq!(extract_client_id(&req), "10.0.0.1");
+}
 
-        assert!(allowed, "Zero window should reset");
-        assert_eq!(entry.requests, 1);
+#[test]
+fn test_extract_unknown_fallback() {
+    let req = req_with_headers(&[]);
+    assert_eq!(extract_client_id(&req), "unknown");
+}
 
-        // Test with max requests = 0 (should always deny)
-        let result = calculate_rate_limit(None, current_time, 60, 0);
-        let (allowed, entry, remaining) = result;
-
-        assert!(!allowed, "Zero max requests should deny");
-        assert_eq!(entry.requests, 1);
-        assert_eq!(remaining, 0);
-    }
-
-    #[test]
-    fn test_extract_client_id() {
-        use http::{HeaderMap, Request};
-
-        // Test with x-forwarded-for header
-        let mut headers = HeaderMap::new();
-        headers.insert("x-forwarded-for", "192.168.1.1".parse().unwrap());
-        let req = Request::builder()
-            .uri("http://example.com/test")
-            .method("GET")
-            .headers(headers)
-            .body(vec![])
-            .unwrap();
-
-        let client_id = extract_client_id(&req);
-        assert_eq!(client_id, "192.168.1.1");
-
-        // Test with x-real-ip header
-        let mut headers = HeaderMap::new();
-        headers.insert("x-real-ip", "10.0.0.1".parse().unwrap());
-        let req = Request::builder()
-            .uri("http://example.com/test")
-            .method("GET")
-            .headers(headers)
-            .body(vec![])
-            .unwrap();
-
-        let client_id = extract_client_id(&req);
-        assert_eq!(client_id, "10.0.0.1");
-
-        // Test with no headers (should return "unknown")
-        let req = Request::builder()
-            .uri("http://example.com/test")
-            .method("GET")
-            .body(vec![])
-            .unwrap();
-
-        let client_id = extract_client_id(&req);
-        assert_eq!(client_id, "unknown");
-    }
+#[test]
+fn test_forwarded_for_priority_over_real_ip() {
+    let req = req_with_headers(&[
+        ("x-forwarded-for", "192.168.1.1"),
+        ("x-real-ip", "10.0.0.1"),
+    ]);
+    assert_eq!(extract_client_id(&req), "192.168.1.1");
 }

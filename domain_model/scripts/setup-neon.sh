@@ -3,9 +3,9 @@ set -e
 
 echo " NeonDB Setup for Albergue del Carrascalejo"
 
-# Configuration
-PROD_URL="postgresql://neondb_owner:npg_X1gcn3aYhPAB@ep-frosty-paper-a2rbivma-pooler.eu-central-1.aws.neon.tech/albergue-carrascalejo?sslmode=require&channel_binding=require"
-DEV_URL="postgresql://neondb_owner:npg_X1gcn3aYhPAB@ep-odd-boat-a2k9sscv-pooler.eu-central-1.aws.neon.tech/albergue-carrascalejo?sslmode=require&channel_binding=require"
+# Configuration - Use environment variables for sensitive data
+PROD_URL="${NEON_PROD_URL:-postgresql://neondb_owner:${NEON_PROD_PASSWORD}@ep-frosty-paper-a2rbivma-pooler.eu-central-1.aws.neon.tech/albergue-carrascalejo?sslmode=require&channel_binding=require}"
+DEV_URL="${NEON_DEV_URL:-postgresql://neondb_owner:${NEON_DEV_PASSWORD}@ep-odd-boat-a2k9sscv-pooler.eu-central-1.aws.neon.tech/albergue-carrascalejo?sslmode=require&channel_binding=require}"
 
 # Function to test connection
 test_connection() {

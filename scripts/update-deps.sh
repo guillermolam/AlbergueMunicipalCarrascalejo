@@ -21,7 +21,7 @@ for dir in backend/auth-service backend/booking-service backend/document-validat
 	backend/rate-limiter-service backend/redis-service backend/reviews-service \
 	backend/security-service backend/mqtt-broker-service backend/redis-cache-service \
 	backend/shared; do
-	if [ -f "$dir/Cargo.toml" ]; then
+	if [[ -f "$dir/Cargo.toml" ]]; then
 		echo "  -> Updating $dir"
 		(cd "$dir" && cargo upgrade --incompatible --skip-compatible 2>/dev/null || true)
 	fi
@@ -30,7 +30,7 @@ done
 echo ""
 echo "Updating dependencies in gateway..."
 for dir in gateway/api-gateway gateway/api-gateway-core gateway/edge-proxy; do
-	if [ -f "$dir/Cargo.toml" ]; then
+	if [[ -f "$dir/Cargo.toml" ]]; then
 		echo "  -> Updating $dir"
 		(cd "$dir" && cargo upgrade --incompatible --skip-compatible 2>/dev/null || true)
 	fi
