@@ -75,33 +75,30 @@ pub fn calculate_rate_limit(
 
     let window_duration = u64::from(window_seconds);
 
-    match entry {
-        Some(mut existing) => {
-            if current_time >= existing.window_start + window_duration {
-                // Window expired — fresh start.
-                existing.requests = 1;
-                existing.window_start = current_time;
-                existing.last_request = current_time;
-                (true, existing, max_requests - 1)
-            } else if existing.requests < max_requests {
-                // Within window, under limit.
-                existing.requests += 1;
-                existing.last_request = current_time;
-                let used = existing.requests;
-                (true, existing, max_requests - used)
-            } else {
-                // Limit exceeded.
-                (false, existing, 0)
-            }
+    if let Some(mut existing) = entry {
+        if current_time >= existing.window_start + window_duration {
+            // Window expired — fresh start.
+            existing.requests = 1;
+            existing.window_start = current_time;
+            existing.last_request = current_time;
+            (true, existing, max_requests - 1)
+        } else if existing.requests < max_requests {
+            // Within window, under limit.
+            existing.requests += 1;
+            existing.last_request = current_time;
+            let used = existing.requests;
+            (true, existing, max_requests - used)
+        } else {
+            // Limit exceeded.
+            (false, existing, 0)
         }
-        None => {
-            let new_entry = RateLimitEntry {
-                requests: 1,
-                window_start: current_time,
-                last_request: current_time,
-            };
-            (true, new_entry, max_requests - 1)
-        }
+    } else {
+        let new_entry = RateLimitEntry {
+            requests: 1,
+            window_start: current_time,
+            last_request: current_time,
+        };
+        (true, new_entry, max_requests - 1)
     }
 }
 
