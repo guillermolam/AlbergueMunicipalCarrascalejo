@@ -19,7 +19,7 @@ export function getGatewayBaseUrl(): string {
     process.env.GATEWAY_BASE_URL ||
     process.env.GATEWAY_URL ||
     'http://127.0.0.1:8080'
-  ).replace(/\/+$/, '');
+  ).replace(/\/+$/, ''); // NOSONAR — /\/+$/ is safe: single literal char class anchored to end, no catastrophic backtracking possible
 }
 
 export async function proxyGatewayJson(

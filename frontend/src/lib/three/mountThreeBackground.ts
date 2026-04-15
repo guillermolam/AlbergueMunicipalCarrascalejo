@@ -27,9 +27,9 @@ export function mountThreeBackground(canvas: HTMLCanvasElement): ThreeMount {
   const positions = new Float32Array(starCount * 3);
   for (let i = 0; i < starCount; i++) {
     const i3 = i * 3;
-    const r = 120 * Math.cbrt(Math.random());
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
+    const r = 120 * Math.cbrt(Math.random()); // NOSONAR — visual randomness for 3D star placement, not security-sensitive
+    const theta = Math.random() * Math.PI * 2; // NOSONAR — visual randomness for 3D star placement, not security-sensitive
+    const phi = Math.acos(2 * Math.random() - 1); // NOSONAR — visual randomness for 3D star placement, not security-sensitive
     positions[i3] = r * Math.sin(phi) * Math.cos(theta);
     positions[i3 + 1] = r * Math.cos(phi);
     positions[i3 + 2] = r * Math.sin(phi) * Math.sin(theta);

@@ -47,6 +47,7 @@
     "@astrojs/cloudflare": "^13.1.7",
     "@iconify-json/logos": "^1.2.11",
     "@iconify-json/uil": "^1.2.3",
+    "@iconify/types": "^2.0.0",
     "@types/alpinejs": "^3.13.11",
     "@types/node": "^25.5.2",
     "@types/three": "^0.175.0",

@@ -249,7 +249,14 @@ jobs:
       - name: Install Spin CLI
         run: |
           curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-          echo "$HOME/.spin/bin" >> $GITHUB_PATH
+          # install.sh ≥ Spin 3 drops the binary in CWD ("./spin") rather than
+          # ~/.spin/bin; move it to /usr/local/bin so it is on PATH for all
+          # subsequent steps without modifying GITHUB_PATH per-step.
+          if [ -f "./spin" ]; then
+            sudo install -m 755 ./spin /usr/local/bin/spin
+            rm -f ./spin
+          fi
+          spin --version
 
       - name: Install just
         run: |
@@ -374,7 +381,7 @@ jobs:
         # SHA-pinning omitted: the 40-char commit SHA triggers semgrep rule
         # generic.secrets.security.detected-sonarqube-docs-api-key (false positive).
         # SonarSource is the publisher of this action; @v3 is the current stable tag.
-        uses: SonarSource/sonarcloud-github-action@v3
+        uses: SonarSource/sonarcloud-github-action@v3 # NOSONAR — S7637: SHA-pin blocked by semgrep CWE-798 false positive (40-char git SHA matches sonar-key pattern); published by SonarSource, @v3 is audited stable tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
