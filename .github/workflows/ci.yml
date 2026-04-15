@@ -3,9 +3,7 @@ name: CI/CD Pipeline
 # Restrict top-level permissions to only what is required (remove write-all)
 permissions:
   contents: read
-  # Add other permissions as needed, e.g.:
-  # issues: read
-  # pull-requests: read
+  pull-requests: read
 
 on:
   push:
@@ -292,9 +290,11 @@ jobs:
           pnpm install --frozen-lockfile
 
       - name: Run security audit (Node)
+        # pnpm audit still targets the retired npm /v1/security/audits endpoint (HTTP 410).
+        # audit-ci uses the new bulk advisory endpoint that npm now requires.
         run: |
           cd frontend
-          pnpm audit --audit-level=critical
+          npx --yes audit-ci@^7 --critical
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -367,21 +367,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install SonarScanner CLI
-        run: |
-          curl -o- https://raw.githubusercontent.com/SonarSource/sonarqube-cli/refs/heads/master/user-scripts/install.sh | bash
-          echo "$HOME/.sonarqube-cli/bin" >> $GITHUB_PATH
-
-      - name: Scan Monorepo (single pass)
-        if: success()
-        run: |
-          sonar-scanner \
-            -Dsonar.projectKey=guillermolam_AlbergueMunicipalCarrascalejo \
-            -Dsonar.organization=guillermolam \
-            -Dsonar.sources=frontend/src,backend,gateway,infra \
-            -Dsonar.exclusions=**/dist/**,**/target/**,**/node_modules/**,GIS/**,frontend/public/** \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.qualitygate.wait=true
+      - name: SonarCloud Scan
+        # Use the official action — avoids manual PATH wiring and is maintained by SonarSource.
+        uses: SonarSource/sonarcloud-github-action@v3
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=guillermolam_AlbergueMunicipalCarrascalejo
+            -Dsonar.organization=guillermolam
+            -Dsonar.sources=frontend/src,backend,gateway,infra
+            -Dsonar.exclusions=**/dist/**,**/target/**,**/node_modules/**,GIS/**,frontend/public/**
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.qualitygate.wait=true
