@@ -1,0 +1,16 @@
+---
+# yamllint configuration for AlbergueMunicipalCarrascalejo
+# Trunk picks this up automatically from .trunk/configs/
+extends: default
+
+rules:
+  # GitHub Actions workflow files use @SHA # tag inline comments with a single
+  # space before the #.  The default rule requires 2 spaces, which conflicts
+  # with that convention.  Relax to min: 1.
+  comments:
+    min-spaces-from-content: 1
+
+  # Long sonar.exclusions lines and SHA-pinned uses: lines can exceed 160 chars.
+  line-length:
+    max: 200
+    level: warning

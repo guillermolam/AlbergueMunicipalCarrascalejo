@@ -390,6 +390,6 @@ jobs:
             -Dsonar.projectKey=guillermolam_AlbergueMunicipalCarrascalejo
             -Dsonar.organization=guillermolam
             -Dsonar.sources=frontend/src,backend,gateway,infra
-            -Dsonar.exclusions=**/dist/**,**/target/**,**/node_modules/**,GIS/**,frontend/public/**
+            -Dsonar.exclusions=**/dist/**,**/target/**,**/node_modules/**,GIS/**,frontend/public/**,tests/infrastructure/docker/**
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.qualitygate.wait=true
