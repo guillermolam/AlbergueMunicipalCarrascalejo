@@ -2,7 +2,7 @@
 // Supports fake routes, mocked gateway, and real gateway integration
 
 import { getConfig } from './config-ssr';
-import { secureRandom, secureRandomInt } from './secure-random';
+import { secureRandomInt } from './secure-random';
 
 // SSR-safe environment check
 const isServer = typeof window === 'undefined';

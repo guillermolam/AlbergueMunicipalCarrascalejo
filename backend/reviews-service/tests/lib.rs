@@ -1,7 +1,7 @@
 // If `reviews_service` is a local crate in the workspace, use this:
-use crate::{ErrorResponse, Review, ReviewsResponse};
+// use crate::{ErrorResponse, Review, ReviewsResponse};
 // Or, if `reviews_service` is in the parent directory as a library crate:
- // use reviews_service::{ErrorResponse, Review, ReviewsResponse};
+use reviews_service::{ErrorResponse, Review, ReviewsResponse};
 use serde_json::json;
 use std::collections::HashMap;
 
