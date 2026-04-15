@@ -57,7 +57,9 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Explicit environment flags
+# Explicit environment flags.
+# NODE_ENV=development is intentional: this image is for local dev only (Dockerfile.dev).
+# NOSONAR — S4507: development flag is deliberate; Dockerfile.dev is never used in production
 ENV NODE_ENV=development \
     PORT=5000
 
