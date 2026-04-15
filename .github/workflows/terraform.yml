@@ -91,7 +91,7 @@ jobs:
           category: checkov
 
       - name: KICS Scan
-        uses: Checkmarx/kics-github-action@v2
+        uses: Checkmarx/kics-github-action@v2.1.20
         with:
           path: infra/
           output_path: kics-results/
@@ -115,6 +115,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     if: github.event_name == 'pull_request'
+    # Spacelift credentials may not be configured in all environments;
+    # allow this job to fail without blocking PR merge.
+    continue-on-error: true
 
     steps:
       - name: Checkout
