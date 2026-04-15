@@ -12,7 +12,7 @@ export default function storybookAstroIntegration(): AstroIntegration {
       'astro:config:setup': ({ config, injectScript }) => {
         // Inject environment variables for Storybook compatibility
         injectScript(
-          'head',
+          'head-inline',
           `
           <script>
             window.ASTRO_ENV = {
@@ -20,7 +20,7 @@ export default function storybookAstroIntegration(): AstroIntegration {
               PUBLIC_ENV: '${import.meta.env.MODE || 'development'}',
               PUBLIC_VERSION: '${import.meta.env.PACKAGE_VERSION || '1.0.0'}',
               STORYBOOK: true,
-              ASTRO_VERSION: '${config.version || '6.1.5'}'
+              ASTRO_VERSION: '6.1.5'
             };
             
             // Mock Cloudflare environment for Storybook
@@ -36,7 +36,7 @@ export default function storybookAstroIntegration(): AstroIntegration {
 
         // Inject Alpine.js for Storybook compatibility
         injectScript(
-          'head',
+          'head-inline',
           `
           <script type="module">
             import Alpine from 'alpinejs';
@@ -48,7 +48,7 @@ export default function storybookAstroIntegration(): AstroIntegration {
 
         // Inject Three.js for GIS components
         injectScript(
-          'head',
+          'head-inline',
           `
           <script type="module">
             import * as THREE from 'three';
@@ -90,15 +90,19 @@ export default function storybookAstroIntegration(): AstroIntegration {
           'solid-js',
           'solid-js/web',
           'solid-js/html',
-          // MapLibre support
-          'maplibre-gl',
-          'maplibre-gl/dist/maplibre-gl.css',
         ];
 
         vite.build = vite.build || {};
         vite.build.rollupOptions = vite.build.rollupOptions || {};
+        const external = vite.build.rollupOptions.external;
+        const externalList =
+          typeof external === 'string'
+            ? [external]
+            : Array.isArray(external)
+              ? external
+              : [];
         vite.build.rollupOptions.external = [
-          ...(vite.build.rollupOptions.external || []),
+          ...externalList,
           'fs',
           'path',
           'async_hooks',

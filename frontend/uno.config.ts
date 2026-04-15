@@ -1,14 +1,14 @@
 import {
   defineConfig,
   presetIcons,
+  presetMini,
   presetTypography,
-  presetUno,
   transformerVariantGroup,
 } from 'unocss';
 
 export default defineConfig({
   presets: [
-    presetUno(),
+    presetMini(),
     presetIcons({
       scale: 1.2,
       warn: true,
