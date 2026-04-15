@@ -63,7 +63,7 @@ export function calculateNights(arrivalDate: string, departureDate: string): num
 }
 
 export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,63}$/; // bounded quantifiers prevent ReDoS
   return emailRegex.test(email);
 }
 

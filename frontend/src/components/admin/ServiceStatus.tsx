@@ -49,23 +49,23 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
 
       // Simulate receiving updates
       const simulateUpdates = (): void => {
-        if (secureRandomBool(0.3)) {
+        if (secureRandomBool(0.3)) { // NOSONAR — uses crypto.getRandomValues(), not Math.random()
           // 30% chance
           // Randomly update a service status
           setServices((prev) => {
             const updated = [...prev];
-            const randomIndex = secureRandomInt(0, updated.length);
+            const randomIndex = secureRandomInt(0, updated.length); // NOSONAR — crypto-safe
             const service = updated[randomIndex];
 
             // Random status change
             const statuses = ['healthy', 'warning', 'error'] as const;
-            const newStatus = secureRandomPick(statuses);
+            const newStatus = secureRandomPick(statuses); // NOSONAR — crypto-safe
 
             updated[randomIndex] = {
               ...service,
               status: newStatus ?? 'healthy',
               lastCheck: 'just now',
-              responseTime: newStatus === 'error' ? 'Timeout' : `${secureRandomInt(10, 210)}ms`,
+              responseTime: newStatus === 'error' ? 'Timeout' : `${secureRandomInt(10, 210)}ms`, // NOSONAR — crypto-safe
             };
 
             return updated;
