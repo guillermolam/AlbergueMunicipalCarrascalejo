@@ -122,7 +122,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       case 'error':
         return 'bg-error';
       default:
-        return 'bg-base-300';
+        return 'bg-stone-300';
     }
   };
 
@@ -135,7 +135,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       case 'error':
         return 'text-error';
       default:
-        return 'text-base-content';
+        return 'text-stone-900';
     }
   };
 
@@ -149,12 +149,12 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class={`w-3 h-3 rounded-full ${isConnected() ? 'bg-success' : 'bg-error'}`}></div>
-          <span class="text-sm text-base-content/70">
+          <span class="text-sm text-stone-600">
             {isConnected() ? 'Connected' : 'Disconnected'} • Last update:{' '}
             {lastUpdate().toLocaleTimeString()}
           </span>
         </div>
-        <button class="btn btn-ghost btn-sm" onClick={refreshServices}>
+        <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-sm" onClick={refreshServices}>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -170,15 +170,15 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       {/* Service Cards */}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {services().map((service) => (
-          <div class="card bg-base-200 shadow-sm border border-base-300">
-            <div class="card-body p-4">
+          <div class="card-brut p-4 bg-stone-100 border border-stone-300">
+            <div class="p-4">
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                   <div class={`w-3 h-3 rounded-full ${getStatusColor(service.status)}`}></div>
-                  <h3 class="card-title text-lg">{service.name}</h3>
+                  <h3 class="font-700 text-lg">{service.name}</h3>
                 </div>
                 <div class="dropdown dropdown-end">
-                  <label tabindex="0" class="btn btn-ghost btn-xs btn-circle">
+                  <label tabindex="0" class="border border-stone-300 rounded-full p-1 bg-white hover:bg-stone-100">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
@@ -190,7 +190,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                   </label>
                   <ul
                     tabindex="0"
-                    class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-32"
+                    class="absolute right-0 mt-2 p-2 shadow bg-white rounded-xl w-32"
                   >
                     <li>
                       <a>View logs</a>
@@ -205,31 +205,31 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                 </div>
               </div>
 
-              <p class="text-sm text-base-content/70 mb-4">{service.description}</p>
+              <p class="text-sm text-stone-600 mb-4">{service.description}</p>
 
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Status:</span>
+                  <span class="text-stone-500">Status:</span>
                   <span class={`font-medium ${getStatusTextColor(service.status)}`}>
                     {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Response Time:</span>
+                  <span class="text-stone-500">Response Time:</span>
                   <span class="font-mono">{service.responseTime}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Uptime:</span>
+                  <span class="text-stone-500">Uptime:</span>
                   <span class="font-mono">{service.uptime}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Last Check:</span>
+                  <span class="text-stone-500">Last Check:</span>
                   <span class="font-mono text-xs">{service.lastCheck}</span>
                 </div>
               </div>
 
-              <div class="card-actions justify-end mt-4">
-                <button class="btn btn-ghost btn-xs">
+              <div class="flex justify-end mt-4">
+                <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
@@ -240,7 +240,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                   </svg>
                   Logs
                 </button>
-                <button class="btn btn-ghost btn-xs">
+                <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"

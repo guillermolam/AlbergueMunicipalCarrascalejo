@@ -97,14 +97,14 @@ const statusIcons: Record<string, string> = {
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold text-base-content">Services Health</h1>
-        <p class="text-base-content/70 mt-1">Monitor all system services and infrastructure</p>
+        <h1 class="text-3xl font-bold text-stone-900">Services Health</h1>
+        <p class="text-stone-600 mt-1">Monitor all system services and infrastructure</p>
       </div>
       <div class="flex items-center gap-4">
-        <div class="text-sm text-base-content/70">
+        <div class="text-sm text-stone-600">
           Last updated: <span class="font-mono">{new Date().toLocaleTimeString()}</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="location.reload()">
+        <button class="btn-primary text-sm" onclick="location.reload()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -120,8 +120,8 @@ const statusIcons: Record<string, string> = {
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-success">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-success">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -130,15 +130,15 @@ const statusIcons: Record<string, string> = {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
-        <div class="stat-title">Healthy Services</div>
-        <div class="stat-value text-success">
+        <div class="text-sm opacity-70">Healthy Services</div>
+        <div class="text-2xl font-900 text-success">
           {services.filter((s) => s.status === 'healthy').length}
         </div>
-        <div class="stat-desc">of {services.length} total</div>
+        <div class="text-xs opacity-70">of {services.length} total</div>
       </div>
 
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-warning">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-warning">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -148,15 +148,15 @@ const statusIcons: Record<string, string> = {
             ></path>
           </svg>
         </div>
-        <div class="stat-title">Warnings</div>
-        <div class="stat-value text-warning">
+        <div class="text-sm opacity-70">Warnings</div>
+        <div class="text-2xl font-900 text-warning">
           {services.filter((s) => s.status === 'warning').length}
         </div>
-        <div class="stat-desc">Requires attention</div>
+        <div class="text-xs opacity-70">Requires attention</div>
       </div>
 
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-error">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-error">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -165,15 +165,15 @@ const statusIcons: Record<string, string> = {
               d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
-        <div class="stat-title">Errors</div>
-        <div class="stat-value text-error">
+        <div class="text-sm opacity-70">Errors</div>
+        <div class="text-2xl font-900 text-error">
           {services.filter((s) => s.status === 'error').length}
         </div>
-        <div class="stat-desc">Critical issues</div>
+        <div class="text-xs opacity-70">Critical issues</div>
       </div>
 
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-info">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-info">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -182,8 +182,8 @@ const statusIcons: Record<string, string> = {
               d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
         </div>
-        <div class="stat-title">Avg Response</div>
-        <div class="stat-value text-info">
+        <div class="text-sm opacity-70">Avg Response</div>
+        <div class="text-2xl font-900 text-info">
           {
             Math.round(
               services
@@ -193,25 +193,25 @@ const statusIcons: Record<string, string> = {
             )
           }ms
         </div>
-        <div class="stat-desc">Across all services</div>
+        <div class="text-xs opacity-70">Across all services</div>
       </div>
     </div>
 
     <!-- Service Cards -->
     <div class="space-y-4">
-      <h2 class="text-xl font-semibold text-base-content">Service Status</h2>
+      <h2 class="text-xl font-semibold text-stone-900">Service Status</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {
           services.map((service) => (
-            <div class="card bg-base-200 shadow-sm border border-base-300">
-              <div class="card-body p-4">
+            <div class="card-brut p-4 bg-stone-100 border border-stone-300">
+              <div class="p-4">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
                     <div class={`w-3 h-3 rounded-full ${statusColors[service.status]}`} />
-                    <h3 class="card-title text-lg">{service.name}</h3>
+                    <h3 class="font-700 text-lg">{service.name}</h3>
                   </div>
                   <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-ghost btn-xs btn-circle">
+                    <label tabindex="0" class="border border-stone-300 rounded-full p-1 bg-white hover:bg-stone-100">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           stroke-linecap="round"
@@ -223,7 +223,7 @@ const statusIcons: Record<string, string> = {
                     </label>
                     <ul
                       tabindex="0"
-                      class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-32"
+                      class="absolute right-0 mt-2 p-2 shadow bg-white rounded-xl w-32"
                     >
                       <li>
                         <a>View logs</a>
@@ -238,11 +238,11 @@ const statusIcons: Record<string, string> = {
                   </div>
                 </div>
 
-                <p class="text-sm text-base-content/70 mb-4">{service.description}</p>
+                <p class="text-sm text-stone-600 mb-4">{service.description}</p>
 
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between">
-                    <span class="text-base-content/60">Status:</span>
+                    <span class="text-stone-500">Status:</span>
                     <span
                       class={`font-medium ${
                         service.status === 'healthy'
@@ -256,21 +256,21 @@ const statusIcons: Record<string, string> = {
                     </span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-base-content/60">Response Time:</span>
+                    <span class="text-stone-500">Response Time:</span>
                     <span class="font-mono">{service.responseTime}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-base-content/60">Uptime:</span>
+                    <span class="text-stone-500">Uptime:</span>
                     <span class="font-mono">{service.uptime}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-base-content/60">Last Check:</span>
+                    <span class="text-stone-500">Last Check:</span>
                     <span class="font-mono text-xs">{service.lastCheck}</span>
                   </div>
                 </div>
 
-                <div class="card-actions justify-end mt-4">
-                  <button class="btn btn-ghost btn-xs">
+                <div class="flex justify-end mt-4">
+                  <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
@@ -281,7 +281,7 @@ const statusIcons: Record<string, string> = {
                     </svg>
                     Logs
                   </button>
-                  <button class="btn btn-ghost btn-xs">
+                  <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
@@ -308,9 +308,9 @@ const statusIcons: Record<string, string> = {
 
     <!-- Quick Actions -->
     <div class="space-y-4">
-      <h2 class="text-xl font-semibold text-base-content">Quick Actions</h2>
+      <h2 class="text-xl font-semibold text-stone-900">Quick Actions</h2>
       <div class="flex flex-wrap gap-3">
-        <button class="btn btn-primary btn-sm">
+        <button class="btn-primary text-sm">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -321,7 +321,7 @@ const statusIcons: Record<string, string> = {
           </svg>
           Refresh All
         </button>
-        <button class="btn btn-outline btn-sm">
+        <button class="border-2 border-black px-3 py-2 text-sm hover:bg-stone-100">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -332,7 +332,7 @@ const statusIcons: Record<string, string> = {
           </svg>
           Export Report
         </button>
-        <button class="btn btn-outline btn-sm">
+        <button class="border-2 border-black px-3 py-2 text-sm hover:bg-stone-100">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"

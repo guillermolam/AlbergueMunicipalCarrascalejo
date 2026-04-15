@@ -14,7 +14,12 @@ frontend/.wrangler/
 **/.vercel/
 **/.netlify/
 **/.spin/
-**/.trunk/
+# Trunk: ignore runtime/cache artifacts but keep repo config
+**/.trunk/**
+!/.trunk/
+!/.trunk/trunk.yaml
+!/.trunk/configs/
+!/.trunk/configs/**
 **/v10/
 **/v3/
 **/.direnv/

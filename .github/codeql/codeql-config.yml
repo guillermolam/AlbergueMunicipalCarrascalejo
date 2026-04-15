@@ -1,0 +1,17 @@
+name: Repo CodeQL Config
+
+paths:
+  - frontend/src
+  - backend
+  - gateway
+  - infra
+
+paths-ignore:
+  - "**/dist/**"
+  - "**/target/**"
+  - "**/node_modules/**"
+  - "**/.astro/**"
+  - "GIS/**"
+  - "public/gis-data/**"
+  - "frontend/public/**"
+  - "frontend/src/locales/.wuchale/**"

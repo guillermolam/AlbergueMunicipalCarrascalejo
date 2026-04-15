@@ -35,10 +35,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Handle progress sync
   if (pathname === '/api/progress' && request.method === 'POST') {
     try {
-      const body = await request.json();
+      const body = (await request.json()) as Record<string, unknown>;
 
       // Validate payload
-      if (!body.dailyGoalKm || !body.currentStageProgress || !body.ts) {
+      const dailyGoalKmRaw = body.dailyGoalKm;
+      const currentStageProgressRaw = body.currentStageProgress;
+      const tsRaw = body.ts;
+
+      if (dailyGoalKmRaw == null || currentStageProgressRaw == null || tsRaw == null) {
         return new Response(JSON.stringify({ error: 'Missing required fields' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
@@ -46,8 +50,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       }
 
       // Validate ranges
-      const dailyGoalKm = Number(body.dailyGoalKm);
-      const currentStageProgress = Number(body.currentStageProgress);
+      const dailyGoalKm = Number(dailyGoalKmRaw);
+      const currentStageProgress = Number(currentStageProgressRaw);
 
       if (dailyGoalKm < 15 || dailyGoalKm > 35) {
         return new Response(JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }), {

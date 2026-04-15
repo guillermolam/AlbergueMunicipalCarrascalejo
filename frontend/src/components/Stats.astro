@@ -24,13 +24,13 @@ const {
 >
   <div class={`stat-card ${animated ? 'animate-fade-in' : ''}`}>
     <div class="stat-header">
-      <h3 class="stat-title">{title}</h3>
+      <h3 class="metric-title">{title}</h3>
     </div>
-    <div class="stat-value">
+    <div class="metric-value">
       <span class="value">{count}</span>
       {unit && <span class="unit">{unit}</span>}
     </div>
-    {description && <p class="stat-desc">{description}</p>}
+    {description && <p class="metric-desc">{description}</p>}
     {
       animated && (
         <div class="progress">
@@ -86,14 +86,14 @@ const {
   .stat-header {
     margin-bottom: 8px;
   }
-  .stat-title {
+  .metric-title {
     font-size: 0.875rem;
     font-weight: 600;
     color: #475569;
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
-  .stat-value {
+  .metric-value {
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -109,7 +109,7 @@ const {
     color: #64748b;
     font-weight: 500;
   }
-  .stat-desc {
+  .metric-desc {
     font-size: 0.9rem;
     color: #64748b;
   }
