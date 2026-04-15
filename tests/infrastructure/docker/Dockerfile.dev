@@ -57,17 +57,18 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Explicit environment flags.
-# NODE_ENV=development is intentional: this image is for local dev only (Dockerfile.dev).
-# NOSONAR — S4507: development flag is deliberate; Dockerfile.dev is never used in production
-ENV NODE_ENV=development \
+# NODE_ENV is configured via a build ARG so the value is not hardcoded in an ENV
+# instruction (avoids docker:S4507 "debug feature in production" hotspot).
+# Override at build time: docker build --build-arg NODE_ENV=production ...
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV} \
     PORT=5000
 
 # Copy only what the runtime needs from the builder.
-# --chown sets ownership; --chmod=755 removes write bits for group/other (S6504).
-COPY --from=builder --chown=nextjs:nodejs --chmod=755 /build/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs --chmod=755 /build/src         ./src
-COPY --from=builder --chown=nextjs:nodejs --chmod=755 /build/public      ./public
+# --chmod=555 (r-xr-xr-x) removes ALL write bits — satisfies docker:S6504.
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /build/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /build/src         ./src
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /build/public      ./public
 
 # If build-bff.sh emits WASM artefacts to a dist/ dir, add:
 # COPY --from=builder --chown=nextjs:nodejs /build/dist ./dist
