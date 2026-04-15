@@ -647,10 +647,8 @@ async function simulateLogin(
         isActive: true,
       },
       tokens: {
-        accessToken:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-        refreshToken:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+        accessToken: process.env.PUBLIC_MOCK_ACCESS_TOKEN || 'mock-access-token',
+        refreshToken: process.env.PUBLIC_MOCK_REFRESH_TOKEN || 'mock-refresh-token',
       },
     };
   }
@@ -747,8 +745,7 @@ async function simulateRefreshToken(
     success: true,
     data: true,
     tokens: {
-      accessToken:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+      accessToken: process.env.PUBLIC_MOCK_ACCESS_TOKEN || 'mock-access-token',
       refreshToken: refreshToken, // Same refresh token
     },
   };

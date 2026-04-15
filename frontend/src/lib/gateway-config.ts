@@ -2,6 +2,7 @@
 // Supports fake routes, mocked gateway, and real gateway integration
 
 import { getConfig } from './config-ssr';
+import { secureRandom, secureRandomInt } from './secure-random';
 
 // SSR-safe environment check
 const isServer = typeof window === 'undefined';
@@ -214,8 +215,8 @@ const fakeResponses = {
         ...mockData.booking,
         ...data,
         id: 'booking-' + Date.now(),
-        reference: 'BK' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-        confirmationCode: 'CONF-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        reference: 'BK' + secureRandomInt(10000000, 99999999).toString(36).toUpperCase(),
+        confirmationCode: 'CONF-' + secureRandomInt(100000, 999999).toString(36).toUpperCase(),
       },
       message: 'Reserva creada correctamente',
     };
@@ -396,7 +397,7 @@ export async function gatewayRequest(endpoint: string, options: RequestInit = {}
 
   // Handle mock mode (similar to fake but with more realistic delays)
   if (mode === 'mock') {
-    await delay(100 + Math.random() * 400); // Random delay 100-500ms
+    await delay(100 + secureRandomInt(0, 401)); // Random delay 100-500ms
     const fakeHandler = fakeResponses[endpoint as keyof typeof fakeResponses];
     if (fakeHandler) {
       try {

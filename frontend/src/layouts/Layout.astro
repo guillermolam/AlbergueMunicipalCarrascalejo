@@ -15,6 +15,14 @@ const {
   showHeader = true,
   showFooter = true,
 } = Astro.props;
+
+const locals = Astro.locals as any;
+const auth = locals.auth?.();
+const isAuthenticated = !!auth?.isAuthenticated;
+const role = (locals.role ?? 'guest') as 'admin' | 'pilgrim' | 'guest';
+const userId = (locals.userId ?? auth?.userId ?? '') as string;
+const avatarLabel = role === 'admin' ? 'A' : 'U';
+const shortUser = userId ? userId.slice(-6) : '';
 ---
 
 <!doctype html>
@@ -34,7 +42,20 @@ const {
           <nav class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-4">
-                <div class="text-2xl font-bold text-slate-800">🚶‍♂️</div>
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  class="text-slate-800"
+                  aria-hidden="true"
+                >
+                  <path d="M12 21v-6l-3-3V7a3 3 0 0 1 6 0v5l-3 3v6" />
+                  <path d="M9 10h6" />
+                  <circle cx="12" cy="4" r="2" />
+                </svg>
                 <div>
                   <h1 class="text-xl font-bold text-slate-800">Camino Dashboard</h1>
                   <p class="text-xs text-slate-600">Tu progreso en el Camino</p>
@@ -60,16 +81,51 @@ const {
                 >
                   Reservas
                 </a>
-                <a
-                  href="/auth"
-                  class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition-colors font-medium"
-                >
-                  Iniciar Sesión
-                </a>
+                {!isAuthenticated ? (
+                  <a
+                    href="/auth"
+                    class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition-colors font-medium"
+                  >
+                    Iniciar sesión
+                  </a>
+                ) : (
+                  <details class="relative">
+                    <summary class="list-none cursor-pointer flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50">
+                      <span class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold">
+                        {avatarLabel}
+                      </span>
+                      <span class="text-slate-700 font-medium max-w-36 truncate">
+                        {shortUser ? `Cuenta · ${shortUser}` : 'Cuenta'}
+                      </span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        class="text-slate-500"
+                        aria-hidden="true"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </summary>
+                    <div class="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                      {role === 'admin' && (
+                        <a href="/admin" class="block px-4 py-2 text-slate-800 hover:bg-slate-50">
+                          Admin
+                        </a>
+                      )}
+                      <a href="/sign-out" class="block px-4 py-2 text-slate-800 hover:bg-slate-50">
+                        Cerrar sesión
+                      </a>
+                    </div>
+                  </details>
+                )}
               </div>
 
               <button class="md:hidden p-2 rounded-lg hover:bg-slate-100">
-                <span class="text-slate-700">☰</span>
+                <span class="text-slate-700">Menu</span>
               </button>
             </div>
           </nav>
@@ -128,7 +184,7 @@ const {
               </div>
             </div>
             <div class="border-t border-slate-700 mt-8 pt-8 text-center text-slate-400 text-sm">
-              © 2024 Camino Dashboard. Hecho con ❤️ para peregrinos.
+              © 2024 Camino Dashboard. Hecho para peregrinos.
             </div>
           </div>
         </footer>

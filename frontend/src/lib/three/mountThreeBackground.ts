@@ -111,4 +111,3 @@ export function mountThreeBackground(canvas: HTMLCanvasElement): ThreeMount {
 
   return { dispose };
 }
-

@@ -1,9 +1,16 @@
 ﻿---
-export const prerender = true;
+export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import ServiceStatus from '../../components/admin/ServiceStatus.astro';
 import { mockHealthChecks } from '../../lib/healthchecks';
+
+const locals = Astro.locals as any;
+if (locals.role !== 'admin') {
+  return Astro.redirect('/');
+}
+
+return Astro.redirect('/admin');
 ---
 
 <AdminLayout title="Services Health - Admin Dashboard" activeSection="services">

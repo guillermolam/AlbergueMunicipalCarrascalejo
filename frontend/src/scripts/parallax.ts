@@ -12,9 +12,13 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-export function initParallax(opts?: { root?: HTMLElement; track?: HTMLElement }): ParallaxController {
+export function initParallax(opts?: {
+  root?: HTMLElement;
+  track?: HTMLElement;
+}): ParallaxController {
   const root = opts?.root ?? document.documentElement;
-  const track = opts?.track ?? document.querySelector<HTMLElement>('[data-parallax-track]') ?? document.body;
+  const track =
+    opts?.track ?? document.querySelector<HTMLElement>('[data-parallax-track]') ?? document.body;
 
   const prevOverflow = document.documentElement.style.overflow;
   const prevBodyOverflow = document.body.style.overflow;
@@ -144,4 +148,3 @@ export function initParallax(opts?: { root?: HTMLElement; track?: HTMLElement })
 
   return { destroy };
 }
-

@@ -15,6 +15,7 @@ export const PATCH: APIRoute = async (ctx) => {
     });
   }
 
-  return proxyGatewayJson(`/admin/bookings/${encodeURIComponent(id)}`, ctx.request, { method: 'PATCH' });
+  return proxyGatewayJson(`/admin/bookings/${encodeURIComponent(id)}`, ctx.request, {
+    method: 'PATCH',
+  });
 };
-

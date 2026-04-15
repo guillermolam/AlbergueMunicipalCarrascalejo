@@ -10,8 +10,8 @@ export default {
       scale: 1.2,
       warn: true,
       collections: {
-        logos: () => import('@iconify-json/logos/icons.json').then((i) => i.default as any),
-        uil: () => import('@iconify-json/uil/icons.json').then((l) => l.default as any),
+        logos: () => import('@iconify-json/logos/icons.json').then((i) => i as unknown as import('@iconify/types').IconifyJSON),
+        uil: () => import('@iconify-json/uil/icons.json').then((l) => l as unknown as import('@iconify/types').IconifyJSON),
       },
     }),
     presetTypography(),

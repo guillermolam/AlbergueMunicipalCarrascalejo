@@ -152,6 +152,12 @@ function checkSSRCompatibility() {
     for (const file of files) {
       if (!file) continue;
 
+      // Validate file path to prevent command injection
+      if (!file.match(/^[a-zA-Z0-9._/-]+$/)) {
+        error(`Invalid file path: ${file}`);
+        continue;
+      }
+
       try {
         const content = execSync(`cat "${file}"`, { encoding: 'utf8' });
 

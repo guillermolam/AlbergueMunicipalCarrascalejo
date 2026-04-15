@@ -8,7 +8,7 @@ import type { GatewayMode } from './gateway-config';
 const isServer = typeof window === 'undefined';
 
 // API response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = Record<string, unknown>> {
   success: boolean;
   data?: T;
   message?: string;
@@ -25,7 +25,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: any;
+  user: UserProfile;
   expiresIn: number;
 }
 
@@ -94,21 +94,31 @@ export interface CaminoRecommendation {
  */
 export class ApiClient {
   private mode: GatewayMode = 'fake';
-  private endpoints: any = {};
+  private endpoints: Record<string, Record<string, string>> = {};
   private token: string | null = null;
+  private initialized: boolean = false;
 
   constructor() {
-    this.initialize();
-  }
-
-  private async initialize(): Promise<void> {
-    this.mode = await getGatewayMode();
-    this.endpoints = await getGatewayEndpoints();
+    // Initialize synchronously with defaults
+    this.mode = getConfig('gateway.mode', 'fake') as GatewayMode;
+    this.endpoints = getConfig('gateway.endpoints', {});
 
     // Load token from localStorage (client-side only)
     if (!isServer) {
       this.token = localStorage.getItem('auth_token');
     }
+  }
+
+  /**
+   * Initialize the API client asynchronously
+   * This should be called before using the client
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+
+    this.mode = await getGatewayMode();
+    this.endpoints = await getGatewayEndpoints();
+    this.initialized = true;
   }
 
   /**
@@ -302,8 +312,14 @@ export function getApiClient(): ApiClient {
  */
 export async function initializeApiClient(): Promise<ApiClient> {
   const client = getApiClient();
-  await client['initialize'](); // Access private method
+  await client.initialize();
   return client;
+}
+
+// Auto-initialize on client side
+if (!isServer) {
+  // Initialize asynchronously without blocking
+  initializeApiClient().catch(console.error);
 }
 
 // Export types

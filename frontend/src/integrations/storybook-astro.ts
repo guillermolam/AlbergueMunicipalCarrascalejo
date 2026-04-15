@@ -96,11 +96,7 @@ export default function storybookAstroIntegration(): AstroIntegration {
         vite.build.rollupOptions = vite.build.rollupOptions || {};
         const external = vite.build.rollupOptions.external;
         const externalList =
-          typeof external === 'string'
-            ? [external]
-            : Array.isArray(external)
-              ? external
-              : [];
+          typeof external === 'string' ? [external] : Array.isArray(external) ? external : [];
         vite.build.rollupOptions.external = [
           ...externalList,
           'fs',

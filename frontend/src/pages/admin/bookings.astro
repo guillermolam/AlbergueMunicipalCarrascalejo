@@ -46,9 +46,7 @@ try {
 
     {
       errorMessage && (
-        <div class="border-2 border-black rounded-xl bg-[#fff4e5] p-3 text-sm">
-          {errorMessage}
-        </div>
+        <div class="border-2 border-black rounded-xl bg-[#fff4e5] p-3 text-sm">{errorMessage}</div>
       )
     }
 
@@ -65,56 +63,58 @@ try {
           </tr>
         </thead>
         <tbody>
-          {items.length === 0 ? (
-            <tr>
-              <td colspan="6" class="py-4 px-2 text-black/60">
-                No bookings available.
-              </td>
-            </tr>
-          ) : (
-            items.map((b) => (
-              <tr class="border-b border-black/15">
-                <td class="py-2 px-2 font-mono">{b.id}</td>
-                <td class="py-2 px-2">
-                  <div>{b.pilgrimName || 'Unknown'}</div>
-                  <div class="text-black/60">{b.email || ''}</div>
-                </td>
-                <td class="py-2 px-2">
-                  {(b.checkInDate || '').slice(0, 10)} → {(b.checkOutDate || '').slice(0, 10)}
-                </td>
-                <td class="py-2 px-2">
-                  <select
-                    class="border border-black rounded px-2 py-1 bg-white"
-                    data-booking-id={b.id}
-                    data-field="status"
-                    value={b.status || 'pending'}
-                  >
-                    <option value="pending">pending</option>
-                    <option value="confirmed">confirmed</option>
-                    <option value="checked_in">checked_in</option>
-                    <option value="checked_out">checked_out</option>
-                    <option value="cancelled">cancelled</option>
-                  </select>
-                </td>
-                <td class="py-2 px-2">
-                  <select
-                    class="border border-black rounded px-2 py-1 bg-white"
-                    data-booking-id={b.id}
-                    data-field="paymentStatus"
-                    value={b.paymentStatus || 'unpaid'}
-                  >
-                    <option value="unpaid">unpaid</option>
-                    <option value="paid">paid</option>
-                    <option value="partial">partial</option>
-                    <option value="refunded">refunded</option>
-                  </select>
-                </td>
-                <td class="py-2 px-2">
-                  {typeof b.totalAmount === 'number' ? b.totalAmount : '-'} {b.currency || ''}
+          {
+            items.length === 0 ? (
+              <tr>
+                <td colspan="6" class="py-4 px-2 text-black/60">
+                  No bookings available.
                 </td>
               </tr>
-            ))
-          )}
+            ) : (
+              items.map((b) => (
+                <tr class="border-b border-black/15">
+                  <td class="py-2 px-2 font-mono">{b.id}</td>
+                  <td class="py-2 px-2">
+                    <div>{b.pilgrimName || 'Unknown'}</div>
+                    <div class="text-black/60">{b.email || ''}</div>
+                  </td>
+                  <td class="py-2 px-2">
+                    {(b.checkInDate || '').slice(0, 10)} → {(b.checkOutDate || '').slice(0, 10)}
+                  </td>
+                  <td class="py-2 px-2">
+                    <select
+                      class="border border-black rounded px-2 py-1 bg-white"
+                      data-booking-id={b.id}
+                      data-field="status"
+                      value={b.status || 'pending'}
+                    >
+                      <option value="pending">pending</option>
+                      <option value="confirmed">confirmed</option>
+                      <option value="checked_in">checked_in</option>
+                      <option value="checked_out">checked_out</option>
+                      <option value="cancelled">cancelled</option>
+                    </select>
+                  </td>
+                  <td class="py-2 px-2">
+                    <select
+                      class="border border-black rounded px-2 py-1 bg-white"
+                      data-booking-id={b.id}
+                      data-field="paymentStatus"
+                      value={b.paymentStatus || 'unpaid'}
+                    >
+                      <option value="unpaid">unpaid</option>
+                      <option value="paid">paid</option>
+                      <option value="partial">partial</option>
+                      <option value="refunded">refunded</option>
+                    </select>
+                  </td>
+                  <td class="py-2 px-2">
+                    {typeof b.totalAmount === 'number' ? b.totalAmount : '-'} {b.currency || ''}
+                  </td>
+                </tr>
+              ))
+            )
+          }
         </tbody>
       </table>
     </div>

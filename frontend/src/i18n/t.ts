@@ -8,4 +8,3 @@ export function t<K extends keyof TranslationKeys>(key: K, vars?: Vars): string 
   if (!vars) return raw;
   return raw.replace(/\{(\w+)\}/g, (_m, name: string) => String(vars[name] ?? `{${name}}`));
 }
-

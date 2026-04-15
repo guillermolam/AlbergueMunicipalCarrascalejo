@@ -10,4 +10,3 @@ export const GET: APIRoute = async (ctx) => {
   const query = new URL(ctx.request.url).search;
   return proxyGatewayJson(`/admin/bookings${query}`, ctx.request, { method: 'GET' });
 };
-

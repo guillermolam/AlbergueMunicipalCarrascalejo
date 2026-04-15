@@ -14,4 +14,3 @@ export const PUT: APIRoute = async (ctx) => {
   if (deny) return deny;
   return proxyGatewayJson('/admin/settings', ctx.request, { method: 'PUT' });
 };
-

@@ -46,9 +46,7 @@ try {
 
     {
       loadError && (
-        <div class="border-2 border-black rounded-xl bg-[#fff4e5] p-3 text-sm">
-          {loadError}
-        </div>
+        <div class="border-2 border-black rounded-xl bg-[#fff4e5] p-3 text-sm">{loadError}</div>
       )
     }
 
@@ -56,46 +54,82 @@ try {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label class="flex flex-col gap-1">
           <span class="text-sm font-700">Hostel name</span>
-          <input class="border border-black rounded px-3 py-2" name="hostelName" value={settings.hostelName} />
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="hostelName"
+            value={settings.hostelName}
+          />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-700">Contact email</span>
-          <input class="border border-black rounded px-3 py-2" name="contactEmail" value={settings.contactEmail} />
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="contactEmail"
+            value={settings.contactEmail}
+          />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-700">Contact phone</span>
-          <input class="border border-black rounded px-3 py-2" name="contactPhone" value={settings.contactPhone} />
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="contactPhone"
+            value={settings.contactPhone}
+          />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-700">Check-in time</span>
-          <input class="border border-black rounded px-3 py-2" name="checkInTime" value={settings.checkInTime} />
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="checkInTime"
+            value={settings.checkInTime}
+          />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-700">Check-out time</span>
-          <input class="border border-black rounded px-3 py-2" name="checkOutTime" value={settings.checkOutTime} />
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="checkOutTime"
+            value={settings.checkOutTime}
+          />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-700">Shared bed price</span>
-          <input class="border border-black rounded px-3 py-2" name="sharedBedPrice" value={String(settings.sharedBedPrice)} />
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="sharedBedPrice"
+            value={String(settings.sharedBedPrice)}
+          />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-sm font-700">Private room price</span>
-          <input class="border border-black rounded px-3 py-2" name="privateRoomPrice" value={String(settings.privateRoomPrice)} />
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="privateRoomPrice"
+            value={String(settings.privateRoomPrice)}
+          />
         </label>
       </div>
 
       <label class="flex flex-col gap-1">
         <span class="text-sm font-700">Cancellation policy</span>
-        <textarea class="border border-black rounded px-3 py-2 min-h-[80px]" name="cancellationPolicy">{settings.cancellationPolicy}</textarea>
+        <textarea
+          class="border border-black rounded px-3 py-2 min-h-[80px]"
+          name="cancellationPolicy">{settings.cancellationPolicy}</textarea
+        >
       </label>
 
       <label class="flex flex-col gap-1">
         <span class="text-sm font-700">House rules</span>
-        <textarea class="border border-black rounded px-3 py-2 min-h-[120px]" name="houseRules">{settings.houseRules}</textarea>
+        <textarea class="border border-black rounded px-3 py-2 min-h-[120px]" name="houseRules"
+          >{settings.houseRules}</textarea
+        >
       </label>
 
       <div class="flex items-center gap-3">
-        <button type="submit" class="border-2 border-black rounded-lg px-4 py-2 bg-[#00ab39] text-white font-800">
+        <button
+          type="submit"
+          class="border-2 border-black rounded-lg px-4 py-2 bg-[#00ab39] text-white font-800"
+        >
           Save settings
         </button>
         <span id="save-status" class="text-sm text-black/70"></span>
@@ -128,4 +162,3 @@ try {
     }
   </script>
 </AdminLayout>
-

@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from 'astro';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/astro/server';
 
 const MOCK_RESPONSES = {
   '/api/health': {
@@ -11,79 +11,114 @@ const MOCK_RESPONSES = {
   },
 } as const;
 
-export const onRequest: MiddlewareHandler = async (context, next) => {
-  const { url, request } = context;
-  const isMockMode = import.meta.env.PUBLIC_API_MODE === 'mock';
+const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/admin(.*)']);
 
-  if (!isMockMode) {
-    return next();
-  }
-
+export const onRequest = clerkMiddleware((auth: any, context: any) => {
+  const { request, url } = context;
   const pathname = url.pathname;
 
-  // Handle health check
-  if (pathname === '/api/health' && request.method === 'GET') {
-    return new Response(JSON.stringify(MOCK_RESPONSES['/api/health']), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Mock-Mode': 'true',
-      },
-    });
-  }
-
-  // Handle progress sync
-  if (pathname === '/api/progress' && request.method === 'POST') {
-    try {
-      const body = (await request.json()) as Record<string, unknown>;
-
-      // Validate payload
-      const dailyGoalKmRaw = body.dailyGoalKm;
-      const currentStageProgressRaw = body.currentStageProgress;
-      const tsRaw = body.ts;
-
-      if (dailyGoalKmRaw == null || currentStageProgressRaw == null || tsRaw == null) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Validate ranges
-      const dailyGoalKm = Number(dailyGoalKmRaw);
-      const currentStageProgress = Number(currentStageProgressRaw);
-
-      if (dailyGoalKm < 15 || dailyGoalKm > 35) {
-        return new Response(JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      if (currentStageProgress < 0 || currentStageProgress > 100) {
-        return new Response(
-          JSON.stringify({ error: 'currentStageProgress must be between 0 and 100' }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      return new Response(JSON.stringify(MOCK_RESPONSES['/api/progress']), {
+  if (import.meta.env.PUBLIC_API_MODE === 'mock') {
+    if (pathname === '/api/health' && request.method === 'GET') {
+      return new Response(JSON.stringify(MOCK_RESPONSES['/api/health']), {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
           'X-Mock-Mode': 'true',
         },
       });
-    } catch (error) {
-      return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    }
+
+    if (pathname === '/api/progress' && request.method === 'POST') {
+      try {
+        const body = request.json() as Promise<Record<string, unknown>>;
+        return body.then((payload) => {
+          const dailyGoalKmRaw = payload.dailyGoalKm;
+          const currentStageProgressRaw = payload.currentStageProgress;
+          const tsRaw = payload.ts;
+
+          if (dailyGoalKmRaw == null || currentStageProgressRaw == null || tsRaw == null) {
+            return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+
+          const dailyGoalKm = Number(dailyGoalKmRaw);
+          const currentStageProgress = Number(currentStageProgressRaw);
+
+          if (Number.isNaN(dailyGoalKm) || dailyGoalKm < 15 || dailyGoalKm > 35) {
+            return new Response(
+              JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }),
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          if (
+            Number.isNaN(currentStageProgress) ||
+            currentStageProgress < 0 ||
+            currentStageProgress > 100
+          ) {
+            return new Response(
+              JSON.stringify({ error: 'currentStageProgress must be between 0 and 100' }),
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          return new Response(JSON.stringify(MOCK_RESPONSES['/api/progress']), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Mock-Mode': 'true',
+            },
+          });
+        });
+      } catch {
+        return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
   }
 
-  return next();
-};
+  const locals = context.locals as any;
+  const a = auth();
+  const isAuthenticated = !!a.isAuthenticated;
+  const userId = a.userId ?? null;
+  const isAdmin =
+    !!userId &&
+    (a.has({ role: 'org:admin' }) ||
+      a.has({ role: 'admin' }) ||
+      a.has({ permission: 'org:admin' }));
+
+  locals.role = !userId || !isAuthenticated ? 'guest' : isAdmin ? 'admin' : 'pilgrim';
+  locals.userId = userId;
+
+  if (!isAdminRoute(request)) return;
+
+  if (!isAuthenticated || !userId) {
+    if (pathname.startsWith('/api/')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return a.redirectToSignIn();
+  }
+
+  if (!isAdmin) {
+    if (pathname.startsWith('/api/')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: admin role required' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return Response.redirect(new URL('/', request.url), 302);
+  }
+});

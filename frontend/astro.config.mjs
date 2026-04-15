@@ -1,13 +1,14 @@
 import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import UnoCSS from '@unocss/astro';
+import clerk from '@clerk/astro';
 
 export default defineConfig({
   adapter: cloudflare({
     prerenderEnvironment: 'node',
   }),
   output: 'server',
-  integrations: [UnoCSS()],
+  integrations: [UnoCSS(), clerk()],
 
   // Site configuration
   site: 'https://albergue-carrascalejo.com',

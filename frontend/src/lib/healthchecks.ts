@@ -1,6 +1,8 @@
 // Health check endpoints for admin dashboard
 // This would typically be implemented in your backend Spin components
 
+import { secureRandomInt } from './secure-random';
+
 export interface HealthCheckResponse {
   service: string;
   status: 'healthy' | 'warning' | 'error';
@@ -273,8 +275,7 @@ export function subscribeToHealthUpdates(callback: (services: ServiceHealth[]) =
     const updatedServices = mockHealthChecks.map((service) => ({
       ...service,
       lastCheck: 'just now',
-      responseTime:
-        service.status === 'error' ? 'Timeout' : `${Math.floor(Math.random() * 200 + 10)}ms`,
+      responseTime: service.status === 'error' ? 'Timeout' : `${secureRandomInt(10, 210)}ms`,
     }));
 
     callback(updatedServices);

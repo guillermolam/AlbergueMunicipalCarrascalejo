@@ -1,41 +1,67 @@
 ---
-export const prerender = true;
-
+export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const locals = Astro.locals as any;
+if (locals.role !== 'admin') {
+  return Astro.redirect('/');
+}
+
+type BookingItem = { id: string; status?: string; createdAt?: string };
+
+let bookings: BookingItem[] = [];
+let apiOk = false;
+
+try {
+  const res = await fetch(new URL('/api/admin/bookings', Astro.url), {
+    headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
+  });
+  apiOk = res.ok;
+  if (res.ok) {
+    const data = await res.json();
+    bookings = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+  }
+} catch {
+  apiOk = false;
+}
+
+const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+const createdLast7d = bookings.filter((b) => {
+  if (!b.createdAt) return false;
+  const ts = Date.parse(b.createdAt);
+  return Number.isFinite(ts) && ts >= weekAgo;
+}).length;
+const pendingCount = bookings.filter((b) => (b.status ?? '').toLowerCase() === 'pending').length;
 ---
 
 <AdminLayout title="Admin Dashboard" activeSection="dashboard">
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
     <div class="card-brut p-3" data-rough-frame>
-      <div class="text-sm opacity-70">Peregrinos activos</div>
-      <div class="text-2xl font-900">24</div>
+      <div class="text-sm opacity-70">Reservas últimos 7 días</div>
+      <div class="text-2xl font-900">{createdLast7d}</div>
     </div>
     <div class="card-brut p-3" data-rough-frame>
-      <div class="text-sm opacity-70">Reservas hoy</div>
-      <div class="text-2xl font-900">12</div>
+      <div class="text-sm opacity-70">Reservas pendientes</div>
+      <div class="text-2xl font-900">{pendingCount}</div>
     </div>
     <div class="card-brut p-3" data-rough-frame>
-      <div class="text-sm opacity-70">Salud de servicios</div>
-      <div class="text-2xl font-900">87.5%</div>
-    </div>
-    <div class="card-brut p-3" data-rough-frame>
-      <div class="text-sm opacity-70">Latencia media</div>
-      <div class="text-2xl font-900">68ms</div>
+      <div class="text-sm opacity-70">Gateway</div>
+      <div class="text-2xl font-900">{apiOk ? 'OK' : 'NO'}</div>
     </div>
   </div>
 
   <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-    <a href="/admin/services" class="card-brut no-underline text-black" data-rough-frame>
-      <div class="font-900 mb-1">Servicios</div>
-      <div class="text-sm opacity-75">Monitoreo y estado en tiempo real.</div>
+    <a href="/admin/settings" class="card-brut no-underline text-black" data-rough-frame>
+      <div class="font-900 mb-1">Ajustes</div>
+      <div class="text-sm opacity-75">Precios, reglas, contactos y defaults.</div>
     </a>
     <a href="/admin/bookings" class="card-brut no-underline text-black" data-rough-frame>
       <div class="font-900 mb-1">Reservas</div>
-      <div class="text-sm opacity-75">Gestión de check-in y asignaciones.</div>
+      <div class="text-sm opacity-75">Estados y pagos (manual).</div>
     </a>
-    <a href="/admin/pilgrims" class="card-brut no-underline text-black" data-rough-frame>
-      <div class="font-900 mb-1">Peregrinos</div>
-      <div class="text-sm opacity-75">Perfiles y seguimiento de ruta.</div>
+    <a href="/admin/maintenance" class="card-brut no-underline text-black" data-rough-frame>
+      <div class="font-900 mb-1">Operaciones</div>
+      <div class="text-sm opacity-75">Módulos planificados tras el MVP.</div>
     </a>
   </div>
 </AdminLayout>

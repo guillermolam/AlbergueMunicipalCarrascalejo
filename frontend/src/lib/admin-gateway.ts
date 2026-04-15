@@ -38,7 +38,7 @@ export async function proxyGatewayJson(
   const body =
     method === 'GET' || method === 'HEAD'
       ? undefined
-      : init.body ?? (await request.text().then((v) => (v ? v : undefined)));
+      : (init.body ?? (await request.text().then((v) => (v ? v : undefined))));
 
   const upstream = await fetch(upstreamUrl, {
     method,
@@ -54,4 +54,3 @@ export async function proxyGatewayJson(
     },
   });
 }
-

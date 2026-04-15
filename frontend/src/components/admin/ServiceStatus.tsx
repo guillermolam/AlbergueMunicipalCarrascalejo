@@ -1,21 +1,33 @@
-import { createSignal, onMount, onCleanup } from 'solid-js';
+import { createSignal, onMount, onCleanup, For } from 'solid-js';
 import type { ServiceHealth } from '../../lib/healthchecks';
+import { secureRandomBool, secureRandomInt, secureRandomPick } from '../../lib/secure-random';
 
 interface ServiceStatusProps {
   initialServices: ServiceHealth[];
+}
+
+interface ServiceResponse {
+  service: string;
+  status: 'healthy' | 'warning' | 'error';
+  responseTime: number;
+  uptime: number;
+  details?: Record<string, unknown>;
 }
 
 export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
   const [services, setServices] = createSignal<ServiceHealth[]>(initialServices);
   const [isConnected, setIsConnected] = createSignal(false);
   const [lastUpdate, setLastUpdate] = createSignal<Date>(new Date());
+  let ws: WebSocket | null = null;
 
   onMount(() => {
     // Connect to WebSocket for real-time updates
     connectWebSocket();
 
     // Also poll API every 30 seconds as fallback
-    const pollInterval = setInterval(pollServices, 30000);
+    const pollInterval = setInterval(() => {
+      pollServices();
+    }, 30000);
 
     onCleanup(() => {
       clearInterval(pollInterval);
@@ -25,37 +37,35 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
     });
   });
 
-  let ws: WebSocket | null = null;
-
-  const connectWebSocket = () => {
+  const connectWebSocket = (): void => {
     // In a real implementation, this would connect to your WebSocket server
     // For now, we'll simulate WebSocket updates
     console.log('Connecting to WebSocket for real-time updates...');
 
     // Simulate WebSocket connection
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setIsConnected(true);
       console.log('WebSocket connected');
 
       // Simulate receiving updates
-      const simulateUpdates = () => {
-        if (Math.random() > 0.7) {
+      const simulateUpdates = (): void => {
+        if (secureRandomBool(0.3)) {
+          // 30% chance
           // Randomly update a service status
           setServices((prev) => {
             const updated = [...prev];
-            const randomIndex = Math.floor(Math.random() * updated.length);
+            const randomIndex = secureRandomInt(0, updated.length);
             const service = updated[randomIndex];
 
             // Random status change
-            const statuses: ('healthy' | 'warning' | 'error')[] = ['healthy', 'warning', 'error'];
-            const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            const statuses = ['healthy', 'warning', 'error'] as const;
+            const newStatus = secureRandomPick(statuses);
 
             updated[randomIndex] = {
               ...service,
-              status: newStatus,
+              status: newStatus ?? 'healthy',
               lastCheck: 'just now',
-              responseTime:
-                newStatus === 'error' ? 'Timeout' : `${Math.floor(Math.random() * 200 + 10)}ms`,
+              responseTime: newStatus === 'error' ? 'Timeout' : `${secureRandomInt(10, 210)}ms`,
             };
 
             return updated;
@@ -66,22 +76,27 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       };
 
       // Simulate updates every 10-30 seconds
-      const updateInterval = setInterval(simulateUpdates, Math.random() * 20000 + 10000);
+      const updateInterval = setInterval(simulateUpdates, secureRandomInt(10000, 30001));
 
+      // Store for cleanup in outer onCleanup
       onCleanup(() => {
         clearInterval(updateInterval);
       });
     }, 1000);
+
+    onCleanup(() => {
+      clearTimeout(timeoutId);
+    });
   };
 
-  const pollServices = async () => {
+  const pollServices = async (): Promise<void> => {
     try {
       const response = await fetch('/api/health');
       if (response.ok) {
-        const data = await response.json();
-        if (data.services) {
+        const data = (await response.json()) as { services?: ServiceResponse[] };
+        if (data.services && Array.isArray(data.services)) {
           setServices(
-            data.services.map((service: any) => ({
+            data.services.map((service: ServiceResponse) => ({
               name: service.service,
               status: service.status,
               lastCheck: 'just now',
@@ -95,7 +110,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
         }
       }
     } catch (error) {
-      console.error('Failed to poll services:', error);
+      console.error(
+        'Failed to poll services:',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   };
 
@@ -154,7 +172,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
             {lastUpdate().toLocaleTimeString()}
           </span>
         </div>
-        <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-sm" onClick={refreshServices}>
+        <button
+          class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-sm"
+          onClick={refreshServices}
+        >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -178,7 +199,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                   <h3 class="font-700 text-lg">{service.name}</h3>
                 </div>
                 <div class="dropdown dropdown-end">
-                  <label tabindex="0" class="border border-stone-300 rounded-full p-1 bg-white hover:bg-stone-100">
+                  <label
+                    tabindex="0"
+                    class="border border-stone-300 rounded-full p-1 bg-white hover:bg-stone-100"
+                  >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"

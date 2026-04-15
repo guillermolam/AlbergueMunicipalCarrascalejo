@@ -74,18 +74,23 @@ export function isValidPhone(phone: string): boolean {
 
 export function generateBookingReference(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  // Use crypto.getRandomValues for cryptographically secure random numbers
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  const random = array[0].toString(36).substring(0, 4).toUpperCase();
   return `BK${timestamp}${random}`;
 }
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
   return (...args: Parameters<T>) => {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
+    if (timeout !== null) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
   };
 }
