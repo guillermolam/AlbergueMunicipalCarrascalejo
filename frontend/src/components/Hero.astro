@@ -97,7 +97,8 @@ const backgroundStyles = {
 <section class={`relative overflow-hidden ${sizeClasses[size]} ${className}`}>
   <!-- Background -->
   <div
-    class={`absolute inset-0 ${backgroundStyles[background]} ${background === 'image' && imageSrc ? `bg-[url(${imageSrc})]` : ''}`}
+    class={`absolute inset-0 ${backgroundStyles[background]}`}
+    style={background === 'image' && imageSrc ? `background-image: url(${imageSrc});` : undefined}
   >
     {
       background === 'image' && overlay && (

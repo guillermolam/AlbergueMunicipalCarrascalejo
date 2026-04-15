@@ -1,12 +1,9 @@
-import {
-  defineConfig,
-  presetIcons,
-  presetMini,
-  presetTypography,
-  transformerVariantGroup,
-} from 'unocss';
+import presetIcons from '@unocss/preset-icons';
+import presetMini from '@unocss/preset-mini';
+import presetTypography from '@unocss/preset-typography';
+import transformerVariantGroup from '@unocss/transformer-variant-group';
 
-export default defineConfig({
+export default {
   presets: [
     presetMini(),
     presetIcons({
@@ -55,4 +52,4 @@ export default defineConfig({
   ],
   safelist: ['i-logos-astro', 'i-uil-football', 'i-uil-heart', 'i-logos-unocss'],
   transformers: [transformerVariantGroup()],
-});
+};

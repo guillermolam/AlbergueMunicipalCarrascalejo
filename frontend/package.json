@@ -49,11 +49,14 @@
     "@types/alpinejs": "^3.13.11",
     "@types/three": "^0.175.0",
     "@unocss/astro": "66.6.8",
+    "@unocss/preset-icons": "66.6.8",
+    "@unocss/preset-mini": "66.6.8",
+    "@unocss/preset-typography": "66.6.8",
+    "@unocss/transformer-variant-group": "66.6.8",
     "prettier": "^3.7.4",
     "prettier-plugin-astro": "^0.14.1",
     "rimraf": "^6.1.2",
     "typescript": "^5.9.3",
-    "unocss": "66.6.8",
     "wrangler": "^4.80.0"
   },
   "packageManager": "pnpm@10.29.3"
