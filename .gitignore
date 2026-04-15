@@ -168,6 +168,23 @@ runtime-config.toml
 # **/pnpm-lock.yaml
 # **/bun.lockb
 
+# === LARGE MEDIA (use external hosting or Git LFS) ===
+**/*.mp4
+**/*.avi
+**/*.mov
+**/*.mkv
+**/*.webm
+
+# === GIS BINARIES (vector-only: KML, GPX, PRJ, TFW allowed) ===
+**/*.tif
+**/*.tiff
+**/*.laz
+**/*.las
+**/*.ecw
+**/*.img
+**/*.dem
+**/*.hgt
+
 # === CUSTOM ===
 .copilot-patches/api-gateway-rfc7807.patch
 

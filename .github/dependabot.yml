@@ -1,5 +1,6 @@
 version: 2
 updates:
+  # ── Frontend (Node.js / pnpm) ──────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
@@ -11,14 +12,20 @@ updates:
       - "dependencies"
       - "javascript"
     commit-message:
-      prefix: "chore"
+      prefix: "chore(frontend)"
       include: "scope"
     reviewers:
       - "guillermolam"
-    automerged-by:
-      - "dependabot[bot]"
     versioning-strategy: increase
+    groups:
+      astro:
+        patterns: ["astro", "@astrojs/*"]
+      unocss:
+        patterns: ["unocss", "@unocss/*"]
+      solid:
+        patterns: ["solid-js", "@solidjs/*"]
 
+  # ── Rust workspace (backend + gateway) ─────────────────────────────────────
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
@@ -30,12 +37,22 @@ updates:
       - "dependencies"
       - "rust"
     commit-message:
-      prefix: "chore"
+      prefix: "chore(deps)"
       include: "scope"
     reviewers:
       - "guillermolam"
     versioning-strategy: increase
+    groups:
+      spin-sdk:
+        patterns: ["spin-sdk", "spin-*"]
+      worker:
+        patterns: ["worker", "worker-*"]
+      serde:
+        patterns: ["serde", "serde_*"]
+      tokio:
+        patterns: ["tokio", "tokio-*"]
 
+  # ── GitHub Actions ─────────────────────────────────────────────────────────
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -47,5 +64,82 @@ updates:
       - "dependencies"
       - "github-actions"
     commit-message:
-      prefix: "ci"
+      prefix: "ci(actions)"
       include: "scope"
+    reviewers:
+      - "guillermolam"
+
+  # ── Terraform / OpenTofu (infra) ───────────────────────────────────────────
+  - package-ecosystem: "terraform"
+    directory: "/infra"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+    commit-message:
+      prefix: "chore(infra)"
+      include: "scope"
+    reviewers:
+      - "guillermolam"
+
+  # ── Terraform modules (OCI compute) ────────────────────────────────────────
+  - package-ecosystem: "terraform"
+    directory: "/infra/modules/oci-compute"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "oci"
+    commit-message:
+      prefix: "chore(infra/oci)"
+      include: "scope"
+    reviewers:
+      - "guillermolam"
+
+  # ── Go modules (Terratest) ─────────────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/infra/tests"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "go"
+      - "testing"
+    commit-message:
+      prefix: "chore(infra/tests)"
+      include: "scope"
+    reviewers:
+      - "guillermolam"
+
+  # ── Docker (OCR service) ───────────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/backend/ocr-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+      - "oci"
+    commit-message:
+      prefix: "chore(ocr)"
+      include: "scope"
+    reviewers:
+      - "guillermolam"

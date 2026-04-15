@@ -1,0 +1,41 @@
+# =============================================================================
+# CODEOWNERS — GitHub automatic review assignment
+#
+# Each line is a file pattern followed by one or more owners.
+# Order matters: later patterns override earlier ones.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# =============================================================================
+
+# ── Default owner (catches everything not matched below) ─────────────────────
+*                                       @guillermolam
+
+# ── Security policies (human-only — OPA P015 enforces at commit time) ────────
+/security/policies/                     @guillermolam
+
+# ── Infrastructure (Terraform, Spacelift, OCI) ───────────────────────────────
+/infra/                                 @guillermolam
+/infra/policies/                        @guillermolam
+
+# ── CI / CD pipelines ────────────────────────────────────────────────────────
+/.github/workflows/                     @guillermolam
+/.github/dependabot.yml                 @guillermolam
+
+# ── Frontend (Astro + UnoCSS + Solid.js) ─────────────────────────────────────
+/frontend/                              @guillermolam
+
+# ── Backend Rust services (Cloudflare Workers) ───────────────────────────────
+/backend/                               @guillermolam
+
+# ── Gateway (Spin / Fermyon) ─────────────────────────────────────────────────
+/gateway/                               @guillermolam
+
+# ── Root config files (protected — OPA P017 enforces at commit time) ─────────
+/spin.toml                              @guillermolam
+/Taskfile.yml                           @guillermolam
+/.trunk/                                @guillermolam
+
+# ── Documentation ────────────────────────────────────────────────────────────
+/docs/                                  @guillermolam
+
+# ── GIS data ─────────────────────────────────────────────────────────────────
+/GIS/                                   @guillermolam

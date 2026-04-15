@@ -1,6 +1,43 @@
 #!/bin/sh
-# Husky pre-commit hook – fast checks only
-# Run prettier on staged files and typescript check
+# Husky pre-commit hook – OPA policy gate + Trunk checks.
+# CWD is the repo root when this hook runs.
 
-cd frontend
-pnpm exec prettier --check src/ || { echo "Prettier failed — run: pnpm exec prettier --write src/"; exit 1; }
+set -e
+
+# Collect staged file paths (exit early if nothing staged)
+staged=$(git diff --cached --name-only 2>/dev/null) || staged=""
+[ -z "${staged}" ] && exit 0
+
+# --- OPA Rego policy gate (runs BEFORE trunk) ---
+# Blocks commits that violate architectural/security policies.
+if [ -x "security/policies/run-opa-gate.sh" ]; then
+	security/policies/run-opa-gate.sh pre-commit || exit 1
+fi
+
+if command -v trunk >/dev/null 2>&1; then
+	# Run trunk on ONLY the staged files (explicit paths, not --index which
+	# can expand to all changed files). Autofixes are applied to disk.
+	# shellcheck disable=SC2086
+	trunk check --no-progress ${staged} 2>&1 | tee /tmp/trunk-precommit.log || true
+
+	# Re-stage the originally staged files (trunk may have auto-fixed them)
+	# shellcheck disable=SC2086
+	echo "${staged}" | tr '\n' '\0' | xargs -0 git add 2>/dev/null || true
+
+	# Fail only on remaining lint/format issues (not tool-download failures)
+	if grep -qE "✖ [0-9]+ (new lint issue|unformatted)" /tmp/trunk-precommit.log 2>/dev/null; then
+		remaining=$(trunk check --no-fix --no-progress "${staged}" 2>&1) || true
+		if echo "${remaining}" | grep -qE "✖ [0-9]+ (new lint issue|unformatted)"; then
+			echo ""
+			echo "Trunk: unresolved issues remain. Run: trunk check ${staged}"
+			exit 1
+		fi
+	fi
+else
+	echo "trunk CLI not found — falling back to prettier"
+	cd frontend
+	pnpm exec prettier --check src/ || {
+		echo "Prettier failed — run: pnpm exec prettier --write src/"
+		exit 1
+	}
+fi
