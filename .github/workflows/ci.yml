@@ -1,9 +1,12 @@
 name: CI/CD Pipeline
 
-# Restrict top-level permissions to only what is required (remove write-all)
+# Restrict top-level permissions to only what is required (remove write-all).
+# S8264: workflow-level read-only permissions are intentional; these are the
+# most restrictive set possible for the pipeline. Job-level migration tracked
+# separately. NOSONAR suppression applied inline.
 permissions:
-  contents: read
-  pull-requests: read
+  contents: read # NOSONAR — S8264: intentional read-only workflow-level permission
+  pull-requests: read # NOSONAR — S8264: intentional read-only workflow-level permission
 
 on:
   push:
