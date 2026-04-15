@@ -57,6 +57,9 @@ importers:
       '@iconify-json/uil':
         specifier: ^1.2.3
         version: 1.2.3
+      '@iconify/types':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@types/alpinejs':
         specifier: ^3.13.11
         version: 3.13.11
