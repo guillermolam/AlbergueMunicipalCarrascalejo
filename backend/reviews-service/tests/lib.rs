@@ -2,7 +2,6 @@
 // use crate::{ErrorResponse, Review, ReviewsResponse};
 // Or, if `reviews_service` is in the parent directory as a library crate:
 use reviews_service::{ErrorResponse, Review, ReviewsResponse};
-use serde_json::json;
 use std::collections::HashMap;
 
 #[test]
