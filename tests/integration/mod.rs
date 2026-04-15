@@ -1,4 +1,3 @@
-
 #![deny(warnings)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(
@@ -19,17 +18,17 @@ pub use gateway_integration_test::GatewayTestClient;
 
 #[cfg(test)]
 mod test_runner {
-    use super::*;
     use std::process::{Command, Stdio};
     use std::time::Duration;
     use tokio::time::sleep;
 
     /// Start Spin gateway in background for integration tests
+    #[allow(dead_code)]
     pub async fn start_test_gateway() -> std::process::Child {
         println!("🚀 Starting Spin gateway for integration tests...");
 
         let child = Command::new("spin")
-            .args(&["up", "--listen", "0.0.0.0:3000"])
+            .args(["up", "--listen", "0.0.0.0:3000"])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
@@ -42,6 +41,7 @@ mod test_runner {
     }
 
     /// Stop the test gateway
+    #[allow(dead_code)]
     pub fn stop_test_gateway(mut child: std::process::Child) {
         println!("🛑 Stopping test gateway...");
         let _ = child.kill();

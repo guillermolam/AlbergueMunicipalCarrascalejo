@@ -3,6 +3,11 @@ name = "integration-tests"
 version = "0.1.0"
 edition = "2021"
 
+# Explicit lib target: mod.rs is the crate root.
+# Without this Cargo finds no targets and cargo fmt/clippy fail.
+[lib]
+path = "mod.rs"
+
 [dependencies]
 # Core dependencies
 anyhow = "1.0"
@@ -29,9 +34,6 @@ reqwest = { version = "0.11", features = ["json"] }
 # Testing
 tokio-test = "0.4"
 wiremock = "0.5"
-
-# Shared
-shared = { path = "../backend/shared" }
 
 # Testing assertions
 speculoos = "0.11"
