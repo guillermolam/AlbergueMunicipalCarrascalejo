@@ -322,5 +322,31 @@ if (!isServer) {
   initializeApiClient().catch(console.error);
 }
 
+/**
+ * SSR-safe config getter for gateway settings.
+ * Looks for config in environment variables (client/server), then falls back to default.
+ */
+function getConfig<T = any>(key: string, defaultValue: T): T {
+  // Try SSR-safe globalThis.env (Vite, SvelteKit, etc.)
+  if (typeof process !== 'undefined' && process.env) {
+    // Convert dot notation to env var style (e.g., gateway.mode -> GATEWAY_MODE)
+    const envKey = key.replaceAll('.', '_').toUpperCase();
+    if (process.env[envKey] !== undefined) {
+      try {
+        // Try to parse JSON for objects/arrays, fallback to string
+        return JSON.parse(process.env[envKey]);
+      } catch {
+        return process.env[envKey] as unknown as T;
+      }
+    }
+  }
+  // Browser: check window.__APP_CONFIG__ (if injected at build/runtime)
+  if (globalThis.window !== undefined && (globalThis.window as any).__APP_CONFIG__) {
+    const value = key.split('.').reduce((obj, k) => obj?.[k], (globalThis.window as any).__APP_CONFIG__);
+    if (value !== undefined) return value;
+  }
+  // Fallback to default
+  return defaultValue;
+}
 // Export types
 // Types are already exported inline above
