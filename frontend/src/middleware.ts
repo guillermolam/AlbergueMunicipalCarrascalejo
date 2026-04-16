@@ -24,7 +24,7 @@ type AstroContext = {
   locals: Record<string, unknown>;
 };
 
-export const onRequest = clerkMiddleware((auth: () => ClerkAuth, context: AstroContext) => {
+export const onRequest = clerkMiddleware(async (auth: () => ClerkAuth, context: AstroContext) => {
   const { request, url } = context;
   const pathname = url.pathname;
 
@@ -41,53 +41,51 @@ export const onRequest = clerkMiddleware((auth: () => ClerkAuth, context: AstroC
 
     if (pathname === '/api/progress' && request.method === 'POST') {
       try {
-        const body = request.json() as Promise<Record<string, unknown>>;
-        return body.then((payload) => {
-          const dailyGoalKmRaw = payload.dailyGoalKm;
-          const currentStageProgressRaw = payload.currentStageProgress;
-          const tsRaw = payload.ts;
+        const payload = (await request.json()) as Record<string, unknown>;
+        const dailyGoalKmRaw = payload.dailyGoalKm;
+        const currentStageProgressRaw = payload.currentStageProgress;
+        const tsRaw = payload.ts;
 
-          if (dailyGoalKmRaw == null || currentStageProgressRaw == null || tsRaw == null) {
-            return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        if (dailyGoalKmRaw == null || currentStageProgressRaw == null || tsRaw == null) {
+          return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const dailyGoalKm = Number(dailyGoalKmRaw);
+        const currentStageProgress = Number(currentStageProgressRaw);
+
+        if (Number.isNaN(dailyGoalKm) || dailyGoalKm < 15 || dailyGoalKm > 35) {
+          return new Response(
+            JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }),
+            {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
-            });
-          }
+            }
+          );
+        }
 
-          const dailyGoalKm = Number(dailyGoalKmRaw);
-          const currentStageProgress = Number(currentStageProgressRaw);
+        if (
+          Number.isNaN(currentStageProgress) ||
+          currentStageProgress < 0 ||
+          currentStageProgress > 100
+        ) {
+          return new Response(
+            JSON.stringify({ error: 'currentStageProgress must be between 0 and 100' }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
 
-          if (Number.isNaN(dailyGoalKm) || dailyGoalKm < 15 || dailyGoalKm > 35) {
-            return new Response(
-              JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }),
-              {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
-          }
-
-          if (
-            Number.isNaN(currentStageProgress) ||
-            currentStageProgress < 0 ||
-            currentStageProgress > 100
-          ) {
-            return new Response(
-              JSON.stringify({ error: 'currentStageProgress must be between 0 and 100' }),
-              {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
-          }
-
-          return new Response(JSON.stringify(MOCK_RESPONSES['/api/progress']), {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Mock-Mode': 'true',
-            },
-          });
+        return new Response(JSON.stringify(MOCK_RESPONSES['/api/progress']), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Mock-Mode': 'true',
+          },
         });
       } catch {
         return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
