@@ -1,7 +1,5 @@
 import type { APIContext } from 'astro';
 
-const TRAILING_SLASH_RE = /\/+$/;
-
 type AdminLocals = {
   role?: 'admin' | 'pilgrim' | 'guest';
 };
@@ -16,12 +14,13 @@ export function requireAdminForApi(locals: APIContext['locals']): Response | nul
 }
 
 export function getGatewayBaseUrl(): string {
-  return (
+  let url =
     process.env.PUBLIC_GATEWAY_BASE_URL ||
     process.env.GATEWAY_BASE_URL ||
     process.env.GATEWAY_URL ||
-    'http://127.0.0.1:8080'
-  ).replace(TRAILING_SLASH_RE, '');
+    'http://127.0.0.1:8080';
+  while (url.endsWith('/')) url = url.slice(0, -1);
+  return url;
 }
 
 export async function proxyGatewayJson(
