@@ -8,7 +8,7 @@ COMPONENT="${1:-all}"
 RUST_VERSION="1.87.0"
 NODE_VERSION="20.x"
 BUN_VERSION="1.2.x"
-SPIN_VERSION="3.3.x"
+SPIN_VERSION="3.6.3"
 
 echo " Setting up environment: $COMPONENT"
 

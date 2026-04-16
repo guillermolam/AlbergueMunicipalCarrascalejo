@@ -257,14 +257,10 @@ jobs:
 
       - name: Install Spin CLI
         run: |
-          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-          # install.sh ≥ Spin 3 drops the binary in CWD ("./spin") rather than
-          # ~/.spin/bin; move it to /usr/local/bin so it is on PATH for all
-          # subsequent steps without modifying GITHUB_PATH per-step.
-          if [ -f "./spin" ]; then
-            sudo install -m 755 ./spin /usr/local/bin/spin
-            rm -f ./spin
-          fi
+          curl -fsSL https://github.com/spinframework/spin/releases/download/v3.6.3/spin-v3.6.3-linux-amd64.tar.gz \
+            | tar -xzf - spin
+          sudo install -m 755 ./spin /usr/local/bin/spin
+          rm -f ./spin
           spin --version
 
       - name: Install just
