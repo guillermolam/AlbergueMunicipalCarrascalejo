@@ -57,13 +57,10 @@ export const onRequest = clerkMiddleware(async (auth: () => ClerkAuth, context: 
         const currentStageProgress = Number(currentStageProgressRaw);
 
         if (Number.isNaN(dailyGoalKm) || dailyGoalKm < 15 || dailyGoalKm > 35) {
-          return new Response(
-            JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }),
-            {
-              status: 400,
-              headers: { 'Content-Type': 'application/json' },
-            }
-          );
+          return new Response(JSON.stringify({ error: 'dailyGoalKm must be between 15 and 35' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
 
         if (
