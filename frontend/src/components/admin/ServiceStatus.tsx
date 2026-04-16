@@ -49,7 +49,8 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
 
       // Simulate receiving updates
       const simulateUpdates = (): void => {
-        if (secureRandomBool(0.3)) { // NOSONAR — uses crypto.getRandomValues(), not Math.random()
+        if (secureRandomBool(0.3)) {
+          // NOSONAR — uses crypto.getRandomValues(), not Math.random()
           // 30% chance
           // Randomly update a service status
           setServices((prev) => {
@@ -255,7 +256,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
               </div>
 
               <div class="flex justify-end mt-4">
-                <button type="button" class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
+                <button
+                  type="button"
+                  class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs"
+                >
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
@@ -266,7 +270,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                   </svg>
                   Logs
                 </button>
-                <button type="button" class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
+                <button
+                  type="button"
+                  class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs"
+                >
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
