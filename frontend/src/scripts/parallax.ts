@@ -136,9 +136,9 @@ export function initParallax(opts?: {
     destroyed = true;
     if (raf) cancelAnimationFrame(raf);
     ro.disconnect();
-    window.removeEventListener('wheel', onWheel as any);
-    window.removeEventListener('keydown', onKey as any);
-    window.removeEventListener('resize', onResize as any);
+    window.removeEventListener('wheel', onWheel as EventListener);
+    window.removeEventListener('keydown', onKey as EventListener);
+    window.removeEventListener('resize', onResize as EventListener);
     document.documentElement.style.overflow = prevOverflow;
     document.body.style.overflow = prevBodyOverflow;
     track.style.willChange = '';

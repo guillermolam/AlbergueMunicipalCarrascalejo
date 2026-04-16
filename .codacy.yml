@@ -1,10 +1,15 @@
 ---
 # Codacy analysis configuration
 # Suppress false positives from tools that run without node_modules installed.
-# Import-resolution errors for packages that are installed at runtime are
-# expected in Codacy's sandboxed environment and are not real issues.
+# Import-resolution errors for packages installed at runtime are expected in
+# Codacy's sandboxed environment and are not real issues.
+#
+# SolidJS false positives: Codacy's OpenGrep applies React/Qwik semgrep rules
+# to .tsx files, incorrectly flagging SolidJS `class` props and signal
+# expressions as "non-serializable". These are valid SolidJS patterns.
 
 exclude_paths:
+  # Build artefacts & generated files
   - "frontend/node_modules/**"
   - "**/node_modules/**"
   - "**/dist/**"
@@ -13,3 +18,21 @@ exclude_paths:
   - "frontend/.astro/**"
   - "GIS/**"
   - ".trunk/**"
+
+  # Astro config — import-resolution false positives (no node_modules in CI)
+  - "frontend/astro.config.mjs"
+  - "frontend/uno.config.ts"
+
+  # API routes — import-resolution false positives (astro runtime imports)
+  - "frontend/src/pages/api/**"
+
+  # SolidJS component — OpenGrep incorrectly applies React/Qwik rules:
+  # "class is not a valid React prop" and "Non-serializable expression must be
+  # wrapped with $(…)" are both false positives for SolidJS.
+  - "frontend/src/components/admin/ServiceStatus.tsx"
+
+  # Three.js helper — import-resolution + Qwik non-serializable false positives
+  - "frontend/src/lib/three/mountThreeBackground.ts"
+
+  # admin-gateway — astro import-resolution false positive (runtime-only import)
+  - "frontend/src/lib/admin-gateway.ts"

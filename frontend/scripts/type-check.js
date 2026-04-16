@@ -8,6 +8,8 @@
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
+
+const SAFE_PATH_RE = /^[a-zA-Z0-9._/-]+$/;
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -153,7 +155,7 @@ function checkSSRCompatibility() {
       if (!file) continue;
 
       // Validate file path to prevent command injection
-      if (!file.match(/^[a-zA-Z0-9._/-]+$/)) {
+      if (!SAFE_PATH_RE.test(file)) {
         error(`Invalid file path: ${file}`);
         continue;
       }
