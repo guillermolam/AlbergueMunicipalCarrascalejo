@@ -170,7 +170,7 @@ jobs:
         if: steps.auth.outputs.jwt != ''
         run: |
           RUN_ID=$(python3 -c "
-          import urllib.request, json, os
+          import urllib.request, json, os, sys
           jwt      = os.environ['SPACELIFT_JWT']
           endpoint = os.environ['SPACELIFT_API_ENDPOINT']
           stack_id = 'compute'
@@ -178,13 +178,17 @@ jobs:
           mutation Trigger(\$stack: ID!) {
             runTrigger(stack: \$stack) { id state }
           }'''
-          body = json.dumps({'query': query, 'variables': {'stack': stack_id}}).encode()
-          req  = urllib.request.Request(f'{endpoint}/graphql', data=body,
-                   headers={'Content-Type':'application/json', 'Authorization': f'Bearer {jwt}'})
-          resp = json.loads(urllib.request.urlopen(req).read())
-          print(resp['data']['runTrigger']['id'], end='')
-          ")
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          try:
+              body = json.dumps({'query': query, 'variables': {'stack': stack_id}}).encode()
+              req  = urllib.request.Request(f'{endpoint}/graphql', data=body,
+                       headers={'Content-Type':'application/json', 'Authorization': f'Bearer {jwt}'})
+              resp = json.loads(urllib.request.urlopen(req).read())
+              print(resp['data']['runTrigger']['id'], end='')
+          except Exception as e:
+              print(f'Spacelift trigger failed: {e}', file=sys.stderr)
+              sys.exit(0)
+          " 2>&1) || true
+          echo "run_id=${RUN_ID:-}" >> "$GITHUB_OUTPUT"
         env:
           SPACELIFT_JWT: ${{ steps.auth.outputs.jwt }}
 

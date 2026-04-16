@@ -173,6 +173,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
           </span>
         </div>
         <button
+          type="button"
           class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-sm"
           onClick={refreshServices}
         >
@@ -191,7 +192,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       {/* Service Cards */}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {services().map((service) => (
-          <div class="card-brut p-4 bg-stone-100 border border-stone-300">
+          <div key={service.name} class="card-brut p-4 bg-stone-100 border border-stone-300">
             <div class="p-4">
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
@@ -199,7 +200,8 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                   <h3 class="font-700 text-lg">{service.name}</h3>
                 </div>
                 <div class="dropdown dropdown-end">
-                  <label
+                  <button
+                    type="button"
                     tabindex="0"
                     class="border border-stone-300 rounded-full p-1 bg-white hover:bg-stone-100"
                   >
@@ -211,7 +213,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                         d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
                       />
                     </svg>
-                  </label>
+                  </button>
                   <ul
                     tabindex="0"
                     class="absolute right-0 mt-2 p-2 shadow bg-white rounded-xl w-32"
@@ -253,7 +255,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
               </div>
 
               <div class="flex justify-end mt-4">
-                <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
+                <button type="button" class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
@@ -264,7 +266,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                   </svg>
                   Logs
                 </button>
-                <button class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
+                <button type="button" class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"

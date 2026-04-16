@@ -13,7 +13,18 @@ const MOCK_RESPONSES = {
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/admin(.*)']);
 
-export const onRequest = clerkMiddleware((auth: any, context: any) => {
+type ClerkAuth = {
+  isAuthenticated: boolean;
+  userId: string | null;
+  has: (opts: { role?: string; permission?: string }) => boolean;
+};
+type AstroContext = {
+  request: Request;
+  url: URL;
+  locals: Record<string, unknown>;
+};
+
+export const onRequest = clerkMiddleware((auth: () => ClerkAuth, context: AstroContext) => {
   const { request, url } = context;
   const pathname = url.pathname;
 
@@ -87,7 +98,7 @@ export const onRequest = clerkMiddleware((auth: any, context: any) => {
     }
   }
 
-  const locals = context.locals as any;
+  const locals = context.locals;
   const a = auth();
   const isAuthenticated = !!a.isAuthenticated;
   const userId = a.userId ?? null;

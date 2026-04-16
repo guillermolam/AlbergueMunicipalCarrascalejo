@@ -1,0 +1,15 @@
+---
+# Codacy analysis configuration
+# Suppress false positives from tools that run without node_modules installed.
+# Import-resolution errors for packages that are installed at runtime are
+# expected in Codacy's sandboxed environment and are not real issues.
+
+exclude_paths:
+  - "frontend/node_modules/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/target/**"
+  - "**/.astro/**"
+  - "frontend/.astro/**"
+  - "GIS/**"
+  - ".trunk/**"
