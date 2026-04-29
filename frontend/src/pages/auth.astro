@@ -1,14 +1,41 @@
 ---
-export const prerender = true;
-
 import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const locals = Astro.locals as any;
+const auth = locals.auth?.();
+const role = locals.role ?? 'guest';
+
+if (auth?.isAuthenticated) {
+  return Astro.redirect(role === 'admin' ? '/admin' : '/camino');
+}
+
+if (auth?.redirectToSignIn) {
+  return auth.redirectToSignIn();
+}
 ---
 
-<Layout title="Auth - Albergue Municipal Carrascalejo" description="Autenticación">
-  <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h2 class="text-3xl font-bold text-foreground mb-6">Autenticación</h2>
-    <div class="bg-card p-6 rounded-lg shadow-md border border-border">
-      <p class="text-muted-foreground">Inicia sesión próximamente.</p>
-    </div>
+<Layout title="Acceso · Albergue Carrascalejo" description="Inicio de sesión">
+  <main class="mx-auto max-w-xl px-4 py-20">
+    <section class="card-brut p-6" data-rough-frame>
+      <h1 class="text-3xl font-900">Acceso</h1>
+      <p class="mt-2 text-sm opacity-75">Autenticación gestionada por Clerk.</p>
+
+      <div class="mt-5 flex flex-col gap-3">
+        <a
+          href="/sign-in"
+          class="inline-flex justify-center border-2 border-black rounded-lg px-4 py-2 bg-[#00ab39] text-white font-800 no-underline"
+        >
+          Ir a iniciar sesión
+        </a>
+        <a
+          href="/sign-up"
+          class="inline-flex justify-center border-2 border-black rounded-lg px-4 py-2 bg-white text-black font-800 no-underline hover:bg-[#e8f5e9]"
+        >
+          Crear cuenta
+        </a>
+      </div>
+    </section>
   </main>
 </Layout>

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Core dependencies
@@ -13,7 +13,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-thiserror = "1.0"
+thiserror = "2.0.18"
 
 # Async runtime
 tokio = { version = "1.0", features = [
@@ -27,7 +27,7 @@ futures = "0.3"
 
 # Spin SDK
 spin-sdk = "5.1.1"
-wit-bindgen = "0.51.0"
+wit-bindgen = "0.56.0"
 
 # HTTP
 http = "1.1"

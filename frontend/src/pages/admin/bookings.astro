@@ -1,0 +1,152 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const locals = Astro.locals as any;
+if (locals.role !== 'admin') {
+  return Astro.redirect('/');
+}
+
+type Booking = {
+  id: string;
+  pilgrimName?: string;
+  email?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  status?: string;
+  paymentStatus?: string;
+  totalAmount?: number;
+  currency?: string;
+};
+
+let items: Booking[] = [];
+let errorMessage = '';
+
+try {
+  const res = await fetch(new URL('/api/admin/bookings', Astro.url), {
+    headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
+  });
+  if (!res.ok) {
+    errorMessage = `Gateway returned ${res.status}`;
+  } else {
+    const data = await res.json();
+    items = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+  }
+} catch {
+  errorMessage = 'Unable to load bookings from gateway';
+}
+---
+
+<AdminLayout title="Admin · Bookings" activeSection="bookings">
+  <section class="space-y-4">
+    <div class="border-2 border-black rounded-xl bg-white p-4">
+      <h1 class="text-2xl font-900">Bookings</h1>
+      <p class="text-sm text-black/70 mt-1">Review, update status and payment state.</p>
+    </div>
+
+    {
+      errorMessage && (
+        <div class="border-2 border-black rounded-xl bg-[#fff4e5] p-3 text-sm">{errorMessage}</div>
+      )
+    }
+
+    <div class="border-2 border-black rounded-xl bg-white p-3 overflow-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-black">
+            <th class="text-left py-2 px-2">ID</th>
+            <th class="text-left py-2 px-2">Pilgrim</th>
+            <th class="text-left py-2 px-2">Stay</th>
+            <th class="text-left py-2 px-2">Status</th>
+            <th class="text-left py-2 px-2">Payment</th>
+            <th class="text-left py-2 px-2">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            items.length === 0 ? (
+              <tr>
+                <td colspan="6" class="py-4 px-2 text-black/60">
+                  No bookings available.
+                </td>
+              </tr>
+            ) : (
+              items.map((b) => (
+                <tr class="border-b border-black/15">
+                  <td class="py-2 px-2 font-mono">{b.id}</td>
+                  <td class="py-2 px-2">
+                    <div>{b.pilgrimName || 'Unknown'}</div>
+                    <div class="text-black/60">{b.email || ''}</div>
+                  </td>
+                  <td class="py-2 px-2">
+                    {(b.checkInDate || '').slice(0, 10)} → {(b.checkOutDate || '').slice(0, 10)}
+                  </td>
+                  <td class="py-2 px-2">
+                    <select
+                      class="border border-black rounded px-2 py-1 bg-white"
+                      data-booking-id={b.id}
+                      data-field="status"
+                      value={b.status || 'pending'}
+                    >
+                      <option value="pending">pending</option>
+                      <option value="confirmed">confirmed</option>
+                      <option value="checked_in">checked_in</option>
+                      <option value="checked_out">checked_out</option>
+                      <option value="cancelled">cancelled</option>
+                    </select>
+                  </td>
+                  <td class="py-2 px-2">
+                    <select
+                      class="border border-black rounded px-2 py-1 bg-white"
+                      data-booking-id={b.id}
+                      data-field="paymentStatus"
+                      value={b.paymentStatus || 'unpaid'}
+                    >
+                      <option value="unpaid">unpaid</option>
+                      <option value="paid">paid</option>
+                      <option value="partial">partial</option>
+                      <option value="refunded">refunded</option>
+                    </select>
+                  </td>
+                  <td class="py-2 px-2">
+                    {typeof b.totalAmount === 'number' ? b.totalAmount : '-'} {b.currency || ''}
+                  </td>
+                </tr>
+              ))
+            )
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    const updateBooking = async (id, patch) => {
+      const res = await fetch(`/api/admin/bookings/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error(`Update failed (${res.status})`);
+    };
+
+    document.querySelectorAll('select[data-booking-id]').forEach((node) => {
+      const el = node;
+      if (!(el instanceof HTMLSelectElement)) return;
+      el.addEventListener('change', async () => {
+        const id = el.getAttribute('data-booking-id');
+        const field = el.getAttribute('data-field');
+        if (!id || !field) return;
+        const previous = el.getAttribute('data-prev') ?? '';
+        el.setAttribute('data-prev', String(el.value));
+        try {
+          await updateBooking(id, { [field]: el.value });
+        } catch (error) {
+          if (previous) el.value = previous;
+          alert(error instanceof Error ? error.message : 'Update failed');
+        }
+      });
+      el.setAttribute('data-prev', String(el.value));
+    });
+  </script>
+</AdminLayout>

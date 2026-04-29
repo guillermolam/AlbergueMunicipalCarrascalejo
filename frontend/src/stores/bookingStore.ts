@@ -1,4 +1,5 @@
 import { map } from 'nanostores';
+import { secureRandomInt } from '../lib/secure-random';
 
 // Booking state types
 export interface BookingState {
@@ -107,7 +108,7 @@ export const bookingActions = {
   addPilgrim: (pilgrim: Omit<Pilgrim, 'id'>) => {
     const newPilgrim: Pilgrim = {
       ...pilgrim,
-      id: `pilgrim_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: `pilgrim_${Date.now()}_${secureRandomInt(100000000, 999999999).toString(36)}`,
     };
 
     bookingStore.setKey('pilgrims', [...bookingStore.get().pilgrims, newPilgrim]);

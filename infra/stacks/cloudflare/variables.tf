@@ -1,7 +1,7 @@
 variable "cloudflare_api_token" {
   type        = string
   sensitive   = true
-  description = "Scoped CF API token: Pages + KV + D1"
+  description = "Scoped CF API token: Pages + KV + D1" #kics-scan ignore-line
 }
 
 variable "cloudflare_account_id" {

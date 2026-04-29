@@ -1,0 +1,164 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const locals = Astro.locals as any;
+if (locals.role !== 'admin') {
+  return Astro.redirect('/');
+}
+
+const defaults = {
+  hostelName: 'Albergue Municipal Carrascalejo',
+  checkInTime: '14:00',
+  checkOutTime: '10:00',
+  contactEmail: '',
+  contactPhone: '',
+  sharedBedPrice: 0,
+  privateRoomPrice: 0,
+  cancellationPolicy: '',
+  houseRules: '',
+};
+
+let settings = { ...defaults };
+let loadError = '';
+
+try {
+  const res = await fetch(new URL('/api/admin/settings', Astro.url), {
+    headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
+  });
+  if (!res.ok) {
+    loadError = `Gateway returned ${res.status}`;
+  } else {
+    const data = await res.json();
+    settings = { ...defaults, ...(data?.settings ?? data ?? {}) };
+  }
+} catch {
+  loadError = 'Unable to load settings from gateway';
+}
+---
+
+<AdminLayout title="Admin · Settings" activeSection="settings">
+  <section class="space-y-4">
+    <div class="border-2 border-black rounded-xl bg-white p-4">
+      <h1 class="text-2xl font-900">Hostel Settings</h1>
+      <p class="text-sm text-black/70 mt-1">Configure prices, rules, contacts and defaults.</p>
+    </div>
+
+    {
+      loadError && (
+        <div class="border-2 border-black rounded-xl bg-[#fff4e5] p-3 text-sm">{loadError}</div>
+      )
+    }
+
+    <form id="settings-form" class="border-2 border-black rounded-xl bg-white p-4 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-700">Hostel name</span>
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="hostelName"
+            value={settings.hostelName}
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-700">Contact email</span>
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="contactEmail"
+            value={settings.contactEmail}
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-700">Contact phone</span>
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="contactPhone"
+            value={settings.contactPhone}
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-700">Check-in time</span>
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="checkInTime"
+            value={settings.checkInTime}
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-700">Check-out time</span>
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="checkOutTime"
+            value={settings.checkOutTime}
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-700">Shared bed price</span>
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="sharedBedPrice"
+            value={String(settings.sharedBedPrice)}
+          />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-700">Private room price</span>
+          <input
+            class="border border-black rounded px-3 py-2"
+            name="privateRoomPrice"
+            value={String(settings.privateRoomPrice)}
+          />
+        </label>
+      </div>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-sm font-700">Cancellation policy</span>
+        <textarea
+          class="border border-black rounded px-3 py-2 min-h-[80px]"
+          name="cancellationPolicy">{settings.cancellationPolicy}</textarea
+        >
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-sm font-700">House rules</span>
+        <textarea class="border border-black rounded px-3 py-2 min-h-[120px]" name="houseRules"
+          >{settings.houseRules}</textarea
+        >
+      </label>
+
+      <div class="flex items-center gap-3">
+        <button
+          type="submit"
+          class="border-2 border-black rounded-lg px-4 py-2 bg-[#00ab39] text-white font-800"
+        >
+          Save settings
+        </button>
+        <span id="save-status" class="text-sm text-black/70"></span>
+      </div>
+    </form>
+  </section>
+
+  <script>
+    const form = document.getElementById('settings-form');
+    const status = document.getElementById('save-status');
+
+    if (form instanceof HTMLFormElement && status instanceof HTMLElement) {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const fd = new FormData(form);
+        const payload = Object.fromEntries(fd.entries());
+        status.textContent = 'Saving...';
+        try {
+          const res = await fetch('/api/admin/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error(`Save failed (${res.status})`);
+          status.textContent = 'Saved';
+        } catch (error) {
+          status.textContent = error instanceof Error ? error.message : 'Save failed';
+        }
+      });
+    }
+  </script>
+</AdminLayout>

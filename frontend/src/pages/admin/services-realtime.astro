@@ -1,9 +1,16 @@
 ﻿---
-export const prerender = true;
+export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import ServiceStatus from '../../components/admin/ServiceStatus.astro';
 import { mockHealthChecks } from '../../lib/healthchecks';
+
+const locals = Astro.locals as any;
+if (locals.role !== 'admin') {
+  return Astro.redirect('/');
+}
+
+return Astro.redirect('/admin');
 ---
 
 <AdminLayout title="Services Health - Admin Dashboard" activeSection="services">
@@ -11,16 +18,16 @@ import { mockHealthChecks } from '../../lib/healthchecks';
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold text-base-content">Services Health</h1>
-        <p class="text-base-content/70 mt-1">Monitor all system services and infrastructure</p>
+        <h1 class="text-3xl font-bold text-stone-900">Services Health</h1>
+        <p class="text-stone-600 mt-1">Monitor all system services and infrastructure</p>
       </div>
-      <div class="text-sm text-base-content/70">Real-time monitoring with WebSocket updates</div>
+      <div class="text-sm text-stone-600">Real-time monitoring with WebSocket updates</div>
     </div>
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-success">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-success">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -29,15 +36,15 @@ import { mockHealthChecks } from '../../lib/healthchecks';
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
-        <div class="stat-title">Healthy Services</div>
-        <div class="stat-value text-success">
+        <div class="text-sm opacity-70">Healthy Services</div>
+        <div class="text-2xl font-900 text-success">
           {mockHealthChecks.filter((s) => s.status === 'healthy').length}
         </div>
-        <div class="stat-desc">of {mockHealthChecks.length} total</div>
+        <div class="text-xs opacity-70">of {mockHealthChecks.length} total</div>
       </div>
 
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-warning">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-warning">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -47,15 +54,15 @@ import { mockHealthChecks } from '../../lib/healthchecks';
             ></path>
           </svg>
         </div>
-        <div class="stat-title">Warnings</div>
-        <div class="stat-value text-warning">
+        <div class="text-sm opacity-70">Warnings</div>
+        <div class="text-2xl font-900 text-warning">
           {mockHealthChecks.filter((s) => s.status === 'warning').length}
         </div>
-        <div class="stat-desc">Requires attention</div>
+        <div class="text-xs opacity-70">Requires attention</div>
       </div>
 
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-error">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-error">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -64,15 +71,15 @@ import { mockHealthChecks } from '../../lib/healthchecks';
               d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
-        <div class="stat-title">Errors</div>
-        <div class="stat-value text-error">
+        <div class="text-sm opacity-70">Errors</div>
+        <div class="text-2xl font-900 text-error">
           {mockHealthChecks.filter((s) => s.status === 'error').length}
         </div>
-        <div class="stat-desc">Critical issues</div>
+        <div class="text-xs opacity-70">Critical issues</div>
       </div>
 
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-figure text-info">
+      <div class="card-brut p-3 bg-stone-100">
+        <div class="mb-2 text-info">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -81,8 +88,8 @@ import { mockHealthChecks } from '../../lib/healthchecks';
               d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
         </div>
-        <div class="stat-title">Avg Response</div>
-        <div class="stat-value text-info">
+        <div class="text-sm opacity-70">Avg Response</div>
+        <div class="text-2xl font-900 text-info">
           {
             Math.round(
               mockHealthChecks
@@ -92,7 +99,7 @@ import { mockHealthChecks } from '../../lib/healthchecks';
             )
           }ms
         </div>
-        <div class="stat-desc">Across all services</div>
+        <div class="text-xs opacity-70">Across all services</div>
       </div>
     </div>
 
@@ -101,9 +108,9 @@ import { mockHealthChecks } from '../../lib/healthchecks';
 
     <!-- Quick Actions -->
     <div class="space-y-4">
-      <h2 class="text-xl font-semibold text-base-content">Quick Actions</h2>
+      <h2 class="text-xl font-semibold text-stone-900">Quick Actions</h2>
       <div class="flex flex-wrap gap-3">
-        <button class="btn btn-primary btn-sm" onclick="location.reload()">
+        <button class="btn-primary text-sm" onclick="location.reload()">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -114,7 +121,7 @@ import { mockHealthChecks } from '../../lib/healthchecks';
           </svg>
           Refresh All
         </button>
-        <button class="btn btn-outline btn-sm">
+        <button class="border-2 border-black px-3 py-2 text-sm hover:bg-stone-100">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -125,7 +132,7 @@ import { mockHealthChecks } from '../../lib/healthchecks';
           </svg>
           Export Report
         </button>
-        <button class="btn btn-outline btn-sm">
+        <button class="border-2 border-black px-3 py-2 text-sm hover:bg-stone-100">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"

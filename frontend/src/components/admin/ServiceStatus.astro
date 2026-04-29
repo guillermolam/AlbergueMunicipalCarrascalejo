@@ -1,15 +1,15 @@
-﻿---
+---
 const { initialServices = [] } = Astro.props;
 ---
 
-<div class="bg-base-200 rounded-box p-6">
+<div class="bg-stone-100 rounded-xl p-6">
   <div class="flex items-center justify-between mb-6">
-    <h2 class="text-xl font-semibold text-base-content">Service status</h2>
-    <div class="text-sm text-base-content/60">Static snapshot</div>
+    <h2 class="text-xl font-semibold text-stone-900">Service status</h2>
+    <div class="text-sm text-stone-500">Static snapshot</div>
   </div>
 
   <div class="overflow-x-auto">
-    <table class="table table-zebra">
+    <table class="w-full border-collapse">
       <thead>
         <tr>
           <th>Service</th>
@@ -25,13 +25,13 @@ const { initialServices = [] } = Astro.props;
               <td class="font-medium">{s.name}</td>
               <td>
                 <span
-                  class={`badge ${s.status === 'healthy' ? 'badge-success' : s.status === 'warning' ? 'badge-warning' : 'badge-error'}`}
+                  class={`badge-doodle ${s.status === 'healthy' ? 'text-green-700' : s.status === 'warning' ? 'text-yellow-700' : 'text-red-700'}`}
                 >
                   {s.status}
                 </span>
               </td>
               <td class="font-mono">{s.responseTime}</td>
-              <td class="text-base-content/70">{s.message}</td>
+              <td class="text-stone-600">{s.message}</td>
             </tr>
           ))
         }

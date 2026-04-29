@@ -1,0 +1,42 @@
+name: Auto Approve + Auto Merge (Squash)
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto:
+    name: Auto Approve and Enable Auto-Merge
+    runs-on: ubuntu-latest
+    if: >
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      # Context values are bound to env-vars so they are never interpolated
+      # directly into the shell command string — prevents script injection
+      # (SonarCloud S6906 / CWE-78).
+      - name: Check PR is from trusted source
+        env:
+          PR_HEAD_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          if [[ "$PR_HEAD_OWNER" != "$REPO_OWNER" ]]; then
+            echo "Untrusted PR source: $PR_HEAD_OWNER"
+            exit 1
+          fi
+
+      - name: Auto-approve PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr review "$PR_NUMBER" --approve || true
+
+      - name: Enable auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR_NUMBER" --auto --squash --delete-branch

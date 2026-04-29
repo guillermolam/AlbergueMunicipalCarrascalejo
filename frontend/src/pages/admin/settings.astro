@@ -1,0 +1,8 @@
+---
+export const prerender = false;
+const locals = Astro.locals as any;
+if (locals.role !== 'admin') {
+  return Astro.redirect('/');
+}
+return Astro.redirect('/admin/settings-v1');
+---

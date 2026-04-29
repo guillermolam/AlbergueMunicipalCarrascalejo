@@ -1,21 +1,33 @@
 import { createSignal, onMount, onCleanup } from 'solid-js';
 import type { ServiceHealth } from '../../lib/healthchecks';
+import { secureRandomBool, secureRandomInt, secureRandomPick } from '../../lib/secure-random';
 
 interface ServiceStatusProps {
   initialServices: ServiceHealth[];
+}
+
+interface ServiceResponse {
+  service: string;
+  status: 'healthy' | 'warning' | 'error';
+  responseTime: number;
+  uptime: number;
+  details?: Record<string, unknown>;
 }
 
 export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
   const [services, setServices] = createSignal<ServiceHealth[]>(initialServices);
   const [isConnected, setIsConnected] = createSignal(false);
   const [lastUpdate, setLastUpdate] = createSignal<Date>(new Date());
+  let ws: WebSocket | null = null;
 
   onMount(() => {
     // Connect to WebSocket for real-time updates
     connectWebSocket();
 
     // Also poll API every 30 seconds as fallback
-    const pollInterval = setInterval(pollServices, 30000);
+    const pollInterval = setInterval(() => {
+      pollServices();
+    }, 30000);
 
     onCleanup(() => {
       clearInterval(pollInterval);
@@ -25,37 +37,36 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
     });
   });
 
-  let ws: WebSocket | null = null;
-
-  const connectWebSocket = () => {
+  const connectWebSocket = (): void => {
     // In a real implementation, this would connect to your WebSocket server
     // For now, we'll simulate WebSocket updates
     console.log('Connecting to WebSocket for real-time updates...');
 
     // Simulate WebSocket connection
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setIsConnected(true);
       console.log('WebSocket connected');
 
       // Simulate receiving updates
-      const simulateUpdates = () => {
-        if (Math.random() > 0.7) {
+      const simulateUpdates = (): void => {
+        if (secureRandomBool(0.3)) {
+          // NOSONAR — uses crypto.getRandomValues(), not Math.random()
+          // 30% chance
           // Randomly update a service status
           setServices((prev) => {
             const updated = [...prev];
-            const randomIndex = Math.floor(Math.random() * updated.length);
+            const randomIndex = secureRandomInt(0, updated.length); // NOSONAR — crypto-safe
             const service = updated[randomIndex];
 
             // Random status change
-            const statuses: ('healthy' | 'warning' | 'error')[] = ['healthy', 'warning', 'error'];
-            const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            const statuses = ['healthy', 'warning', 'error'] as const;
+            const newStatus = secureRandomPick(statuses); // NOSONAR — crypto-safe
 
             updated[randomIndex] = {
               ...service,
-              status: newStatus,
+              status: newStatus ?? 'healthy',
               lastCheck: 'just now',
-              responseTime:
-                newStatus === 'error' ? 'Timeout' : `${Math.floor(Math.random() * 200 + 10)}ms`,
+              responseTime: newStatus === 'error' ? 'Timeout' : `${secureRandomInt(10, 210)}ms`, // NOSONAR — crypto-safe
             };
 
             return updated;
@@ -66,22 +77,27 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       };
 
       // Simulate updates every 10-30 seconds
-      const updateInterval = setInterval(simulateUpdates, Math.random() * 20000 + 10000);
+      const updateInterval = setInterval(simulateUpdates, secureRandomInt(10000, 30001));
 
+      // Store for cleanup in outer onCleanup
       onCleanup(() => {
         clearInterval(updateInterval);
       });
     }, 1000);
+
+    onCleanup(() => {
+      clearTimeout(timeoutId);
+    });
   };
 
-  const pollServices = async () => {
+  const pollServices = async (): Promise<void> => {
     try {
       const response = await fetch('/api/health');
       if (response.ok) {
-        const data = await response.json();
-        if (data.services) {
+        const data = (await response.json()) as { services?: ServiceResponse[] };
+        if (data.services && Array.isArray(data.services)) {
           setServices(
-            data.services.map((service: any) => ({
+            data.services.map((service: ServiceResponse) => ({
               name: service.service,
               status: service.status,
               lastCheck: 'just now',
@@ -95,7 +111,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
         }
       }
     } catch (error) {
-      console.error('Failed to poll services:', error);
+      console.error(
+        'Failed to poll services:',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   };
 
@@ -122,7 +141,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       case 'error':
         return 'bg-error';
       default:
-        return 'bg-base-300';
+        return 'bg-stone-300';
     }
   };
 
@@ -135,7 +154,7 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       case 'error':
         return 'text-error';
       default:
-        return 'text-base-content';
+        return 'text-stone-900';
     }
   };
 
@@ -149,12 +168,16 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class={`w-3 h-3 rounded-full ${isConnected() ? 'bg-success' : 'bg-error'}`}></div>
-          <span class="text-sm text-base-content/70">
+          <span class="text-sm text-stone-600">
             {isConnected() ? 'Connected' : 'Disconnected'} • Last update:{' '}
             {lastUpdate().toLocaleTimeString()}
           </span>
         </div>
-        <button class="btn btn-ghost btn-sm" onClick={refreshServices}>
+        <button
+          type="button"
+          class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-sm"
+          onClick={refreshServices}
+        >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -170,15 +193,19 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
       {/* Service Cards */}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {services().map((service) => (
-          <div class="card bg-base-200 shadow-sm border border-base-300">
-            <div class="card-body p-4">
+          <div key={service.name} class="card-brut p-4 bg-stone-100 border border-stone-300">
+            <div class="p-4">
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                   <div class={`w-3 h-3 rounded-full ${getStatusColor(service.status)}`}></div>
-                  <h3 class="card-title text-lg">{service.name}</h3>
+                  <h3 class="font-700 text-lg">{service.name}</h3>
                 </div>
                 <div class="dropdown dropdown-end">
-                  <label tabindex="0" class="btn btn-ghost btn-xs btn-circle">
+                  <button
+                    type="button"
+                    tabindex="0"
+                    class="border border-stone-300 rounded-full p-1 bg-white hover:bg-stone-100"
+                  >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
@@ -187,10 +214,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                         d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
                       />
                     </svg>
-                  </label>
+                  </button>
                   <ul
                     tabindex="0"
-                    class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-32"
+                    class="absolute right-0 mt-2 p-2 shadow bg-white rounded-xl w-32"
                   >
                     <li>
                       <a>View logs</a>
@@ -205,31 +232,34 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                 </div>
               </div>
 
-              <p class="text-sm text-base-content/70 mb-4">{service.description}</p>
+              <p class="text-sm text-stone-600 mb-4">{service.description}</p>
 
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Status:</span>
+                  <span class="text-stone-500">Status:</span>
                   <span class={`font-medium ${getStatusTextColor(service.status)}`}>
                     {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Response Time:</span>
+                  <span class="text-stone-500">Response Time:</span>
                   <span class="font-mono">{service.responseTime}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Uptime:</span>
+                  <span class="text-stone-500">Uptime:</span>
                   <span class="font-mono">{service.uptime}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-base-content/60">Last Check:</span>
+                  <span class="text-stone-500">Last Check:</span>
                   <span class="font-mono text-xs">{service.lastCheck}</span>
                 </div>
               </div>
 
-              <div class="card-actions justify-end mt-4">
-                <button class="btn btn-ghost btn-xs">
+              <div class="flex justify-end mt-4">
+                <button
+                  type="button"
+                  class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs"
+                >
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
@@ -240,7 +270,10 @@ export default function ServiceStatus({ initialServices }: ServiceStatusProps) {
                   </svg>
                   Logs
                 </button>
-                <button class="btn btn-ghost btn-xs">
+                <button
+                  type="button"
+                  class="border border-stone-300 rounded px-2 py-1 bg-white hover:bg-stone-100 text-xs"
+                >
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"

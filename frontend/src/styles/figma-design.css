@@ -214,12 +214,12 @@
     background: var(--primary-50);
   }
 
-  .btn-ghost {
+  .btn-minimal {
     background: transparent;
     color: var(--primary-600);
   }
 
-  .btn-ghost:hover {
+  .btn-minimal:hover {
     background: var(--primary-100);
     color: var(--primary-800);
   }

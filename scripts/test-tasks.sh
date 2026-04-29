@@ -17,7 +17,7 @@ test_task() {
 
 	echo "Testing: task $task_name"
 
-	if [ "$should_fail" = "true" ]; then
+	if [[ $should_fail == "true" ]]; then
 		# Task is expected to fail (e.g., requires dependencies)
 		if timeout 10 task "$task_name" 2>&1 >/dev/null; then
 			PASSED_TASKS+=("$task_name (unexpected success)")
@@ -63,7 +63,7 @@ echo "Passed: ${#PASSED_TASKS[@]}"
 echo "Failed: ${#FAILED_TASKS[@]}"
 echo ""
 
-if [ ${#FAILED_TASKS[@]} -gt 0 ]; then
+if [[ ${#FAILED_TASKS[@]} -gt 0 ]]; then
 	echo "Failed tasks:"
 	for task in "${FAILED_TASKS[@]}"; do
 		echo "  - $task"

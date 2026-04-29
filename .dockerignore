@@ -1,0 +1,39 @@
+# ── Version-control ──────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ── CI / tooling ─────────────────────────────────────────────
+.github/
+.trunk/
+.vscode/
+.idea/
+
+# ── Secrets / environment files ──────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.p12
+
+# ── Build artefacts (re-built inside the image) ───────────────
+frontend/dist/
+frontend/.astro/
+frontend/node_modules/
+backend/target/
+gateway/target/
+node_modules/
+
+# ── Test & local infra ───────────────────────────────────────
+tests/
+infra/
+
+# ── Documentation ────────────────────────────────────────────
+*.md
+LICENSE
+
+# ── OS noise ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

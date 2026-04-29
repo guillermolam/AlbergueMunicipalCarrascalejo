@@ -22,60 +22,60 @@ FAILED_JOBS=()
 PASSED_JOBS=()
 
 run_job() {
-    local job_name="$1"
-    echo -e "${YELLOW}>>> Running: $job_name${NC}"
-    shift
-    if "$@"; then
-        echo -e "${GREEN}✓ PASSED: $job_name${NC}"
-        PASSED_JOBS+=("$job_name")
-        return 0
-    else
-        echo -e "${RED}✗ FAILED: $job_name${NC}"
-        FAILED_JOBS+=("$job_name")
-        return 1
-    fi
+	local job_name="$1"
+	echo -e "${YELLOW}>>> Running: $job_name${NC}"
+	shift
+	if "$@"; then
+		echo -e "${GREEN}✓ PASSED: $job_name${NC}"
+		PASSED_JOBS+=("$job_name")
+		return 0
+	else
+		echo -e "${RED}✗ FAILED: $job_name${NC}"
+		FAILED_JOBS+=("$job_name")
+		return 1
+	fi
 }
 
 test_frontend_prettier() {
-    cd "$PROJECT_ROOT/frontend"
-    pnpm exec prettier --check src/
+	cd "$PROJECT_ROOT/frontend"
+	pnpm exec prettier --check src/
 }
 
 test_frontend_build() {
-    cd "$PROJECT_ROOT/frontend"
-    pnpm build
-    # Verify artifacts exist
-    test -f dist/index.html
+	cd "$PROJECT_ROOT/frontend"
+	pnpm build
+	# Verify artifacts exist
+	test -f dist/index.html
 }
 
 test_gateway_format() {
-    cd "$PROJECT_ROOT/gateway"
-    just fmt-check
+	cd "$PROJECT_ROOT/gateway"
+	just fmt-check
 }
 
 test_gateway_clippy() {
-    cd "$PROJECT_ROOT/gateway"
-    just clippy
+	cd "$PROJECT_ROOT/gateway"
+	just clippy
 }
 
 test_gateway_test() {
-    cd "$PROJECT_ROOT/gateway"
-    just test
+	cd "$PROJECT_ROOT/gateway"
+	just test
 }
 
 test_gateway_build_wasm() {
-    cd "$PROJECT_ROOT/gateway"
-    cargo build --workspace --release --target wasm32-wasip1
+	cd "$PROJECT_ROOT/gateway"
+	cargo build --workspace --release --target wasm32-wasip1
 }
 
 test_backend_format() {
-    cd "$PROJECT_ROOT/backend"
-    just fmt-check
+	cd "$PROJECT_ROOT/backend"
+	just fmt-check
 }
 
 test_backend_build() {
-    cd "$PROJECT_ROOT/backend"
-    just build
+	cd "$PROJECT_ROOT/backend"
+	just build
 }
 
 echo "=========================================="
@@ -112,20 +112,20 @@ echo "SUMMARY"
 echo "=========================================="
 echo -e "${GREEN}Passed: ${#PASSED_JOBS[@]}${NC}"
 for job in "${PASSED_JOBS[@]}"; do
-    echo -e "${GREEN}  ✓ $job${NC}"
+	echo -e "${GREEN}  ✓ $job${NC}"
 done
 
-if [ ${#FAILED_JOBS[@]} -gt 0 ]; then
-    echo ""
-    echo -e "${RED}Failed: ${#FAILED_JOBS[@]}${NC}"
-    for job in "${FAILED_JOBS[@]}"; do
-        echo -e "${RED}  ✗ $job${NC}"
-    done
-    echo ""
-    echo -e "${RED}CI Tests FAILED${NC}"
-    exit 1
+if [[ ${#FAILED_JOBS[@]} -gt 0 ]]; then
+	echo ""
+	echo -e "${RED}Failed: ${#FAILED_JOBS[@]}${NC}"
+	for job in "${FAILED_JOBS[@]}"; do
+		echo -e "${RED}  ✗ $job${NC}"
+	done
+	echo ""
+	echo -e "${RED}CI Tests FAILED${NC}"
+	exit 1
 else
-    echo ""
-    echo -e "${GREEN}All CI Tests PASSED!${NC}"
-    exit 0
+	echo ""
+	echo -e "${GREEN}All CI Tests PASSED!${NC}"
+	exit 0
 fi

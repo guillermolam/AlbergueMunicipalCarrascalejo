@@ -1,0 +1,20 @@
+extends: default
+
+rules:
+  document-start: disable
+  truthy: disable
+  # GitHub Actions workflow files use @SHA # tag inline comments with a single
+  # space before the #.  The default rule requires 2 spaces.  Relax to min: 1.
+  comments:
+    min-spaces-from-content: 1
+  # Long sonar.exclusions lines and SHA-pinned uses: lines can exceed 120 chars.
+  line-length:
+    max: 200
+    level: warning
+
+ignore: |
+  **/.git/**
+  **/node_modules/**
+  **/dist/**
+  **/.astro/**
+  **/target/**

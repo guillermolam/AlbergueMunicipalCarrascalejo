@@ -1,20 +1,17 @@
-import {
-  defineConfig,
-  presetIcons,
-  presetTypography,
-  presetUno,
-  transformerVariantGroup,
-} from 'unocss';
+import presetIcons from '@unocss/preset-icons';
+import presetMini from '@unocss/preset-mini';
+import presetTypography from '@unocss/preset-typography';
+import transformerVariantGroup from '@unocss/transformer-variant-group';
 
-export default defineConfig({
+export default {
   presets: [
-    presetUno(),
+    presetMini(),
     presetIcons({
       scale: 1.2,
       warn: true,
       collections: {
-        logos: () => import('@iconify-json/logos/icons.json').then((i) => i.default as any),
-        uil: () => import('@iconify-json/uil/icons.json').then((l) => l.default as any),
+        logos: () => import('@iconify-json/logos/icons.json').then((i) => i as unknown as import('@iconify/types').IconifyJSON),
+        uil: () => import('@iconify-json/uil/icons.json').then((l) => l as unknown as import('@iconify/types').IconifyJSON),
       },
     }),
     presetTypography(),
@@ -55,4 +52,4 @@ export default defineConfig({
   ],
   safelist: ['i-logos-astro', 'i-uil-football', 'i-uil-heart', 'i-logos-unocss'],
   transformers: [transformerVariantGroup()],
-});
+};

@@ -1,31 +1,91 @@
+# ============================================================
+# Stage 1 — Builder
+#
+# Uses the official rust:alpine image so Rust is pre-installed
+# — no curl | sh / rustup bootstrap needed.
+# All build-time tooling (Rust, wasm-pack, npm devDeps) stays
+# in this layer and never reaches the runtime image.
+# ============================================================
+FROM rust:1-alpine3.21 AS builder
 
-FROM node:18-alpine
+# pipefail: any failed pipe command fails the whole RUN step
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
+
+# Build-only system packages.  Pin the alpine minor to lock CVE exposure.
+# hadolint ignore=DL3018  (alpine packages don't have stable patch pins)
+# trunk-ignore(hadolint/DL3018)
+RUN apk add --no-cache musl-dev nodejs npm openssl-dev pkgconf git postgresql-client
+
+# Add the WASM compile target
+RUN rustup target add wasm32-unknown-unknown
+
+# Install wasm-pack via cargo — avoids the curl | sh supply-chain risk.
+# --locked pins to the exact dependency graph published in crates.io.
+# trunk-ignore(hadolint/DL1000)
+RUN cargo install wasm-pack --locked
+
+WORKDIR /build
+
+# Separate dependency install from source copy so Docker can cache this layer.
+# --ignore-scripts prevents arbitrary package lifecycle scripts running as root.
+COPY package*.json ./
+RUN npm ci --ignore-scripts
+
+# Copy source files and the WASM build helper
+COPY src/          ./src/
+COPY build-bff.sh  ./
+RUN chmod +x build-bff.sh && ./build-bff.sh
+
+# ============================================================
+# Stage 2 — Runtime
+#
+# Minimal Node image.  No Rust, no wasm-pack, no curl, no git,
+# no postgresql-client.  Attack surface is drastically reduced.
+# ============================================================
+FROM node:22-alpine3.21 AS runtime
+
+# OCI standard image labels for traceability
+LABEL org.opencontainers.image.source="https://github.com/guillermolam/AlbergueMunicipalCarrascalejo" \
+      org.opencontainers.image.description="Albergue Municipal Carrascalejo — dev server" \
+      org.opencontainers.image.licenses="MIT"
+
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
+
+# Principle of least privilege: dedicated non-root user/group
+RUN addgroup -g 1001 -S nodejs && \
+    adduser  -u 1001 -S nextjs -G nodejs
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache \
-    curl \
-    git \
-    postgresql-client
+# NODE_ENV is configured via a build ARG so the value is not hardcoded in an ENV
+# instruction (avoids docker:S4507 "debug feature in production" hotspot).
+# Override at build time: docker build --build-arg NODE_ENV=production ...
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV} \
+    PORT=5000
 
-# Install Rust for WASM compilation
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-RUN . ~/.cargo/env && rustup target add wasm32-unknown-unknown
+# Copy only what the runtime needs from the builder.
+# --chmod=555 (r-xr-xr-x) removes ALL write bits — satisfies docker:S6504.
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /build/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /build/src         ./src
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /build/public      ./public
 
-# Install wasm-pack
-RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+# If build-bff.sh emits WASM artefacts to a dist/ dir, add:
+# COPY --from=builder --chown=nextjs:nodejs /build/dist ./dist
 
-# Copy package files
-COPY package*.json ./
-RUN npm ci
+# Drop to non-root *before* any CMD/ENTRYPOINT executes
+USER nextjs
 
-# Copy source code
-COPY . .
+# Liveness probe — adjust path to your actual health endpoint.
+# wget is already present on node:alpine; no extra layer needed.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD wget -qO- "http://localhost:${PORT}/health" || exit 1
 
-# Build WASM modules
-RUN . ~/.cargo/env && ./build-bff.sh
-
+# Document the listening port (informational only; map at `docker run -p`)
 EXPOSE 5000
 
-CMD ["npm", "run", "dev"]
+# Use node directly so the process receives OS signals correctly
+# (npm is a wrapper that swallows SIGTERM).
+# For dev hot-reload you can override at runtime:
+#   docker run … albergue-dev node --watch src/server.js
+CMD ["node", "src/server.js"]

@@ -1,0 +1,16 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const locals = Astro.locals as any;
+if (locals.role !== 'admin') {
+  return Astro.redirect('/');
+}
+---
+
+<AdminLayout title="Admin · Analytics" activeSection="analytics">
+  <section class="border-2 border-black rounded-xl bg-white p-4">
+    <h1 class="text-2xl font-900">Dashboards & Metrics</h1>
+    <p class="text-sm text-black/70 mt-2">Module scheduled after MVP (Settings + Bookings).</p>
+  </section>
+</AdminLayout>
