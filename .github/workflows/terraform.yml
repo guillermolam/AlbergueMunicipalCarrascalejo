@@ -156,7 +156,7 @@ jobs:
           except Exception as e:
               print(f'Spacelift auth failed: {e}', file=sys.stderr)
               sys.exit(0)
-          " 2>&1) || true
+          " 2>/dev/null) || true
           if [ -n "$JWT" ]; then
             echo "::add-mask::$JWT"
           fi
@@ -187,7 +187,7 @@ jobs:
           except Exception as e:
               print(f'Spacelift trigger failed: {e}', file=sys.stderr)
               sys.exit(0)
-          " 2>&1) || true
+          " 2>/dev/null) || true
           echo "run_id=${RUN_ID:-}" >> "$GITHUB_OUTPUT"
         env:
           SPACELIFT_JWT: ${{ steps.auth.outputs.jwt }}
