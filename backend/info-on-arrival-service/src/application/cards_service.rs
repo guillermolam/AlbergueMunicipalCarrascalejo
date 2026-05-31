@@ -3,9 +3,9 @@ use crate::domain::{
 };
 use crate::ports::{ScraperPort, StoragePort};
 use futures::future::BoxFuture;
-use std::cmp::Reverse;
 use serde_json;
 use shared::{AlbergueError, AlbergueResult};
+use std::cmp::Reverse;
 
 pub struct CardsServiceImpl {
     storage: Box<crate::adapters::storage::PostgresCardsRepository>,
