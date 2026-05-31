@@ -517,7 +517,7 @@ Este pequeño pueblo de apenas 300 habitantes guarda secretos fascinantes:
         }
 
         // Sort by priority (highest first)
-        all_cards.sort_by(|a, b| b.priority.cmp(&a.priority));
+        all_cards.sort_by_key(|a| std::cmp::Reverse(a.priority));
 
         Ok(serde_json::to_string(&all_cards)?)
     }
