@@ -33,12 +33,12 @@ impl RequestHandler {
                 log::warn!("Redis not configured, using in-memory cache only");
                 LocationService::with_memory_cache(Some(CacheConfig::default()))
             },
-            |redis_url| {
+|redis_url| {
                 log::info!("Initializing with Redis cache");
                 let redis = RedisService::new(&redis_url).expect("Failed to create Redis service");
                 let config = CacheConfig {
                     enabled: true,
-                    ttl: Duration::from_secs(3600), // 1 hour TTL
+                    ttl: Duration::from_hours(1), // 1 hour TTL
                 };
                 LocationService::with_redis(redis, Some(config))
             },
