@@ -241,19 +241,24 @@ jobs:
           components: rustfmt, clippy
           targets: wasm32-wasip1
 
-      - name: Install Spin CLI
-        run: |
-          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-          echo "$HOME/.spin/bin" >> $GITHUB_PATH
+- name: Install Spin CLI
+  run: |
+    curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+    echo "$HOME/.spin/bin" >> $GITHUB_PATH
+    # Debug: verify installation
+    ls -la $HOME/.spin/bin
+    $HOME/.spin/bin/spin --version
 
       - name: Install just
         run: |
           cargo install just --locked || cargo install just
 
-      - name: Build Spin app (root spin.toml)
-        run: |
-          spin --version
-          spin build
+- name: Build Spin app (root spin.toml)
+  run: |
+    echo "PATH=$PATH"
+    which spin
+    spin --version
+    spin build
 
       - name: Run Rust integration tests (tests/integration)
         run: |
