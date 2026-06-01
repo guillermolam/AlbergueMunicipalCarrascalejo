@@ -365,7 +365,7 @@ jobs:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v5.0.0
+        uses: SonarSource/sonarqube-scan-action@v1.0.0
         with:
           projectBaseDir: .
         env:
