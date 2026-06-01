@@ -17,9 +17,18 @@
 
 use serde::{Deserialize, Serialize};
 use spin_sdk::http::{Method, Request, Response, ResponseBuilder};
-use spin_sdk::http_component;
+use serde_json::Value;
+use std::env;
 
-#[derive(Serialize, Deserialize)]
+// Import shared constants
+#[path = "../../shared/constants.rs"]
+mod shared_constants;
+use shared_constants::*;
+
+// Declare handler module
+mod handler;
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Booking {
     pub id: String,
     pub guest_name: String,
@@ -34,7 +43,7 @@ pub struct Booking {
     pub payment_status: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Room {
     pub id: String,
     pub name: String,
@@ -45,42 +54,33 @@ pub struct Room {
     pub available: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DashboardStats {
     pub occupancy: OccupancyStats,
     pub today_bookings: i32,
     pub revenue: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct OccupancyStats {
     pub available: i32,
     pub occupied: i32,
     pub total: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Pricing {
     pub dormitory: i32,
 }
 
-#[http_component]
-fn handle_request(req: Request) -> Response {
-    let method = req.method();
-    let path = req.uri();
-
-    match (method, path) {
-        (&Method::Get, "/bookings") => get_bookings(),
-        (&Method::Post, "/bookings") => create_booking(req),
-        (&Method::Get, "/rooms") => get_rooms(),
-        (&Method::Get, "/dashboard/stats") => get_dashboard_stats(),
-        (&Method::Get, "/pricing") => get_pricing(),
-        _ => error_response(404, "Not found"),
+/// Get WhatsApp integration status from environment variable.
+// Returns true if WHATSAPP_ENABLED is set to "true" (case-insensitive).
+fn is_whatsapp_enabled() -> bool {
+    match env::var("WHATSAPP_ENABLED") {
+        Ok(val) => val.eq_ignore_ascii_case("true"),
+        Err(_) => false, // Default to disabled if not set
     }
 }
-
-use serde_json::Value;
-use std::env;
 
 fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
     // Placeholder: Implement WhatsApp API call to register client
@@ -103,7 +103,8 @@ fn create_booking(req: Request) -> Response {
     // Read WhatsApp business phone number from env
     let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
 
-    if !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
+    // Only register if WhatsApp is enabled and both numbers are present
+    if is_whatsapp_enabled() && !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
         register_whatsapp_client(guest_phone, &whatsapp_business_phone);
     }
 
@@ -156,99 +157,22 @@ fn create_booking(req: Request) -> Response {
 }
 
 fn get_dashboard_stats() -> Response {
-    let stats = DashboardStats {
-        occupancy: OccupancyStats {
-            available: 24,
-            occupied: 0,
-            total: 24,
-        },
-        today_bookings: 3,
-        revenue: 4500,
-    };
-
+    let stats = get_dashboard_stats_data(); // from shared_constants
     json_response(200, &stats)
 }
 
 fn get_pricing() -> Response {
-    let pricing = Pricing { dormitory: 15 };
-
+    let pricing = get_pricing_data(); // from shared_constants
     json_response(200, &pricing)
 }
 
 fn get_rooms() -> Response {
-    let rooms = vec![
-        Room {
-            id: "dorm-a".to_string(),
-            name: "Dormitorio A".to_string(),
-            type_: "shared".to_string(),
-            capacity: 12,
-            price_per_night: 1500,
-            amenities: vec![
-                "Taquillas".to_string(),
-                "Enchufes".to_string(),
-                "Ventanas".to_string(),
-            ],
-            available: true,
-        },
-        Room {
-            id: "dorm-b".to_string(),
-            name: "Dormitorio B".to_string(),
-            type_: "shared".to_string(),
-            capacity: 10,
-            price_per_night: 1500,
-            amenities: vec![
-                "Taquillas".to_string(),
-                "Enchufes".to_string(),
-                "Aire acondicionado".to_string(),
-            ],
-            available: true,
-        },
-        Room {
-            id: "private-1".to_string(),
-            name: "Habitación Privada 1".to_string(),
-            type_: "private".to_string(),
-            capacity: 2,
-            price_per_night: 3500,
-            amenities: vec![
-                "Baño privado".to_string(),
-                "TV".to_string(),
-                "Aire acondicionado".to_string(),
-            ],
-            available: true,
-        },
-        Room {
-            id: "private-2".to_string(),
-            name: "Habitación Privada 2".to_string(),
-            type_: "private".to_string(),
-            capacity: 2,
-            price_per_night: 3500,
-            amenities: vec![
-                "Baño privado".to_string(),
-                "TV".to_string(),
-                "Aire acondicionado".to_string(),
-            ],
-            available: true,
-        },
-    ];
-
+    let rooms = get_rooms_data(); // from shared_constants
     json_response(200, &rooms)
 }
 
 fn get_bookings() -> Response {
-    let bookings = vec![Booking {
-        id: "1".to_string(),
-        guest_name: "Juan Pérez".to_string(),
-        guest_email: "juan@example.com".to_string(),
-        guest_phone: Some("+34666123456".to_string()),
-        room_type: "dorm-a".to_string(),
-        check_in: "2024-01-15".to_string(),
-        check_out: "2024-01-16".to_string(),
-        num_guests: 1,
-        total_price: 1500,
-        status: "confirmed".to_string(),
-        payment_status: "paid".to_string(),
-    }];
-
+    let bookings = get_bookings_data(); // from shared_constants
     json_response(200, &bookings)
 }
 
