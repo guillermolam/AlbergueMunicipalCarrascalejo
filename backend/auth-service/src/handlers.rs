@@ -1,6 +1,8 @@
 use chrono::Utc;
 use http::StatusCode;
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation};
+use jsonwebtoken::{
+    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
+};
 use serde_json::json;
 use spin_sdk::http::{Request, Response};
 use std::collections::HashMap;
@@ -212,8 +214,11 @@ pub async fn verify_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Res
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
 
-    let result: Result<TokenData<Claims>, _> =
-        decode(token, &DecodingKey::from_secret(&cfg.jwt_secret), &validation);
+    let result: Result<TokenData<Claims>, _> = decode(
+        token,
+        &DecodingKey::from_secret(&cfg.jwt_secret),
+        &validation,
+    );
 
     match result {
         Ok(_) => Ok(Response::builder()
