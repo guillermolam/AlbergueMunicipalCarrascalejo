@@ -184,22 +184,24 @@ pub async fn verify_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Res
     let headers = req.headers();
     let mut token: Option<&str> = None;
 
-    if let Some(auth) = headers.get("Authorization") {
-        let auth_str = auth.to_str().unwrap_or_default();
-        if let Some(bearer) = auth_str.strip_prefix("Bearer ") {
-            token = Some(bearer);
-        }
-    }
-
-    if token.is_none() {
-        if let Some(cookie) = headers.get("Cookie") {
-            let cookie_str = cookie.to_str().unwrap_or_default();
+    for (key, value) in headers {
+        if key == "Authorization" {
+            let auth_str = value.to_str().unwrap_or_default();
+            if let Some(bearer) = auth_str.strip_prefix("Bearer ") {
+                token = Some(bearer);
+                break;
+            }
+        } else if key == "Cookie" {
+            let cookie_str = value.to_str().unwrap_or_default();
             for part in cookie_str.split(';') {
                 let part = part.trim();
                 if let Some(jwt) = part.strip_prefix("jwt=") {
                     token = Some(jwt);
                     break;
                 }
+            }
+            if token.is_some() {
+                break;
             }
         }
     }

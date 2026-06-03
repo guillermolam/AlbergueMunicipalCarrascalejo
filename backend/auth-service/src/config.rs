@@ -42,7 +42,7 @@ pub struct TokenResponse {
     pub token_type: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
