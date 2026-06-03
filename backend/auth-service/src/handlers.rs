@@ -186,13 +186,13 @@ pub async fn verify_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Res
 
     for (key, value) in headers {
         if key == "Authorization" {
-            let auth_str = value.to_str().unwrap_or_default();
+            let auth_str = value.as_str().unwrap_or_default();
             if let Some(bearer) = auth_str.strip_prefix("Bearer ") {
                 token = Some(bearer);
                 break;
             }
         } else if key == "Cookie" {
-            let cookie_str = value.to_str().unwrap_or_default();
+            let cookie_str = value.as_str().unwrap_or_default();
             for part in cookie_str.split(';') {
                 let part = part.trim();
                 if let Some(jwt) = part.strip_prefix("jwt=") {
