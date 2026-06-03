@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
-use shared::constants::{Booking, Room, DashboardStats, OccupancyStats, Pricing, SAMPLE_BOOKINGS, SAMPLE_ROOMS, SAMPLE_DASHBOARD_STATS, SAMPLE_PRICING};
+use shared::constants::{
+    Booking, DashboardStats, OccupancyStats, Pricing, Room, SAMPLE_BOOKINGS,
+    SAMPLE_DASHBOARD_STATS, SAMPLE_PRICING, SAMPLE_ROOMS,
+};
 
 /// Storage port abstracting over different storage backends (Spin KV, Cloudflare KV, etc.)
 pub trait StoragePort {

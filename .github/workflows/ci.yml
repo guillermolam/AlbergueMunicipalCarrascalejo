@@ -273,8 +273,8 @@ jobs:
       - name: Lint integration test crate (tests/integration)
         run: |
           cd tests/integration
-          just fmt
-          just clippy
+          cargo fmt --manifest-path Cargo.toml -- --check
+          cargo clippy --manifest-path Cargo.toml --all-targets --all-features -- -D warnings
 
   # Security Scan
   security:

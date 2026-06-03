@@ -25,7 +25,7 @@ pub use shared::constants::*;
 
 // Import storage port
 mod storage;
-use storage::{StoragePort, InMemoryStorage};
+use storage::{InMemoryStorage, StoragePort};
 
 use serde_json::Value;
 use std::env;
@@ -61,7 +61,8 @@ fn create_booking(req: Request, storage: &dyn StoragePort) -> Response {
     let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
 
     // Make WhatsApp integration optional: only register if both numbers are present and feature is enabled
-    let whatsapp_enabled = env::var("WHATSAPP_ENABLED").unwrap_or_else(|_| "true".to_string()) == "true";
+    let whatsapp_enabled =
+        env::var("WHATSAPP_ENABLED").unwrap_or_else(|_| "true".to_string()) == "true";
     if whatsapp_enabled && !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
         register_whatsapp_client(guest_phone, &whatsapp_business_phone);
     }
