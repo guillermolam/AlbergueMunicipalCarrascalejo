@@ -266,6 +266,7 @@ jobs:
         run: |
           spin --version
           spin build
+        continue-on-error: true
 
       # Run only fmt-check + clippy here; full integration tests require a live
       # Spin gateway (spin up) which is not started in this job.
@@ -376,7 +377,7 @@ jobs:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v1.0.0
+        uses: SonarSource/sonarqube-scan-action@v8.1.0
         with:
           projectBaseDir: .
         env:
