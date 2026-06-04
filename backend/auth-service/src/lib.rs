@@ -17,7 +17,8 @@ mod providers;
 
 use config::load_config;
 use handlers::{
-    callback_handler, login_handler, logout_handler, refresh_handler, well_known_handler,
+    callback_handler, login_handler, logout_handler, refresh_handler, verify_handler,
+    well_known_handler,
 };
 
 #[http_component]
@@ -29,6 +30,7 @@ async fn handle_auth_service(req: Request) -> anyhow::Result<Response> {
         (&Method::Get, "/api/auth/callback") => callback_handler(req, &config).await,
         (&Method::Get, "/api/auth/logout") => logout_handler(req, &config).await,
         (&Method::Post, "/api/auth/refresh") => refresh_handler(req, &config).await,
+        (&Method::Get, "/api/auth/verify") => verify_handler(req, &config).await,
         (&Method::Get, "/api/auth/.well-known/openid-configuration") => {
             well_known_handler(req, &config).await
         }

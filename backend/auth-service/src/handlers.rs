@@ -1,6 +1,8 @@
 use chrono::Utc;
 use http::StatusCode;
-use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use jsonwebtoken::{
+    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
+};
 use serde_json::json;
 use spin_sdk::http::{Request, Response};
 use std::collections::HashMap;
@@ -176,4 +178,51 @@ pub async fn well_known_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Resu
         .header("Content-Type", "application/json")
         .body(serde_json::to_vec(&config)?)
         .build())
+}
+
+pub async fn verify_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
+    let token = req
+        .headers()
+        .get("Authorization")
+        .and_then(|v| v.as_str())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .or_else(|| {
+            req.headers()
+                .get("Cookie")
+                .and_then(|v| v.as_str())
+                .and_then(|cookie| {
+                    cookie.split(';')
+                        .find_map(|part| {
+                            let part = part.trim();
+                            part.strip_prefix("jwt=")
+                        })
+                })
+        });
+
+    let Some(token) = token else {
+        return Ok(Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Missing token")
+            .build());
+    };
+
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = true;
+
+    let result: Result<TokenData<Claims>, _> = decode(
+        token,
+        &DecodingKey::from_secret(&cfg.jwt_secret),
+        &validation,
+    );
+
+    match result {
+        Ok(_) => Ok(Response::builder()
+            .status(StatusCode::OK)
+            .body("Token valid")
+            .build()),
+        Err(_) => Ok(Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Invalid token")
+            .build()),
+    }
 }

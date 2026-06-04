@@ -241,10 +241,10 @@ jobs:
           components: rustfmt, clippy
           targets: wasm32-wasip1
 
-      - name: Install Spin CLI
-        run: |
-          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-          echo "$HOME/.spin/bin" >> $GITHUB_PATH
+       - name: Install Spin CLI
+         run: |
+           curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+           echo "$HOME/.spin/bin" >> $GITHUB_PATH
 
       - name: Install just
         run: |
@@ -359,59 +359,63 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install SonarScanner CLI
-        run: |
-          curl -o- https://raw.githubusercontent.com/SonarSource/sonarqube-cli/refs/heads/master/user-scripts/install.sh | bash
-          echo "$HOME/.sonarqube-cli/bin" >> $GITHUB_PATH
+       - name: Install SonarScanner CLI
+         id: install-sonar-scanner
+         run: |
+           VERSION=$(curl -s https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/latest-version.txt)
+           echo "SonarScanner version: $VERSION"
+           wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${VERSION}-linux.zip
+           unzip -q sonar-scanner-cli-${VERSION}-linux.zip
+           echo "$HOME/sonar-scanner-${VERSION}/bin" >> $GITHUB_PATH
 
       - name: Scan Frontend
         if: success()
         run: |
-          sonar-scanner \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.sources=frontend/src \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+           sonar-scanner \
+             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+             -Dsonar.sources=frontend/src \
+             -Dsonar.host.url=https://sonarcloud.io \
+             -Dsonar.token=${{ secrets.SONAR_TOKEN }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Scan Backend (Rust)
         if: success()
         run: |
-          sonar-scanner \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.sources=backend \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.rust.file.suffixes=.rs \
-            -Dsonar.rust.coverage.reportPaths=target/llvm-cov/coverage.json
+           sonar-scanner \
+             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+             -Dsonar.sources=backend \
+             -Dsonar.host.url=https://sonarcloud.io \
+             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+             -Dsonar.rust.file.suffixes=.rs \
+             -Dsonar.rust.coverage.reportPaths=target/llvm-cov/coverage.json
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Scan Gateway (Rust)
         if: success()
         run: |
-          sonar-scanner \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.sources=gateway \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.rust.file.suffixes=.rs
+           sonar-scanner \
+             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+             -Dsonar.sources=gateway \
+             -Dsonar.host.url=https://sonarcloud.io \
+             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+             -Dsonar.rust.file.suffixes=.rs
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Scan Infrastructure (Terraform)
         if: success()
         run: |
-          sonar-scanner \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-            -Dsonar.sources=infra \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.terraform.file.suffixes=.tf
+           sonar-scanner \
+             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+             -Dsonar.sources=infra \
+             -Dsonar.host.url=https://sonarcloud.io \
+             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+             -Dsonar.terraform.file.suffixes=.tf
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
