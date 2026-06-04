@@ -181,30 +181,23 @@ pub async fn well_known_handler(_req: Request, _cfg: &AppConfig) -> anyhow::Resu
 }
 
 pub async fn verify_handler(req: Request, cfg: &AppConfig) -> anyhow::Result<Response> {
-    let headers = req.headers();
-    let mut token: Option<&str> = None;
-
-    for (key, value) in headers {
-        if key == "Authorization" {
-            let auth_str = value.as_str().unwrap_or_default();
-            if let Some(bearer) = auth_str.strip_prefix("Bearer ") {
-                token = Some(bearer);
-                break;
-            }
-        } else if key == "Cookie" {
-            let cookie_str = value.as_str().unwrap_or_default();
-            for part in cookie_str.split(';') {
-                let part = part.trim();
-                if let Some(jwt) = part.strip_prefix("jwt=") {
-                    token = Some(jwt);
-                    break;
-                }
-            }
-            if token.is_some() {
-                break;
-            }
-        }
-    }
+    let token = req
+        .headers()
+        .get("Authorization")
+        .and_then(|v| v.as_str())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .or_else(|| {
+            req.headers()
+                .get("Cookie")
+                .and_then(|v| v.as_str())
+                .and_then(|cookie| {
+                    cookie.split(';')
+                        .find_map(|part| {
+                            let part = part.trim();
+                            part.strip_prefix("jwt=")
+                        })
+                })
+        });
 
     let Some(token) = token else {
         return Ok(Response::builder()
