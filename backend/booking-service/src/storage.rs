@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
-use shared::constants::{
-    Booking, DashboardStats, OccupancyStats, Pricing, Room, SAMPLE_BOOKINGS,
-    SAMPLE_DASHBOARD_STATS, SAMPLE_PRICING, SAMPLE_ROOMS,
+use crate::shared::constants::{
+    Booking, DashboardStats, Pricing, Room, sample_bookings,
+    sample_dashboard_stats, sample_pricing, sample_rooms,
 };
 
 /// Storage port abstracting over different storage backends (Spin KV, Cloudflare KV, etc.)
@@ -19,18 +18,18 @@ pub struct InMemoryStorage;
 
 impl StoragePort for InMemoryStorage {
     fn get_bookings(&self) -> Vec<Booking> {
-        SAMPLE_BOOKINGS.to_vec()
+        sample_bookings().to_vec()
     }
 
     fn get_rooms(&self) -> Vec<Room> {
-        SAMPLE_ROOMS.to_vec()
+        sample_rooms().to_vec()
     }
 
     fn get_dashboard_stats(&self) -> DashboardStats {
-        SAMPLE_DASHBOARD_STATS
+        sample_dashboard_stats()
     }
 
     fn get_pricing(&self) -> Pricing {
-        SAMPLE_PRICING
+        sample_pricing()
     }
 }

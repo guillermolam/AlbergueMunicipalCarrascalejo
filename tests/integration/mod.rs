@@ -1,4 +1,3 @@
-
 #![deny(warnings)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(
@@ -12,9 +11,10 @@
 //! Tests the complete service composition pipeline by making real HTTP requests
 //! to the Spin gateway running in test mode.
 
+#[cfg(test)]
 pub mod gateway_integration_test;
 
-// Re-export main test client for use in other test modules
+#[cfg(test)]
 pub use gateway_integration_test::GatewayTestClient;
 
 #[cfg(test)]

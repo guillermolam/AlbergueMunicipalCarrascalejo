@@ -15,8 +15,8 @@
     clippy::needless_pass_by_value
 )]
 
-use serde::{Deserialize, Serialize};
-use spin_sdk::http::{Method, Request, Response, ResponseBuilder};
+use serde::Serialize;
+use spin_sdk::http::{Request, Response, ResponseBuilder};
 use spin_sdk::http_component;
 
 // Import shared constants
@@ -44,7 +44,7 @@ fn get_bookings(storage: &dyn StoragePort) -> Response {
     json_response(200, &bookings)
 }
 
-fn create_booking(req: Request, storage: &dyn StoragePort) -> Response {
+fn create_booking(req: Request, _storage: &dyn StoragePort) -> Response {
     // Parse request body with error handling
     let body_bytes = req.body();
     let body_json: Value = match serde_json::from_slice(body_bytes) {
@@ -152,6 +152,7 @@ fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
 
 // HTTP handler module
 mod handler {
+    #[allow(clippy::wildcard_imports)]
     use super::*;
     use spin_sdk::http::{Method, Request, Response};
 

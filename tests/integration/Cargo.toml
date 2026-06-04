@@ -3,6 +3,9 @@ name = "integration-tests"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+path = "mod.rs"
+
 [dependencies]
 # Core dependencies
 anyhow = "1.0"
@@ -31,7 +34,7 @@ tokio-test = "0.4"
 wiremock = "0.5"
 
 # Shared
-shared = { path = "../backend/shared" }
+shared = { path = "../../backend/shared" }
 
 # Testing assertions
 speculoos = "0.11"
