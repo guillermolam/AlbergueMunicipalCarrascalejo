@@ -71,7 +71,7 @@ impl Default for CacheConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            ttl: Duration::from_hours(1), // 1 hour default
+            ttl: Duration::from_secs(3600), // 1 hour default
         }
     }
 }
