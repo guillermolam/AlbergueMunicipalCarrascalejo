@@ -31,7 +31,12 @@ pub struct GatewayTestClient {
     base_url: String,
 }
 
-#[derive(Default)]
+impl Default for GatewayTestClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GatewayTestClient {
     #[must_use]
     pub fn new() -> Self {
@@ -167,7 +172,7 @@ async fn test_rate_limiting_enforcement() -> Result<()> {
     let mut responses = Vec::new();
 
     for i in 0..20 {
-        let response = client.get(&format!("/api/reviews/list?page={}", i)).await?;
+        let response = client.get(&format!("/api/reviews/list?page={i}")).await?;
         responses.push(response);
 
         // Small delay to avoid overwhelming the test
@@ -353,7 +358,7 @@ async fn test_concurrent_request_handling() -> Result<()> {
     for i in 0..10 {
         let client = GatewayTestClient::new();
         let handle =
-            tokio::spawn(async move { client.get(&format!("/api/reviews/list?page={}", i)).await });
+            tokio::spawn(async move { client.get(&format!("/api/reviews/list?page={i}")).await });
         handles.push(handle);
     }
 
