@@ -11,16 +11,14 @@
 
 use anyhow::Result;
 use reqwest;
-use serde_json::{json, Value};
-use speculoos::prelude::*;
+use serde_json::Value;
 use std::env;
-use std::time::Duration;
-use tokio::time::sleep;
 
 fn get_gateway_url() -> String {
-    env::var("GATEWAY_TEST_PORT")
-        .map(|port| format!("http://0.0.0.0:{}", port))
-        .unwrap_or_else(|_| "http://0.0.0.0:3000".to_string())
+    env::var("GATEWAY_TEST_PORT").map_or_else(
+        |_| "http://0.0.0.0:3000".to_string(),
+        |port| format!("http://0.0.0.0:{port}"),
+    )
 }
 
 pub struct GatewayTestClient {
@@ -28,7 +26,14 @@ pub struct GatewayTestClient {
     base_url: String,
 }
 
+impl Default for GatewayTestClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GatewayTestClient {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -38,7 +43,7 @@ impl GatewayTestClient {
 
     pub async fn get(&self, path: &str) -> Result<reqwest::Response> {
         let response = self.client
-            .get(&format!("{}{}", self.base_url, path))
+            .get(format!("{}{}", self.base_url, path))
             .send()
             .await?;
         Ok(response)
@@ -46,7 +51,7 @@ impl GatewayTestClient {
 
     pub async fn post(&self, path: &str, body: Value) -> Result<reqwest::Response> {
         let response = self.client
-            .post(&format!("{}{}", self.base_url, path))
+            .post(format!("{}{}", self.base_url, path))
             .header("Content-Type", "application/json")
             .json(&body)
             .send()
@@ -56,9 +61,9 @@ impl GatewayTestClient {
 
     pub async fn post_with_auth(&self, path: &str, body: Value, token: &str) -> Result<reqwest::Response> {
         let response = self.client
-            .post(&format!("{}{}", self.base_url, path))
+            .post(format!("{}{}", self.base_url, path))
             .header("Content-Type", "application/json")
-            .header("Authorization", &format!("Bearer {}", token))
+            .header("Authorization", format!("Bearer {token}"))
             .json(&body)
             .send()
             .await?;
@@ -67,7 +72,7 @@ impl GatewayTestClient {
 
     pub async fn options(&self, path: &str) -> Result<reqwest::Response> {
         let response = self.client
-            .request(reqwest::Method::OPTIONS, &format!("{}{}", self.base_url, path))
+            .request(reqwest::Method::OPTIONS, format!("{}{}", self.base_url, path))
             .header("Access-Control-Request-Method", "POST")
             .header("Access-Control-Request-Headers", "Content-Type, Authorization")
             .send()

@@ -15,7 +15,7 @@
     clippy::needless_pass_by_value
 )]
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use spin_sdk::http::{Method, Request, Response, ResponseBuilder};
 use spin_sdk::http_component;
 
