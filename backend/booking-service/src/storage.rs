@@ -1,6 +1,6 @@
 use crate::shared::constants::{
-    sample_bookings, sample_dashboard_stats, sample_pricing, sample_rooms, Booking, DashboardStats,
-    Pricing, Room,
+    Booking, DashboardStats, Pricing, Room, sample_bookings, sample_dashboard_stats, sample_pricing,
+    sample_rooms,
 };
 
 /// Storage port abstracting over different storage backends (Spin KV, Cloudflare KV, etc.)
