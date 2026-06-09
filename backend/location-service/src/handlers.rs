@@ -20,6 +20,7 @@ impl Default for RequestHandler {
 }
 
 impl RequestHandler {
+    #[allow(clippy::duration_suboptimal_units)]
     #[must_use]
     pub fn new() -> Self {
         // Initialize Redis service if available
@@ -38,7 +39,7 @@ impl RequestHandler {
                 let redis = RedisService::new(&redis_url).expect("Failed to create Redis service");
                 let config = CacheConfig {
                     enabled: true,
-                    ttl: Duration::from_hours(1), // 1 hour TTL
+                    ttl: Duration::from_secs(3600), // 1 hour TTL
                 };
                 LocationService::with_redis(redis, Some(config))
             },

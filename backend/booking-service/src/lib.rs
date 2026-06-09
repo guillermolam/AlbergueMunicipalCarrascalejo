@@ -239,7 +239,7 @@ fn get_bookings() -> Response {
         id: "1".to_string(),
         guest_name: "Juan Pérez".to_string(),
         guest_email: "juan@example.com".to_string(),
-        guest_phone: Some("+34666123456".to_string()),
+        guest_phone: None,
         room_type: "dorm-a".to_string(),
         check_in: "2024-01-15".to_string(),
         check_out: "2024-01-16".to_string(),
