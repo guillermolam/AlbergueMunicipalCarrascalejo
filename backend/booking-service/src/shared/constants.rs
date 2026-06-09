@@ -138,3 +138,4 @@ pub const fn sample_dashboard_stats() -> DashboardStats {
 pub const fn sample_pricing() -> Pricing {
     Pricing { dormitory: 15 }
 }
+
