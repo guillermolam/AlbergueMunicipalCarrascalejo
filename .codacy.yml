@@ -3,6 +3,9 @@ exclude_paths:
   - "gateway/**"
   - "frontend/dist/**"
   - "backend/info-on-arrival-service/**"
+  - "backend/notification-service/tests/**"
+  - "tests/e2e/**"
+  - "domain_model/seed/**"
 
 complexity:
   threshold: 20
