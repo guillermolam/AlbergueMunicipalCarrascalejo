@@ -1,0 +1,12 @@
+exclude_paths:
+  - "tests/integration/**"
+  - "gateway/**"
+  - "frontend/dist/**"
+  - "backend/info-on-arrival-service/**"
+
+complexity:
+  threshold: 20
+
+security:
+  threshold: high
+  use_suggestions: true
