@@ -68,6 +68,7 @@ pub struct CacheConfig {
 }
 
 impl Default for CacheConfig {
+    #[allow(clippy::duration_suboptimal_units)]
     fn default() -> Self {
         Self {
             enabled: true,

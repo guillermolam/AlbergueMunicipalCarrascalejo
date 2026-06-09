@@ -20,6 +20,7 @@ impl Default for RequestHandler {
 }
 
 impl RequestHandler {
+    #[allow(clippy::duration_suboptimal_units)]
     #[must_use]
     pub fn new() -> Self {
         // Initialize Redis service if available

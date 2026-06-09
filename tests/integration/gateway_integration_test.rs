@@ -5,22 +5,25 @@
     clippy::missing_errors_doc,
     clippy::missing_panics_doc
 )]
+// Test utilities are used in test functions
+#![allow(unused_imports)]
 
 //! Gateway Integration Tests
 //! Tests the entire service composition pipeline through HTTP requests
 
 use anyhow::Result;
 use reqwest;
-use serde_json::{json, Value};
+use serde_json::Value;
 use speculoos::prelude::*;
 use std::env;
 use std::time::Duration;
 use tokio::time::sleep;
 
 fn get_gateway_url() -> String {
-    env::var("GATEWAY_TEST_PORT")
-        .map(|port| format!("http://0.0.0.0:{}", port))
-        .unwrap_or_else(|_| "http://0.0.0.0:3000".to_string())
+    env::var("GATEWAY_TEST_PORT").map_or_else(
+        |_| "http://0.0.0.0:3000".to_string(),
+        |port| format!("http://0.0.0.0:{port}"),
+    )
 }
 
 pub struct GatewayTestClient {
@@ -28,7 +31,14 @@ pub struct GatewayTestClient {
     base_url: String,
 }
 
+impl Default for GatewayTestClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GatewayTestClient {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -37,16 +47,18 @@ impl GatewayTestClient {
     }
 
     pub async fn get(&self, path: &str) -> Result<reqwest::Response> {
-        let response = self.client
-            .get(&format!("{}{}", self.base_url, path))
+        let response = self
+            .client
+            .get(format!("{}{}", self.base_url, path))
             .send()
             .await?;
         Ok(response)
     }
 
     pub async fn post(&self, path: &str, body: Value) -> Result<reqwest::Response> {
-        let response = self.client
-            .post(&format!("{}{}", self.base_url, path))
+        let response = self
+            .client
+            .post(format!("{}{}", self.base_url, path))
             .header("Content-Type", "application/json")
             .json(&body)
             .send()
@@ -54,11 +66,17 @@ impl GatewayTestClient {
         Ok(response)
     }
 
-    pub async fn post_with_auth(&self, path: &str, body: Value, token: &str) -> Result<reqwest::Response> {
-        let response = self.client
-            .post(&format!("{}{}", self.base_url, path))
+    pub async fn post_with_auth(
+        &self,
+        path: &str,
+        body: Value,
+        token: &str,
+    ) -> Result<reqwest::Response> {
+        let response = self
+            .client
+            .post(format!("{}{}", self.base_url, path))
             .header("Content-Type", "application/json")
-            .header("Authorization", &format!("Bearer {}", token))
+            .header("Authorization", format!("Bearer {token}"))
             .json(&body)
             .send()
             .await?;
@@ -66,10 +84,17 @@ impl GatewayTestClient {
     }
 
     pub async fn options(&self, path: &str) -> Result<reqwest::Response> {
-        let response = self.client
-            .request(reqwest::Method::OPTIONS, &format!("{}{}", self.base_url, path))
+        let response = self
+            .client
+            .request(
+                reqwest::Method::OPTIONS,
+                format!("{}{}", self.base_url, path),
+            )
             .header("Access-Control-Request-Method", "POST")
-            .header("Access-Control-Request-Headers", "Content-Type, Authorization")
+            .header(
+                "Access-Control-Request-Headers",
+                "Content-Type, Authorization",
+            )
             .send()
             .await?;
         Ok(response)
@@ -123,11 +148,13 @@ async fn test_service_composition_pipeline_success() -> Result<()> {
         "bed_preference": "lower"
     });
 
-    let response = client.post_with_auth(
-        "/api/booking/create",
-        booking_data,
-        "valid_access_token_123"
-    ).await?;
+    let response = client
+        .post_with_auth(
+            "/api/booking/create",
+            booking_data,
+            "valid_access_token_123",
+        )
+        .await?;
 
     // Should pass through rate limiting, security, and auth
     assert_that(&response.status().as_u16()).is_not_equal_to(429); // Not rate limited
@@ -145,7 +172,7 @@ async fn test_rate_limiting_enforcement() -> Result<()> {
     let mut responses = Vec::new();
 
     for i in 0..20 {
-        let response = client.get(&format!("/api/reviews/list?page={}", i)).await?;
+        let response = client.get(format!("/api/reviews/list?page={i}")).await?;
         responses.push(response);
 
         // Small delay to avoid overwhelming the test
@@ -156,7 +183,10 @@ async fn test_rate_limiting_enforcement() -> Result<()> {
     let rate_limited = responses.iter().any(|r| r.status().as_u16() == 429);
 
     if rate_limited {
-        let rate_limited_response = responses.iter().find(|r| r.status().as_u16() == 429).unwrap();
+        let rate_limited_response = responses
+            .iter()
+            .find(|r| r.status().as_u16() == 429)
+            .unwrap();
         let body: Value = rate_limited_response.json().await?;
         assert_that(&body["error"].as_str()).is_equal_to(Some("Rate Limit Exceeded"));
         assert_that(&body["retry_after"]).is_some();
@@ -203,7 +233,9 @@ async fn test_authentication_required_endpoints() -> Result<()> {
     ];
 
     for endpoint in protected_endpoints {
-        let response = client.post(endpoint, serde_json::json!({"test": "data"})).await?;
+        let response = client
+            .post(endpoint, serde_json::json!({"test": "data"}))
+            .await?;
 
         assert_that(&response.status().as_u16()).is_equal_to(401);
 
@@ -241,7 +273,9 @@ async fn test_oauth2_authentication_flow() -> Result<()> {
     let client = GatewayTestClient::new();
 
     // Test OAuth2 callback endpoint
-    let response = client.get("/api/auth/callback?code=auth_code_123&state=csrf_state_456").await?;
+    let response = client
+        .get("/api/auth/callback?code=auth_code_123&state=csrf_state_456")
+        .await?;
 
     assert_that(&response.status().as_u16()).is_equal_to(200);
 
@@ -256,11 +290,13 @@ async fn test_oauth2_authentication_flow() -> Result<()> {
 async fn test_openid_connect_userinfo() -> Result<()> {
     let client = GatewayTestClient::new();
 
-    let response = client.post_with_auth(
-        "/api/auth/userinfo",
-        serde_json::json!({}),
-        "valid_access_token_123"
-    ).await?;
+    let response = client
+        .post_with_auth(
+            "/api/auth/userinfo",
+            serde_json::json!({}),
+            "valid_access_token_123",
+        )
+        .await?;
 
     assert_that(&response.status().as_u16()).is_equal_to(200);
 
@@ -286,7 +322,12 @@ async fn test_service_routing() -> Result<()> {
         // Should route to service (not 404)
         assert_that(&response.status().as_u16()).is_not_equal_to(404);
 
-        println!("✅ Route {} -> {} service: {}", route, service_name, response.status());
+        println!(
+            "✅ Route {} -> {} service: {}",
+            route,
+            service_name,
+            response.status()
+        );
     }
 
     Ok(())
@@ -316,9 +357,8 @@ async fn test_concurrent_request_handling() -> Result<()> {
 
     for i in 0..10 {
         let client = GatewayTestClient::new();
-        let handle = tokio::spawn(async move {
-            client.get(&format!("/api/reviews/list?page={}", i)).await
-        });
+        let handle =
+            tokio::spawn(async move { client.get(format!("/api/reviews/list?page={i}")).await });
         handles.push(handle);
     }
 
@@ -336,11 +376,13 @@ async fn test_concurrent_request_handling() -> Result<()> {
 async fn test_middleware_context_propagation() -> Result<()> {
     let client = GatewayTestClient::new();
 
-    let response = client.post_with_auth(
-        "/api/booking/create",
-        serde_json::json!({"guest_name": "Test User"}),
-        "valid_token_with_user_info"
-    ).await?;
+    let response = client
+        .post_with_auth(
+            "/api/booking/create",
+            serde_json::json!({"guest_name": "Test User"}),
+            "valid_token_with_user_info",
+        )
+        .await?;
 
     // Test that user context is properly propagated through middleware
     // This would be validated by checking if user-specific logic was applied
@@ -370,11 +412,16 @@ async fn test_protected_route_requires_auth() -> Result<()> {
     let client = GatewayTestClient::new();
 
     // Test protected booking endpoint without auth
-    let response = client.post("/api/booking/create", serde_json::json!({
-        "guest_name": "Test User",
-        "check_in": "2024-01-15",
-        "check_out": "2024-01-16"
-    })).await?;
+    let response = client
+        .post(
+            "/api/booking/create",
+            serde_json::json!({
+                "guest_name": "Test User",
+                "check_in": "2024-01-15",
+                "check_out": "2024-01-16"
+            }),
+        )
+        .await?;
 
     assert_that(&response.status().as_u16()).is_equal_to(401);
 
