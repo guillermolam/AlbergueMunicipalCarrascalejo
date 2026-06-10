@@ -6,6 +6,7 @@ exclude_paths:
   - "backend/notification-service/tests/**"
   - "tests/e2e/**"
   - "domain_model/seed/**"
+  - "frontend/tests/fixtures/**"
 
 complexity:
   threshold: 20
