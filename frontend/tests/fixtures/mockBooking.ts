@@ -3,7 +3,7 @@ export const mockBookingData = {
   id: 'test-booking-123',
   guestName: 'Juan García López',
   email: 'juan.test@example.com',
-  phone: '+34600000000',
+  phone: '+15555555555', // Test-only phone number (not real)
   nationality: 'ESP',
   documentType: 'DNI',
   documentNumber: '12345678A',

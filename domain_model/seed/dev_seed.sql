@@ -54,13 +54,13 @@ INSERT INTO countries (code, name, nationality, requires_visa) VALUES
     ('CZ', 'República Checa', 'Checa', FALSE)
 ON CONFLICT (code) DO NOTHING;
 
--- Sample pilgrims with realistic data
+-- Sample pilgrims with realistic data (test-only phone numbers)
 INSERT INTO pilgrims (document_type, document_number, full_name, email, phone, nationality_code, birth_date, validation_status, consent_data_processing, document_confidence) VALUES
-    ('DNI', '12345678A', 'María García López', 'maria.garcia@email.com', '+34666123456', 'ES', '1985-03-15', 'valid', TRUE, 0.98),
-    ('PASSPORT', 'P12345678', 'John Smith', 'john.smith@email.com', '+441234567890', 'GB', '1978-07-22', 'valid', TRUE, 0.95),
-    ('NIE', 'X1234567L', 'Pierre Dubois', 'pierre.dubois@email.fr', '+33123456789', 'FR', '1990-11-08', 'valid', TRUE, 0.97),
-    ('DNI', '87654321B', 'Ana Rodríguez Martín', 'ana.rodriguez@email.com', '+34677987654', 'ES', '1992-05-30', 'valid', TRUE, 0.99),
-    ('PASSPORT', 'G87654321', 'Klaus Müller', 'klaus.muller@email.de', '+491234567890', 'DE', '1983-12-03', 'valid', TRUE, 0.96)
+    ('DNI', '12345678A', 'María García López', 'maria.garcia@email.com', '+15555550101', 'ES', '1985-03-15', 'valid', TRUE, 0.98),
+    ('PASSPORT', 'P12345678', 'John Smith', 'john.smith@email.com', '+15555550102', 'GB', '1978-07-22', 'valid', TRUE, 0.95),
+    ('NIE', 'X1234567L', 'Pierre Dubois', 'pierre.dubois@email.fr', '+15555550103', 'FR', '1990-11-08', 'valid', TRUE, 0.97),
+    ('DNI', '87654321B', 'Ana Rodríguez Martín', 'ana.rodriguez@email.com', '+15555550104', 'ES', '1992-05-30', 'valid', TRUE, 0.99),
+    ('PASSPORT', 'G87654321', 'Klaus Müller', 'klaus.muller@email.de', '+15555550105', 'DE', '1983-12-03', 'valid', TRUE, 0.96)
 ON CONFLICT (document_type, document_number) DO NOTHING;
 
 -- Sample bookings (some current, some historical)
