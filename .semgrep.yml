@@ -51,12 +51,13 @@ exclude:
   - '**/*.rlib'
   - '**/*.rmeta'
   
-  # Test and mock directories
-  - '**/tests/**'
-  - '**/__tests__/**'
-  - '**/test/**'
-  - '**/mocks/**'
-  - '**/fixtures/**'
+# Test and mock directories
+   - '**/tests/**'
+   - '**/__tests__/**'
+   - '**/test/**'
+   - '**/mocks/**'
+   - '**/fixtures/**'
+   - 'backend/info-on-arrival-service/**'
   
   # Scripts and CI
   - '**/scripts/**'
