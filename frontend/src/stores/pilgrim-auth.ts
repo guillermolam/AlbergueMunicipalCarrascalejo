@@ -622,7 +622,7 @@ async function simulateLogin(
         pilgrimId: 'pilgrim-123',
         email: email,
         emailVerified: true,
-        phoneNumber: '+1234567890',
+        phoneNumber: 'Test-Phone-123',
         phoneVerified: true,
         passwordHash: 'hashed-password-placeholder',
         twoFactorEnabled: false,
