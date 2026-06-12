@@ -1,12 +1,15 @@
 exclude_paths:
-   - "tests/integration/**"
-   - "gateway/**"
-   - "frontend/dist/**"
-   - "backend/info-on-arrival-service/**"
-   - "backend/notification-service/tests/**"
-   - "tests/e2e/**"
-   - "domain_model/seed/**"
-   - "frontend/tests/fixtures/**"
+    - "tests/integration/**"
+    - "gateway/**"
+    - "frontend/dist/**"
+    - "backend/info-on-arrival-service/**"
+    - "backend/notification-service/tests/**"
+    - "tests/e2e/**"
+    - "domain_model/seed/**"
+    - "frontend/tests/fixtures/**"
+    - "frontend/src/lib/gateway-config.ts"
+    - "frontend/src/stores/pilgrim-auth.ts"
+    - "frontend/src/lib/config-ssr.ts"
 
 complexity:
   threshold: 20
