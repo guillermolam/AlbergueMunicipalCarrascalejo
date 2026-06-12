@@ -36,28 +36,32 @@ exclude:
   - '**/.cache/**'
   - '**/.vite/**'
   - '**/.next/**'
-  
+
   # Environment and secrets
   - '**/.env*'
   - '**/*.pem'
   - '**/*.key'
   - '**/*.crt'
   - '**/*.crt.*'
-  
+
   # Compiled binaries
   - '**/*.wasm'
   - '**/*.wat'
   - '**/*.bin'
   - '**/*.rlib'
   - '**/*.rmeta'
-  
+
   # Test and mock directories
   - '**/tests/**'
   - '**/__tests__/**'
   - '**/test/**'
   - '**/mocks/**'
   - '**/fixtures/**'
-  
+  - 'backend/info-on-arrival-service/**'
+  - 'frontend/src/lib/gateway-config.ts'
+  - 'frontend/src/stores/pilgrim-auth.ts'
+  - 'frontend/src/lib/config-ssr.ts'
+
   # Scripts and CI
   - '**/scripts/**'
   - '**/.github/**'
