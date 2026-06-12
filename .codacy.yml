@@ -6,6 +6,7 @@ exclude_paths:
   - "backend/info-on-arrival-service/**"
   - "backend/notification-service/tests/**"
   - "domain_model/seed/**"
+  - "frontend/tests/fixtures/**"
   - "frontend/src/lib/gateway-config.ts"
   - "frontend/src/stores/pilgrim-auth.ts"
   - "frontend/src/lib/config-ssr.ts"
