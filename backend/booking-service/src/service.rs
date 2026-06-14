@@ -34,12 +34,27 @@ pub fn create_booking(req: Request, _storage: &dyn StoragePort) -> Response {
 
     let new_booking = Booking {
         id: "new_id".to_string(),
-        guest_name: string_or_default(body.guest_name, "New Guest"),
-        guest_email: string_or_default(body.guest_email, "guest@example.com"),
+        guest_name: body
+            .guest_name
+            .filter(|item| !item.is_empty())
+            .unwrap_or_else(|| "New Guest".to_string()),
+        guest_email: body
+            .guest_email
+            .filter(|item| !item.is_empty())
+            .unwrap_or_else(|| "guest@example.com".to_string()),
         guest_phone,
-        room_type: string_or_default(body.room_type, "dorm-a"),
-        check_in: string_or_default(body.check_in, "2024-01-20"),
-        check_out: string_or_default(body.check_out, "2024-01-21"),
+        room_type: body
+            .room_type
+            .filter(|item| !item.is_empty())
+            .unwrap_or_else(|| "dorm-a".to_string()),
+        check_in: body
+            .check_in
+            .filter(|item| !item.is_empty())
+            .unwrap_or_else(|| "2024-01-20".to_string()),
+        check_out: body
+            .check_out
+            .filter(|item| !item.is_empty())
+            .unwrap_or_else(|| "2024-01-21".to_string()),
         num_guests: body.num_guests.unwrap_or(1),
         total_price: body.total_price.unwrap_or(1500),
         status: "confirmed".to_string(),
@@ -62,12 +77,6 @@ pub fn get_pricing(storage: &dyn StoragePort) -> Response {
 pub fn get_rooms(storage: &dyn StoragePort) -> Response {
     let rooms = storage.snapshot().rooms;
     json_response(200, &rooms)
-}
-
-fn string_or_default(value: Option<String>, default: &str) -> String {
-    value
-        .filter(|item| !item.is_empty())
-        .unwrap_or_else(|| default.to_string())
 }
 
 fn maybe_register_whatsapp(guest_phone: Option<&str>) {
