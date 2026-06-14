@@ -47,17 +47,19 @@ pub struct Pricing {
 
 #[must_use]
 pub fn sample_bookings() -> [Booking; 1] {
-    [booking(BookingData {
-        id: "1",
-        guest_name: "Juan Pérez",
-        guest_email: "juan@example.com",
+    [Booking {
+        id: "1".to_string(),
+        guest_name: "Juan Pérez".to_string(),
+        guest_email: "juan@example.com".to_string(),
         guest_phone: None,
-        room_type: "dorm-a",
-        check_in: "2024-01-15",
-        check_out: "2024-01-16",
+        room_type: "dorm-a".to_string(),
+        check_in: "2024-01-15".to_string(),
+        check_out: "2024-01-16".to_string(),
         num_guests: 1,
         total_price: 1500,
-    })]
+        status: "confirmed".to_string(),
+        payment_status: "paid".to_string(),
+    }]
 }
 
 #[must_use]
@@ -114,34 +116,6 @@ pub const fn sample_dashboard_stats() -> DashboardStats {
 #[must_use]
 pub const fn sample_pricing() -> Pricing {
     Pricing { dormitory: 15 }
-}
-
-fn booking(data: BookingData<'_>) -> Booking {
-    Booking {
-        id: data.id.to_string(),
-        guest_name: data.guest_name.to_string(),
-        guest_email: data.guest_email.to_string(),
-        guest_phone: data.guest_phone.map(str::to_string),
-        room_type: data.room_type.to_string(),
-        check_in: data.check_in.to_string(),
-        check_out: data.check_out.to_string(),
-        num_guests: data.num_guests,
-        total_price: data.total_price,
-        status: "confirmed".to_string(),
-        payment_status: "paid".to_string(),
-    }
-}
-
-struct BookingData<'a> {
-    id: &'a str,
-    guest_name: &'a str,
-    guest_email: &'a str,
-    guest_phone: Option<&'a str>,
-    room_type: &'a str,
-    check_in: &'a str,
-    check_out: &'a str,
-    num_guests: i32,
-    total_price: i32,
 }
 
 fn room(
