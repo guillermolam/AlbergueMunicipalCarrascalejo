@@ -108,7 +108,7 @@ pub fn sample_rooms() -> [Room; 4] {
         Room {
             id: "private-2".to_string(),
             name: "Habitación Privada 2".to_string(),
-            type_: "shared".to_string(),
+            type_: "private".to_string(),
             capacity: 2,
             price_per_night: 3500,
             amenities: vec![
