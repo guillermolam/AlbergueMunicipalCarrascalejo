@@ -1,8 +1,8 @@
 use spin_sdk::http::{Method, Request, Response};
 
-use crate::error_response;
-use crate::service::{create_booking, get_bookings, get_dashboard_stats, get_pricing, get_rooms};
+use crate::service::{get_bookings, get_dashboard_stats, get_pricing, get_rooms};
 use crate::storage::StoragePort;
+use crate::{create_booking, error_response};
 
 pub fn handle_request(req: Request, storage: &dyn StoragePort) -> Response {
     let method = req.method();
