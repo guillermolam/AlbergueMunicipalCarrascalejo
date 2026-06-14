@@ -45,79 +45,56 @@ pub struct Pricing {
     pub dormitory: i32,
 }
 
-// Sample data for in-memory storage
 #[must_use]
 pub fn sample_bookings() -> [Booking; 1] {
-    [Booking {
-        id: "1".to_string(),
-        guest_name: "Juan Pérez".to_string(),
-        guest_email: "juan@example.com".to_string(),
+    [booking(BookingData {
+        id: "1",
+        guest_name: "Juan Pérez",
+        guest_email: "juan@example.com",
         guest_phone: None,
-        room_type: "dorm-a".to_string(),
-        check_in: "2024-01-15".to_string(),
-        check_out: "2024-01-16".to_string(),
+        room_type: "dorm-a",
+        check_in: "2024-01-15",
+        check_out: "2024-01-16",
         num_guests: 1,
         total_price: 1500,
-        status: "confirmed".to_string(),
-        payment_status: "paid".to_string(),
-    }]
+    })]
 }
 
 #[must_use]
 pub fn sample_rooms() -> [Room; 4] {
     [
-        Room {
-            id: "dorm-a".to_string(),
-            name: "Dormitorio A".to_string(),
-            type_: "shared".to_string(),
-            capacity: 12,
-            price_per_night: 1500,
-            amenities: vec![
-                "Taquillas".to_string(),
-                "Enchufes".to_string(),
-                "Ventanas".to_string(),
-            ],
-            available: true,
-        },
-        Room {
-            id: "dorm-b".to_string(),
-            name: "Dormitorio B".to_string(),
-            type_: "shared".to_string(),
-            capacity: 10,
-            price_per_night: 1500,
-            amenities: vec![
-                "Taquillas".to_string(),
-                "Enchufes".to_string(),
-                "Aire acondicionado".to_string(),
-            ],
-            available: true,
-        },
-        Room {
-            id: "private-1".to_string(),
-            name: "Habitación Privada 1".to_string(),
-            type_: "private".to_string(),
-            capacity: 2,
-            price_per_night: 3500,
-            amenities: vec![
-                "Baño privado".to_string(),
-                "TV".to_string(),
-                "Aire acondicionado".to_string(),
-            ],
-            available: true,
-        },
-        Room {
-            id: "private-2".to_string(),
-            name: "Habitación Privada 2".to_string(),
-            type_: "shared".to_string(),
-            capacity: 2,
-            price_per_night: 3500,
-            amenities: vec![
-                "Baño privado".to_string(),
-                "TV".to_string(),
-                "Aire acondicionado".to_string(),
-            ],
-            available: true,
-        },
+        room(
+            "dorm-a",
+            "Dormitorio A",
+            "shared",
+            12,
+            1500,
+            &["Taquillas", "Enchufes", "Ventanas"],
+        ),
+        room(
+            "dorm-b",
+            "Dormitorio B",
+            "shared",
+            10,
+            1500,
+            &["Taquillas", "Enchufes", "Aire acondicionado"],
+        ),
+        room(
+            "private-1",
+            "Habitación Privada 1",
+            "private",
+            2,
+            3500,
+            &["Baño privado", "TV", "Aire acondicionado"],
+        ),
+        room(
+            "private-2",
+            "Habitación Privada 2",
+            "private",
+            2,
+            3500,
+            &["Baño privado", "TV", "Aire acondicionado"],
+        ),
     ]
 }
 
@@ -137,4 +114,51 @@ pub const fn sample_dashboard_stats() -> DashboardStats {
 #[must_use]
 pub const fn sample_pricing() -> Pricing {
     Pricing { dormitory: 15 }
+}
+
+fn booking(data: BookingData<'_>) -> Booking {
+    Booking {
+        id: data.id.to_string(),
+        guest_name: data.guest_name.to_string(),
+        guest_email: data.guest_email.to_string(),
+        guest_phone: data.guest_phone.map(str::to_string),
+        room_type: data.room_type.to_string(),
+        check_in: data.check_in.to_string(),
+        check_out: data.check_out.to_string(),
+        num_guests: data.num_guests,
+        total_price: data.total_price,
+        status: "confirmed".to_string(),
+        payment_status: "paid".to_string(),
+    }
+}
+
+struct BookingData<'a> {
+    id: &'a str,
+    guest_name: &'a str,
+    guest_email: &'a str,
+    guest_phone: Option<&'a str>,
+    room_type: &'a str,
+    check_in: &'a str,
+    check_out: &'a str,
+    num_guests: i32,
+    total_price: i32,
+}
+
+fn room(
+    id: &str,
+    name: &str,
+    type_: &str,
+    capacity: i32,
+    price_per_night: i32,
+    amenities: &[&str],
+) -> Room {
+    Room {
+        id: id.to_string(),
+        name: name.to_string(),
+        type_: type_.to_string(),
+        capacity,
+        price_per_night,
+        amenities: amenities.iter().map(ToString::to_string).collect(),
+        available: true,
+    }
 }

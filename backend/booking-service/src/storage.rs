@@ -3,33 +3,26 @@ use crate::shared::constants::{
     Pricing, Room,
 };
 
-/// Storage port abstracting over different storage backends (Spin KV, Cloudflare KV, etc.)
-pub trait StoragePort {
-    fn get_bookings(&self) -> Vec<Booking>;
-    fn get_rooms(&self) -> Vec<Room>;
-    fn get_dashboard_stats(&self) -> DashboardStats;
-    fn get_pricing(&self) -> Pricing;
-    // Note: create_booking would typically mutate state, but for simplicity we omit it here.
-    // In a real implementation, we would have a method to add a booking.
+pub struct StorageSnapshot {
+    pub bookings: Vec<Booking>,
+    pub rooms: Vec<Room>,
+    pub dashboard_stats: DashboardStats,
+    pub pricing: Pricing,
 }
 
-/// In-memory storage implementation using hardcoded data.
+pub trait StoragePort {
+    fn snapshot(&self) -> StorageSnapshot;
+}
+
 pub struct InMemoryStorage;
 
 impl StoragePort for InMemoryStorage {
-    fn get_bookings(&self) -> Vec<Booking> {
-        sample_bookings().to_vec()
-    }
-
-    fn get_rooms(&self) -> Vec<Room> {
-        sample_rooms().to_vec()
-    }
-
-    fn get_dashboard_stats(&self) -> DashboardStats {
-        sample_dashboard_stats()
-    }
-
-    fn get_pricing(&self) -> Pricing {
-        sample_pricing()
+    fn snapshot(&self) -> StorageSnapshot {
+        StorageSnapshot {
+            bookings: sample_bookings().to_vec(),
+            rooms: sample_rooms().to_vec(),
+            dashboard_stats: sample_dashboard_stats(),
+            pricing: sample_pricing(),
+        }
     }
 }
