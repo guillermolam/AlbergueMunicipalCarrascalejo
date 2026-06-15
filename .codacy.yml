@@ -1,8 +1,6 @@
 exclude_paths:
     - "tests/integration/**"
-    - "gateway/**"
     - "frontend/dist/**"
-    - "backend/info-on-arrival-service/**"
     - "backend/notification-service/tests/**"
     - "tests/e2e/**"
     - "domain_model/seed/**"

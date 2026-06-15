@@ -356,8 +356,8 @@ fn rewrite_upstream_path(path: &str, service: &str) -> String {
         | "reviews-service"
         | "notification-service"
         | "document-validation-service"
-        | "info-on-arrival-service"
-        | "booking-service" => format!("/api{rest_path}"),
+        | "info-on-arrival-service" => format!("/api{rest_path}"),
+        "booking-service" => rest_path.to_string(),
         _ => path.to_string(),
     }
 }

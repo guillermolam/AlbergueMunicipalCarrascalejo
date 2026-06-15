@@ -57,7 +57,6 @@ exclude:
   - '**/test/**'
   - '**/mocks/**'
   - '**/fixtures/**'
-  - 'backend/info-on-arrival-service/**'
   - 'frontend/src/lib/gateway-config.ts'
   - 'frontend/src/stores/pilgrim-auth.ts'
   - 'frontend/src/lib/config-ssr.ts'

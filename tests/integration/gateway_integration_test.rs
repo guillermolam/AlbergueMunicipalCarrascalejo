@@ -123,7 +123,7 @@ async fn test_gateway_health_check() -> Result<()> {
 async fn test_cors_preflight_handling() -> Result<()> {
     let client = GatewayTestClient::new();
 
-    let response = client.options("/api/booking/create").await?;
+    let response = client.options("/api/bookings").await?;
 
     assert_that(&response.status().as_u16()).is_equal_to(200);
     assert_that(&response.headers().get("Access-Control-Allow-Origin"))
@@ -150,7 +150,7 @@ async fn test_service_composition_pipeline_success() -> Result<()> {
 
     let response = client
         .post_with_auth(
-            "/api/booking/create",
+            "/api/bookings",
             booking_data,
             "valid_access_token_123",
         )
@@ -207,7 +207,7 @@ async fn test_security_scanning_malicious_payload() -> Result<()> {
     ];
 
     for payload in malicious_payloads {
-        let response = client.post("/api/booking/create", payload).await?;
+        let response = client.post("/api/bookings", payload).await?;
 
         // Should be blocked by security scanning (403) or require auth (401)
         assert_that(&response.status().as_u16()).is_in(vec![401, 403]);
@@ -226,7 +226,7 @@ async fn test_authentication_required_endpoints() -> Result<()> {
     let client = GatewayTestClient::new();
 
     let protected_endpoints = vec![
-        "/api/booking/create",
+        "/api/bookings",
         "/api/admin/dashboard",
         "/api/notifications/create",
         "/api/validation/upload",
@@ -308,7 +308,7 @@ async fn test_service_routing() -> Result<()> {
     let client = GatewayTestClient::new();
 
     let service_routes = vec![
-        ("/api/booking/list", "booking"),
+        ("/api/bookings", "booking"),
         ("/api/reviews/list", "reviews"),
         ("/api/notifications/status", "notifications"),
         ("/api/location/search", "location"),
@@ -378,7 +378,7 @@ async fn test_middleware_context_propagation() -> Result<()> {
 
     let response = client
         .post_with_auth(
-            "/api/booking/create",
+            "/api/bookings",
             serde_json::json!({"guest_name": "Test User"}),
             "valid_token_with_user_info",
         )
@@ -395,7 +395,7 @@ async fn test_middleware_context_propagation() -> Result<()> {
 async fn test_cors_preflight() -> Result<()> {
     let client = GatewayTestClient::new();
 
-    let response = client.options("/api/booking/create").await?;
+    let response = client.options("/api/bookings").await?;
 
     assert_that(&response.status().as_u16()).is_equal_to(200);
 
@@ -414,7 +414,7 @@ async fn test_protected_route_requires_auth() -> Result<()> {
     // Test protected booking endpoint without auth
     let response = client
         .post(
-            "/api/booking/create",
+            "/api/bookings",
             serde_json::json!({
                 "guest_name": "Test User",
                 "check_in": "2024-01-15",
@@ -461,7 +461,7 @@ async fn test_security_middleware() -> Result<()> {
         "sql": "'; DROP TABLE users; --"
     });
 
-    let response = client.post("/api/booking/list", malicious_payload).await?;
+    let response = client.post("/api/bookings", malicious_payload).await?;
 
     // Security middleware should handle this gracefully
     // Could be 403 (blocked) or processed normally depending on implementation

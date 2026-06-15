@@ -53,7 +53,7 @@ export async function checkAvailability(
 }
 
 export async function createBooking(bookingData: BookingData): Promise<BookingResponse> {
-  const response = await fetch('/api/booking/create', {
+  const response = await fetch('/api/bookings', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

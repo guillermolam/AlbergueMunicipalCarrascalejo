@@ -206,22 +206,22 @@ const fakeResponses = {
     };
   },
 
-  '/api/bookings/create': async (data: any) => {
-    await delay(600);
-    return {
-      success: true,
-      data: {
-        ...mockData.booking,
-        ...data,
-        id: 'booking-' + Date.now(),
-        reference: 'BK' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-        confirmationCode: 'CONF-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-      },
-      message: 'Reserva creada correctamente',
-    };
-  },
+  '/api/bookings': async (data: any) => {
+    if (data) {
+      await delay(600);
+      return {
+        success: true,
+        data: {
+          ...mockData.booking,
+          ...data,
+          id: 'booking-' + Date.now(),
+          reference: 'BK' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+          confirmationCode: 'CONF-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        },
+        message: 'Reserva creada correctamente',
+      };
+    }
 
-  '/api/bookings/list': async () => {
     await delay(250);
     return {
       success: true,
@@ -339,12 +339,12 @@ export async function getGatewayEndpoints(): Promise<GatewayEndpoints> {
       list: `${baseUrl}/users/list`,
     },
     bookings: {
-      create: `${baseUrl}/bookings/create`,
+      create: `${baseUrl}/bookings`,
       get: `${baseUrl}/bookings/{id}`,
       update: `${baseUrl}/bookings/{id}`,
       cancel: `${baseUrl}/bookings/{id}/cancel`,
-      list: `${baseUrl}/bookings/list`,
-      availability: `${baseUrl}/bookings/availability`,
+      list: `${baseUrl}/bookings`,
+      availability: `${baseUrl}/bookings`,
     },
     camino: {
       stages: `${baseUrl}/camino/stages`,

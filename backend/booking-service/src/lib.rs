@@ -18,6 +18,8 @@
 use serde::Serialize;
 use spin_sdk::http::{Request, Response, ResponseBuilder};
 use spin_sdk::http_component;
+use std::{env, sync::OnceLock};
+use uuid::Uuid;
 
 // Import shared constants
 mod shared;
@@ -28,14 +30,17 @@ mod storage;
 use storage::{InMemoryStorage, StoragePort};
 
 use serde_json::Value;
-use std::env;
+
+static STORAGE: OnceLock<InMemoryStorage> = OnceLock::new();
 
 #[http_component]
 fn handle_request(req: Request) -> Response {
-    // Create an in-memory storage instance (in real implementation, this would be configured)
-    let storage = InMemoryStorage;
-    // Delegate to the HTTP handler with the storage
-    handler::handle_request(req, &storage)
+    handler::handle_request(req, storage())
+}
+
+#[must_use]
+fn storage() -> &'static InMemoryStorage {
+    STORAGE.get_or_init(InMemoryStorage::new)
 }
 
 // Business logic functions now take a storage port
@@ -44,8 +49,7 @@ fn get_bookings(storage: &dyn StoragePort) -> Response {
     json_response(200, &bookings)
 }
 
-fn create_booking(req: Request, _storage: &dyn StoragePort) -> Response {
-    // Parse request body with error handling
+fn create_booking(req: Request, storage: &dyn StoragePort) -> Response {
     let body_bytes = req.body();
     let body_json: Value = match serde_json::from_slice(body_bytes) {
         Ok(json) => json,
@@ -57,19 +61,16 @@ fn create_booking(req: Request, _storage: &dyn StoragePort) -> Response {
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
-    // Read WhatsApp business phone number from env
     let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
 
-    // Make WhatsApp integration optional: only register if both numbers are present and feature is enabled
     let whatsapp_enabled =
-        env::var("WHATSAPP_ENABLED").unwrap_or_else(|_| "true".to_string()) == "true";
+        env::var("WHATSAPP_ENABLED").map_or(false, |value| value.eq_ignore_ascii_case("true"));
     if whatsapp_enabled && !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
         register_whatsapp_client(guest_phone, &whatsapp_business_phone);
     }
 
-    // Create booking as before (not storing it in storage for simplicity)
     let new_booking = Booking {
-        id: "new_id".to_string(),
+        id: Uuid::new_v4().to_string(),
         guest_name: body_json
             .get("guest_name")
             .and_then(|v| v.as_str())
@@ -112,7 +113,9 @@ fn create_booking(req: Request, _storage: &dyn StoragePort) -> Response {
         payment_status: "pending".to_string(),
     };
 
-    json_response(201, &new_booking)
+    let stored_booking = storage.create_booking(new_booking);
+
+    json_response(201, &stored_booking)
 }
 
 fn get_dashboard_stats(storage: &dyn StoragePort) -> Response {
@@ -144,10 +147,8 @@ fn error_response(status: u16, message: &str) -> Response {
     json_response(status, &serde_json::json!({ "error": message }))
 }
 
-// Placeholder for WhatsApp registration
-fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
-    // Placeholder: Implement WhatsApp API call to register client
-    println!("Registering WhatsApp client {client_phone} with business phone {business_phone}");
+fn register_whatsapp_client(_client_phone: &str, _business_phone: &str) {
+    println!("Registering WhatsApp client with configured business phone");
 }
 
 // HTTP handler module
