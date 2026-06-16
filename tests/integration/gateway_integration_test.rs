@@ -12,7 +12,6 @@
 //! Tests the entire service composition pipeline through HTTP requests
 
 use anyhow::Result;
-use reqwest;
 use serde_json::Value;
 use speculoos::prelude::*;
 use std::env;
@@ -126,12 +125,23 @@ async fn test_cors_preflight_handling() -> Result<()> {
     let response = client.options("/api/booking/create").await?;
 
     assert_that(&response.status().as_u16()).is_equal_to(200);
-    assert_that(&response.headers().get("Access-Control-Allow-Origin"))
-        .is_some()
-        .is_equal_to("*");
-    assert_that(&response.headers().get("Access-Control-Allow-Methods"))
-        .is_some()
-        .contains("POST");
+    assert!(response
+        .headers()
+        .get("Access-Control-Allow-Origin")
+        .and_then(|value| value.to_str().ok())
+        .is_some());
+    assert_eq!(
+        response
+            .headers()
+            .get("Access-Control-Allow-Origin")
+            .and_then(|value| value.to_str().ok()),
+        Some("*")
+    );
+    let allowed_methods = response
+        .headers()
+        .get("Access-Control-Allow-Methods")
+        .and_then(|value| value.to_str().ok());
+    assert!(allowed_methods.is_some_and(|value| value.contains("POST")));
 
     Ok(())
 }
@@ -172,7 +182,7 @@ async fn test_rate_limiting_enforcement() -> Result<()> {
     let mut responses = Vec::new();
 
     for i in 0..20 {
-        let response = client.get(format!("/api/reviews/list?page={i}")).await?;
+        let response = client.get(&format!("/api/reviews/list?page={i}")).await?;
         responses.push(response);
 
         // Small delay to avoid overwhelming the test
@@ -189,7 +199,7 @@ async fn test_rate_limiting_enforcement() -> Result<()> {
             .unwrap();
         let body: Value = rate_limited_response.json().await?;
         assert_that(&body["error"].as_str()).is_equal_to(Some("Rate Limit Exceeded"));
-        assert_that(&body["retry_after"]).is_some();
+        assert!(body.get("retry_after").is_some());
     }
 
     Ok(())
@@ -210,7 +220,7 @@ async fn test_security_scanning_malicious_payload() -> Result<()> {
         let response = client.post("/api/booking/create", payload).await?;
 
         // Should be blocked by security scanning (403) or require auth (401)
-        assert_that(&response.status().as_u16()).is_in(vec![401, 403]);
+        assert!(matches!(response.status().as_u16(), 401 | 403));
 
         if response.status().as_u16() == 403 {
             let body: Value = response.json().await?;
@@ -343,7 +353,7 @@ async fn test_unknown_endpoint_404() -> Result<()> {
 
     let body: Value = response.json().await?;
     assert_that(&body["error"].as_str()).is_equal_to(Some("Not Found"));
-    assert_that(&body["available_endpoints"]).is_some();
+    assert!(body.get("available_endpoints").is_some());
 
     Ok(())
 }
@@ -357,8 +367,8 @@ async fn test_concurrent_request_handling() -> Result<()> {
 
     for i in 0..10 {
         let client = GatewayTestClient::new();
-        let handle =
-            tokio::spawn(async move { client.get(format!("/api/reviews/list?page={i}")).await });
+        let path = format!("/api/reviews/list?page={i}");
+        let handle = tokio::spawn(async move { client.get(&path).await });
         handles.push(handle);
     }
 
@@ -446,7 +456,7 @@ async fn test_rate_limiting_middleware() -> Result<()> {
 
     // Should either succeed (200) or be rate limited (429)
     let status = response.status().as_u16();
-    assert_that(&status).is_in(vec![200, 429]);
+    assert!(matches!(status, 200 | 429));
 
     Ok(())
 }
@@ -466,7 +476,7 @@ async fn test_security_middleware() -> Result<()> {
     // Security middleware should handle this gracefully
     // Could be 403 (blocked) or processed normally depending on implementation
     let status = response.status().as_u16();
-    assert_that(&status).is_in(vec![200, 403, 404]);
+    assert!(matches!(status, 200 | 403 | 404));
 
     Ok(())
 }

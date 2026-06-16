@@ -324,7 +324,7 @@ jobs:
   deploy-check:
     name: Deployment Readiness
     runs-on: ubuntu-latest
-    needs: [frontend, gateway, backend, database, integration, security, sonarcloud]
+    needs: [frontend, gateway, backend, database, integration, security]
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -366,6 +366,7 @@ jobs:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: [frontend, gateway, backend]
+    if: false  # SonarCloud project uses Automatic Analysis; external SonarCloud Code Analysis is the active gate
 
     steps:
       - name: Checkout code

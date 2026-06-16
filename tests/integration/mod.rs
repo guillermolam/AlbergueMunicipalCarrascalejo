@@ -19,7 +19,6 @@ pub use gateway_integration_test::GatewayTestClient;
 
 #[cfg(test)]
 mod test_runner {
-    use super::*;
     use std::process::{Command, Stdio};
     use std::time::Duration;
     use tokio::time::sleep;
