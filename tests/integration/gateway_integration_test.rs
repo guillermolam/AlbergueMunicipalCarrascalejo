@@ -194,9 +194,9 @@ async fn test_rate_limiting_enforcement() -> Result<()> {
 
     if rate_limited {
         let rate_limited_response = responses
-            .iter()
+            .into_iter()
             .find(|r| r.status().as_u16() == 429)
-            .unwrap();
+            .expect("expected one rate-limited response");
         let body: Value = rate_limited_response.json().await?;
         assert_that(&body["error"].as_str()).is_equal_to(Some("Rate Limit Exceeded"));
         assert!(body.get("retry_after").is_some());
@@ -360,8 +360,6 @@ async fn test_unknown_endpoint_404() -> Result<()> {
 
 #[tokio::test]
 async fn test_concurrent_request_handling() -> Result<()> {
-    let client = GatewayTestClient::new();
-
     // Test concurrent requests
     let mut handles = Vec::new();
 
