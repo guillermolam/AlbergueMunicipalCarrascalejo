@@ -266,15 +266,14 @@ jobs:
         run: |
           spin --version
           spin build
-        continue-on-error: true
 
-      # Run only fmt-check + clippy here; full integration tests require a live
+      # Run fmt-check + clippy here; full integration tests require a live
       # Spin gateway (spin up) which is not started in this job.
       - name: Lint integration test crate (tests/integration)
         run: |
           cd tests/integration
           cargo fmt --manifest-path Cargo.toml -- --check
-          cargo clippy --manifest-path Cargo.toml --lib -- -D warnings
+          cargo clippy --manifest-path Cargo.toml --tests -- -D warnings
 
   # Security Scan
   security:
@@ -326,7 +325,7 @@ jobs:
   deploy-check:
     name: Deployment Readiness
     runs-on: ubuntu-latest
-    needs: [frontend, gateway, backend, database, integration, security]
+    needs: [frontend, gateway, backend, database, integration, security, sonarcloud]
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -368,7 +367,6 @@ jobs:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: [frontend, gateway, backend]
-    if: false  # Disabled: Automatic Analysis is enabled on SonarCloud project
 
     steps:
       - name: Checkout code

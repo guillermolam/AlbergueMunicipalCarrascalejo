@@ -26,7 +26,7 @@ fmt-fix:
 
 # Clippy with warnings denied
 clippy:
-  cargo clippy --lib -- -D warnings
+  cargo clippy --tests -- -D warnings
 
 # Run tests
 test:

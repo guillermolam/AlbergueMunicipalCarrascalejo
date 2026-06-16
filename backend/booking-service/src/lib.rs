@@ -43,7 +43,7 @@ fn handle_request(req: Request) -> Response {
     handler::handle_request(req, &storage)
 }
 
-fn create_booking(req: Request, _storage: &dyn storage::StoragePort) -> Response {
+fn create_booking(req: Request, storage: &dyn storage::StoragePort) -> Response {
     let body: CreateBookingRequest = match serde_json::from_slice(req.body()) {
         Ok(json) => json,
         Err(err) => return error_response(400, &format!("Invalid JSON: {err}")),
@@ -81,6 +81,8 @@ fn create_booking(req: Request, _storage: &dyn storage::StoragePort) -> Response
         payment_status: "pending".to_string(),
     };
 
+    let new_booking = storage.create_booking(new_booking);
+
     json_response(201, &new_booking)
 }
 
@@ -98,21 +100,24 @@ fn error_response(status: u16, message: &str) -> Response {
     json_response(status, &serde_json::json!({ "error": message }))
 }
 
-fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
-    println!("Registering WhatsApp client {client_phone} with business phone {business_phone}");
+fn register_whatsapp_client() {
+    println!("Registering WhatsApp client with configured business phone");
 }
 
 fn maybe_register_whatsapp(guest_phone: Option<&str>) {
-    let Some(guest_phone) = guest_phone else {
+    if guest_phone.is_none() {
         return;
-    };
+    }
 
     let Ok(whatsapp_business_phone) = env::var("WHATSAPP_BUSINESS_NUMBER") else {
         return;
     };
 
-    let whatsapp_enabled = env::var("WHATSAPP_ENABLED").map_or(true, |value| value == "true");
-    if whatsapp_enabled && !whatsapp_business_phone.is_empty() {
-        register_whatsapp_client(guest_phone, &whatsapp_business_phone);
+    let Ok(whatsapp_enabled) = env::var("WHATSAPP_ENABLED") else {
+        return;
+    };
+
+    if whatsapp_enabled.eq_ignore_ascii_case("true") && !whatsapp_business_phone.is_empty() {
+        register_whatsapp_client();
     }
 }
