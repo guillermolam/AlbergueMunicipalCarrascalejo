@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![allow(dead_code)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(
     clippy::module_name_repetitions,
@@ -28,7 +29,7 @@ mod test_runner {
         println!("🚀 Starting Spin gateway for integration tests...");
 
         let child = Command::new("spin")
-            .args(&["up", "--listen", "0.0.0.0:3000"])
+            .args(["up", "--listen", "0.0.0.0:3000"])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
