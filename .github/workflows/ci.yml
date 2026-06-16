@@ -254,6 +254,7 @@ jobs:
           mv "$tmpdir/spin" "$RUNNER_TEMP/bin/spin"
           chmod +x "$RUNNER_TEMP/bin/spin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          export PATH="$RUNNER_TEMP/bin:$PATH"
           spin --version
 
       - name: Install just
