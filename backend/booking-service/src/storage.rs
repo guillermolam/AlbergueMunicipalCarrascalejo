@@ -36,14 +36,14 @@ impl InMemoryStorage {
 
 impl StoragePort for InMemoryStorage {
     fn snapshot(&self) -> StorageSnapshot {
-        self.storage()
+        InMemoryStorage::storage()
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
     }
 
     fn create_booking(&self, booking: Booking) -> Booking {
-        self.storage()
+        InMemoryStorage::storage()
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .bookings

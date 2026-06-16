@@ -243,20 +243,18 @@ jobs:
 
       - name: Install Spin CLI
         run: |
-          for url in \
+          set -euo pipefail
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          curl --fail --location --retry 3 --retry-delay 2 \
             "https://github.com/spinframework/spin/releases/download/v4.0.0/spin-v4.0.0-static-linux-amd64.tar.gz" \
-            "https://github.com/spinframework/spin/releases/download/v4.0.0/spin-v4.0.0-linux-amd64.tar.gz"; do
-            tmpdir=$(mktemp -d)
-            if curl -fsSL "$url" -o "$tmpdir/spin.tar.gz"; then
-              tar -xzf "$tmpdir/spin.tar.gz" -C "$tmpdir"
-              cp "$tmpdir"/spin .
-              chmod +x spin
-              echo "$(pwd)/spin" >> $GITHUB_PATH
-              rm -rf "$tmpdir"
-              break
-            fi
-            rm -rf "$tmpdir"
-          done
+            -o "$tmpdir/spin.tar.gz"
+          tar -xzf "$tmpdir/spin.tar.gz" -C "$tmpdir"
+          mkdir -p "$RUNNER_TEMP/bin"
+          mv "$tmpdir/spin" "$RUNNER_TEMP/bin/spin"
+          chmod +x "$RUNNER_TEMP/bin/spin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          spin --version
 
       - name: Install just
         run: |
