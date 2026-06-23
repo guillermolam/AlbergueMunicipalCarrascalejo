@@ -81,10 +81,16 @@ fn handle_request(req: Request) -> Response {
 
 use serde_json::Value;
 use std::env;
+use uuid::Uuid;
 
 fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
-    // Placeholder: Implement WhatsApp API call to register client
     println!("Registering WhatsApp client {client_phone} with business phone {business_phone}");
+}
+
+fn is_whatsapp_enabled() -> bool {
+    env::var("WHATSAPP_ENABLED")
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(true)
 }
 
 fn create_booking(req: Request) -> Response {
@@ -103,13 +109,14 @@ fn create_booking(req: Request) -> Response {
     // Read WhatsApp business phone number from env
     let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
 
-    if !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
+    // Only register if WhatsApp is enabled and both numbers are present
+    if is_whatsapp_enabled() && !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
         register_whatsapp_client(guest_phone, &whatsapp_business_phone);
     }
 
     // Create booking as before
     let new_booking = Booking {
-        id: "new_id".to_string(),
+        id: Uuid::new_v4().to_string(),
         guest_name: body_json
             .get("guest_name")
             .and_then(|v| v.as_str())
