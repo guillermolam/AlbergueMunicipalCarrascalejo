@@ -241,7 +241,7 @@ export async function loadConfiguration(): Promise<AppConfig> {
       sms: {
         provider: getServerEnv('SMS_PROVIDER') || 'twilio',
         apiKey: getServerEnv('SMS_API_KEY') || '',
-        fromNumber: getServerEnv('SMS_FROM') || '+1234567890',
+        fromNumber: getServerEnv('SMS_FROM') || 'TEST_SMS_FROM',
       },
     },
   } as AppConfig;

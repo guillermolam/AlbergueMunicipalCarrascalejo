@@ -80,7 +80,7 @@ const mockData = {
     name: 'Peregrino Test',
     email: 'test@peregrino.com',
     country: 'España',
-    phone: '+34-600-123-456',
+    phone: 'Test-Phone-123',
     status: 'confirmed',
     arrivalDate: new Date().toISOString(),
     departureDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),

@@ -1,5 +1,5 @@
-
 #![deny(warnings)]
+#![allow(dead_code)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(
     clippy::module_name_repetitions,
@@ -12,14 +12,14 @@
 //! Tests the complete service composition pipeline by making real HTTP requests
 //! to the Spin gateway running in test mode.
 
+#[cfg(test)]
 pub mod gateway_integration_test;
 
-// Re-export main test client for use in other test modules
+#[cfg(test)]
 pub use gateway_integration_test::GatewayTestClient;
 
 #[cfg(test)]
 mod test_runner {
-    use super::*;
     use std::process::{Command, Stdio};
     use std::time::Duration;
     use tokio::time::sleep;
@@ -29,7 +29,7 @@ mod test_runner {
         println!("🚀 Starting Spin gateway for integration tests...");
 
         let child = Command::new("spin")
-            .args(&["up", "--listen", "0.0.0.0:3000"])
+            .args(["up", "--listen", "0.0.0.0:3000"])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()

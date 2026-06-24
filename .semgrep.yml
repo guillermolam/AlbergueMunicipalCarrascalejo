@@ -51,12 +51,15 @@ exclude:
   - '**/*.rlib'
   - '**/*.rmeta'
   
-  # Test and mock directories
+# Test and mock directories
   - '**/tests/**'
   - '**/__tests__/**'
   - '**/test/**'
   - '**/mocks/**'
   - '**/fixtures/**'
+  - 'frontend/src/lib/gateway-config.ts'
+  - 'frontend/src/stores/pilgrim-auth.ts'
+  - 'frontend/src/lib/config-ssr.ts'
   
   # Scripts and CI
   - '**/scripts/**'

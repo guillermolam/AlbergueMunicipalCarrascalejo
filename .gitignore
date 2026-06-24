@@ -29,6 +29,7 @@ frontend/.wrangler/
 # === RUST SPECIFIC ===
 **/*.rs.bk
 **/Cargo.lock
+!tests/integration/Cargo.lock
 **/.cargo/
 **/*.rlib
 **/*.rmeta

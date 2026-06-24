@@ -1,0 +1,17 @@
+exclude_paths:
+  - "tests/**"
+  - "frontend/tests/**"
+  - "frontend/dist/**"
+  - "backend/notification-service/tests/**"
+  - "domain_model/seed/**"
+  - "frontend/tests/fixtures/**"
+  - "frontend/src/lib/gateway-config.ts"
+  - "frontend/src/stores/pilgrim-auth.ts"
+  - "frontend/src/lib/config-ssr.ts"
+
+complexity:
+  threshold: 20
+
+security:
+  threshold: high
+  use_suggestions: true

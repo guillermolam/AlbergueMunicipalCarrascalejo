@@ -73,7 +73,7 @@ export default function () {
     documentType: 'DNI',
     documentNumber: '12345678Z',
     email: 'test@example.com',
-    phone: '+34123456789'
+    phone: 'test-phone-123'
   });
 
   response = http.post(`${BASE_URL}/api/validate/document`, validationPayload, {
