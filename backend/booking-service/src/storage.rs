@@ -1,4 +1,4 @@
-use crate::shared::constants::{
+use crate::booking_constants::constants::{
     sample_bookings, sample_dashboard_stats, sample_pricing, sample_rooms, Booking, DashboardStats,
     Pricing, Room,
 };

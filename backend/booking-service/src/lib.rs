@@ -21,9 +21,9 @@ use spin_sdk::http_component;
 use std::{env, sync::OnceLock};
 use uuid::Uuid;
 
-// Import shared constants
-mod shared;
-pub use shared::constants::*;
+// Import booking constants
+mod booking_constants;
+pub use booking_constants::constants::*;
 
 // Import storage port
 mod storage;
