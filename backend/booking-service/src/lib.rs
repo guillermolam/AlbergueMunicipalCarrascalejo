@@ -12,12 +12,12 @@
     clippy::needless_pass_by_value
 )]
 
+mod booking_constants;
 mod handler;
 mod service;
-mod shared;
 mod storage;
 
-pub use shared::constants::*;
+pub use booking_constants::constants::*;
 
 use serde::{Deserialize, Serialize};
 use spin_sdk::http::{Request, Response, ResponseBuilder};
