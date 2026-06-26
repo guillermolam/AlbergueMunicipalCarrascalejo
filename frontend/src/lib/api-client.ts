@@ -202,13 +202,19 @@ export class ApiClient {
   }
 
   // Booking API
-  async getAvailability(params: { startDate: string; endDate: string }): Promise<ApiResponse<any>> {
-    const queryParams = new URLSearchParams({
-      startDate: params.startDate,
-      endDate: params.endDate,
+  async getAvailability(params: {
+    startDate: string;
+    endDate: string;
+    guests: number;
+  }): Promise<ApiResponse<any>> {
+    return await this.request(this.endpoints.bookings.availability, {
+      method: 'POST',
+      body: JSON.stringify({
+        arrivalDate: params.startDate,
+        departureDate: params.endDate,
+        guests: params.guests,
+      }),
     });
-
-    return await this.request(`${this.endpoints.bookings.availability}?${queryParams}`);
   }
 
   async createBooking(booking: BookingRequest): Promise<ApiResponse<BookingResponse>> {

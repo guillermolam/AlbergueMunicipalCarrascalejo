@@ -197,11 +197,20 @@ const fakeResponses = {
   },
 
   // Booking endpoints
-  '/api/bookings/availability': async (_params: any) => {
+  '/api/bookings/availability': async (data: any) => {
     await delay(300);
+    const guests = data?.guests || 1;
+    const availableRooms = 4;
+    const pricePerNight = 15;
     return {
       success: true,
-      data: mockData.availability,
+      data: {
+        available: true,
+        availableRooms,
+        pricePerNight,
+        totalPrice: pricePerNight * guests,
+        currency: 'EUR',
+      },
       message: 'Disponibilidad obtenida correctamente',
     };
   },
@@ -344,7 +353,7 @@ export async function getGatewayEndpoints(): Promise<GatewayEndpoints> {
       update: `${baseUrl}/bookings/{id}`,
       cancel: `${baseUrl}/bookings/{id}/cancel`,
       list: `${baseUrl}/bookings`,
-      availability: `${baseUrl}/bookings`,
+      availability: `${baseUrl}/api/bookings/availability`,
     },
     camino: {
       stages: `${baseUrl}/camino/stages`,

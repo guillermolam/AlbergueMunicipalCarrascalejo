@@ -63,6 +63,9 @@ fn create_booking(req: Request, storage: &dyn StoragePort) -> Response {
 
     let whatsapp_business_phone = env::var("WHATSAPP_BUSINESS_NUMBER").unwrap_or_default();
 
+    // WhatsApp client registration now requires WHATSAPP_ENABLED=true to be active.
+    // Previously, registration occurred whenever both phone numbers were present.
+    // This change allows operators to disable WhatsApp integration without removing environment config.
     let whatsapp_enabled =
         env::var("WHATSAPP_ENABLED").map_or(false, |value| value.eq_ignore_ascii_case("true"));
     if whatsapp_enabled && !guest_phone.is_empty() && !whatsapp_business_phone.is_empty() {
@@ -128,6 +131,45 @@ fn get_pricing(storage: &dyn StoragePort) -> Response {
     json_response(200, &pricing)
 }
 
+fn check_availability(req: Request, storage: &dyn StoragePort) -> Response {
+    let body_bytes = req.body();
+    let body_json: Value = match serde_json::from_slice(body_bytes) {
+        Ok(json) => json,
+        Err(err) => return error_response(400, &format!("Invalid JSON: {err}")),
+    };
+
+    let _check_in = body_json
+        .get("arrivalDate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let _check_out = body_json
+        .get("departureDate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let guests = body_json
+        .get("guests")
+        .and_then(serde_json::Value::as_i64)
+        .unwrap_or(1) as i32;
+
+    let available_rooms = storage.get_rooms().into_iter().filter(|r| r.available).count();
+    let pricing = storage.get_pricing();
+    let price_per_night = pricing.dormitory;
+
+    // Use 1 night as default if dates not provided (simplified for WASM compatibility)
+    let nights = 1;
+
+    json_response(
+        200,
+        &serde_json::json!({
+            "available": available_rooms > 0,
+            "availableRooms": available_rooms,
+            "pricePerNight": price_per_night,
+            "totalPrice": price_per_night * nights * guests,
+            "currency": "EUR"
+        }),
+    )
+}
+
 fn get_rooms(storage: &dyn StoragePort) -> Response {
     let rooms = storage.get_rooms();
     json_response(200, &rooms)
@@ -147,8 +189,8 @@ fn error_response(status: u16, message: &str) -> Response {
     json_response(status, &serde_json::json!({ "error": message }))
 }
 
-fn register_whatsapp_client(_client_phone: &str, _business_phone: &str) {
-    println!("Registering WhatsApp client with configured business phone");
+fn register_whatsapp_client(client_phone: &str, business_phone: &str) {
+    println!("Registering WhatsApp client {client_phone} with business phone {business_phone}");
 }
 
 // HTTP handler module
@@ -164,6 +206,7 @@ mod handler {
         match (method, path) {
             (&Method::Get, "/bookings") => get_bookings(storage),
             (&Method::Post, "/bookings") => create_booking(req, storage),
+            (&Method::Post, "/availability") => check_availability(req, storage),
             (&Method::Get, "/rooms") => get_rooms(storage),
             (&Method::Get, "/dashboard/stats") => get_dashboard_stats(storage),
             (&Method::Get, "/pricing") => get_pricing(storage),

@@ -37,7 +37,7 @@ export interface AvailabilityResponse {
 export async function checkAvailability(
   request: AvailabilityRequest
 ): Promise<AvailabilityResponse> {
-  const response = await fetch('/api/booking/availability', {
+  const response = await fetch('/api/bookings/availability', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

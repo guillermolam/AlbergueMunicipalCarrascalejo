@@ -357,6 +357,8 @@ fn rewrite_upstream_path(path: &str, service: &str) -> String {
         | "notification-service"
         | "document-validation-service"
         | "info-on-arrival-service" => format!("/api{rest_path}"),
+        // booking-service uses paths without /api prefix (e.g., /bookings, /availability)
+        // unlike other services which expect /api/... paths downstream
         "booking-service" => rest_path.to_string(),
         _ => path.to_string(),
     }
